@@ -169,7 +169,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   return (
     <div className="flex flex-1 flex-col md:flex-row md:items-stretch md:gap-0 min-h-dvh md:min-h-0 md:h-[calc(100dvh-8rem)]">
       {/* Cover art — full-width banner on mobile, tall left column on desktop */}
-      <div className="relative h-[28vh] md:h-full md:flex-[3] w-full overflow-hidden flex-shrink-0 md:rounded-xl">
+      <div className="relative h-[28vh] md:h-full md:flex-[3] w-full md:w-0 overflow-hidden flex-shrink-0 md:flex-shrink md:rounded-xl">
         <Image
           src={game.header_image}
           alt={game.name}
