@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useCallback, useRef } from "react"
+import { motion, AnimatePresence, type PanInfo } from "framer-motion"
 
 interface SessionNotepadProps {
   goal: string
@@ -36,6 +36,29 @@ export function SessionNotepad({
   const [pages, setPages] = useState(() => parsePages(notes))
   const [editingGoal, setEditingGoal] = useState(false)
   const [goalDraft, setGoalDraft] = useState(goal)
+  const [direction, setDirection] = useState(0)
+  const constraintsRef = useRef(null)
+
+  const flipPage = useCallback((dir: number) => {
+    setCurrentPage(p => {
+      const next = p + dir
+      if (next < 0 || next > 9) return p
+      setDirection(dir)
+      return next
+    })
+  }, [])
+
+  const handleDragEnd = useCallback(
+    (_: unknown, info: PanInfo) => {
+      const threshold = 40
+      if (info.offset.x < -threshold && info.velocity.x < -100) {
+        flipPage(1)
+      } else if (info.offset.x > threshold && info.velocity.x > 100) {
+        flipPage(-1)
+      }
+    },
+    [flipPage]
+  )
 
   const handlePageEdit = useCallback(
     (text: string) => {
@@ -155,7 +178,7 @@ export function SessionNotepad({
                 <div className="absolute bottom-0.5 left-1.5 right-1.5 top-1 rounded-xl border border-border/30 bg-card/40" />
                 <div className="absolute bottom-0 left-3 right-3 top-2 rounded-xl border border-border/15 bg-card/20" />
 
-                <div className="relative glass-card rounded-xl p-3 flex flex-col">
+                <div className="relative glass-card rounded-xl p-3 flex flex-col overflow-hidden">
                   {/* Page header */}
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -166,17 +189,38 @@ export function SessionNotepad({
                     </span>
                   </div>
 
-                  <textarea
-                    value={pages[currentPage]}
-                    onChange={e => handlePageEdit(e.target.value)}
-                    placeholder="Write something..."
-                    className="w-full h-[88px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none resize-none leading-relaxed"
-                  />
+                  {/* Swipeable page area */}
+                  <div ref={constraintsRef} className="relative touch-pan-y">
+                    <motion.div
+                      drag="x"
+                      dragConstraints={constraintsRef}
+                      dragElastic={0.15}
+                      onDragEnd={handleDragEnd}
+                      className="cursor-grab active:cursor-grabbing"
+                    >
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.div
+                          key={currentPage}
+                          initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: direction > 0 ? -30 : 30 }}
+                          transition={{ duration: 0.15, ease: "easeOut" }}
+                        >
+                          <textarea
+                            value={pages[currentPage]}
+                            onChange={e => handlePageEdit(e.target.value)}
+                            placeholder="Write something..."
+                            className="w-full h-[88px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none resize-none leading-relaxed"
+                          />
+                        </motion.div>
+                      </AnimatePresence>
+                    </motion.div>
+                  </div>
 
                   {/* Page dots */}
                   <div className="flex items-center justify-center gap-1 pt-2 border-t border-border/20 mt-1">
                     <button
-                      onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                      onClick={() => flipPage(-1)}
                       disabled={currentPage === 0}
                       className="text-muted-foreground disabled:opacity-15 text-sm leading-none px-1 min-h-[24px]"
                       aria-label="Previous page"
@@ -187,7 +231,10 @@ export function SessionNotepad({
                       {Array.from({ length: 10 }, (_, i) => (
                         <button
                           key={i}
-                          onClick={() => setCurrentPage(i)}
+                          onClick={() => {
+                            setDirection(i > currentPage ? 1 : -1)
+                            setCurrentPage(i)
+                          }}
                           className={`rounded-full transition-all ${
                             i === currentPage
                               ? "w-2 h-2 bg-primary"
@@ -200,7 +247,7 @@ export function SessionNotepad({
                       ))}
                     </div>
                     <button
-                      onClick={() => setCurrentPage(p => Math.min(9, p + 1))}
+                      onClick={() => flipPage(1)}
                       disabled={currentPage === 9}
                       className="text-muted-foreground disabled:opacity-15 text-sm leading-none px-1 min-h-[24px]"
                       aria-label="Next page"
