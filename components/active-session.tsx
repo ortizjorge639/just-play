@@ -15,6 +15,7 @@ import type { Session, Game, SessionStatus } from "@/lib/types"
 interface ActiveSessionProps {
   session: Session & { games: Game }
   onFinished: () => void
+  onSessionUpdated?: (updates: Partial<Session>) => void
 }
 
 function formatTime(seconds: number): string {
@@ -27,7 +28,7 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`
 }
 
-export function ActiveSession({ session, onFinished }: ActiveSessionProps) {
+export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveSessionProps) {
   const [status, setStatus] = useState<SessionStatus>(session.status)
   const [isPending, startTransition] = useTransition()
   const [elapsed, setElapsed] = useState(0)
@@ -38,7 +39,24 @@ export function ActiveSession({ session, onFinished }: ActiveSessionProps) {
   const [showGoalInput, setShowGoalInput] = useState(!session.session_goal)
   const [showEndOptions, setShowEndOptions] = useState(false)
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const notesRef = useRef(notes)
+  const sessionIdRef = useRef(session.id)
   const [prevSessionId, setPrevSessionId] = useState(session.id)
+
+  // Keep refs in sync and flush pending notes on unmount
+  useEffect(() => {
+    notesRef.current = notes
+    sessionIdRef.current = session.id
+  })
+
+  useEffect(() => {
+    return () => {
+      if (notesTimeoutRef.current) {
+        clearTimeout(notesTimeoutRef.current)
+        updateSessionNotes(sessionIdRef.current, notesRef.current)
+      }
+    }
+  }, [])
 
   const game = session.games
   const isPlaying = status === "Playing"
@@ -96,6 +114,7 @@ export function ActiveSession({ session, onFinished }: ActiveSessionProps) {
   // Auto-save notes with debounce
   const handleNotesChange = (value: string) => {
     setNotes(value)
+    onSessionUpdated?.({ notes: value })
     if (notesTimeoutRef.current) {
       clearTimeout(notesTimeoutRef.current)
     }
@@ -107,6 +126,7 @@ export function ActiveSession({ session, onFinished }: ActiveSessionProps) {
   const handleSaveGoal = async () => {
     if (sessionGoal.trim()) {
       await updateSessionGoal(session.id, sessionGoal.trim())
+      onSessionUpdated?.({ session_goal: sessionGoal.trim() })
       setShowGoalInput(false)
     }
   }

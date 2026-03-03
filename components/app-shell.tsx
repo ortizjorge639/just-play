@@ -61,6 +61,10 @@ export function AppShell({
     window.location.reload()
   }, [])
 
+  const handleSessionUpdated = useCallback((updates: Partial<Session>) => {
+    setActiveSession(prev => prev ? { ...prev, ...updates } : prev)
+  }, [])
+
   const handleSessionFinished = useCallback(() => {
     setActiveSession(null)
     setActiveTab("progress")
@@ -165,6 +169,7 @@ export function AppShell({
               <ActiveSession
                 session={activeSession}
                 onFinished={handleSessionFinished}
+                onSessionUpdated={handleSessionUpdated}
               />
             ) : activeGame ? (
               <CurrentGame
