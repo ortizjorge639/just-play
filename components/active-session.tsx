@@ -167,18 +167,18 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   }
 
   return (
-    <div className="flex flex-1 flex-col min-h-dvh">
-      {/* Header with game image */}
-      <div className="relative h-[28vh] sm:h-[240px] w-full sm:max-w-2xl sm:mx-auto sm:rounded-xl overflow-hidden flex-shrink-0">
+    <div className="flex flex-1 flex-col md:flex-row md:items-stretch md:gap-0 min-h-dvh md:min-h-0 md:h-[calc(100dvh-8rem)]">
+      {/* Cover art — full-width banner on mobile, tall left column on desktop */}
+      <div className="relative h-[28vh] md:h-full md:flex-[3] w-full overflow-hidden flex-shrink-0 md:rounded-xl">
         <Image
           src={game.header_image}
           alt={game.name}
           fill
           className="object-cover"
-          sizes="100vw"
+          sizes="(min-width: 768px) 60vw, 100vw"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-background/80" />
 
         <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -204,8 +204,8 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
         </div>
       </div>
 
-      {/* Session content */}
-      <div className="flex flex-1 flex-col gap-4 px-6 pt-4 pb-6 overflow-y-auto sm:max-w-2xl sm:mx-auto sm:w-full">
+      {/* Session content — scrollable column on mobile, right panel on desktop */}
+      <div className="flex flex-1 md:flex-[2] flex-col gap-4 px-6 pt-4 pb-6 overflow-y-auto">
         {/* Timer */}
         <div className="glass-card p-5 relative">
           <button
