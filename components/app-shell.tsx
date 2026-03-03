@@ -35,7 +35,7 @@ export function AppShell({
   const [showTutorial, setShowTutorial] = useState(!user.tutorial_complete && user.onboarding_complete)
   const [showOnboarding, setShowOnboarding] = useState(!user.onboarding_complete)
   const [activeTab, setActiveTab] = useState<Tab>(
-    initialSession ? "session" : "deck"
+    initialSession || activeGame ? "session" : "deck"
   )
   const [activeSession, setActiveSession] = useState(initialSession)
   const [needsRefresh, setNeedsRefresh] = useState(false)
@@ -74,13 +74,13 @@ export function AppShell({
       window.location.reload()
       return
     }
-    // If there's an active session and they try to go to deck, redirect to session
-    if (tab === "deck" && activeSession) {
+    // If there's an active session or active game and they try to go to deck, redirect to session
+    if (tab === "deck" && (activeSession || activeGame)) {
       setActiveTab("session")
       return
     }
     setActiveTab(tab)
-  }, [needsRefresh, activeSession])
+  }, [needsRefresh, activeSession, activeGame])
 
   if (showOnboarding) {
     return <Onboarding onComplete={handleOnboardingComplete} />
@@ -166,6 +166,11 @@ export function AppShell({
                 session={activeSession}
                 onFinished={handleSessionFinished}
               />
+            ) : activeGame ? (
+              <CurrentGame
+                gameProgress={activeGame}
+                onSessionStarted={handleSessionCreated}
+              />
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-secondary">
@@ -220,7 +225,7 @@ export function AppShell({
       <BottomNav
         active={activeTab}
         onChange={handleTabChange}
-        hasActiveSession={!!activeSession}
+        hasActiveSession={!!activeSession || !!activeGame}
       />
 
       {/* Quick Filters Modal */}

@@ -38,6 +38,7 @@ export function ActiveSession({ session, onFinished }: ActiveSessionProps) {
   const [showGoalInput, setShowGoalInput] = useState(!session.session_goal)
   const [showEndOptions, setShowEndOptions] = useState(false)
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [prevSessionId, setPrevSessionId] = useState(session.id)
 
   const game = session.games
   const isPlaying = status === "Playing"
@@ -45,21 +46,21 @@ export function ActiveSession({ session, onFinished }: ActiveSessionProps) {
   const isLockedIn = status === "LockedIn"
 
   // Sync status with server when session prop changes
-  useEffect(() => {
+  if (prevSessionId !== session.id || status !== session.status) {
+    setPrevSessionId(session.id)
     setStatus(session.status)
     setNotes(session.notes || "")
     setSessionGoal(session.session_goal || "")
-  }, [session.id, session.status, session.notes, session.session_goal])
+  }
 
   // Live timer - handles pause/resume correctly
+  const pausedElapsed = session.paused_elapsed_seconds || 0
+  if (status === "Paused" && elapsed !== pausedElapsed) {
+    setElapsed(pausedElapsed)
+  }
+
   useEffect(() => {
-    if (status === "LockedIn" || status === "Finished") return
-    
-    // If paused, just show the paused elapsed time
-    if (status === "Paused") {
-      setElapsed(session.paused_elapsed_seconds || 0)
-      return
-    }
+    if (status !== "Playing") return
     
     // If playing, calculate from started_at + paused time
     const startTime = new Date(session.started_at).getTime()
