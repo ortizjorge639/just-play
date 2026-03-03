@@ -152,7 +152,7 @@ export function Progress({ sessions, displayName }: ProgressProps) {
                 transition={{ delay: 0.1 * Math.min(i, 10) }}
                 className="glass-card flex items-center gap-4 p-4"
               >
-                <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
                   <Image
                     src={session.games?.header_image || "/images/games/hades.jpg"}
                     alt={session.games?.name || "Game"}

@@ -57,7 +57,7 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
         className="w-full max-w-md glass-card rounded-t-3xl p-6 pb-10 flex flex-col gap-5 max-h-[85dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30 flex-shrink-0" />
+        <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30 shrink-0" />
         
         <div className="text-center flex flex-col gap-1">
           <h3 className="text-lg font-bold text-foreground">Update Filters</h3>

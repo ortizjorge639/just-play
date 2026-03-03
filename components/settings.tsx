@@ -99,6 +99,22 @@ export function Settings({
             label="Replay Tutorial"
             onClick={onReplayTutorial}
           />
+          <a
+            href="https://x.com/messages/compose?recipient_id=jojiguy639"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-4 p-4 rounded-xl text-left transition-colors hover:bg-secondary min-h-[56px] w-full"
+          >
+            <span className="text-muted-foreground">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </span>
+            <span className="text-base font-medium text-foreground flex-1">Send Feedback</span>
+            <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+          </a>
         </div>
       </div>
 
@@ -125,7 +141,7 @@ export function Settings({
 
       {/* App version */}
       <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-        <span className="text-xs text-muted-foreground">Just Play v1.1.3</span>
+        <span className="text-xs text-muted-foreground">Just Play v1.1.4</span>
       </div>
     </motion.div>
   )
