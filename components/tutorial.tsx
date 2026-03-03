@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import Image from "next/image"
 
 interface TutorialProps {
   onComplete: () => void
@@ -10,49 +11,28 @@ interface TutorialProps {
 
 const SLIDES = [
   {
-    icon: (
-      <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-      </svg>
-    ),
     title: "Welcome to Just Play",
     subtitle: "Stop scrolling through your library. Start playing.",
   },
   {
-    icon: (
-      <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-      </svg>
-    ),
-    title: "We Pick for You",
-    subtitle: "Tell us your mood, time, and energy. We'll show you 1-3 perfect games.",
+    image: "/finding_game_to_play.jpeg",
+    title: "Swipe to Find Your Game",
+    subtitle: "We pick 1–3 games based on your mood, time, and energy. Swipe up to lock in, down to skip.",
   },
   {
-    icon: (
-      <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H3.75" />
-      </svg>
-    ),
-    title: "Swipe to Decide",
-    subtitle: "Swipe up to lock in a game. Swipe down to skip. It's that simple.",
+    image: "/game_in_progress.jpeg",
+    title: "Track Your Session",
+    subtitle: "A live timer, notes, and goals keep you focused. Pause anytime, pick up later.",
   },
   {
-    icon: (
-      <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    title: "Track Your Time",
-    subtitle: "Start playing when you're ready. Finish when you're done. See your progress over time.",
+    image: "/coming%20back%20to%20your%20game.jpeg",
+    title: "Pick Up Where You Left Off",
+    subtitle: "Your game stays locked in between sessions. Come back tomorrow and keep going.",
   },
   {
-    icon: (
-      <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-      </svg>
-    ),
-    title: "Ready?",
-    subtitle: "Let's find something to play.",
+    image: "/progress%20page.jpeg",
+    title: "See Your Journey",
+    subtitle: "Sessions, play time, streaks — watch your gaming habits come together.",
   },
 ]
 
@@ -116,7 +96,7 @@ export function Tutorial({ onComplete, onSkip }: TutorialProps) {
       )}
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8">
+      <div className="flex-1 flex flex-col items-center justify-center px-8 overflow-hidden">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentSlide}
@@ -131,17 +111,36 @@ export function Tutorial({ onComplete, onSkip }: TutorialProps) {
               damping: 30,
               opacity: { duration: 0.2 }
             }}
-            className="flex flex-col items-center text-center max-w-sm"
+            className="flex flex-col items-center text-center max-w-sm w-full"
           >
-            {/* Icon */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-              className="mb-8 text-primary"
-            >
-              {slide.icon}
-            </motion.div>
+            {/* Screenshot or welcome icon */}
+            {slide.image ? (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                className="mb-6 w-full max-w-[240px] rounded-2xl overflow-hidden border border-border/30 shadow-lg shadow-primary/5"
+              >
+                <Image
+                  src={slide.image}
+                  alt={slide.title}
+                  width={240}
+                  height={480}
+                  className="w-full h-auto"
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                className="mb-8 text-primary"
+              >
+                <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                </svg>
+              </motion.div>
+            )}
 
             {/* Title */}
             <motion.h1
@@ -196,7 +195,7 @@ export function Tutorial({ onComplete, onSkip }: TutorialProps) {
           whileTap={{ scale: 0.98 }}
           className="h-14 w-full rounded-2xl bg-primary text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 min-h-[56px]"
         >
-          {isLastSlide ? "Get Started" : "Continue"}
+          {isLastSlide ? "Let's Play" : "Continue"}
         </motion.button>
       </div>
     </div>
