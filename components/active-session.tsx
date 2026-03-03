@@ -167,9 +167,9 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   }
 
   return (
-    <div className="flex flex-1 flex-col md:flex-row md:items-stretch md:gap-0 min-h-dvh md:min-h-0 md:h-[calc(100dvh-8rem)]">
+    <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] min-h-dvh md:min-h-0 md:h-[calc(100dvh-8rem)]">
       {/* Cover art — full-width banner on mobile, tall left column on desktop */}
-      <div className="relative h-[28vh] md:h-full md:flex-[3] w-full md:w-0 overflow-hidden flex-shrink-0 md:flex-shrink md:rounded-xl">
+      <div className="relative h-[28vh] md:h-full overflow-hidden md:rounded-xl">
         <Image
           src={game.header_image}
           alt={game.name}
@@ -184,7 +184,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span
-                className="h-2 w-2 rounded-full flex-shrink-0"
+                className="h-2 w-2 rounded-full shrink-0"
                 style={{ 
                   backgroundColor: isPaused ? "#FAA61A" : isPlaying ? "#3BA55D" : "#5865F2",
                   animation: isPlaying ? "pulse 2s infinite" : "none"
@@ -205,7 +205,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
       </div>
 
       {/* Session content — scrollable column on mobile, right panel on desktop */}
-      <div className="flex flex-1 md:flex-[2] flex-col gap-4 px-6 pt-4 pb-6 overflow-y-auto">
+      <div className="flex flex-col gap-4 px-6 pt-4 pb-6 overflow-y-auto">
         {/* Timer */}
         <div className="glass-card p-5 relative">
           <button
@@ -370,7 +370,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
                   disabled={isPending}
                   className="h-14 w-full rounded-xl glass-card text-base font-semibold text-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
                 >
-                  <svg className="h-5 w-5 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-5 w-5 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span className="flex-1 text-left">Done for Today</span>
@@ -383,7 +383,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
                   className="h-14 w-full rounded-xl text-base font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
                   style={{ backgroundColor: "#3BA55D" }}
                 >
-                  <svg className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span className="flex-1 text-left">I Beat This Game!</span>
