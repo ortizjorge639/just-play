@@ -169,7 +169,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   return (
     <div className="flex flex-1 flex-col min-h-dvh">
       {/* Header with game image */}
-      <div className="relative h-[28vh] w-full overflow-hidden flex-shrink-0">
+      <div className="relative h-[28vh] sm:h-[240px] w-full sm:max-w-2xl sm:mx-auto sm:rounded-xl overflow-hidden flex-shrink-0">
         <Image
           src={game.header_image}
           alt={game.name}
@@ -205,7 +205,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
       </div>
 
       {/* Session content */}
-      <div className="flex flex-1 flex-col gap-4 px-6 pt-4 pb-6 overflow-y-auto">
+      <div className="flex flex-1 flex-col gap-4 px-6 pt-4 pb-6 overflow-y-auto sm:max-w-2xl sm:mx-auto sm:w-full">
         {/* Timer */}
         <div className="glass-card p-5 relative">
           <button
