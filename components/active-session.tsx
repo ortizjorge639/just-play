@@ -11,6 +11,7 @@ import {
   abandonGame
 } from "@/app/actions"
 import type { Session, Game, SessionStatus } from "@/lib/types"
+import { SessionNotepad } from "./session-notepad"
 
 interface ActiveSessionProps {
   session: Session & { games: Game }
@@ -36,7 +37,6 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   const [showTimer, setShowTimer] = useState(true)
   const [notes, setNotes] = useState(session.notes || "")
   const [sessionGoal, setSessionGoal] = useState(session.session_goal || "")
-  const [showGoalInput, setShowGoalInput] = useState(!session.session_goal)
   const [showEndOptions, setShowEndOptions] = useState(false)
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const notesRef = useRef(notes)
@@ -138,13 +138,11 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
     }, 1000)
   }
 
-  const handleSaveGoal = async () => {
-    if (sessionGoal.trim()) {
-      await updateSessionGoal(session.id, sessionGoal.trim())
-      onSessionUpdated?.({ session_goal: sessionGoal.trim() })
-      setShowGoalInput(false)
-    }
-  }
+  const handleGoalSave = useCallback(async (goal: string) => {
+    setSessionGoal(goal)
+    await updateSessionGoal(session.id, goal)
+    onSessionUpdated?.({ session_goal: goal })
+  }, [session.id, onSessionUpdated])
 
   const handleMarkBeaten = async () => {
     startTransition(async () => {
@@ -258,82 +256,14 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           </div>
         </div>
 
-        {/* Session Goal */}
-        <AnimatePresence mode="wait">
-          {showGoalInput && !isLockedIn ? (
-            <motion.div
-              key="goal-input"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="glass-card p-4"
-            >
-              <label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-                Session Goal (optional)
-              </label>
-              <input
-                type="text"
-                value={sessionGoal}
-                onChange={(e) => setSessionGoal(e.target.value)}
-                placeholder="e.g., Beat the first boss..."
-                className="w-full bg-secondary/50 rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px]"
-                onKeyDown={(e) => e.key === "Enter" && handleSaveGoal()}
-              />
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={handleSaveGoal}
-                  disabled={!sessionGoal.trim()}
-                  className="flex-1 h-10 rounded-lg bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50 min-h-[44px]"
-                >
-                  Set Goal
-                </button>
-                <button
-                  onClick={() => setShowGoalInput(false)}
-                  className="h-10 px-4 rounded-lg text-sm font-medium text-muted-foreground min-h-[44px]"
-                >
-                  Skip
-                </button>
-              </div>
-            </motion.div>
-          ) : sessionGoal ? (
-            <motion.div
-              key="goal-display"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="glass-card p-4"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Goal</span>
-                  <p className="text-foreground font-medium mt-0.5">{sessionGoal}</p>
-                </div>
-                <button 
-                  onClick={() => setShowGoalInput(true)}
-                  className="p-2 text-muted-foreground hover:text-foreground min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                </button>
-              </div>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-
-        {/* Notes - only show when playing or paused */}
+        {/* Notes & Goal — toggleable notepad */}
         {(isPlaying || isPaused) && (
-          <div className="glass-card p-4">
-            <label className="text-xs uppercase tracking-wider text-muted-foreground mb-2 block">
-              Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => handleNotesChange(e.target.value)}
-              placeholder="Progress, thoughts, reminders..."
-              className="w-full h-20 bg-secondary/50 rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none text-sm"
-            />
-            <p className="text-xs text-muted-foreground mt-1.5">Auto-saves</p>
-          </div>
+          <SessionNotepad
+            goal={sessionGoal}
+            notes={notes}
+            onGoalSave={handleGoalSave}
+            onNotesChange={handleNotesChange}
+          />
         )}
 
         {/* Error */}
