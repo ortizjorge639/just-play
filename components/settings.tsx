@@ -125,7 +125,7 @@ export function Settings({
 
       {/* App version */}
       <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-        <span className="text-xs text-muted-foreground">Just Play v1.0.3</span>
+        <span className="text-xs text-muted-foreground">Just Play v1.0.4</span>
       </div>
     </motion.div>
   )

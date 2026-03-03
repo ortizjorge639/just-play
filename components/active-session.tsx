@@ -351,7 +351,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
         </AnimatePresence>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-3 mt-auto pt-4">
+        <div className="flex flex-col gap-3 pt-8">
           {isLockedIn && (
             <button
               onClick={() => transition("Playing")}

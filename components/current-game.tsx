@@ -105,7 +105,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
       )}
 
       {/* Actions */}
-      <div className="mt-auto flex flex-col gap-3">
+      <div className="pt-8 flex flex-col gap-3">
         <button
           onClick={handleStartSession}
           disabled={isPending}
