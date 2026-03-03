@@ -42,6 +42,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   const notesRef = useRef(notes)
   const sessionIdRef = useRef(session.id)
   const [prevSessionId, setPrevSessionId] = useState(session.id)
+  const [prevPropStatus, setPrevPropStatus] = useState(session.status)
 
   // Keep refs in sync and flush pending notes on unmount
   useEffect(() => {
@@ -63,9 +64,10 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   const isPaused = status === "Paused"
   const isLockedIn = status === "LockedIn"
 
-  // Sync status with server when session prop changes
-  if (prevSessionId !== session.id || status !== session.status) {
+  // Sync state when the session prop itself changes (not local optimistic updates)
+  if (prevSessionId !== session.id || session.status !== prevPropStatus) {
     setPrevSessionId(session.id)
+    setPrevPropStatus(session.status)
     setStatus(session.status)
     setNotes(session.notes || "")
     setSessionGoal(session.session_goal || "")
@@ -100,6 +102,19 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
         try {
           await updateSessionStatus(session.id, newStatus)
           setStatus(newStatus)
+
+          // Sync parent state so prop stays consistent with local status
+          const updates: Partial<Session> = { status: newStatus }
+          if (newStatus === "Paused") {
+            const start = new Date(session.started_at).getTime()
+            const currentElapsed = Math.floor((Date.now() - start) / 1000)
+            updates.paused_elapsed_seconds = (session.paused_elapsed_seconds || 0) + currentElapsed
+          }
+          if (newStatus === "Playing" && status === "Paused") {
+            updates.started_at = new Date().toISOString()
+          }
+          onSessionUpdated?.(updates)
+
           if (newStatus === "Finished") {
             onFinished()
           }
@@ -108,7 +123,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
         }
       })
     },
-    [session.id, onFinished]
+    [session.id, session.started_at, session.paused_elapsed_seconds, status, onFinished, onSessionUpdated]
   )
 
   // Auto-save notes with debounce
