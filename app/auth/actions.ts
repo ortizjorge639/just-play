@@ -11,7 +11,10 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
-    return redirect("/auth/login?error=" + encodeURIComponent(error.message))
+    const message = error.message.toLowerCase().includes("rate limit")
+      ? "Too many attempts. Please wait a few minutes before trying again."
+      : error.message
+    return redirect("/auth/login?error=" + encodeURIComponent(message))
   }
 
   return redirect("/")
@@ -37,7 +40,10 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    return redirect("/auth/sign-up?error=" + encodeURIComponent(error.message))
+    const message = error.message.toLowerCase().includes("rate limit")
+      ? "Too many sign-up attempts. Please wait a few minutes before trying again."
+      : error.message
+    return redirect("/auth/sign-up?error=" + encodeURIComponent(message))
   }
 
   return redirect("/auth/sign-up-success")
