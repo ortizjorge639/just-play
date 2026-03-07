@@ -136,10 +136,10 @@ export function GameCard({
           <div
             className="relative h-full w-full overflow-hidden rounded-2xl"
             style={{
-              background: "rgba(255,255,255,0.06)",
+              background: "rgba(15,15,20,0.85)",
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.1)",
               boxShadow: getHintColor() !== "transparent"
                 ? `0 0 40px ${getHintColor()}, inset 0 0 40px ${getHintColor()}`
                 : "0 8px 32px rgba(0,0,0,0.4)",
@@ -173,7 +173,7 @@ export function GameCard({
                   <span
                     key={genre}
                     className="rounded-lg px-2.5 py-1 text-xs font-medium text-foreground/80"
-                    style={{ background: "rgba(255,255,255,0.08)" }}
+                    style={{ background: "rgba(255,255,255,0.12)" }}
                   >
                     {genre.replace("-", " ")}
                   </span>
