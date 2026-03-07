@@ -163,7 +163,7 @@ export function GameCard({
             <div className="absolute bottom-0 left-0 right-0 flex flex-col gap-3 p-5">
               <div className="flex flex-col gap-1">
                 <h3 className="text-xl font-bold text-foreground leading-tight">{game.name}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                <p className="text-sm text-foreground/70 leading-relaxed line-clamp-2">
                   {game.description}
                 </p>
               </div>
@@ -172,7 +172,7 @@ export function GameCard({
                 {game.genres?.slice(0, 3).map((genre) => (
                   <span
                     key={genre}
-                    className="rounded-lg px-2.5 py-1 text-xs font-medium text-foreground/80"
+                    className="rounded-lg px-2.5 py-1 text-xs font-medium text-foreground"
                     style={{ background: "rgba(255,255,255,0.12)" }}
                   >
                     {genre.replace("-", " ")}
@@ -180,7 +180,7 @@ export function GameCard({
                 ))}
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-foreground/70">
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
