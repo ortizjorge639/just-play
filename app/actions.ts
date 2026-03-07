@@ -51,9 +51,10 @@ export async function savePreferences(preferences: UserPreferences) {
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
+  // Reset seen games when preferences change so new filters get a fresh cycle
   const { error } = await supabase
     .from("users")
-    .update({ preferences, onboarding_complete: true })
+    .update({ preferences, onboarding_complete: true, seen_game_ids: [] })
     .eq("id", user.id)
 
   if (error) throw new Error(error.message)
@@ -83,12 +84,18 @@ export async function getRecommendations(preferences: UserPreferences) {
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  const { data: games, error } = await supabase.from("games").select("*")
+  // Fetch games and user's seen list in parallel
+  const [{ data: games, error }, { data: profile }] = await Promise.all([
+    supabase.from("games").select("*"),
+    supabase.from("users").select("seen_game_ids").eq("id", user.id).single(),
+  ])
   if (error) throw new Error(error.message)
   if (!games || games.length === 0) return []
 
-  // Simple recommendation engine: filter + score
-  let scored = games.map((game) => {
+  const seenIds = new Set<string>(profile?.seen_game_ids || [])
+
+  // Score all games
+  const scored = games.map((game) => {
     let score = 0
 
     // Time filter: if time_available set, prefer games within that range
@@ -165,14 +172,38 @@ export async function getRecommendations(preferences: UserPreferences) {
         score += 2
     }
 
+    // Discovery preference: add variance for non-curated modes
+    if (preferences.discovery === "adventurous") {
+      score += Math.random() * 4 - 1 // -1 to +3 random variance
+    } else if (preferences.discovery === "random") {
+      score = Math.random() * 10 // fully random
+    }
+
     return { ...game, score }
   })
 
-  // Sort by score descending, then shuffle ties
+  // Sort by score descending
   scored.sort((a, b) => b.score - a.score)
 
-  // Hard 3-card guardrail
-  return scored.slice(0, 3)
+  // Filter out already-seen games
+  let unseen = scored.filter((g) => !seenIds.has(g.id))
+
+  // If fewer than 10 unseen remain, reset the cycle
+  if (unseen.length < 10) {
+    unseen = scored
+    seenIds.clear()
+  }
+
+  const deck = unseen.slice(0, 10)
+
+  // Track newly shown games
+  const newSeenIds = [...Array.from(seenIds), ...deck.map((g) => g.id)]
+  await supabase
+    .from("users")
+    .update({ seen_game_ids: newSeenIds })
+    .eq("id", user.id)
+
+  return deck
 }
 
 export async function createSession(gameId: string) {

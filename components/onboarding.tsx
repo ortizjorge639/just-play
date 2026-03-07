@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { savePreferences } from "@/app/actions"
 import type { UserPreferences } from "@/lib/types"
 
-const STEPS = ["mood", "time", "energy", "genres", "style"] as const
+const STEPS = ["mood", "time", "energy", "genres", "discovery"] as const
 
 const MOODS = [
   { value: "adventurous", label: "Adventurous", desc: "I want to explore and discover" },
@@ -39,10 +39,10 @@ const GENRES = [
   "farming",
 ]
 
-const STYLES = [
-  { value: "one", label: "Just one", desc: "Give me THE pick" },
-  { value: "few", label: "A few options", desc: "2-3 cards to choose from" },
-  { value: "surprise", label: "Surprise me", desc: "Dealer's choice" },
+const DISCOVERIES = [
+  { value: "curated", label: "Curated", desc: "Best matches based on your filters" },
+  { value: "adventurous", label: "Adventurous", desc: "Throw in some wildcards" },
+  { value: "random", label: "Random", desc: "Full shuffle, surprise me" },
 ]
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
@@ -95,8 +95,8 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
         return !!preferences.energy
       case "genres":
         return (preferences.genre_preferences?.length || 0) > 0
-      case "style":
-        return !!preferences.play_style
+      case "discovery":
+        return !!preferences.discovery
       default:
         return false
     }
@@ -234,19 +234,19 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
               </StepContainer>
             )}
 
-            {currentStep === "style" && (
+            {currentStep === "discovery" && (
               <StepContainer
-                title="How many choices?"
-                subtitle="We'll never show more than 3"
+                title="How should we pick?"
+                subtitle="Controls how your 10-card deck is built"
               >
                 <div className="flex flex-col gap-3">
-                  {STYLES.map((style) => (
+                  {DISCOVERIES.map((disc) => (
                     <OptionButton
-                      key={style.value}
-                      selected={preferences.play_style === style.value}
-                      onClick={() => selectOption("play_style", style.value)}
-                      label={style.label}
-                      description={style.desc}
+                      key={disc.value}
+                      selected={preferences.discovery === disc.value}
+                      onClick={() => selectOption("discovery", disc.value)}
+                      label={disc.label}
+                      description={disc.desc}
                     />
                   ))}
                 </div>

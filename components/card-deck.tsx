@@ -160,11 +160,11 @@ export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps
         </div>
 
         {/* Card count indicator */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5">
           {games.map((g) => (
             <div
               key={g.id}
-              className="h-1.5 w-6 rounded-full transition-colors"
+              className="h-1.5 w-3 rounded-full transition-colors"
               style={{
                 backgroundColor: deck.find((d) => d.id === g.id)
                   ? "#5865F2"

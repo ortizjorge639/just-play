@@ -56,7 +56,7 @@ export interface UserPreferences {
   time_available?: number
   energy?: string
   genre_preferences?: string[]
-  play_style?: string
+  discovery?: string
 }
 
-export type OnboardingStep = "mood" | "time" | "energy" | "genres" | "style"
+export type OnboardingStep = "mood" | "time" | "energy" | "genres" | "discovery"
