@@ -5,7 +5,7 @@ export interface Game {
   estimated_session_length: number
   header_image: string
   description: string
-  source: "steam" | "test"
+  source: "steam" | "test" | "igdb"
   created_at: string
 }
 
