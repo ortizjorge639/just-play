@@ -83,8 +83,13 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
         setResults([])
         setError(null)
         onGameSelected(game)
-      } catch {
-        setError("Failed to add game. Try again.")
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : ""
+        if (msg.includes("SERVICE_ROLE")) {
+          setError("Server config needed. Ask admin to add SUPABASE_SERVICE_ROLE_KEY.")
+        } else {
+          setError("Failed to add game. Try again.")
+        }
       } finally {
         setIsLoading(false)
       }
