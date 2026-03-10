@@ -168,3 +168,69 @@ export function getIGDBImageUrl(
 export function escapeSQL(str: string): string {
   return str.replace(/'/g, "''")
 }
+
+// ── Runtime Token Cache ───────────────────────────────────────────────
+// IGDB tokens last ~60 days; cache in memory to avoid re-auth on every search
+
+let cachedToken: { accessToken: string; expiresAt: number } | null = null
+
+export async function getCachedIGDBToken(): Promise<string> {
+  const clientId = process.env.IGDB_CLIENT_ID?.trim()
+  const clientSecret = process.env.IGDB_CLIENT_SECRET?.trim()
+  if (!clientId || !clientSecret) {
+    throw new Error("Missing IGDB_CLIENT_ID or IGDB_CLIENT_SECRET")
+  }
+
+  // Return cached token if still valid (with 5-min buffer)
+  if (cachedToken && Date.now() < cachedToken.expiresAt - 5 * 60 * 1000) {
+    return cachedToken.accessToken
+  }
+
+  const token = await getIGDBToken(clientId, clientSecret)
+  cachedToken = {
+    accessToken: token.access_token,
+    expiresAt: Date.now() + token.expires_in * 1000,
+  }
+  return cachedToken.accessToken
+}
+
+// ── Search Helper ─────────────────────────────────────────────────────
+
+export interface IGDBSearchResult {
+  igdbId: number
+  name: string
+  coverUrl: string | null
+  genres: string[]
+  estimatedSessionLength: number
+  description: string
+}
+
+export async function searchIGDBGames(
+  query: string
+): Promise<IGDBSearchResult[]> {
+  const clientId = process.env.IGDB_CLIENT_ID?.trim()
+  if (!clientId) throw new Error("Missing IGDB_CLIENT_ID")
+
+  const accessToken = await getCachedIGDBToken()
+
+  const body = `
+    search "${query.replace(/"/g, '\\"')}";
+    fields name, cover.image_id, genres.id, genres.name, themes.id, themes.name,
+      keywords.id, keywords.name, summary, category;
+    where version_parent = null & parent_game = null & category = 0;
+    limit 8;
+  `
+
+  const games = await queryIGDB<IGDBGame>("games", body, clientId, accessToken)
+
+  return games.map((game) => ({
+    igdbId: game.id,
+    name: game.name,
+    coverUrl: game.cover?.image_id
+      ? getIGDBImageUrl(game.cover.image_id)
+      : null,
+    genres: mapIGDBGenres(game),
+    estimatedSessionLength: estimateSessionLength(game),
+    description: (game.summary || "").slice(0, 500),
+  }))
+}

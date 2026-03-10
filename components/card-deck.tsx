@@ -3,6 +3,7 @@
 import { useState, useTransition, useCallback } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { GameCard } from "./game-card"
+import { GameSearch } from "./game-search"
 import { QuickFilters } from "./quick-filters"
 import { createSession } from "@/app/actions"
 import type { Game, UserPreferences } from "@/lib/types"
@@ -20,6 +21,17 @@ export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+
+  // Add a searched game to the top of the deck, then auto-show lock-in
+  const addSearchedGame = useCallback((game: Game) => {
+    setDeck((prev) => {
+      // Remove if already in deck to avoid duplicates
+      const filtered = prev.filter((g) => g.id !== game.id)
+      return [...filtered, game]
+    })
+    // Brief delay before auto-showing lock-in confirmation
+    setTimeout(() => setLockedGame(game), 600)
+  }, [])
 
   const handleReject = useCallback(
     (game: Game) => {
@@ -117,6 +129,56 @@ export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps
             />
           )}
         </AnimatePresence>
+
+        {/* Search FAB + overlay (available even when deck is empty) */}
+        <GameSearch onGameSelected={addSearchedGame} />
+
+        {/* Lock-in confirmation modal (for searched games added to empty deck) */}
+        <AnimatePresence>
+          {lockedGame && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm"
+              onClick={cancelLockIn}
+            >
+              <motion.div
+                initial={{ y: 200 }}
+                animate={{ y: 0 }}
+                exit={{ y: 200 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="w-full max-w-md glass-card rounded-t-3xl p-6 pb-10 flex flex-col gap-5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30" />
+                <div className="text-center flex flex-col gap-2">
+                  <h3 className="text-lg font-bold text-foreground">
+                    Lock in {lockedGame.name}?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {"This becomes your active session. You'll see it on your dashboard."}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={confirmLockIn}
+                    disabled={isPending}
+                    className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                  >
+                    {isPending ? "Starting session..." : "Lock In"}
+                  </button>
+                  <button
+                    onClick={cancelLockIn}
+                    className="h-12 w-full rounded-xl bg-secondary text-base font-medium text-foreground transition-colors hover:bg-muted min-h-[44px]"
+                  >
+                    Go back
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </>
     )
   }
@@ -208,6 +270,9 @@ export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps
           {error}
         </motion.div>
       )}
+
+      {/* Search FAB + overlay */}
+      <GameSearch onGameSelected={addSearchedGame} />
 
       {/* Lock-in confirmation modal */}
       <AnimatePresence>

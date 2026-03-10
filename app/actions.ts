@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Game } from "@/lib/types"
 
 export async function getUser() {
   const supabase = await createClient()
@@ -611,4 +611,51 @@ export async function getSessionHistory() {
     ...session,
     games: gameMap.get(session.game_id) || null
   })).filter(s => s.games !== null)
+}
+
+// ── Game Search ───────────────────────────────────────────────────────
+
+export async function addSearchedGame(gameData: {
+  igdbId: number
+  name: string
+  coverUrl: string | null
+  genres: string[]
+  estimatedSessionLength: number
+  description: string
+}): Promise<Game> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  const gameId = `igdb-${gameData.igdbId}`
+
+  // Check if game already exists
+  const { data: existing } = await supabase
+    .from("games")
+    .select("*")
+    .eq("id", gameId)
+    .maybeSingle()
+
+  if (existing) return existing as Game
+
+  // Insert new game
+  const { data: game, error } = await supabase
+    .from("games")
+    .insert({
+      id: gameId,
+      name: gameData.name,
+      genres: gameData.genres.length > 0 ? gameData.genres : ["indie"],
+      estimated_session_length: gameData.estimatedSessionLength,
+      header_image: gameData.coverUrl || "",
+      description: gameData.description,
+      source: "igdb",
+    })
+    .select("*")
+    .single()
+
+  if (error) throw new Error(error.message)
+  revalidatePath("/")
+  return game as Game
 }
