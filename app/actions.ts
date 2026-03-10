@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import type { UserPreferences, SessionStatus, Game } from "@/lib/types"
 
@@ -641,9 +640,8 @@ export async function addSearchedGame(gameData: {
 
   if (existing) return existing as Game
 
-  // INSERT uses admin client to bypass RLS (games table has no INSERT policy)
-  const admin = createAdminClient()
-  const { data: game, error } = await admin
+  // Insert new game (RLS INSERT policy allows authenticated users)
+  const { data: game, error } = await supabase
     .from("games")
     .insert({
       id: gameId,
