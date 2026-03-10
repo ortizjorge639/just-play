@@ -217,7 +217,6 @@ export async function searchIGDBGames(
     search "${query.replace(/"/g, '\\"')}";
     fields name, cover.image_id, genres.id, genres.name, themes.id, themes.name,
       keywords.id, keywords.name, summary, category;
-    where version_parent = null & parent_game = null & category = 0;
     limit 8;
   `
 
