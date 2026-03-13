@@ -45,20 +45,20 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
           className="flex flex-col items-center gap-4 pb-8"
         >
           {/* Level badge — big, centered */}
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-chart-1/30 to-chart-1/10 border-2 border-chart-1/25">
-            <span className="text-4xl font-black text-chart-1">
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-amber-500/30 to-amber-500/10 border-2 border-amber-500/25">
+            <span className="text-4xl font-black text-amber-400">
               {playerStats.level}
             </span>
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-chart-1 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
               level
             </span>
           </div>
 
           {/* Chunky XP progress bar */}
           <div className="flex w-full flex-col items-center gap-2">
-            <div className="relative h-4 w-full rounded-full bg-secondary overflow-hidden">
+            <div className="relative h-4 w-full rounded-full bg-white/10 overflow-hidden">
               <div
-                className="absolute inset-y-0 left-0 rounded-full bg-chart-1 transition-all duration-700 ease-out"
+                className="absolute inset-y-0 left-0 rounded-full bg-amber-500 transition-all duration-700 ease-out"
                 style={{ width: `${Math.max((playerStats.xpInCurrentLevel / playerStats.xpToNextLevel) * 100, 3)}%` }}
               />
             </div>
