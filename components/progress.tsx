@@ -2,15 +2,18 @@
 
 import { motion } from "framer-motion"
 import Image from "next/image"
-import type { Session, Game } from "@/lib/types"
+import type { Session, Game, PlayerStats } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
 
 interface ProgressProps {
   sessions: (Session & { games: Game })[]
   displayName: string | null
+  playerStats: PlayerStats | null
 }
 
-export function Progress({ sessions, displayName }: ProgressProps) {
+const WEEKDAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"]
+
+export function Progress({ sessions, displayName, playerStats }: ProgressProps) {
   const totalMinutes = sessions.reduce(
     (acc, s) => acc + (s.duration_minutes || 0),
     0
@@ -19,29 +22,10 @@ export function Progress({ sessions, displayName }: ProgressProps) {
   const remainingMinutes = totalMinutes % 60
   const uniqueGames = new Set(sessions.map((s) => s.game_id)).size
 
-  // Calculate streak (consecutive days with sessions)
-  const daySet = new Set(
-    sessions.map((s) =>
-      new Date(s.ended_at || s.created_at).toISOString().split("T")[0]
-    )
-  )
-  const today = new Date()
-  let streak = 0
-  for (let i = 0; i < 365; i++) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
-    const key = d.toISOString().split("T")[0]
-    if (daySet.has(key)) {
-      streak++
-    } else if (i > 0) {
-      break
-    }
-  }
-
   return (
     <div className="flex flex-col min-h-dvh">
       {/* Greeting */}
-      <div className="px-6 pb-6">
+      <div className="px-6 pb-5">
         <p className="text-muted-foreground text-sm">
           {"Hey, "}
           <span className="text-foreground font-medium">
@@ -50,14 +34,116 @@ export function Progress({ sessions, displayName }: ProgressProps) {
         </p>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-3 px-6 pb-6">
+      {/* Level Card — Duolingo-style */}
+      {playerStats && (
+        <div className="px-6 pb-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="glass-card overflow-hidden"
+          >
+            <div className="flex items-center gap-4 p-4">
+              {/* Level badge */}
+              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-chart-1/30 to-chart-1/10 border border-chart-1/20">
+                <span className="text-2xl font-black text-chart-1">
+                  {playerStats.level}
+                </span>
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-chart-1 px-1.5 py-px text-[9px] font-bold text-white uppercase tracking-wider">
+                  lvl
+                </span>
+              </div>
+
+              {/* XP progress */}
+              <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm font-semibold text-foreground">
+                    {playerStats.totalXP.toLocaleString()} XP
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {playerStats.xpInCurrentLevel} / {playerStats.xpToNextLevel}
+                  </span>
+                </div>
+                <div className="relative h-2.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <motion.div
+                    className="absolute inset-y-0 left-0 rounded-full bg-chart-1"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.max(playerStats.progress * 100, 3)}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Streak Card — Duolingo weekly dots */}
+      {playerStats && (
+        <div className="px-6 pb-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="glass-card p-4"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">
+                  {playerStats.streak >= 2 ? "🔥" : "📅"}
+                </span>
+                <span className="text-sm font-semibold text-foreground">
+                  {playerStats.streak > 0
+                    ? `${playerStats.streak} day streak`
+                    : "Start a streak!"}
+                </span>
+              </div>
+              {playerStats.bestStreak > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Best: {playerStats.bestStreak}d
+                </span>
+              )}
+            </div>
+
+            {/* Weekly dots */}
+            <div className="flex items-center justify-between gap-1">
+              {WEEKDAY_LABELS.map((label, i) => {
+                const played = playerStats.weeklyDays[i]
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1.5">
+                    <div
+                      className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+                        played
+                          ? "bg-chart-1 text-white"
+                          : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
+                      {played ? (
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      ) : null}
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground">
+                      {label}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Stats row — Nintendo-style tiles */}
+      <div className="grid grid-cols-3 gap-3 px-6 pb-5">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.15 }}
           className="glass-card flex flex-col items-center gap-1 p-4"
         >
+          <span className="text-lg">🎮</span>
           <span className="text-2xl font-bold text-foreground">
             {sessions.length}
           </span>
@@ -69,6 +155,7 @@ export function Progress({ sessions, displayName }: ProgressProps) {
           transition={{ delay: 0.2 }}
           className="glass-card flex flex-col items-center gap-1 p-4"
         >
+          <span className="text-lg">⏱️</span>
           <span className="text-2xl font-bold text-foreground">
             {totalHours > 0
               ? `${totalHours}h${remainingMinutes > 0 ? ` ${remainingMinutes}m` : ""}`
@@ -79,54 +166,16 @@ export function Progress({ sessions, displayName }: ProgressProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.25 }}
           className="glass-card flex flex-col items-center gap-1 p-4"
         >
+          <span className="text-lg">🕹️</span>
           <span className="text-2xl font-bold text-foreground">
             {uniqueGames}
           </span>
           <span className="text-xs text-muted-foreground">Games</span>
         </motion.div>
       </div>
-
-      {/* Streak */}
-      {streak > 0 && (
-        <div className="px-6 pb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="glass-card flex items-center gap-4 p-4"
-          >
-            <div
-              className="flex h-12 w-12 items-center justify-center rounded-xl"
-              style={{ backgroundColor: "rgba(59, 165, 93, 0.15)" }}
-            >
-              <svg
-                className="h-6 w-6 text-success"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
-                />
-              </svg>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-foreground">
-                {streak} day{streak !== 1 ? "s" : ""} streak
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Keep it going!
-              </span>
-            </div>
-          </motion.div>
-        </div>
-      )}
 
       {/* Session history */}
       <div className="px-6 pb-4">
@@ -171,11 +220,16 @@ export function Progress({ sessions, displayName }: ProgressProps) {
                       : "< 1 min"}
                     {" "}
                     {session.ended_at &&
-                      `- ${formatDistanceToNow(new Date(session.ended_at), {
+                      `· ${formatDistanceToNow(new Date(session.ended_at), {
                         addSuffix: true,
                       })}`}
                   </span>
                 </div>
+                {session.xp_awarded > 0 && (
+                  <span className="shrink-0 rounded-full bg-chart-1/15 px-2 py-0.5 text-xs font-semibold text-chart-1">
+                    +{session.xp_awarded} XP
+                  </span>
+                )}
               </motion.div>
             ))}
           </div>

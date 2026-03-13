@@ -8,7 +8,6 @@ import { CardDeck } from "./card-deck"
 import { ActiveSession } from "./active-session"
 import { CurrentGame } from "./current-game"
 import { Progress } from "./progress"
-import { PlayerHUD } from "./player-hud"
 import { XPToastProvider } from "./xp-toast"
 import { BottomNav } from "./bottom-nav"
 import { QuickFilters } from "./quick-filters"
@@ -154,9 +153,6 @@ export function AppShell({
         </div>
       </header>
 
-      {/* Player HUD */}
-      {playerStats && <PlayerHUD stats={playerStats} />}
-
       {/* Content area */}
       <AnimatePresence mode="wait">
         {activeTab === "deck" && !activeSession && (
@@ -240,6 +236,7 @@ export function AppShell({
             <Progress
               sessions={initialHistory}
               displayName={user.display_name}
+              playerStats={playerStats}
             />
           </motion.div>
         )}
