@@ -39,8 +39,8 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
       {/* Level + XP — centered Duolingo-style */}
       {playerStats && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
           className="flex flex-col items-center gap-4 pb-8"
         >
@@ -55,13 +55,11 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
           </div>
 
           {/* Chunky XP progress bar */}
-          <div className="flex w-full max-w-xs flex-col items-center gap-2">
+          <div className="flex w-full flex-col items-center gap-2">
             <div className="relative h-4 w-full rounded-full bg-secondary overflow-hidden">
-              <motion.div
-                className="absolute inset-y-0 left-0 rounded-full bg-chart-1"
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.max(playerStats.progress * 100, 4)}%` }}
-                transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-chart-1 transition-all duration-700 ease-out"
+                style={{ width: `${Math.max((playerStats.xpInCurrentLevel / playerStats.xpToNextLevel) * 100, 3)}%` }}
               />
             </div>
             <span className="text-sm font-semibold text-muted-foreground">
