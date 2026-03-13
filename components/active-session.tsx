@@ -12,6 +12,7 @@ import {
 } from "@/app/actions"
 import type { Session, Game, SessionStatus } from "@/lib/types"
 import { SessionNotepad } from "./session-notepad"
+import { useXPToast } from "./xp-toast"
 
 interface ActiveSessionProps {
   session: Session & { games: Game }
@@ -37,6 +38,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   const [showTimer, setShowTimer] = useState(true)
   const [notes, setNotes] = useState(session.notes || "")
   const [sessionGoal, setSessionGoal] = useState(session.session_goal || "")
+  const showXPToast = useXPToast()
   const [showEndOptions, setShowEndOptions] = useState(false)
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const notesRef = useRef(notes)
@@ -100,7 +102,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
       setError(null)
       startTransition(async () => {
         try {
-          await updateSessionStatus(session.id, newStatus)
+          const result = await updateSessionStatus(session.id, newStatus)
           setStatus(newStatus)
 
           // Sync parent state so prop stays consistent with local status
@@ -116,6 +118,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           onSessionUpdated?.(updates)
 
           if (newStatus === "Finished") {
+            if (result?.xpAwarded) showXPToast(result.xpAwarded)
             onFinished()
           }
         } catch (e) {
@@ -123,7 +126,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
         }
       })
     },
-    [session.id, session.started_at, session.paused_elapsed_seconds, status, onFinished, onSessionUpdated]
+    [session.id, session.started_at, session.paused_elapsed_seconds, status, onFinished, onSessionUpdated, showXPToast]
   )
 
   // Auto-save notes with debounce
@@ -148,6 +151,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
     startTransition(async () => {
       try {
         await markGameBeaten(game.id)
+        showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
         onFinished()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")

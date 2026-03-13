@@ -22,6 +22,7 @@ export interface Session {
   active: boolean
   notes: string | null
   session_goal: string | null
+  xp_awarded: number
   created_at: string
   games?: Game
 }
@@ -48,7 +49,25 @@ export interface UserProfile {
   onboarding_complete: boolean
   tutorial_complete: boolean
   streak_enabled: boolean
+  total_xp: number
+  level: number
+  streak_count: number
+  best_streak: number
+  last_session_date: string | null
   created_at: string
+}
+
+export interface PlayerStats {
+  totalXP: number
+  level: number
+  xpInCurrentLevel: number
+  xpToNextLevel: number
+  progress: number
+  streak: number
+  bestStreak: number
+  weeklyRatio: number
+  weeklyDays: boolean[]
+  totalSessions: number
 }
 
 export interface UserPreferences {

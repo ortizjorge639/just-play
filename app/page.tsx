@@ -6,8 +6,11 @@ import {
   getActiveSession,
   getActiveGame,
   getSessionHistory,
+  getPlayerStats,
+  backfillXP,
 } from "./actions"
 import { AppShell } from "@/components/app-shell"
+import type { PlayerStats } from "@/lib/types"
 
 export default async function HomePage({
   searchParams,
@@ -39,6 +42,7 @@ export default async function HomePage({
   let activeGame = null
   let sessionHistory: Awaited<ReturnType<typeof getSessionHistory>> = []
   let recommendations: Awaited<ReturnType<typeof getRecommendations>> = []
+  let playerStats: PlayerStats | null = null
 
   try {
     const results = await Promise.all([
@@ -46,17 +50,25 @@ export default async function HomePage({
       getActiveSession(),
       getActiveGame(),
       getSessionHistory(),
+      getPlayerStats(),
     ])
     profile = results[0]
     activeSession = results[1]
     activeGame = results[2]
     sessionHistory = results[3]
+    playerStats = results[4]
   } catch (error) {
     console.error("[v0] Error fetching user data:", error)
   }
 
   if (!profile) {
     redirect("/auth/login")
+  }
+
+  // Backfill XP for existing users who haven't earned any yet
+  if (playerStats && playerStats.totalXP === 0 && playerStats.totalSessions > 0) {
+    await backfillXP()
+    playerStats = await getPlayerStats()
   }
 
   // Get recommendations based on user preferences
@@ -75,6 +87,7 @@ export default async function HomePage({
       activeSession={activeSession}
       activeGame={activeGame}
       sessionHistory={sessionHistory}
+      playerStats={playerStats}
     />
   )
 }

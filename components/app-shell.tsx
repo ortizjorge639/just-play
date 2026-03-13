@@ -8,12 +8,14 @@ import { CardDeck } from "./card-deck"
 import { ActiveSession } from "./active-session"
 import { CurrentGame } from "./current-game"
 import { Progress } from "./progress"
+import { PlayerHUD } from "./player-hud"
+import { XPToastProvider } from "./xp-toast"
 import { BottomNav } from "./bottom-nav"
 import { QuickFilters } from "./quick-filters"
 import { Settings } from "./settings"
 import { signout } from "@/app/auth/actions"
 import { markTutorialComplete } from "@/app/actions"
-import type { UserProfile, Game, Session, GameProgress } from "@/lib/types"
+import type { UserProfile, Game, Session, GameProgress, PlayerStats } from "@/lib/types"
 
 type Tab = "deck" | "session" | "progress"
 
@@ -23,6 +25,7 @@ interface AppShellProps {
   activeSession: (Session & { games: Game }) | null
   activeGame: (GameProgress & { game: Game }) | null
   sessionHistory: (Session & { games: Game })[]
+  playerStats: PlayerStats | null
 }
 
 export function AppShell({
@@ -31,6 +34,7 @@ export function AppShell({
   activeSession: initialSession,
   activeGame,
   sessionHistory: initialHistory,
+  playerStats,
 }: AppShellProps) {
   const [showTutorial, setShowTutorial] = useState(!user.tutorial_complete && user.onboarding_complete)
   const [showOnboarding, setShowOnboarding] = useState(!user.onboarding_complete)
@@ -95,6 +99,7 @@ export function AppShell({
   }
 
   return (
+    <XPToastProvider>
     <div className="flex min-h-dvh flex-col pb-16">
       {/* Top bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-6 pt-6 pb-2 bg-background/80 backdrop-blur-lg">
@@ -148,6 +153,9 @@ export function AppShell({
           </form>
         </div>
       </header>
+
+      {/* Player HUD */}
+      {playerStats && <PlayerHUD stats={playerStats} />}
 
       {/* Content area */}
       <AnimatePresence mode="wait">
@@ -275,5 +283,6 @@ export function AppShell({
         )}
       </AnimatePresence>
     </div>
+    </XPToastProvider>
   )
 }

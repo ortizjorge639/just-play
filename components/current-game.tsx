@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { startSessionForGame, markGameBeaten, abandonGame } from "@/app/actions"
+import { useXPToast } from "./xp-toast"
 import type { GameProgress, Game } from "@/lib/types"
 
 interface CurrentGameProps {
@@ -15,6 +16,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
   const [isPending, startTransition] = useTransition()
   const [showOptions, setShowOptions] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const showXPToast = useXPToast()
 
   const game = gameProgress.game
 
@@ -34,6 +36,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
     startTransition(async () => {
       try {
         await markGameBeaten(game.id)
+        showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
         window.location.reload()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")

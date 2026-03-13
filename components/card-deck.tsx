@@ -6,6 +6,7 @@ import { GameCard } from "./game-card"
 import { GameSearch } from "./game-search"
 import { QuickFilters } from "./quick-filters"
 import { createSession } from "@/app/actions"
+import { useXPToast } from "./xp-toast"
 import type { Game, UserPreferences } from "@/lib/types"
 
 interface CardDeckProps {
@@ -21,6 +22,7 @@ export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const showXPToast = useXPToast()
 
   // Add a searched game to the top of the deck, then auto-show lock-in
   const addSearchedGame = useCallback((game: Game) => {
@@ -57,7 +59,8 @@ export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps
     setError(null)
     startTransition(async () => {
       try {
-        await createSession(lockedGame.id)
+        const result = await createSession(lockedGame.id)
+        if (result.xpAwarded) showXPToast(result.xpAwarded)
         onSessionCreated()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")

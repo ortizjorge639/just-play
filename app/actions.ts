@@ -2,7 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Game } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Game, PlayerStats } from "@/lib/types"
+import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
+import { calculateStreak } from "@/lib/streak"
 
 export async function getUser() {
   const supabase = await createClient()
@@ -246,6 +248,8 @@ export async function createSession(gameId: string) {
     .eq("game_id", gameId)
     .maybeSingle()
 
+  const isNewGame = !existingProgress
+
   if (!existingProgress) {
     await supabase
       .from("game_progress")
@@ -273,8 +277,46 @@ export async function createSession(gameId: string) {
       .eq("id", existingProgress.id)
   }
 
+  // Award XP for starting a session
+  const { data: profile } = await supabase
+    .from("users")
+    .select("total_xp, last_session_date")
+    .eq("id", user.id)
+    .single()
+
+  const comeback = isComeback(profile?.last_session_date ?? null)
+  const xp = calculateSessionXP({
+    durationMinutes: 0,
+    isNewGame,
+    isGameBeaten: false,
+    isComeback: comeback,
+  })
+
+  const startXP = xp.base + xp.newGameBonus + xp.comebackBonus
+  if (startXP > 0 && profile) {
+    const newTotalXP = profile.total_xp + startXP
+    const { level } = levelFromXP(newTotalXP)
+    const today = new Date().toISOString().split("T")[0]
+
+    await supabase
+      .from("users")
+      .update({ total_xp: newTotalXP, level, last_session_date: today })
+      .eq("id", user.id)
+
+    await supabase
+      .from("sessions")
+      .update({ xp_awarded: startXP })
+      .eq("id", data.id)
+  }
+
+  // Update streak
+  await updateUserStreak(user.id)
+
   revalidatePath("/")
-  return data
+  return {
+    session: data,
+    xpAwarded: { total: startXP, bonuses: xp.bonuses.filter(b => !b.includes("duration") && !b.includes("Long")) },
+  }
 }
 
 export async function updateSessionStatus(
@@ -337,7 +379,35 @@ export async function updateSessionStatus(
     const currentElapsed = Math.round((Date.now() - start.getTime()) / 1000)
     const totalSeconds = (session.paused_elapsed_seconds || 0) + 
       (session.status === "Paused" ? 0 : currentElapsed)
-    updates.duration_minutes = Math.round(totalSeconds / 60)
+    const durationMinutes = Math.round(totalSeconds / 60)
+    updates.duration_minutes = durationMinutes
+
+    // Award duration-based XP on finish
+    const durationXP = calculateSessionXP({
+      durationMinutes,
+      isNewGame: false,
+      isGameBeaten: false,
+      isComeback: false,
+    })
+    const finishXP = durationXP.durationBonus + durationXP.longSessionBonus
+    const finishBonuses = durationXP.bonuses.filter(b => b.includes("duration") || b.includes("Long"))
+    if (finishXP > 0) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("total_xp")
+        .eq("id", user.id)
+        .single()
+      if (profile) {
+        const newTotalXP = profile.total_xp + finishXP
+        const { level } = levelFromXP(newTotalXP)
+        await supabase
+          .from("users")
+          .update({ total_xp: newTotalXP, level })
+          .eq("id", user.id)
+      }
+      // Add finish XP to what was already awarded at start
+      updates.xp_awarded = (session.xp_awarded || 0) + finishXP
+    }
   }
 
   const { error } = await supabase
@@ -348,6 +418,23 @@ export async function updateSessionStatus(
 
   if (error) throw new Error(error.message)
   revalidatePath("/")
+
+  if (newStatus === "Finished") {
+    const durationXPCalc = calculateSessionXP({
+      durationMinutes: (updates.duration_minutes as number) || 0,
+      isNewGame: false,
+      isGameBeaten: false,
+      isComeback: false,
+    })
+    const finishXPTotal = durationXPCalc.durationBonus + durationXPCalc.longSessionBonus
+    return {
+      xpAwarded: {
+        total: finishXPTotal,
+        bonuses: durationXPCalc.bonuses.filter(b => b.includes("duration") || b.includes("Long")),
+      },
+    }
+  }
+  return { xpAwarded: null }
 }
 
 export async function getActiveGame() {
@@ -524,6 +611,27 @@ export async function markGameBeaten(gameId: string) {
       })
   }
 
+  // Award beat-game XP bonus
+  const { data: profile } = await supabase
+    .from("users")
+    .select("total_xp")
+    .eq("id", user.id)
+    .single()
+  if (profile) {
+    const xp = calculateSessionXP({
+      durationMinutes: 0,
+      isNewGame: false,
+      isGameBeaten: true,
+      isComeback: false,
+    })
+    const newTotalXP = profile.total_xp + xp.beatGameBonus
+    const { level } = levelFromXP(newTotalXP)
+    await supabase
+      .from("users")
+      .update({ total_xp: newTotalXP, level })
+      .eq("id", user.id)
+  }
+
   revalidatePath("/")
 }
 
@@ -658,4 +766,152 @@ export async function addSearchedGame(gameData: {
   if (error) throw new Error(error.message)
   revalidatePath("/")
   return game as Game
+}
+
+// ── Gamification ──────────────────────────────────────────────────────
+
+async function updateUserStreak(userId: string) {
+  const supabase = await createClient()
+
+  // Fetch all session start dates for streak calculation
+  const { data: sessions } = await supabase
+    .from("sessions")
+    .select("started_at")
+    .eq("user_id", userId)
+    .order("started_at", { ascending: false })
+
+  if (!sessions || sessions.length === 0) return
+
+  const dates = sessions.map((s) => s.started_at)
+  const streak = calculateStreak(dates)
+
+  await supabase
+    .from("users")
+    .update({
+      streak_count: streak.consecutive,
+      best_streak: streak.bestStreak,
+    })
+    .eq("id", userId)
+}
+
+export async function getPlayerStats(): Promise<PlayerStats | null> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const [{ data: profile }, { data: sessions }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("total_xp, level, streak_count, best_streak, last_session_date")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("sessions")
+      .select("started_at")
+      .eq("user_id", user.id)
+      .order("started_at", { ascending: false }),
+  ])
+
+  if (!profile) return null
+
+  const levelInfo = levelFromXP(profile.total_xp)
+  const sessionDates = (sessions || []).map((s) => s.started_at)
+  const streak = calculateStreak(sessionDates)
+  const totalSessions = sessionDates.length
+
+  return {
+    totalXP: profile.total_xp,
+    level: levelInfo.level,
+    xpInCurrentLevel: levelInfo.xpInCurrentLevel,
+    xpToNextLevel: levelInfo.xpToNextLevel,
+    progress: levelInfo.progress,
+    streak: streak.consecutive,
+    bestStreak: streak.bestStreak,
+    weeklyRatio: streak.weeklyRatio,
+    weeklyDays: streak.weeklyDays,
+    totalSessions,
+  }
+}
+
+export async function backfillXP() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("total_xp")
+    .eq("id", user.id)
+    .single()
+
+  // Only backfill if user has no XP yet
+  if (!profile || profile.total_xp > 0) return
+
+  // Get all finished sessions that haven't been awarded XP
+  const { data: sessions } = await supabase
+    .from("sessions")
+    .select("id, duration_minutes, game_id, started_at, xp_awarded")
+    .eq("user_id", user.id)
+    .eq("active", false)
+    .order("started_at", { ascending: true })
+
+  if (!sessions || sessions.length === 0) return
+
+  let totalXP = 0
+  const seenGames = new Set<string>()
+
+  for (const session of sessions) {
+    if (session.xp_awarded > 0) {
+      totalXP += session.xp_awarded
+      seenGames.add(session.game_id)
+      continue
+    }
+
+    const isNewGame = !seenGames.has(session.game_id)
+    seenGames.add(session.game_id)
+
+    const xp = calculateSessionXP({
+      durationMinutes: session.duration_minutes || 0,
+      isNewGame,
+      isGameBeaten: false,
+      isComeback: false,
+    })
+
+    totalXP += xp.total
+
+    // Mark session with awarded XP
+    await supabase
+      .from("sessions")
+      .update({ xp_awarded: xp.total })
+      .eq("id", session.id)
+  }
+
+  // Check for beaten games bonus
+  const { data: beatenGames } = await supabase
+    .from("game_progress")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "beaten")
+
+  if (beatenGames) {
+    totalXP += beatenGames.length * 50
+  }
+
+  const { level } = levelFromXP(totalXP)
+  const lastSession = sessions[sessions.length - 1]
+  const lastDate = lastSession?.started_at
+    ? new Date(lastSession.started_at).toISOString().split("T")[0]
+    : null
+
+  await supabase
+    .from("users")
+    .update({ total_xp: totalXP, level, last_session_date: lastDate })
+    .eq("id", user.id)
+
+  // Also update streak
+  await updateUserStreak(user.id)
 }
