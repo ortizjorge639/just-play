@@ -40,6 +40,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   const [sessionGoal, setSessionGoal] = useState(session.session_goal || "")
   const showXPToast = useXPToast()
   const [showEndOptions, setShowEndOptions] = useState(false)
+  const [shimmer, setShimmer] = useState(false)
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const notesRef = useRef(notes)
   const sessionIdRef = useRef(session.id)
@@ -114,6 +115,8 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           }
           if (newStatus === "Playing" && status === "Paused") {
             updates.started_at = new Date().toISOString()
+            setShimmer(true)
+            setTimeout(() => setShimmer(false), 1200)
           }
           onSessionUpdated?.(updates)
 
@@ -183,6 +186,29 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent md:bg-gradient-to-r md:from-transparent md:via-transparent md:to-background/80" />
+
+        {/* Resume shimmer — a light sweep across the cover art */}
+        <AnimatePresence>
+          {shimmer && (
+            <motion.div
+              className="absolute inset-0 pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <motion.div
+                className="absolute inset-y-0 w-1/3"
+                style={{
+                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
+                }}
+                initial={{ left: "-33%" }}
+                animate={{ left: "133%" }}
+                transition={{ duration: 0.9, ease: "easeInOut" }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between gap-4">
           <div className="flex-1 min-w-0">
