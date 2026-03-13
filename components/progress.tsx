@@ -23,96 +23,88 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
   const uniqueGames = new Set(sessions.map((s) => s.game_id)).size
 
   return (
-    <div className="flex flex-col min-h-dvh">
-      {/* Greeting */}
-      <div className="px-6 pb-5">
-        <p className="text-muted-foreground text-sm">
+    <div className="flex flex-col min-h-dvh px-6">
+      {/* Greeting — centered hero */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="pt-2 pb-6 text-center"
+      >
+        <h1 className="text-2xl font-bold text-foreground">
           {"Hey, "}
-          <span className="text-foreground font-medium">
-            {displayName || "Player"}
-          </span>
-        </p>
-      </div>
+          {displayName || "Player"} 👋
+        </h1>
+      </motion.div>
 
-      {/* Level Card — Duolingo-style */}
+      {/* Level + XP — centered Duolingo-style */}
       {playerStats && (
-        <div className="px-6 pb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-            className="glass-card overflow-hidden"
-          >
-            <div className="flex items-center gap-4 p-4">
-              {/* Level badge */}
-              <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-chart-1/30 to-chart-1/10 border border-chart-1/20">
-                <span className="text-2xl font-black text-chart-1">
-                  {playerStats.level}
-                </span>
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-chart-1 px-1.5 py-px text-[9px] font-bold text-white uppercase tracking-wider">
-                  lvl
-                </span>
-              </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.05 }}
+          className="flex flex-col items-center gap-4 pb-8"
+        >
+          {/* Level badge — big, centered */}
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-chart-1/30 to-chart-1/10 border-2 border-chart-1/25">
+            <span className="text-4xl font-black text-chart-1">
+              {playerStats.level}
+            </span>
+            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-chart-1 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+              level
+            </span>
+          </div>
 
-              {/* XP progress */}
-              <div className="flex flex-1 flex-col gap-1.5 min-w-0">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-semibold text-foreground">
-                    {playerStats.totalXP.toLocaleString()} XP
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {playerStats.xpInCurrentLevel} / {playerStats.xpToNextLevel}
-                  </span>
-                </div>
-                <div className="relative h-2.5 w-full rounded-full bg-secondary overflow-hidden">
-                  <motion.div
-                    className="absolute inset-y-0 left-0 rounded-full bg-chart-1"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.max(playerStats.progress * 100, 3)}%` }}
-                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
-                  />
-                </div>
-              </div>
+          {/* Chunky XP progress bar */}
+          <div className="flex w-full max-w-xs flex-col items-center gap-2">
+            <div className="relative h-4 w-full rounded-full bg-secondary overflow-hidden">
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded-full bg-chart-1"
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.max(playerStats.progress * 100, 4)}%` }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+              />
             </div>
-          </motion.div>
-        </div>
+            <span className="text-sm font-semibold text-muted-foreground">
+              {playerStats.xpInCurrentLevel}
+              <span className="text-muted-foreground/60"> / {playerStats.xpToNextLevel} XP</span>
+            </span>
+          </div>
+        </motion.div>
       )}
 
-      {/* Streak Card — Duolingo weekly dots */}
+      {/* Streak — centered with weekly dots */}
       {playerStats && (
-        <div className="px-6 pb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="glass-card p-4"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">
-                  {playerStats.streak >= 2 ? "🔥" : "📅"}
-                </span>
-                <span className="text-sm font-semibold text-foreground">
-                  {playerStats.streak > 0
-                    ? `${playerStats.streak} day streak`
-                    : "Start a streak!"}
-                </span>
-              </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="glass-card p-5 mb-5"
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">
+                {playerStats.streak >= 2 ? "🔥" : "📅"}
+              </span>
+              <span className="text-base font-bold text-foreground">
+                {playerStats.streak > 0
+                  ? `${playerStats.streak} day streak`
+                  : "Start a streak!"}
+              </span>
               {playerStats.bestStreak > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  Best: {playerStats.bestStreak}d
+                <span className="text-xs text-muted-foreground ml-1">
+                  · Best: {playerStats.bestStreak}
                 </span>
               )}
             </div>
 
-            {/* Weekly dots */}
-            <div className="flex items-center justify-between gap-1">
+            {/* Weekly dots — evenly spaced */}
+            <div className="flex items-center justify-center gap-3 w-full">
               {WEEKDAY_LABELS.map((label, i) => {
                 const played = playerStats.weeklyDays[i]
                 return (
-                  <div key={i} className="flex flex-col items-center gap-1.5">
+                  <div key={i} className="flex flex-col items-center gap-1">
                     <div
-                      className={`h-8 w-8 rounded-full flex items-center justify-center transition-colors ${
+                      className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
                         played
                           ? "bg-chart-1 text-white"
                           : "bg-secondary text-muted-foreground"
@@ -124,67 +116,55 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
                         </svg>
                       ) : null}
                     </div>
-                    <span className="text-[10px] font-medium text-muted-foreground">
+                    <span className="text-[10px] font-semibold text-muted-foreground">
                       {label}
                     </span>
                   </div>
                 )
               })}
             </div>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       )}
 
-      {/* Stats row — Nintendo-style tiles */}
-      <div className="grid grid-cols-3 gap-3 px-6 pb-5">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="glass-card flex flex-col items-center gap-1 p-4"
-        >
-          <span className="text-lg">🎮</span>
-          <span className="text-2xl font-bold text-foreground">
-            {sessions.length}
-          </span>
-          <span className="text-xs text-muted-foreground">Sessions</span>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="glass-card flex flex-col items-center gap-1 p-4"
-        >
-          <span className="text-lg">⏱️</span>
-          <span className="text-2xl font-bold text-foreground">
-            {totalHours > 0
+      {/* Stats row — centered tiles */}
+      <div className="grid grid-cols-3 gap-3 pb-6">
+        {[
+          { emoji: "🎮", value: sessions.length, label: "Sessions", delay: 0.15 },
+          {
+            emoji: "⏱️",
+            value: totalHours > 0
               ? `${totalHours}h${remainingMinutes > 0 ? ` ${remainingMinutes}m` : ""}`
-              : `${totalMinutes}m`}
-          </span>
-          <span className="text-xs text-muted-foreground">Play Time</span>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="glass-card flex flex-col items-center gap-1 p-4"
-        >
-          <span className="text-lg">🕹️</span>
-          <span className="text-2xl font-bold text-foreground">
-            {uniqueGames}
-          </span>
-          <span className="text-xs text-muted-foreground">Games</span>
-        </motion.div>
+              : `${totalMinutes}m`,
+            label: "Play Time",
+            delay: 0.2,
+          },
+          { emoji: "🕹️", value: uniqueGames, label: "Games", delay: 0.25 },
+        ].map(({ emoji, value, label, delay }) => (
+          <motion.div
+            key={label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay }}
+            className="glass-card flex flex-col items-center justify-center gap-1 p-4 text-center"
+          >
+            <span className="text-lg">{emoji}</span>
+            <span className="text-xl font-bold text-foreground leading-tight">
+              {value}
+            </span>
+            <span className="text-[11px] text-muted-foreground">{label}</span>
+          </motion.div>
+        ))}
       </div>
 
       {/* Session history */}
-      <div className="px-6 pb-4">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="pb-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Recent Sessions
         </h2>
       </div>
 
-      <div className="flex-1 px-6 pb-8">
+      <div className="flex-1 pb-8">
         {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
             <p className="text-muted-foreground text-sm">
@@ -192,22 +172,22 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5">
             {sessions.map((session, i) => (
               <motion.div
                 key={session.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * Math.min(i, 10) }}
-                className="glass-card flex items-center gap-4 p-4"
+                transition={{ delay: 0.08 * Math.min(i, 8) }}
+                className="glass-card flex items-center gap-3 p-3"
               >
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
                   <Image
                     src={session.games?.header_image || "/images/games/hades.jpg"}
                     alt={session.games?.name || "Game"}
                     fill
                     className="object-cover"
-                    sizes="56px"
+                    sizes="44px"
                   />
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5 min-w-0">
@@ -227,7 +207,7 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
                 </div>
                 {session.xp_awarded > 0 && (
                   <span className="shrink-0 rounded-full bg-chart-1/15 px-2 py-0.5 text-xs font-semibold text-chart-1">
-                    +{session.xp_awarded} XP
+                    +{session.xp_awarded}
                   </span>
                 )}
               </motion.div>
