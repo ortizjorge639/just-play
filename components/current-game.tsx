@@ -63,7 +63,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
         <h2 className="text-2xl font-bold text-foreground">{game.name}</h2>
       </div>
 
-      {/* Game card */}
+      {/* Game card with journey progress */}
       <div className="glass-card overflow-hidden mb-6">
         <div className="relative aspect-video w-full">
           <Image
@@ -74,29 +74,36 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
             sizes="(max-width: 768px) 100vw, 400px"
           />
         </div>
-        <div className="p-4">
+        <div className="p-4 flex flex-col gap-3">
           <p className="text-sm text-muted-foreground line-clamp-2">
             {game.description}
           </p>
-        </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="glass-card p-4 text-center">
-          <span className="text-2xl font-bold text-foreground">
-            {gameProgress.total_sessions}
-          </span>
-          <p className="text-xs text-muted-foreground mt-1">Sessions played</p>
-        </div>
-        <div className="glass-card p-4 text-center">
-          <span className="text-2xl font-bold text-foreground">
-            {gameProgress.total_time_minutes > 0 
-              ? `${Math.round(gameProgress.total_time_minutes / 60)}h ${gameProgress.total_time_minutes % 60}m`
-              : "0m"
-            }
-          </span>
-          <p className="text-xs text-muted-foreground mt-1">Total time</p>
+          {/* Journey progress bar */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {gameProgress.total_sessions} session{gameProgress.total_sessions !== 1 ? "s" : ""}
+                {" · "}
+                {gameProgress.total_time_minutes >= 60
+                  ? `${Math.floor(gameProgress.total_time_minutes / 60)}h ${gameProgress.total_time_minutes % 60}m`
+                  : `${gameProgress.total_time_minutes}m`}
+              </span>
+              <span className="text-muted-foreground">
+                {gameProgress.status === "playing" ? "In progress" : gameProgress.status}
+              </span>
+            </div>
+            <div className="relative h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded-full bg-chart-1"
+                initial={{ width: 0 }}
+                animate={{
+                  width: `${Math.min(Math.max((gameProgress.total_sessions / 10) * 100, 4), 100)}%`,
+                }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
