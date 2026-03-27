@@ -3,6 +3,7 @@ export interface Game {
   name: string
   genres: string[]
   estimated_session_length: number
+  time_to_beat_minutes?: number
   header_image: string
   description: string
   featured: boolean

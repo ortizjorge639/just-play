@@ -19,7 +19,7 @@ type NudgeStage = "none" | "first" | "second"
 const DEFAULT_ESTIMATED_MINUTES = 60
 
 interface ActiveSessionProps {
-  session: Session & { games: Game }
+  session: Session & { games: Game; progress: { total_sessions: number; total_time_minutes: number } | null }
   onFinished: () => void
   onSessionUpdated?: (updates: Partial<Session>) => void
 }
@@ -95,7 +95,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
     // If playing, calculate from started_at + paused time
     const startTime = new Date(session.started_at).getTime()
     const pausedTime = session.paused_elapsed_seconds || 0
-    const estimatedSeconds = (game.estimated_session_length || DEFAULT_ESTIMATED_MINUTES) * 60
+    const estimatedSeconds = (game.time_to_beat_minutes ?? game.estimated_session_length ?? DEFAULT_ESTIMATED_MINUTES) * 60
     const firstThreshold = Math.floor(estimatedSeconds * 1.5)
     const secondThreshold = Math.floor(estimatedSeconds * 2.5)
     
@@ -310,7 +310,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           
           <div className="flex flex-col items-center gap-1">
             <span className="text-xs uppercase tracking-wider text-muted-foreground">
-              {isPaused ? "Paused" : isLockedIn ? "Est. Time" : "Session"}
+              {isPaused ? "Paused" : isLockedIn ? (game.time_to_beat_minutes ? "Avg. Session" : "Est. Time") : "Session"}
             </span>
             
             <AnimatePresence mode="wait">
@@ -322,7 +322,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
                   exit={{ opacity: 0, scale: 0.9 }}
                   className={`text-4xl font-bold tabular-nums font-mono ${isPaused ? "text-[#FAA61A]" : "text-foreground"}`}
                 >
-                  {isLockedIn ? `~${game.estimated_session_length}m` : formatTime(elapsed)}
+                  {isLockedIn ? `~${game.time_to_beat_minutes ?? game.estimated_session_length}m` : formatTime(elapsed)}
                 </motion.span>
               ) : (
                 <motion.span
@@ -339,8 +339,40 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           </div>
         </div>
 
-        {/* Notes & Goal — toggleable notepad */}
-        {(isPlaying || isPaused) && (
+        {/* Genre tags */}
+        {game.genres && game.genres.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {game.genres.map((genre) => (
+              <span
+                key={genre}
+                className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Play stats — only if user has previous sessions with this game */}
+        {session.progress && session.progress.total_sessions > 0 && (
+          <div className="glass-card px-4 py-3 flex items-center gap-3">
+            <svg className="h-4 w-4 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            <span className="text-sm text-muted-foreground">
+              {session.progress.total_sessions} {session.progress.total_sessions === 1 ? "session" : "sessions"}
+              {session.progress.total_time_minutes > 0 && (
+                <> · {session.progress.total_time_minutes >= 60
+                  ? `${Math.floor(session.progress.total_time_minutes / 60)}h ${session.progress.total_time_minutes % 60}m`
+                  : `${session.progress.total_time_minutes}m`
+                } played</>
+              )}
+            </span>
+          </div>
+        )}
+
+        {/* Notes & Goal — available in all active states */}
+        {(isLockedIn || isPlaying || isPaused) && (
           <SessionNotepad
             goal={sessionGoal}
             notes={notes}

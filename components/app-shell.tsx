@@ -19,7 +19,7 @@ type Tab = "deck" | "session" | "progress"
 interface AppShellProps {
   user: UserProfile
   recommendations: Game[]
-  activeSession: (Session & { games: Game }) | null
+  activeSession: (Session & { games: Game; progress: { total_sessions: number; total_time_minutes: number } | null }) | null
   activeGame: (GameProgress & { game: Game }) | null
   sessionHistory: (Session & { games: Game })[]
   playerStats: PlayerStats | null

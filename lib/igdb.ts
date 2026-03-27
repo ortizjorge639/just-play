@@ -30,6 +30,13 @@ export interface IGDBGame {
   category?: number
 }
 
+export interface IGDBTimeToBeat {
+  game_id: number
+  hastily?: number
+  normally?: number
+  completely?: number
+}
+
 // ── Genre Mapping ──────────────────────────────────────────────────────
 // Maps IGDB genre IDs → Just Play genre strings used by the scoring engine
 
@@ -202,7 +209,45 @@ export interface IGDBSearchResult {
   coverUrl: string | null
   genres: string[]
   estimatedSessionLength: number
+  timeToBeatMinutes: number | null
   description: string
+}
+
+/**
+ * Fetch time-to-beat data for a batch of IGDB game IDs.
+ * Returns a map of gameId → minutes (using "normally" with fallbacks).
+ */
+export async function fetchTimeToBeat(
+  gameIds: number[],
+  clientId: string,
+  accessToken: string
+): Promise<Map<number, number>> {
+  if (gameIds.length === 0) return new Map()
+
+  const idList = gameIds.join(",")
+  const body = `fields game_id, hastily, normally, completely; where game_id = (${idList}); limit 500;`
+
+  try {
+    const results = await queryIGDB<IGDBTimeToBeat>(
+      "game_time_to_beats",
+      body,
+      clientId,
+      accessToken
+    )
+
+    const map = new Map<number, number>()
+    for (const entry of results) {
+      // Prefer "normally", fall back to "hastily" or "completely"
+      const seconds = entry.normally ?? entry.hastily ?? entry.completely
+      if (seconds && seconds > 0) {
+        map.set(entry.game_id, Math.round(seconds / 60))
+      }
+    }
+    return map
+  } catch {
+    // time_to_beat is best-effort — don't break search if it fails
+    return new Map()
+  }
 }
 
 export async function searchIGDBGames(
@@ -222,6 +267,13 @@ export async function searchIGDBGames(
 
   const games = await queryIGDB<IGDBGame>("games", body, clientId, accessToken)
 
+  // Batch-fetch time-to-beat data for all results
+  const ttbMap = await fetchTimeToBeat(
+    games.map((g) => g.id),
+    clientId,
+    accessToken
+  )
+
   return games.map((game) => ({
     igdbId: game.id,
     name: game.name,
@@ -230,6 +282,7 @@ export async function searchIGDBGames(
       : null,
     genres: mapIGDBGenres(game),
     estimatedSessionLength: estimateSessionLength(game),
+    timeToBeatMinutes: ttbMap.get(game.id) ?? null,
     description: (game.summary || "").slice(0, 500),
   }))
 }

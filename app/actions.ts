@@ -604,16 +604,28 @@ export async function getActiveSession() {
 
   if (sessionError || !session) return null
 
-  // Then get the game data
-  const { data: game, error: gameError } = await supabase
-    .from("games")
-    .select("*")
-    .eq("id", session.game_id)
-    .single()
+  // Fetch game data and game progress in parallel
+  const [gameResult, progressResult] = await Promise.all([
+    supabase
+      .from("games")
+      .select("*")
+      .eq("id", session.game_id)
+      .single(),
+    supabase
+      .from("game_progress")
+      .select("total_sessions, total_time_minutes")
+      .eq("user_id", user.id)
+      .eq("game_id", session.game_id)
+      .maybeSingle(),
+  ])
 
-  if (gameError || !game) return null
+  if (gameResult.error || !gameResult.data) return null
 
-  return { ...session, games: game }
+  return {
+    ...session,
+    games: gameResult.data,
+    progress: progressResult.data ?? null,
+  }
 }
 
 export async function updateSessionNotes(sessionId: string, notes: string) {
@@ -814,6 +826,7 @@ export async function addSearchedGame(gameData: {
   coverUrl: string | null
   genres: string[]
   estimatedSessionLength: number
+  timeToBeatMinutes?: number | null
   description: string
 }): Promise<Game> {
   const supabase = await createClient()
@@ -841,6 +854,7 @@ export async function addSearchedGame(gameData: {
       name: gameData.name,
       genres: gameData.genres.length > 0 ? gameData.genres : ["indie"],
       estimated_session_length: gameData.estimatedSessionLength,
+      time_to_beat_minutes: gameData.timeToBeatMinutes ?? null,
       header_image: gameData.coverUrl || "",
       description: gameData.description,
       source: "igdb",
