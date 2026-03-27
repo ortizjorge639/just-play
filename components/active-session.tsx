@@ -13,6 +13,10 @@ import {
 import type { Session, Game, SessionStatus } from "@/lib/types"
 import { SessionNotepad } from "./session-notepad"
 import { useXPToast } from "./xp-toast"
+import { StillPlayingModal } from "./still-playing-modal"
+
+type NudgeStage = "none" | "first" | "second"
+const DEFAULT_ESTIMATED_MINUTES = 60
 
 interface ActiveSessionProps {
   session: Session & { games: Game }
@@ -41,6 +45,9 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   const showXPToast = useXPToast()
   const [showEndOptions, setShowEndOptions] = useState(false)
   const [shimmer, setShimmer] = useState(false)
+  const [nudgeStage, setNudgeStage] = useState<NudgeStage>("none")
+  const [showNudge, setShowNudge] = useState(false)
+  const [autoPaused, setAutoPaused] = useState(false)
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const notesRef = useRef(notes)
   const sessionIdRef = useRef(session.id)
@@ -88,15 +95,28 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
     // If playing, calculate from started_at + paused time
     const startTime = new Date(session.started_at).getTime()
     const pausedTime = session.paused_elapsed_seconds || 0
+    const estimatedSeconds = (game.estimated_session_length || DEFAULT_ESTIMATED_MINUTES) * 60
+    const firstThreshold = Math.floor(estimatedSeconds * 1.5)
+    const secondThreshold = Math.floor(estimatedSeconds * 2.5)
     
     const tick = () => {
       const currentElapsed = Math.floor((Date.now() - startTime) / 1000)
-      setElapsed(pausedTime + currentElapsed)
+      const totalElapsed = pausedTime + currentElapsed
+      setElapsed(totalElapsed)
+
+      // Nudge checks — only fire once per stage
+      if (nudgeStage === "none" && totalElapsed >= firstThreshold) {
+        setNudgeStage("first")
+        setShowNudge(true)
+      } else if (nudgeStage === "first" && totalElapsed >= secondThreshold) {
+        setNudgeStage("second")
+        setShowNudge(true)
+      }
     }
     tick()
     const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
-  }, [session.started_at, session.paused_elapsed_seconds, status])
+  }, [session.started_at, session.paused_elapsed_seconds, status, nudgeStage, game.estimated_session_length])
 
   const transition = useCallback(
     (newStatus: SessionStatus) => {
@@ -115,6 +135,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           }
           if (newStatus === "Playing" && status === "Paused") {
             updates.started_at = new Date().toISOString()
+            setAutoPaused(false)
             setShimmer(true)
             setTimeout(() => setShimmer(false), 1200)
           }
@@ -131,6 +152,21 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
     },
     [session.id, session.started_at, session.paused_elapsed_seconds, status, onFinished, onSessionUpdated, showXPToast]
   )
+
+  const handleNudgeDismiss = useCallback(() => {
+    setShowNudge(false)
+  }, [])
+
+  const handleNudgeFinish = useCallback(() => {
+    setShowNudge(false)
+    transition("Finished")
+  }, [transition])
+
+  const handleAutoPause = useCallback(() => {
+    setShowNudge(false)
+    setAutoPaused(true)
+    transition("Paused")
+  }, [transition])
 
   // Auto-save notes with debounce
   const handleNotesChange = (value: string) => {
@@ -236,6 +272,23 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
 
       {/* Session content — scrollable column on mobile, right panel on desktop */}
       <div className="flex flex-col gap-4 px-6 pt-4 pb-6 overflow-y-auto">
+        {/* Auto-paused indicator */}
+        <AnimatePresence>
+          {autoPaused && isPaused && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="rounded-lg bg-[#FAA61A]/10 border border-[#FAA61A]/20 p-3 text-center text-sm text-[#FAA61A] flex items-center justify-center gap-2"
+            >
+              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Auto-paused after inactivity
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Timer */}
         <div className="glass-card p-5 relative">
           <button
@@ -371,6 +424,18 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
           )}
         </div>
       </div>
+
+      {/* Still Playing? nudge modal */}
+      <AnimatePresence>
+        {showNudge && (
+          <StillPlayingModal
+            elapsed={elapsed}
+            onStillPlaying={handleNudgeDismiss}
+            onFinishSession={handleNudgeFinish}
+            onAutoPause={handleAutoPause}
+          />
+        )}
+      </AnimatePresence>
 
       {/* End Session Options Modal */}
       <AnimatePresence>
