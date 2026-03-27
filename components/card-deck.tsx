@@ -143,7 +143,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
           </div>
           <h2 className="text-xl font-bold text-foreground">No more games</h2>
           <p className="text-muted-foreground text-base max-w-xs">
-            You swiped through all your picks. Refresh or update your filters for new recommendations.
+            You swiped through all your picks. Open another pack or update your filters.
           </p>
           <div className="flex flex-col gap-3 w-full max-w-xs mt-2">
             {rejectedStack.length > 0 && (
@@ -157,20 +157,14 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                 Bring Back Last Card
               </button>
             )}
-            <button
-              onClick={() => window.location.reload()}
-              className={`h-12 rounded-xl px-8 text-sm font-semibold transition-colors active:scale-[0.98] min-h-[44px] ${
-                rejectedStack.length > 0 
-                  ? "glass-card text-foreground hover:bg-muted" 
-                  : "bg-primary text-primary-foreground hover:bg-primary/90"
-              }`}
-            >
-              Refresh Picks
-            </button>
             {boosterPackStatus && boosterPackStatus.packsRemaining > 0 && (
               <button
                 onClick={() => setShowBoosterPack(true)}
-                className="h-12 rounded-xl glass-card px-8 text-sm font-semibold text-foreground transition-colors hover:bg-muted active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2"
+                className={`h-12 rounded-xl px-8 text-sm font-semibold transition-colors active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2 ${
+                  rejectedStack.length > 0
+                    ? "glass-card text-foreground hover:bg-muted"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                }`}
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
