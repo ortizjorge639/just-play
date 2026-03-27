@@ -46,6 +46,18 @@ export function AppShell({
   const [showSettings, setShowSettings] = useState(false)
   const [filterTipDismissed, setFilterTipDismissed] = useState(user.tutorial_complete)
 
+  // Check if there's pending XP from a recent session finish (survives page reload via sessionStorage)
+  const [xpPending] = useState(() => {
+    if (typeof window === "undefined") return false
+    try {
+      const pending = sessionStorage.getItem("pendingXP")
+      if (!pending) return false
+      const { timestamp } = JSON.parse(pending)
+      // Only show glow if XP was earned in the last 10 seconds
+      return Date.now() - timestamp < 10000
+    } catch { return false }
+  })
+
   const handleSessionCreated = useCallback(() => {
     setNeedsRefresh(true)
     // Full reload to get the new active session from the server
@@ -78,7 +90,7 @@ export function AppShell({
   }, [needsRefresh, activeSession, activeGame])
 
   return (
-    <XPToastProvider>
+    <XPToastProvider playerStats={playerStats}>
     <div className="flex min-h-dvh flex-col pb-16">
       {/* Top bar */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-6 pt-6 pb-2 bg-background/80 backdrop-blur-lg">
@@ -242,6 +254,7 @@ export function AppShell({
         active={activeTab}
         onChange={handleTabChange}
         hasActiveSession={!!activeSession || !!activeGame}
+        xpPending={xpPending}
       />
 
       {/* Quick Filters Modal */}

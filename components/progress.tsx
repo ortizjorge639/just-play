@@ -1,9 +1,11 @@
 "use client"
 
+import { useState, useEffect, useRef, useCallback } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import type { Session, Game, PlayerStats } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
+import { XPParticles } from "./xp-particles"
 
 interface ProgressProps {
   sessions: (Session & { games: Game })[]
@@ -11,9 +13,119 @@ interface ProgressProps {
   playerStats: PlayerStats | null
 }
 
+interface PendingXP {
+  xp: number
+  previousStats: {
+    totalXP: number
+    level: number
+    xpInCurrentLevel: number
+    xpToNextLevel: number
+    totalSessions: number
+  }
+  timestamp: number
+}
+
 const WEEKDAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"]
 
+function useCountUp(target: number, from: number, duration = 1200, enabled = true) {
+  const [value, setValue] = useState(enabled ? from : target)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (!enabled || from === target) {
+      setValue(target)
+      return
+    }
+
+    const start = performance.now()
+    const diff = target - from
+
+    const tick = (now: number) => {
+      const elapsed = now - start
+      const progress = Math.min(elapsed / duration, 1)
+      // Ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setValue(Math.round(from + diff * eased))
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      }
+    }
+
+    // Delay start slightly so the page has rendered
+    const timeout = setTimeout(() => {
+      rafRef.current = requestAnimationFrame(tick)
+    }, 400)
+
+    return () => {
+      clearTimeout(timeout)
+      cancelAnimationFrame(rafRef.current)
+    }
+  }, [target, from, duration, enabled])
+
+  return value
+}
+
 export function Progress({ sessions, displayName, playerStats }: ProgressProps) {
+  const [pending, setPending] = useState<PendingXP | null>(null)
+  const [showBarParticles, setShowBarParticles] = useState(false)
+  const barRef = useRef<HTMLDivElement>(null)
+  const [barParticleOrigin, setBarParticleOrigin] = useState({ x: 0, y: 0 })
+
+  // Check for pending XP on mount
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("pendingXP")
+      if (!raw) return
+      const data: PendingXP = JSON.parse(raw)
+      // Only animate if XP was earned recently (within 10s)
+      if (Date.now() - data.timestamp < 10000) {
+        setPending(data)
+      }
+      sessionStorage.removeItem("pendingXP")
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  // Fire bar particles after the count-up finishes
+  const onCountUpDone = useCallback(() => {
+    if (!barRef.current || !pending) return
+    const rect = barRef.current.getBoundingClientRect()
+    const barProgress = playerStats
+      ? Math.max((playerStats.xpInCurrentLevel / playerStats.xpToNextLevel) * 100, 3)
+      : 50
+    setBarParticleOrigin({
+      x: rect.left + (rect.width * barProgress) / 100,
+      y: rect.top + rect.height / 2,
+    })
+    setShowBarParticles(true)
+  }, [pending, playerStats])
+
+  // Trigger particles after count-up duration
+  useEffect(() => {
+    if (!pending) return
+    const timer = setTimeout(onCountUpDone, 1800)
+    return () => clearTimeout(timer)
+  }, [pending, onCountUpDone])
+
+  const hasPending = !!pending
+  const prevXP = pending?.previousStats.xpInCurrentLevel ?? (playerStats?.xpInCurrentLevel ?? 0)
+  const prevLevel = pending?.previousStats.level ?? (playerStats?.level ?? 1)
+
+  const animatedXP = useCountUp(
+    playerStats?.xpInCurrentLevel ?? 0,
+    prevXP,
+    1200,
+    hasPending
+  )
+  const animatedLevel = useCountUp(
+    playerStats?.level ?? 1,
+    prevLevel,
+    800,
+    hasPending && prevLevel !== (playerStats?.level ?? 1)
+  )
+
   const totalMinutes = sessions.reduce(
     (acc, s) => acc + (s.duration_minutes || 0),
     0
@@ -21,6 +133,14 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
   const totalHours = Math.floor(totalMinutes / 60)
   const remainingMinutes = totalMinutes % 60
   const uniqueGames = new Set(sessions.map((s) => s.game_id)).size
+
+  // XP bar width: animate from previous to current
+  const currentBarWidth = playerStats
+    ? Math.max((playerStats.xpInCurrentLevel / playerStats.xpToNextLevel) * 100, 3)
+    : 0
+  const prevBarWidth = pending && playerStats
+    ? Math.max((pending.previousStats.xpInCurrentLevel / (pending.previousStats.xpToNextLevel || 1)) * 100, 3)
+    : currentBarWidth
 
   return (
     <div className="flex flex-col min-h-dvh px-6">
@@ -47,7 +167,7 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
           {/* Level badge — big, centered */}
           <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-amber-500/30 to-amber-500/10 border-2 border-amber-500/25">
             <span className="text-4xl font-black text-amber-400">
-              {playerStats.level}
+              {animatedLevel}
             </span>
             <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
               level
@@ -56,14 +176,16 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
 
           {/* Chunky XP progress bar */}
           <div className="flex w-full flex-col items-center gap-2">
-            <div className="relative h-4 w-full rounded-full bg-white/10 overflow-hidden">
-              <div
-                className="absolute inset-y-0 left-0 rounded-full bg-amber-500 transition-all duration-700 ease-out"
-                style={{ width: `${Math.max((playerStats.xpInCurrentLevel / playerStats.xpToNextLevel) * 100, 3)}%` }}
+            <div ref={barRef} className="relative h-4 w-full rounded-full bg-white/10 overflow-hidden">
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded-full bg-amber-500"
+                initial={{ width: `${hasPending ? prevBarWidth : currentBarWidth}%` }}
+                animate={{ width: `${currentBarWidth}%` }}
+                transition={{ duration: hasPending ? 1.4 : 0.7, ease: "easeOut", delay: hasPending ? 0.5 : 0 }}
               />
             </div>
             <span className="text-sm font-semibold text-muted-foreground">
-              {playerStats.xpInCurrentLevel}
+              {animatedXP}
               <span className="text-muted-foreground/60"> / {playerStats.xpToNextLevel} XP</span>
             </span>
           </div>
@@ -213,6 +335,17 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
           </div>
         )}
       </div>
+
+      {/* XP bar particle burst */}
+      {showBarParticles && (
+        <XPParticles
+          originX={barParticleOrigin.x}
+          originY={barParticleOrigin.y}
+          count={16}
+          spread={5}
+          onComplete={() => setShowBarParticles(false)}
+        />
+      )}
     </div>
   )
 }

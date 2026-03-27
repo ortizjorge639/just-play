@@ -1,7 +1,9 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react"
 import { AnimatePresence, motion } from "framer-motion"
+import { XPParticles } from "./xp-particles"
+import type { PlayerStats } from "@/lib/types"
 
 interface XPToastData {
   total: number
@@ -14,14 +16,55 @@ export function useXPToast() {
   return useContext(XPToastContext)
 }
 
-export function XPToastProvider({ children }: { children: ReactNode }) {
+/** Store current stats in sessionStorage so the Progress page can animate from old → new */
+export function storePendingXP(xp: number, playerStats: PlayerStats | null) {
+  if (!playerStats || xp <= 0) return
+  try {
+    sessionStorage.setItem("pendingXP", JSON.stringify({
+      xp,
+      previousStats: {
+        totalXP: playerStats.totalXP,
+        level: playerStats.level,
+        xpInCurrentLevel: playerStats.xpInCurrentLevel,
+        xpToNextLevel: playerStats.xpToNextLevel,
+        totalSessions: playerStats.totalSessions,
+      },
+      timestamp: Date.now(),
+    }))
+  } catch {
+    // sessionStorage unavailable — skip
+  }
+}
+
+export function XPToastProvider({ children, playerStats }: { children: ReactNode; playerStats?: PlayerStats | null }) {
   const [toast, setToast] = useState<XPToastData | null>(null)
+  const [showParticles, setShowParticles] = useState(false)
+  const toastRef = useRef<HTMLDivElement>(null)
+  const [particleOrigin, setParticleOrigin] = useState({ x: 0, y: 0 })
 
   const showToast = useCallback((data: XPToastData) => {
     if (data.total <= 0) return
     setToast(data)
-    setTimeout(() => setToast(null), 2500)
-  }, [])
+
+    // Store pending XP for progress page animation
+    if (playerStats) {
+      storePendingXP(data.total, playerStats)
+    }
+
+    // Trigger particles after a brief delay (let toast render first)
+    setTimeout(() => {
+      const el = toastRef.current
+      if (el) {
+        const rect = el.getBoundingClientRect()
+        setParticleOrigin({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 })
+      } else {
+        setParticleOrigin({ x: window.innerWidth / 2, y: 120 })
+      }
+      setShowParticles(true)
+    }, 100)
+
+    setTimeout(() => setToast(null), 2000)
+  }, [playerStats])
 
   return (
     <XPToastContext.Provider value={showToast}>
@@ -29,6 +72,7 @@ export function XPToastProvider({ children }: { children: ReactNode }) {
       <AnimatePresence>
         {toast && (
           <motion.div
+            ref={toastRef}
             key="xp-toast"
             initial={{ opacity: 0, y: 30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -51,6 +95,15 @@ export function XPToastProvider({ children }: { children: ReactNode }) {
           </motion.div>
         )}
       </AnimatePresence>
+      {showParticles && (
+        <XPParticles
+          originX={particleOrigin.x}
+          originY={particleOrigin.y}
+          count={28}
+          spread={7}
+          onComplete={() => setShowParticles(false)}
+        />
+      )}
     </XPToastContext.Provider>
   )
 }
