@@ -38,13 +38,21 @@ export function storePendingXP(xp: number, playerStats: PlayerStats | null) {
 
 export function XPToastProvider({ children, playerStats }: { children: ReactNode; playerStats?: PlayerStats | null }) {
   const [toast, setToast] = useState<XPToastData | null>(null)
+  const [isLevelUp, setIsLevelUp] = useState(false)
   const [showParticles, setShowParticles] = useState(false)
+  const [particleCount, setParticleCount] = useState(28)
   const toastRef = useRef<HTMLDivElement>(null)
   const [particleOrigin, setParticleOrigin] = useState({ x: 0, y: 0 })
 
   const showToast = useCallback((data: XPToastData) => {
     if (data.total <= 0) return
     setToast(data)
+
+    // Detect level-up: current XP in level + awarded >= XP needed
+    const levelUp = playerStats
+      ? playerStats.xpInCurrentLevel + data.total >= playerStats.xpToNextLevel
+      : false
+    setIsLevelUp(levelUp)
 
     // Store pending XP for progress page animation
     if (playerStats) {
@@ -60,10 +68,11 @@ export function XPToastProvider({ children, playerStats }: { children: ReactNode
       } else {
         setParticleOrigin({ x: window.innerWidth / 2, y: 120 })
       }
+      setParticleCount(levelUp ? 60 : 28)
       setShowParticles(true)
     }, 100)
 
-    setTimeout(() => setToast(null), 2000)
+    setTimeout(() => setToast(null), levelUp ? 3000 : 2000)
   }, [playerStats])
 
   return (
@@ -82,6 +91,11 @@ export function XPToastProvider({ children, playerStats }: { children: ReactNode
           >
             <div className="rounded-xl bg-chart-1/20 border border-chart-1/30 backdrop-blur-lg px-4 py-2 shadow-lg shadow-chart-1/10">
               <div className="text-center">
+                {isLevelUp && (
+                  <div className="text-xs font-bold text-amber-300 tracking-wider uppercase mb-0.5">
+                    ⬆ Level Up!
+                  </div>
+                )}
                 <span className="text-lg font-bold text-chart-1">
                   +{toast.total} XP
                 </span>
@@ -99,8 +113,8 @@ export function XPToastProvider({ children, playerStats }: { children: ReactNode
         <XPParticles
           originX={particleOrigin.x}
           originY={particleOrigin.y}
-          count={28}
-          spread={7}
+          count={particleCount}
+          spread={particleCount > 28 ? 10 : 7}
           onComplete={() => setShowParticles(false)}
         />
       )}
