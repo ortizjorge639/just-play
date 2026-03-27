@@ -5,6 +5,7 @@ export interface Game {
   estimated_session_length: number
   header_image: string
   description: string
+  featured: boolean
   source: "steam" | "test" | "igdb"
   created_at: string
 }
@@ -77,5 +78,3 @@ export interface UserPreferences {
   genre_preferences?: string[]
   discovery?: string
 }
-
-export type OnboardingStep = "mood" | "time" | "energy" | "genres" | "discovery"

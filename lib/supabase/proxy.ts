@@ -43,12 +43,37 @@ export async function updateSession(request: NextRequest) {
 
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith('/auth')
+    !request.nextUrl.pathname.startsWith('/auth') &&
+    !request.nextUrl.pathname.startsWith('/welcome')
   ) {
-    // No user and not on an auth page => redirect to login
     const url = request.nextUrl.clone()
+    const hasVisited = request.cookies.get('has_visited')
+
+    if (!hasVisited) {
+      // First-time visitor → send to welcome tutorial
+      url.pathname = '/welcome'
+      const redirectResponse = NextResponse.redirect(url)
+      redirectResponse.cookies.set('has_visited', 'true', {
+        maxAge: 60 * 60 * 24 * 365,
+        path: '/',
+      })
+      return redirectResponse
+    }
+
+    // Returning visitor → send to login
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)
+  }
+
+  // Set has_visited cookie when viewing /welcome (if not already set)
+  if (
+    request.nextUrl.pathname.startsWith('/welcome') &&
+    !request.cookies.get('has_visited')
+  ) {
+    supabaseResponse.cookies.set('has_visited', 'true', {
+      maxAge: 60 * 60 * 24 * 365,
+      path: '/',
+    })
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

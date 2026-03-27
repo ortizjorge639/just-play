@@ -7,6 +7,7 @@ import {
   getActiveGame,
   getSessionHistory,
   getPlayerStats,
+  getBoosterPackStatus,
   backfillXP,
 } from "./actions"
 import { AppShell } from "@/components/app-shell"
@@ -71,11 +72,17 @@ export default async function HomePage({
     playerStats = await getPlayerStats()
   }
 
-  // Get recommendations based on user preferences
+  let boosterPackStatus = { packsOpenedToday: 0, packsRemaining: 3 }
+  const isBoosterPack = !profile.onboarding_complete
+
   try {
-    recommendations = profile.onboarding_complete
-      ? await getRecommendations(profile.preferences || {})
-      : []
+    // Always fetch booster pack status (available in empty deck state for all users)
+    boosterPackStatus = await getBoosterPackStatus()
+
+    // Only fetch recommendations if user has set preferences
+    if (profile.onboarding_complete) {
+      recommendations = await getRecommendations(profile.preferences || {})
+    }
   } catch (error) {
     console.error("[v0] Error fetching recommendations:", error)
   }
@@ -88,6 +95,8 @@ export default async function HomePage({
       activeGame={activeGame}
       sessionHistory={sessionHistory}
       playerStats={playerStats}
+      isBoosterPack={isBoosterPack}
+      boosterPackStatus={boosterPackStatus}
     />
   )
 }

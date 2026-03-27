@@ -2,8 +2,6 @@
 
 import { useState, useCallback } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Onboarding } from "./onboarding"
-import { Tutorial } from "./tutorial"
 import { CardDeck } from "./card-deck"
 import { ActiveSession } from "./active-session"
 import { CurrentGame } from "./current-game"
@@ -13,7 +11,7 @@ import { BottomNav } from "./bottom-nav"
 import { QuickFilters } from "./quick-filters"
 import { Settings } from "./settings"
 import { signout } from "@/app/auth/actions"
-import { markTutorialComplete } from "@/app/actions"
+import { FilterTip } from "./filter-tip"
 import type { UserProfile, Game, Session, GameProgress, PlayerStats } from "@/lib/types"
 
 type Tab = "deck" | "session" | "progress"
@@ -25,6 +23,8 @@ interface AppShellProps {
   activeGame: (GameProgress & { game: Game }) | null
   sessionHistory: (Session & { games: Game })[]
   playerStats: PlayerStats | null
+  isBoosterPack: boolean
+  boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
 }
 
 export function AppShell({
@@ -34,9 +34,9 @@ export function AppShell({
   activeGame,
   sessionHistory: initialHistory,
   playerStats,
+  isBoosterPack,
+  boosterPackStatus,
 }: AppShellProps) {
-  const [showTutorial, setShowTutorial] = useState(!user.tutorial_complete && user.onboarding_complete)
-  const [showOnboarding, setShowOnboarding] = useState(!user.onboarding_complete)
   const [activeTab, setActiveTab] = useState<Tab>(
     initialSession || activeGame ? "session" : "deck"
   )
@@ -44,19 +44,7 @@ export function AppShell({
   const [needsRefresh, setNeedsRefresh] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-
-  const handleOnboardingComplete = useCallback(() => {
-    setShowOnboarding(false)
-    // Show tutorial after onboarding
-    setShowTutorial(true)
-  }, [])
-
-  const handleTutorialComplete = useCallback(async () => {
-    setShowTutorial(false)
-    await markTutorialComplete()
-    // Force a full reload to get fresh recommendations
-    window.location.reload()
-  }, [])
+  const [filterTipDismissed, setFilterTipDismissed] = useState(user.tutorial_complete)
 
   const handleSessionCreated = useCallback(() => {
     setNeedsRefresh(true)
@@ -89,14 +77,6 @@ export function AppShell({
     setActiveTab(tab)
   }, [needsRefresh, activeSession, activeGame])
 
-  if (showOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />
-  }
-
-  if (showTutorial) {
-    return <Tutorial onComplete={handleTutorialComplete} />
-  }
-
   return (
     <XPToastProvider>
     <div className="flex min-h-dvh flex-col pb-16">
@@ -107,15 +87,29 @@ export function AppShell({
         </div>
         <div className="flex items-center gap-2">
           {activeTab === "deck" && !activeSession && (
-            <button
-              onClick={() => setShowFilters(true)}
-              className="flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px] min-w-[44px]"
-              aria-label="Update filters"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-              </svg>
-            </button>
+            filterTipDismissed ? (
+              <button
+                onClick={() => setShowFilters(true)}
+                className="flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px] min-w-[44px]"
+                aria-label="Update filters"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                </svg>
+              </button>
+            ) : (
+              <FilterTip onDismiss={() => setFilterTipDismissed(true)}>
+                <button
+                  onClick={() => setShowFilters(true)}
+                  className="flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px] min-w-[44px]"
+                  aria-label="Update filters"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                  </svg>
+                </button>
+              </FilterTip>
+            )
           )}
           {activeTab === "progress" && (
             <button
@@ -168,6 +162,8 @@ export function AppShell({
               games={recommendations}
               preferences={user.preferences || {}}
               onSessionCreated={handleSessionCreated}
+              isBoosterPack={isBoosterPack}
+              boosterPackStatus={boosterPackStatus}
             />
           </motion.div>
         )}
@@ -268,10 +264,6 @@ export function AppShell({
           <Settings
             displayName={user.display_name}
             onClose={() => setShowSettings(false)}
-            onReplayTutorial={() => {
-              setShowSettings(false)
-              setShowTutorial(true)
-            }}
             onEditPreferences={() => {
               setShowSettings(false)
               setShowFilters(true)

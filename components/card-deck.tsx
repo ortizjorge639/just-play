@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { GameCard } from "./game-card"
 import { GameSearch } from "./game-search"
 import { QuickFilters } from "./quick-filters"
+import { BoosterPack } from "./booster-pack"
 import { createSession } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
 import type { Game, UserPreferences } from "@/lib/types"
@@ -13,16 +14,26 @@ interface CardDeckProps {
   games: Game[]
   preferences: UserPreferences
   onSessionCreated: () => void
+  isBoosterPack?: boolean
+  boosterPackStatus?: { packsOpenedToday: number; packsRemaining: number }
 }
 
-export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps) {
+export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, boosterPackStatus }: CardDeckProps) {
   const [deck, setDeck] = useState<Game[]>(games)
   const [rejectedStack, setRejectedStack] = useState<Game[]>([])
   const [lockedGame, setLockedGame] = useState<Game | null>(null)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [packOpened, setPackOpened] = useState(false)
+  const [showBoosterPack, setShowBoosterPack] = useState(false)
   const showXPToast = useXPToast()
+
+  const handleBoosterPackOpened = useCallback((newGames: Game[]) => {
+    setDeck(newGames)
+    setPackOpened(true)
+    setShowBoosterPack(false)
+  }, [])
 
   // Add a searched game to the top of the deck, then auto-show lock-in
   const addSearchedGame = useCallback((game: Game) => {
@@ -73,6 +84,53 @@ export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps
     setLockedGame(null)
   }, [])
 
+  // Show booster pack overlay for new users or when explicitly triggered
+  if ((isBoosterPack && !packOpened && deck.length === 0) || showBoosterPack) {
+    return (
+      <>
+        <BoosterPack
+          boosterPackStatus={boosterPackStatus || { packsOpenedToday: 0, packsRemaining: 3 }}
+          onPackOpened={handleBoosterPackOpened}
+        />
+        {/* Search FAB still available */}
+        <GameSearch onGameSelected={addSearchedGame} />
+        {/* Lock-in confirmation for searched games */}
+        <AnimatePresence>
+          {lockedGame && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm"
+              onClick={cancelLockIn}
+            >
+              <motion.div
+                initial={{ y: 200 }}
+                animate={{ y: 0 }}
+                exit={{ y: 200 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="w-full max-w-md glass-card rounded-t-3xl p-6 pb-10 flex flex-col gap-5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30" />
+                <div className="text-center flex flex-col gap-2">
+                  <h3 className="text-lg font-bold text-foreground">Lock in {lockedGame.name}?</h3>
+                  <p className="text-sm text-muted-foreground">{"This becomes your active session. You'll see it on your dashboard."}</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <button onClick={confirmLockIn} disabled={isPending} className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]">
+                    {isPending ? "Starting session..." : "Lock In"}
+                  </button>
+                  <button onClick={cancelLockIn} className="h-12 w-full rounded-xl bg-secondary text-base font-medium text-foreground transition-colors hover:bg-muted min-h-[44px]">Go back</button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </>
+    )
+  }
+
   if (deck.length === 0) {
     return (
       <>
@@ -108,6 +166,17 @@ export function CardDeck({ games, preferences, onSessionCreated }: CardDeckProps
             >
               Refresh Picks
             </button>
+            {boosterPackStatus && boosterPackStatus.packsRemaining > 0 && (
+              <button
+                onClick={() => setShowBoosterPack(true)}
+                className="h-12 rounded-xl glass-card px-8 text-sm font-semibold text-foreground transition-colors hover:bg-muted active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                </svg>
+                Open Booster Pack ({boosterPackStatus.packsRemaining} left)
+              </button>
+            )}
             <button
               onClick={() => setShowFilters(true)}
               className="h-12 rounded-xl glass-card px-8 text-sm font-semibold text-foreground transition-colors hover:bg-muted active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2"

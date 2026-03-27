@@ -79,6 +79,91 @@ export async function markTutorialComplete() {
   revalidatePath("/")
 }
 
+export async function getBoosterPack() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  // Fetch featured games and user's seen list in parallel
+  const [{ data: games, error }, { data: profile }] = await Promise.all([
+    supabase.from("games").select("*").eq("featured", true),
+    supabase.from("users").select("seen_game_ids").eq("id", user.id).single(),
+  ])
+  if (error) throw new Error(error.message)
+  if (!games || games.length === 0) return []
+
+  const seenIds = new Set<string>(profile?.seen_game_ids || [])
+
+  // Filter out already-seen games
+  let available = games.filter((g) => !seenIds.has(g.id))
+
+  // If fewer than 10 unseen featured games remain, reset the cycle
+  if (available.length < 10) {
+    available = games
+    seenIds.clear()
+  }
+
+  // Shuffle and take up to 10
+  const shuffled = available.sort(() => Math.random() - 0.5)
+  const deck = shuffled.slice(0, 10)
+
+  // Track newly shown games
+  const newSeenIds = [...Array.from(seenIds), ...deck.map((g) => g.id)]
+  await supabase
+    .from("users")
+    .update({ seen_game_ids: newSeenIds })
+    .eq("id", user.id)
+
+  return deck
+}
+
+export async function getBoosterPackStatus() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { packsOpenedToday: 0, packsRemaining: 3 }
+
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  
+  const { count, error } = await supabase
+    .from("booster_pack_opens")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("opened_at", twentyFourHoursAgo)
+
+  if (error) {
+    console.error("Error fetching booster pack status:", error)
+    return { packsOpenedToday: 0, packsRemaining: 3 }
+  }
+
+  const packsOpenedToday = count || 0
+  return { packsOpenedToday, packsRemaining: Math.max(0, 3 - packsOpenedToday) }
+}
+
+export async function recordBoosterPackOpen() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  // Check rate limit
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { count } = await supabase
+    .from("booster_pack_opens")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("opened_at", twentyFourHoursAgo)
+
+  if ((count || 0) >= 3) {
+    throw new Error("Daily booster pack limit reached. Come back tomorrow!")
+  }
+
+  const { error } = await supabase
+    .from("booster_pack_opens")
+    .insert({ user_id: user.id })
+
+  if (error) throw new Error(error.message)
+  revalidatePath("/")
+}
+
 export async function getRecommendations(preferences: UserPreferences) {
   const supabase = await createClient()
   const {
