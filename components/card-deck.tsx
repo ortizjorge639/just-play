@@ -90,6 +90,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
       <>
         <BoosterPack
           boosterPackStatus={boosterPackStatus || { packsOpenedToday: 0, packsRemaining: 3 }}
+          preferences={preferences}
           onPackOpened={handleBoosterPackOpened}
         />
         {/* Search FAB still available */}

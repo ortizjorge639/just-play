@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import {
   getUser,
-  getRecommendations,
   getActiveSession,
   getActiveGame,
   getSessionHistory,
@@ -42,7 +41,6 @@ export default async function HomePage({
   let activeSession = null
   let activeGame = null
   let sessionHistory: Awaited<ReturnType<typeof getSessionHistory>> = []
-  let recommendations: Awaited<ReturnType<typeof getRecommendations>> = []
   let playerStats: PlayerStats | null = null
 
   try {
@@ -73,29 +71,23 @@ export default async function HomePage({
   }
 
   let boosterPackStatus = { packsOpenedToday: 0, packsRemaining: 3 }
-  const isBoosterPack = !profile.onboarding_complete
 
   try {
-    // Always fetch booster pack status (available in empty deck state for all users)
+    // All users open booster packs to fill their deck — no pre-fetched recommendations
     boosterPackStatus = await getBoosterPackStatus()
-
-    // Only fetch recommendations if user has set preferences
-    if (profile.onboarding_complete) {
-      recommendations = await getRecommendations(profile.preferences || {})
-    }
   } catch (error) {
-    console.error("[v0] Error fetching recommendations:", error)
+    console.error("[v0] Error fetching booster pack status:", error)
   }
 
   return (
     <AppShell
       user={profile}
-      recommendations={recommendations}
+      recommendations={[]}
       activeSession={activeSession}
       activeGame={activeGame}
       sessionHistory={sessionHistory}
       playerStats={playerStats}
-      isBoosterPack={isBoosterPack}
+      isBoosterPack={true}
       boosterPackStatus={boosterPackStatus}
     />
   )

@@ -2,17 +2,19 @@
 
 import { useState, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { getBoosterPack, recordBoosterPackOpen } from "@/app/actions"
-import type { Game } from "@/lib/types"
+import { getBoosterPack, getRecommendations, recordBoosterPackOpen } from "@/app/actions"
+import type { Game, UserPreferences } from "@/lib/types"
 
 interface BoosterPackProps {
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
+  preferences?: UserPreferences
   onPackOpened: (games: Game[]) => void
 }
 
 type PackPhase = "idle" | "shaking" | "opening" | "revealing" | "done"
 
-export function BoosterPack({ boosterPackStatus, onPackOpened }: BoosterPackProps) {
+export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: BoosterPackProps) {
+  const hasPreferences = preferences && Object.keys(preferences).length > 0
   const [phase, setPhase] = useState<PackPhase>("idle")
   const [games, setGames] = useState<Game[]>([])
   const [revealedCount, setRevealedCount] = useState(0)
@@ -28,9 +30,10 @@ export function BoosterPack({ boosterPackStatus, onPackOpened }: BoosterPackProp
       setPhase("shaking")
 
       // Record the opening and fetch games in parallel
+      // Users with preferences get personalized recommendations; others get featured games
       const [, fetchedGames] = await Promise.all([
         recordBoosterPackOpen(),
-        getBoosterPack(),
+        hasPreferences ? getRecommendations(preferences!) : getBoosterPack(),
       ])
 
       setGames(fetchedGames)
