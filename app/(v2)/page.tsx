@@ -7,14 +7,15 @@
  */
 
 import { motion } from 'framer-motion';
+import CartridgeAvatar from '@/components/cartridge-avatar';
 
 // ─── MOCK DATA ──────────────────────────────────────────────────────────────
 const MOCK_TIME = '9:41';
 const MOCK_STATS = { completed: 47, backlog: 8 };
 const MOCK_CREW = [
-  { name: 'Joji', skin: '#FFD4B2', hair: '#3D2B1F', torso: '#6B4FBB' },
+  { name: 'Joji', skin: '#FFD4B2', hair: '#3D2B1F', torso: '#6B4FBB', gradient: 'linear-gradient(135deg,#6B4FBB,#9C27B0,#FFD700)' },
   { name: 'Kai',  skin: '#C8956C', hair: '#1A1A1A', torso: '#FF7B54' },
-  { name: 'Sam',  skin: '#FDDCB5', hair: '#8B4513', torso: '#4ECDC4' },
+  { name: 'Sam',  skin: '#FDDCB5', hair: '#8B4513', torso: '#4ECDC4',  gradient: 'linear-gradient(135deg,#4ECDC4,#26A69A,#80DEEA)' },
 ];
 const MOCK_NOW_PLAYING = { title: 'Elden Ring', xp: 68, level: 12 };
 
@@ -376,7 +377,7 @@ export default function HomeScreen() {
               className="flex flex-col items-center"
               style={{ width: 80 }}
             >
-              <MiiAvatar skin={member.skin} hair={member.hair} torso={member.torso} />
+              <CartridgeAvatar gradient={member.gradient} title={member.name} animated={false} size={0.7} />
               <span
                 style={{
                   fontSize: 12,
