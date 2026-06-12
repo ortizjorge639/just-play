@@ -269,8 +269,9 @@ export default function HomeScreen() {
         style={{ gridTemplateColumns: '1fr 1fr', gap: 12, padding: 12 }}
       >
         {/* Completed Card */}
-        <div
+        <motion.div
           className="flex flex-col justify-between"
+          whileTap={{ scale: 0.96 }}
           style={{
             height: 140,
             borderRadius: 20,
@@ -304,11 +305,12 @@ export default function HomeScreen() {
               Completed
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Backlog Card */}
-        <div
+        <motion.div
           className="flex flex-col justify-between"
+          whileTap={{ scale: 0.96 }}
           style={{
             height: 140,
             borderRadius: 20,
@@ -342,7 +344,7 @@ export default function HomeScreen() {
               Backlog
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* ── 4. CREW SECTION ───────────────────────────────────────────────── */}
@@ -388,7 +390,7 @@ export default function HomeScreen() {
               </span>
             </div>
           ))}
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* ── 5. SPACER ─────────────────────────────────────────────────────── */}
@@ -485,7 +487,7 @@ export default function HomeScreen() {
               {MOCK_NOW_PLAYING.xp} XP · Lv {MOCK_NOW_PLAYING.level}
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
 
       {/* ── 7. BOTTOM NAV ─────────────────────────────────────────────────── */}
