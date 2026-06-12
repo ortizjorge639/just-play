@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import CartridgeAvatar from '@/components/cartridge-avatar';
 
 // --- Mock Data ---
 const GAME = {
@@ -260,7 +261,7 @@ export default function InProgressPage() {
               borderRadius: '16px',
             }}
           >
-            <MiiAvatar />
+            <CartridgeAvatar gradient="linear-gradient(135deg,#3D1A8E,#8B2FC9,#FFD700)" title="Elden Ring" animated={true} size={0.85} />
           </div>
 
           {/* Stats */}
