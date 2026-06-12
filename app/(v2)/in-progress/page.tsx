@@ -406,7 +406,8 @@ export default function InProgressPage() {
         }}
       >
         {/* Full Screen */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.96 }}
           style={{
             background: 'none',
             border: 'none',
@@ -429,10 +430,11 @@ export default function InProgressPage() {
           >
             Full Screen
           </span>
-        </button>
+        </motion.button>
 
         {/* Pause */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.96 }}
           style={{
             background: 'none',
             border: 'none',
@@ -455,10 +457,11 @@ export default function InProgressPage() {
           >
             Pause
           </span>
-        </button>
+        </motion.button>
 
         {/* Complete */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.96 }}
           style={{
             background: 'none',
             border: 'none',
@@ -481,7 +484,7 @@ export default function InProgressPage() {
           >
             Complete
           </span>
-        </button>
+        </motion.button>
       </div>
     </div>
   );
