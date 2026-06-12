@@ -10,6 +10,11 @@ interface CartridgeAvatarProps {
   icon?: string
 }
 
+function parseGradientColors(gradient: string): string[] {
+  const matches = gradient.match(/#[0-9A-Fa-f]{3,6}/g)
+  return matches ?? ['#6B4FBB', '#9C27B0']
+}
+
 export function CartridgeAvatar({
   gradient,
   title,
@@ -21,6 +26,9 @@ export function CartridgeAvatar({
   const h = 72 * size
   const s = size
 
+  const colors = parseGradientColors(gradient)
+  const gradId = `grad-${title.replace(/\s/g, "")}`
+
   const body = (
     <svg
       width={w + 4 * s}
@@ -30,23 +38,33 @@ export function CartridgeAvatar({
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        <linearGradient id={`grad-${title.replace(/\s/g,"")}`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6B4FBB" />
-          <stop offset="100%" stopColor="#9C27B0" />
+        <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          {colors.length >= 3 ? (
+            <>
+              <stop offset="0%" stopColor={colors[0]} />
+              <stop offset="50%" stopColor={colors[1]} />
+              <stop offset="100%" stopColor={colors[2]} />
+            </>
+          ) : (
+            <>
+              <stop offset="0%" stopColor={colors[0]} />
+              <stop offset="100%" stopColor={colors[1] ?? colors[0]} />
+            </>
+          )}
         </linearGradient>
         <style>{`
-          .cart-body-${title.replace(/\s/g,"")} { fill: url(#grad-${title.replace(/\s/g,"")}); }
+          .cart-body-${title.replace(/\s/g, "")} { fill: url(#${gradId}); }
         `}</style>
       </defs>
 
       {/* Top notch */}
       <rect x="20" y="0" width="20" height="8" rx="3"
-        className={`cart-body-${title.replace(/\s/g,"")}`}
+        className={`cart-body-${title.replace(/\s/g, "")}`}
         stroke="#1A1A1A" strokeWidth="2.5" />
 
       {/* Main cartridge body */}
       <rect x="2" y="6" width="56" height="62" rx="6"
-        className={`cart-body-${title.replace(/\s/g,"")}`}
+        className={`cart-body-${title.replace(/\s/g, "")}`}
         stroke="#1A1A1A" strokeWidth="2.5" />
 
       {/* Label face */}
@@ -66,8 +84,13 @@ export function CartridgeAvatar({
       {/* Smile */}
       <path d="M22 32 Q30 37 38 32" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
 
+      {/* Icon */}
+      <text x="30" y="41" textAnchor="middle"
+        fontFamily="Nunito, sans-serif" fontSize="10"
+        fill="white" opacity="0.9">{icon}</text>
+
       {/* Title on label */}
-      <text x="30" y="46" textAnchor="middle"
+      <text x="30" y="48" textAnchor="middle"
         fontFamily="Nunito, sans-serif" fontWeight="700" fontSize="7"
         fill="white" opacity="0.95">{title.slice(0, 12)}</text>
 
@@ -101,6 +124,8 @@ export function CartridgeAvatar({
       <motion.div
         animate={{ y: [0, -5, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.95 }}
         style={{ display: "inline-flex", flexDirection: "column", alignItems: "center" }}
       >
         {body}
@@ -109,8 +134,12 @@ export function CartridgeAvatar({
   }
 
   return (
-    <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center" }}>
+    <motion.div
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.95 }}
+      style={{ display: "inline-flex", flexDirection: "column", alignItems: "center" }}
+    >
       {body}
-    </div>
+    </motion.div>
   )
 }
