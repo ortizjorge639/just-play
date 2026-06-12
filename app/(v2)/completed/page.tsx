@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import CartridgeAvatar from '@/components/cartridge-avatar';
 import { useState } from 'react';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
@@ -347,27 +348,7 @@ function MiiJoji() {
     <div style={{ position: 'absolute', bottom: '22%', left: 28, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ position: 'relative' }}>
         <SpeechBubble text="GG! 🏆" />
-        {/* body */}
-        <svg width="36" height="60">
-          {/* head */}
-          <circle cx="18" cy="13" r="12" fill="#FFD4B2" />
-          {/* eyes */}
-          <circle cx="13" cy="12" r="2" fill="#3D2B1F" />
-          <circle cx="23" cy="12" r="2" fill="#3D2B1F" />
-          {/* mouth */}
-          <path d="M13 18 Q18 22 23 18" fill="none" stroke="#3D2B1F" strokeWidth={1.5} />
-          {/* hair */}
-          <path d="M6 10 Q8 2 18 2 Q28 2 30 10" fill="#3D2B1F" />
-          {/* torso */}
-          <rect x="8" y="26" width="20" height="24" rx="4" fill="#6B4FBB" />
-          {/* left arm */}
-          <rect x="2" y="26" width="7" height="16" rx="3" fill="#6B4FBB" />
-          {/* right arm */}
-          <rect x="27" y="26" width="7" height="16" rx="3" fill="#6B4FBB" />
-          {/* legs */}
-          <rect x="9" y="49" width="7" height="10" rx="3" fill="#3D2B1F" />
-          <rect x="20" y="49" width="7" height="10" rx="3" fill="#3D2B1F" />
-        </svg>
+        <CartridgeAvatar gradient="linear-gradient(135deg,#6B4FBB,#9C27B0,#FFD700)" title="Joji" size={0.75} animated={false} />
       </div>
       <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 10, fontWeight: 700, color: '#3D2B1F', marginTop: 2 }}>Joji</span>
     </div>
@@ -377,19 +358,7 @@ function MiiJoji() {
 function MiiSam() {
   return (
     <div style={{ position: 'absolute', bottom: '32%', left: '45%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {/* smaller for depth */}
-      <svg width="26" height="44">
-        <circle cx="13" cy="9" r="9" fill="#FDDCB5" />
-        <circle cx="9" cy="8" r="1.5" fill="#3D2B1F" />
-        <circle cx="17" cy="8" r="1.5" fill="#3D2B1F" />
-        <path d="M9 13 Q13 16 17 13" fill="none" stroke="#3D2B1F" strokeWidth={1.2} />
-        <path d="M5 7 Q7 1 13 1 Q19 1 21 7" fill="#C8956C" />
-        <rect x="6" y="19" width="14" height="17" rx="3" fill="#4ECDC4" />
-        <rect x="1" y="19" width="6" height="12" rx="3" fill="#4ECDC4" />
-        <rect x="19" y="19" width="6" height="12" rx="3" fill="#4ECDC4" />
-        <rect x="7" y="35" width="5" height="7" rx="2" fill="#3D2B1F" />
-        <rect x="14" y="35" width="5" height="7" rx="2" fill="#3D2B1F" />
-      </svg>
+      <CartridgeAvatar gradient="linear-gradient(135deg,#4ECDC4,#26A69A,#80DEEA)" title="Sam" size={0.65} animated={false} />
       <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 9, fontWeight: 700, color: '#3D2B1F' }}>Sam</span>
     </div>
   );
@@ -400,23 +369,7 @@ function MiiKai() {
     <div style={{ position: 'absolute', bottom: '22%', right: 20, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ position: 'relative' }}>
         <SpeechBubble text="47! 🎮" flipped />
-        <svg width="36" height="60">
-          <circle cx="18" cy="13" r="12" fill="#C8956C" />
-          <circle cx="13" cy="12" r="2" fill="#3D2B1F" />
-          <circle cx="23" cy="12" r="2" fill="#3D2B1F" />
-          <path d="M13 18 Q18 22 23 18" fill="none" stroke="#3D2B1F" strokeWidth={1.5} />
-          {/* hair */}
-          <path d="M6 8 Q10 2 18 3 Q26 2 30 8" fill="#8D6E63" />
-          {/* torso */}
-          <rect x="8" y="26" width="20" height="24" rx="4" fill="#FF7B54" />
-          {/* left arm — raised waving */}
-          <rect x="0" y="12" width="7" height="16" rx="3" fill="#FF7B54" transform="rotate(-40 3 20)" />
-          {/* right arm — down */}
-          <rect x="27" y="26" width="7" height="16" rx="3" fill="#FF7B54" />
-          {/* legs */}
-          <rect x="9" y="49" width="7" height="10" rx="3" fill="#3D2B1F" />
-          <rect x="20" y="49" width="7" height="10" rx="3" fill="#3D2B1F" />
-        </svg>
+        <CartridgeAvatar gradient="linear-gradient(135deg,#FF7B54,#FF9A6C,#FFD700)" title="Kai" size={0.75} animated={false} />
       </div>
       <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 10, fontWeight: 700, color: '#3D2B1F', marginTop: 2 }}>Kai</span>
     </div>
