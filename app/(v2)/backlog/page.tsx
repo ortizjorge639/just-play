@@ -160,6 +160,7 @@ function GameCard({ game }: { game: (typeof GAMES)[0] }) {
   return (
     <motion.div
       variants={cardVariants}
+      whileTap={{ scale: 0.96 }}
       style={{
         height: 130,
         borderRadius: 14,
