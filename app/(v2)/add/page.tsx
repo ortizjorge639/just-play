@@ -112,6 +112,7 @@ function GameCard({ game, index }: { game: Game; index: number }) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.38, delay: index * 0.07, ease: [0.22, 1, 0.36, 1] }}
+      whileTap={{ scale: 0.96 }}
       style={{
         background: '#FFFFFF',
         borderRadius: 16,
@@ -294,27 +295,44 @@ export default function AddGameSearchPage() {
             gap: 10,
             pointerEvents: 'auto',
             cursor: 'text',
-          }}
-        >
-          {/* Magnifier */}
+            }}
+            >
+            {/* Back button */}
+            <button
+              style={{
+                background: 'transparent',
+                border: 'none',
+                fontFamily: "'Nunito', sans-serif",
+                fontWeight: 600,
+                color: '#6B4FBB',
+                padding: '0 8px',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              ← Back
+            </button>
+
+            {/* Magnifier */}
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
             <circle cx="8.5" cy="8.5" r="5.5" stroke="#6B7280" strokeWidth="2"/>
             <line x1="12.5" y1="12.5" x2="17" y2="17" stroke="#6B7280" strokeWidth="2" strokeLinecap="round"/>
           </svg>
 
-          {/* Placeholder text */}
-          <span
+          {/* Real search input */}
+          <input
+            type="text"
+            placeholder="Search games..."
             style={{
               flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
               fontFamily: "'Nunito', sans-serif",
-              fontWeight: 400,
-              fontSize: 15,
-              color: '#9CA3AF',
-              userSelect: 'none',
+              fontSize: 16,
+              color: '#1A1A2E',
             }}
-          >
-            Search games...
-          </span>
+          />
 
           {/* Microphone */}
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
