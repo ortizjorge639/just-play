@@ -502,7 +502,7 @@ function RoomScene() {
 // Completed game card
 function CompletedCard({ game }: { game: (typeof RECENTLY_COMPLETED)[0] }) {
   return (
-    <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+    <motion.div whileTap={{ scale: 0.96 }} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
       <div style={{ position: 'relative' }}>
         <div
           style={{
@@ -550,7 +550,7 @@ function CompletedCard({ game }: { game: (typeof RECENTLY_COMPLETED)[0] }) {
       >
         {game.title}
       </span>
-    </div>
+    </motion.div>
   );
 }
 
