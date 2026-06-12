@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import CartridgeAvatar from '@/components/cartridge-avatar';
 
 /* ─── Mock Data ─────────────────────────────────────────────── */
 const GAME = {
@@ -349,7 +350,7 @@ export default function AddConfirmPage() {
         >
           {/* Minimalist Mii peeking above card */}
           <div className="jp-mii-peek" aria-hidden="true">
-            <MiniMii />
+            <CartridgeAvatar gradient="linear-gradient(135deg,#1A4731,#2D7A4F,#F59E0B)" title="TOTK" animated={false} size={0.8} />
           </div>
 
           {/* Hero cover card */}
