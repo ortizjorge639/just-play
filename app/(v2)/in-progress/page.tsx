@@ -90,6 +90,7 @@ function CompleteIcon() {
 }
 
 export default function InProgressPage() {
+  const router = useRouter()
   return (
     <div
       style={{
