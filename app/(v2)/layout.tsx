@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import BottomNav from '@/components/bottom-nav'
 
 export const metadata: Metadata = {
   title: "Just Play",
@@ -6,5 +7,10 @@ export const metadata: Metadata = {
 }
 
 export default function V2Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return (
+    <>
+      <div className="pb-20">{children}</div>
+      <BottomNav />
+    </>
+  )
 }
