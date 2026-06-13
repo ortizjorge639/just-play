@@ -106,7 +106,7 @@ function GameCard({ game, index }: { game: GameResult; index: number }) {
         >
           <div
             style={{
-              fontFamily: \"'Nunito', sans-serif\",
+              fontFamily: "'Nunito', sans-serif",
               fontWeight: 700,
               fontSize: 13,
               color: '#1A1A2E',
@@ -124,7 +124,7 @@ function GameCard({ game, index }: { game: GameResult; index: number }) {
                   background: '#EDE9FF',
                   color: '#6B4FBB',
                   fontSize: 10,
-                  fontFamily: \"'Nunito', sans-serif\",
+                  fontFamily: "'Nunito', sans-serif",
                   fontWeight: 600,
                   borderRadius: 10,
                   padding: '2px 7px',
@@ -186,7 +186,7 @@ export default function AddGameSearchPage() {
         maxWidth: 430,
         margin: '0 auto',
         position: 'relative',
-        fontFamily: \"'Nunito', sans-serif\",
+        fontFamily: "'Nunito', sans-serif",
       }}
     >
       {/* Status bar spacer */}
@@ -205,7 +205,7 @@ export default function AddGameSearchPage() {
       >
         <span
           style={{
-            fontFamily: \"'Space Grotesk', sans-serif\",
+            fontFamily: "'Space Grotesk', sans-serif",
             fontWeight: 700,
             fontSize: 22,
             color: '#1A1A2E',
@@ -251,7 +251,7 @@ export default function AddGameSearchPage() {
             <span style={{ fontSize: 48 }}>🎮</span>
             <span
               style={{
-                fontFamily: \"'Nunito', sans-serif\",
+                fontFamily: "'Nunito', sans-serif",
                 fontWeight: 700,
                 fontSize: 16,
                 color: '#6B7280',
@@ -275,7 +275,7 @@ export default function AddGameSearchPage() {
             <span style={{ fontSize: 48 }}>🔍</span>
             <span
               style={{
-                fontFamily: \"'Nunito', sans-serif\",
+                fontFamily: "'Nunito', sans-serif",
                 fontWeight: 700,
                 fontSize: 16,
                 color: '#6B7280',
@@ -324,7 +324,7 @@ export default function AddGameSearchPage() {
             style={{
               background: 'transparent',
               border: 'none',
-              fontFamily: \"'Nunito', sans-serif\",
+              fontFamily: "'Nunito', sans-serif",
               fontWeight: 600,
               color: '#6B4FBB',
               padding: '0 8px',
@@ -352,7 +352,7 @@ export default function AddGameSearchPage() {
               background: 'transparent',
               border: 'none',
               outline: 'none',
-              fontFamily: \"'Nunito', sans-serif\",
+              fontFamily: "'Nunito', sans-serif",
               fontSize: 16,
               color: '#1A1A2E',
             }}

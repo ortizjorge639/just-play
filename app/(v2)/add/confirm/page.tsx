@@ -1,8 +1,15 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { CartridgeAvatar } from '@/components/cartridge-avatar';
+import dynamicImport from 'next/dynamic';
+
+const CartridgeAvatar = dynamicImport(
+  () => import('@/components/cartridge-avatar').then(m => m.CartridgeAvatar),
+  { ssr: false }
+);
 
 /* ─── Mock Data ─────────────────────────────────────────────── */
 const GAME = {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import BottomNav from '@/components/bottom-nav'
+import { BottomNav } from '@/components/bottom-nav'
 
 export const metadata: Metadata = {
   title: "Just Play",
