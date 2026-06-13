@@ -7,7 +7,7 @@
  */
 
 import { motion } from 'framer-motion';
-import CartridgeAvatar from '@/components/cartridge-avatar';
+import { CartridgeAvatar } from '@/components/cartridge-avatar';
 
 // ─── MOCK DATA ──────────────────────────────────────────────────────────────
 const MOCK_TIME = '9:41';
@@ -391,7 +391,7 @@ export default function HomeScreen() {
               </span>
             </div>
           ))}
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* ── 5. SPACER ─────────────────────────────────────────────────────── */}
@@ -488,7 +488,7 @@ export default function HomeScreen() {
               {MOCK_NOW_PLAYING.xp} XP · Lv {MOCK_NOW_PLAYING.level}
             </div>
           </div>
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* ── 7. BOTTOM NAV ─────────────────────────────────────────────────── */}
