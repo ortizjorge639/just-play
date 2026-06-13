@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import CartridgeAvatar from '@/components/cartridge-avatar';
+import { useRouter } from 'next/navigation';
+import { CartridgeAvatar } from '@/components/cartridge-avatar';
 
 /* ─── Mock Data ─────────────────────────────────────────────── */
 const GAME = {
@@ -103,6 +104,7 @@ function ShieldIcon() {
 
 /* ─── Main Component ─────────────────────────────────────────── */
 export default function AddConfirmPage() {
+  const router = useRouter();
   return (
     <>
       {/* Font imports */}
@@ -335,7 +337,7 @@ export default function AddConfirmPage() {
 
         {/* 2 ── Back Row */}
         <div className="jp-back-row">
-          <button className="jp-back-btn" aria-label="Go back">
+          <button className="jp-back-btn" aria-label="Go back" onClick={() => router.back()}>
             ← Back
           </button>
         </div>
