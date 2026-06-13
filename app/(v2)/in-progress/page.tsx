@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import CartridgeAvatar from '@/components/cartridge-avatar';
+import { useRouter } from 'next/navigation';
+import { CartridgeAvatar } from '@/components/cartridge-avatar';
 
 // --- Mock Data ---
 const GAME = {
@@ -176,6 +177,7 @@ export default function InProgressPage() {
             zIndex: 10,
             backdropFilter: 'blur(4px)',
           }}
+          onClick={() => router.back()}
         >
           ← back
         </button>
