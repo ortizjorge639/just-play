@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import CartridgeAvatar from '@/components/cartridge-avatar';
+import { CartridgeAvatar } from '@/components/cartridge-avatar';
 import { useState } from 'react';
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
