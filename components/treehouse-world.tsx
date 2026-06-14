@@ -9,6 +9,9 @@ export interface GameData {
   genre: 'rpg' | 'adventure' | 'platformer' | 'action' | 'sim' | 'horror' | 'rhythm';
   color: string;
   floor: 0 | 1;
+  coverUrl?: string;
+  completedAt?: string;
+  totalMinutes?: number;
 }
 
 export interface TreehouseWorldHandle {
