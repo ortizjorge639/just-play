@@ -178,6 +178,19 @@ export default function CompletedClient({ games }: { games: GameData[] }) {
                   <span style={{ fontSize: 10, fontWeight: 600, color: '#8D6E63', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Rating</span>
                   <span style={{ color: '#FFD700', fontSize: 13, letterSpacing: 1 }}>{RATINGS[game?.genre] || '★★★★☆'}</span>
                 </div>
+                {(game?.totalMinutes && game.totalMinutes > 0) ? (
+                  <>
+                    <div style={{ height: 1, background: 'rgba(141,110,99,0.2)' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: '#8D6E63', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Time Played</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#3D2B1F' }}>
+                        {game.totalMinutes >= 60
+                          ? `${(game.totalMinutes / 60).toFixed(1)} hrs`
+                          : `${game.totalMinutes} min`}
+                      </span>
+                    </div>
+                  </>
+                ) : null}
                 <div style={{ height: 1, background: 'rgba(141,110,99,0.2)' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 10, fontWeight: 600, color: '#8D6E63', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Vibe</span>
@@ -186,7 +199,7 @@ export default function CompletedClient({ games }: { games: GameData[] }) {
               </div>
               {/* completed pill */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#15803D' }}>
-                ✓ Completed
+                ✓ Completed{game?.completedAt ? ` · ${new Date(game.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
               </div>
             </motion.div>
           )}
