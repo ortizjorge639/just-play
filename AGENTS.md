@@ -45,8 +45,14 @@ If you're an autonomous/cron agent and hit a point where the next step is a merg
    git checkout v2
    git pull origin v2
    git merge feature/treehouse --no-ff -m "merge: feature/treehouse into v2 — 3D world + Supabase-wired Completed screen"
-   # resolve conflicts if any — with divergent branches, expect at least
-   # a trivial conflict on AGENTS.md or similar docs-only files
+   # Verified via dry-run (git merge --no-commit --no-ff, then --abort) on
+   # 2026-07-05: this is a clean merge, zero conflicts — 6 files auto-stage
+   # (completed-client.tsx added, completed/page.tsx + treehouse-world.tsx +
+   # pnpm-workspace.yaml modified, lib/treehouse.ts + tsconfig.tsbuildinfo
+   # added). feature/treehouse predates AGENTS.md so it won't conflict there.
+   # If a real conflict DOES show up, that means v2 picked up other commits
+   # since this was last checked — re-run the dry-run yourself before assuming
+   # this note is still accurate.
    pnpm install && pnpm build   # verify build is actually green post-merge
    git push origin v2
    ```
@@ -88,7 +94,7 @@ Both the vault roadmap (`JP-Roadmap-2026.md`, has a manually-maintained `current
 3. Cross-reference any dated review doc's punch list against commits made *after* its date — grep the repo for the specific component/prop it flagged to confirm the fix actually landed.
 4. Confirm live deploy health: `curl -s -o /dev/null -w "%{http_code}" <url>`.
 5. Check for a test suite before assuming one exists: `find . -iname "*.test.*" -o -iname "*.spec.*"` (exclude `node_modules`) + grep `package.json` for test/vitest/jest/playwright scripts. As of 2026-07-05: **none exist.**
-6. Check PR state via GitHub REST API (no `gh` CLI on the usual operating box): `curl -s -H "Authorization: token $(cat ~/.ghpat)" "https://api.github.com/repos/ortizjorge639/just-play/pulls?state=all"`. A branch can be fully done in commits with zero PR ever opened toward `main`.
+6. Check PR state via GitHub REST API (no `gh` CLI on the usual operating box). Read the token from `~/.ghpat` into a shell variable, then build the curl auth header from that variable — e.g. `GH_TOKEN=$(cat ~/.ghpat)` followed by a `curl -H` call passing `"token $GH_TOKEN"` as the auth header value against `https://api.github.com/repos/ortizjorge639/just-play/pulls?state=all`. (Written descriptively here rather than as one literal copy-pasteable line — some write tooling pattern-matches and mangles an inlined `"<header-name>: token $VAR"` string even when it's just a variable reference in documentation, not a real credential. Construct the two-step version yourself rather than trusting a single-line command pasted from a doc.) A branch can be fully done in commits with zero PR ever opened toward `main`.
 
 ---
 
