@@ -59,6 +59,14 @@ If you're an autonomous/cron agent and hit a point where the next step is a merg
    Prefer `--no-ff` so the merge is a visible, revertable commit rather than silently rewriting history — this was an experimental branch, keep the seam visible.
 6. **After merging, `feature/treehouse` is done** — don't leave it lingering as a source of confusion for the next agent. Ask Jorge if it should be deleted (`git push origin --delete feature/treehouse`) or kept around as a reference; don't unilaterally delete it without asking, but do flag it rather than leaving five stale branches for the next status-check pass to puzzle over.
 
+### If something goes wrong mid-merge — stop, don't improvise
+
+The steps above assume the happy path (dry-run clean → real merge → build passes → push). If reality diverges from that:
+
+- **Real merge produces conflicts the dry-run didn't show** (means someone pushed to either branch between your dry-run and the real merge): do not hand-resolve conflicts to force it through. Run `git merge --abort` to get back to a clean `v2`, re-run the dry-run check (step 3 above) to see the *current* diff, and either re-plan the merge with fresh eyes or go back to Jorge if the conflict touches something you don't have context on (e.g. someone else's commit landed on `v2` in the meantime).
+- **`pnpm build` fails after a real (committed) merge, before you've pushed**: do not push a broken build to `origin/v2` — that blocks Jorge and any other agent working off this branch. Fix forward only if the failure is small and obviously caused by the merge itself (e.g. an import path collision) and you can verify the fix with a clean rebuild; otherwise `git reset --hard HEAD~1` to undo the merge commit locally (safe — nothing pushed yet) and report the specific build error back to Jorge instead of pushing something broken.
+- **You already pushed and then discovered a problem**: don't force-push over it silently. Tell Jorge what broke and what you want to do about it (revert commit vs. fix-forward commit) — a shared branch's history is something to negotiate, not unilaterally rewrite.
+
 ---
 
 ## Repo & branch map
