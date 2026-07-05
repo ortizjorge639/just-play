@@ -30,6 +30,29 @@ feature/treehouse  →  v2  →  main
 
 If you're an autonomous/cron agent and hit a point where the next step is a merge into `main`: **stop and surface it as a question instead.** Do not merge and report after the fact.
 
+### `feature/treehouse` was an experiment — treat the merge as a code review, not a rubber stamp
+
+`feature/treehouse` was built to prove out a 3D world concept, not written under the same scrutiny as the rest of `v2`. "The commit message says it's clean" is not the same as "it's clean." Before merging, actually check:
+
+1. **Diff it first, don't blind-merge.** `git diff v2..feature/treehouse --stat` and read the full diff on anything nontrivial. As of 2026-07-05 this touches `app/(v2)/completed/page.tsx` + `completed-client.tsx` (splits server/client, wires real Supabase data in place of the v2 mock array), `components/treehouse-world.tsx` (the 3D scene itself, +1117/-… lines), `lib/treehouse.ts` (new data layer), and two files that are **not real feature changes** and need a second look before they ride along:
+   - `tsconfig.tsbuildinfo` — a compiler build artifact, **not gitignored in this repo** (`.gitignore` has no `tsbuildinfo` entry). This should not be a tracked file at all. Add it to `.gitignore` and `git rm --cached tsconfig.tsbuildinfo` rather than merging it in.
+   - `pnpm-workspace.yaml` — just someone answering pnpm's interactive `allowBuilds` prompt (`esbuild/sharp/unrs-resolver: true` instead of the placeholder `set this to true or false`). Harmless, but confirm it's the whole diff and nothing else snuck in under it.
+2. **No dependency drift as of the last check** (`git diff v2..feature/treehouse -- package.json pnpm-lock.yaml` was empty) — if that's changed since, run `pnpm install` after merging and re-verify the lockfile before building.
+3. **Branches may no longer be a clean fast-forward.** If any commits have landed on `v2` directly since `feature/treehouse` was cut (e.g. this very `AGENTS.md` file did), the two branches have mutually diverged — `git merge-base --is-ancestor v2 feature/treehouse` will fail, and you need a real three-way merge / PR, not a fast-forward. Check this fresh each time, don't assume the table above is still true.
+4. **Actually run the app before calling it done** — `pnpm install && pnpm build && pnpm dev`, then click through the Completed screen with a real logged-in Supabase session (the new `lib/treehouse.ts` data layer requires auth — see pitfalls below) and confirm the treehouse scene renders and the completed-games list matches real `game_progress` rows, not the old mock array.
+5. **Mechanical merge**, once 1–4 are clean and Jorge has said yes:
+   ```bash
+   git checkout v2
+   git pull origin v2
+   git merge feature/treehouse --no-ff -m "merge: feature/treehouse into v2 — 3D world + Supabase-wired Completed screen"
+   # resolve conflicts if any — with divergent branches, expect at least
+   # a trivial conflict on AGENTS.md or similar docs-only files
+   pnpm install && pnpm build   # verify build is actually green post-merge
+   git push origin v2
+   ```
+   Prefer `--no-ff` so the merge is a visible, revertable commit rather than silently rewriting history — this was an experimental branch, keep the seam visible.
+6. **After merging, `feature/treehouse` is done** — don't leave it lingering as a source of confusion for the next agent. Ask Jorge if it should be deleted (`git push origin --delete feature/treehouse`) or kept around as a reference; don't unilaterally delete it without asking, but do flag it rather than leaving five stale branches for the next status-check pass to puzzle over.
+
 ---
 
 ## Repo & branch map
