@@ -77,7 +77,7 @@ Repo: `ortizjorge639/just-play`. GH PAT for API access: `~/.ghpat` (no `gh` CLI 
 |---|---|---|
 | `main` | old baseline | far behind v2 — last commit is the pre-v2 README, never received any v2 work |
 | `v2` | active MVP branch | all 6 screens scaffolded, styled, routed; deployed to just-play-five.vercel.app |
-| `feature/treehouse` | ahead of `v2` by 3 commits | real 3D treehouse world (`components/treehouse-world.tsx`) + Supabase-wired Completed screen (`lib/treehouse.ts`) replacing the v2 mock array; unmerged |
+| `feature/treehouse` | diverged from `v2`, not simply "ahead" | has 3 commits `v2` lacks (real 3D treehouse world in `components/treehouse-world.tsx` + Supabase-wired Completed screen in `lib/treehouse.ts`, replacing the v2 mock array) — but `v2` has since picked up its own commits too (this file's history is the proof), so the two branches now have exclusive commits on *both* sides. Don't read "3 commits" as "simple fast-forward"; see the merge-gate section above and re-run the divergence check yourself before merging. |
 | `v0/officialguy639-*` | legacy v0.dev auto-generated | dead, ignore |
 
 ## Deploy targets
