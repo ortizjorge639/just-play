@@ -9,6 +9,3 @@ node_modules/
 .env*.local
 .DS_Store
 .vercel
-
-# TypeScript incremental build artifact
-*.tsbuildinfo
