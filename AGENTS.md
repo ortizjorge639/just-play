@@ -30,9 +30,16 @@ feature/treehouse  →  v2  →  main
 
 If you're an autonomous/cron agent and hit a point where the next step is a merge into `main`: **stop and surface it as a question instead.** Do not merge and report after the fact.
 
-### ✅ 2026-07-06: hop (1) is DONE — merge + verification log
+### ✅ 2026-07-06: BOTH hops are DONE — v2 is shipped to main
 
-Hop (1) `feature/treehouse` → `v2` was completed on 2026-07-06 with Jorge's explicit in-session approval. Hop (2) `v2` → `main` remains fully gated — `main` still has none of the v2 work.
+**Hop (2) `v2` → `main`** was executed later the same day, also with Jorge's explicit in-session approval ("yes, proceed… tread carefully and merge with expectation of transforming v1 to v2"). Record:
+
+- Pre-merge verification, done fresh: `main` was unmoved at `cd5075a` and a **strict ancestor** of `v2` (51 commits behind, zero commits of its own), so the merge was a conflict-free replacement of the v1 app with v2 — the intended transformation, not a risk to "sustain." `pnpm build` green on the exact `v2` tip (`d5ed60d`); production-mode smoke (`pnpm start` + real-session browser click-through) verified login, IGDB search, real `game_progress` data, and the treehouse scene across 3 fresh loads, zero scene errors.
+- Known localhost-only console error: `@vercel/analytics` requests `/_vercel/insights/script.js`, which 404s outside Vercel hosting and logs `Unexpected token '<'`. Expected — not a bug.
+- Merged `--no-ff` so the v1→v2 transformation is one visible, revertable seam (the merge commit at `main`'s tip).
+- **Post-ship follow-ups:** (a) if the Vercel project's production branch is `main`, this push deploys v2 to production — confirm `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and the IGDB credentials are set in that Vercel environment; (b) `.github/copilot-instructions.md` now describes an app that no longer exists on any live branch — rewrite or delete it; (c) the standing rule at the top of this section still applies to every **future** merge into `main`: this approval covered this merge only.
+
+**Hop (1) `feature/treehouse` → `v2`** was completed earlier the same day with Jorge's explicit in-session approval:
 
 What happened, for the record:
 
@@ -89,8 +96,8 @@ Repo: `ortizjorge639/just-play`. GH PAT for API access: `~/.ghpat` (no `gh` CLI 
 
 | Branch | Role | State (verify — don't trust this table blindly, see workflow below) |
 |---|---|---|
-| `main` | old baseline | far behind v2 — last commit is the pre-v2 README, never received any v2 work |
-| `v2` | active MVP branch | all 6 screens scaffolded, styled, routed; now includes the treehouse 3D world + Supabase-wired Completed screen (merged `ccc6df1`, 2026-07-06, runtime-verified); deployed to just-play-five.vercel.app |
+| `main` | shipped v2 | received the full v2 line on 2026-07-06 via a `--no-ff` merge (explicitly approved) — the v1 app it previously held exists only in history now |
+| `v2` | active MVP branch | all 6 screens scaffolded, styled, routed; includes the treehouse 3D world + Supabase-wired Completed screen (merged `ccc6df1`, 2026-07-06, runtime-verified); deployed to just-play-five.vercel.app |
 | `feature/treehouse` | merged, pending deletion | fully merged into `v2` as `ccc6df1` on 2026-07-06 (tip `1be183a` is an ancestor of `v2`); approved for deletion but the operating session couldn't delete refs — safe to remove with `git push origin --delete feature/treehouse`, do not build on it |
 | `v0/officialguy639-*` | legacy v0.dev auto-generated | dead, ignore |
 
