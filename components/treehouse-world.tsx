@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import Script from 'next/script';
 
 export interface GameData {
   id: number;
@@ -812,23 +811,53 @@ function buildScene(
 }
 
 // ── component ─────────────────────────────────────────────────────────────────
+// Order matters: three.min.js must execute before every addon below.
+const THREE_SCRIPTS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js',
+];
+
 const TreehouseWorld = forwardRef<TreehouseWorldHandle, Props>(
   function TreehouseWorld({ games, onAvatarSelect }, ref) {
     const canvasRef  = useRef<HTMLCanvasElement>(null);
     const sceneRef   = useRef<ReturnType<typeof buildScene> | null>(null);
     const threeReady = useRef(false);
 
-    function tryInit() {
-      if (threeReady.current || !canvasRef.current) return;
+    function threeLoaded() {
       const THREE = (window as any).THREE;
-      if (!THREE?.OrbitControls || !THREE?.EffectComposer) return;
+      // buildScene needs every addon, not just the first two — checking a
+      // subset lets init fire in the gap before the later scripts execute.
+      return !!(THREE?.OrbitControls && THREE?.EffectComposer && THREE?.RenderPass &&
+        THREE?.ShaderPass && THREE?.UnrealBloomPass && THREE?.CopyShader &&
+        THREE?.LuminosityHighPassShader);
+    }
+
+    function tryInit() {
+      if (threeReady.current || !canvasRef.current || !threeLoaded()) return;
       threeReady.current = true;
       sceneRef.current = buildScene(canvasRef.current, games, onAvatarSelect);
     }
 
     useEffect(() => {
+      // Inject in dependency order with async=false: script-inserted scripts
+      // with async=false are spec-guaranteed to execute in insertion order,
+      // unlike parallel <Script>/async tags where each addon throws
+      // "THREE is not defined" if it beats the core file.
+      for (const src of THREE_SCRIPTS) {
+        if (document.querySelector(`script[src="${src}"]`)) continue;
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = false;
+        document.head.appendChild(s);
+      }
       const interval = setInterval(() => {
-        if ((window as any).THREE?.OrbitControls && (window as any).THREE?.EffectComposer) {
+        if (threeLoaded()) {
           clearInterval(interval); tryInit();
         }
       }, 100);
@@ -841,17 +870,7 @@ const TreehouseWorld = forwardRef<TreehouseWorldHandle, Props>(
     }));
 
     return (
-      <>
-        <Script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js" strategy="afterInteractive" onLoad={tryInit} />
-        <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
-      </>
+      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }} />
     );
   }
 );
