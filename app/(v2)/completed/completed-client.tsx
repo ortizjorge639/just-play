@@ -96,6 +96,7 @@ export default function CompletedClient({ games }: { games: GameData[] }) {
   }, []);
 
   const handleStep = useCallback((dir: -1 | 1) => {
+    if (games.length === 0) return; // nothing to step through -- avoid %0 (NaN)
     const next = ((focusIdx + dir) % games.length + games.length) % games.length;
     setFocusIdx(next);
     worldRef.current?.focusStep(dir);
@@ -125,6 +126,27 @@ export default function CompletedClient({ games }: { games: GameData[] }) {
       {/* ── 3D world canvas ── */}
       <div style={{ position: 'relative', width: '100%', flex: '1 0 380px', minHeight: 380, overflow: 'hidden' }}>
         <TreehouseWorld ref={worldRef} games={games} onAvatarSelect={handleAvatarSelect} />
+
+        {/* ── empty state — no completed games yet, or the data layer hit an
+             error upstream (lib/treehouse.ts swallows fetch/auth/query errors
+             into an empty array by design). Previously this silently rendered
+             an interaction-dead scene with no explanation; NaN comes from
+             dividing by a 0-length games array in handleStep/buildScene. ── */}
+        {games.length === 0 && (
+          <div style={{
+            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32,
+            textAlign: 'center', color: '#FFF8E7', pointerEvents: 'none',
+          }}>
+            <span style={{ fontSize: 40 }}>🌱</span>
+            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17 }}>
+              Your treehouse is waiting
+            </span>
+            <span style={{ fontSize: 13, color: 'rgba(255,248,231,0.65)', maxWidth: 240, lineHeight: 1.5 }}>
+              Finish a game and it'll show up here as a cartridge buddy in the world.
+            </span>
+          </div>
+        )}
 
         {/* dim overlay */}
         <div style={{
@@ -376,7 +398,7 @@ export default function CompletedClient({ games }: { games: GameData[] }) {
       </AnimatePresence>
 
       {/* ── recently completed strip ── */}
-      {!focusMode && (
+      {!focusMode && games.length > 0 && (
         <div style={{ background: 'rgba(255,248,231,0.96)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(141,110,99,0.22)', padding: '8px 0 10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 7px' }}>
             <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 12, color: '#3D2B1F' }}>Recently Completed</span>

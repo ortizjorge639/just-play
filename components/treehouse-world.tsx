@@ -58,6 +58,14 @@ function buildScene(
 ): { dispose(): void; exitFocus(): void; focusStep(dir: -1 | 1): void } {
   const THREE = (window as any).THREE;
   if (!THREE) return { dispose() {}, exitFocus() {}, focusStep() {} };
+  // No completed games yet (new user) or the data layer swallowed an error
+  // upstream (see lib/treehouse.ts) -- every focus/step helper below divides
+  // or takes modulo by cartridges.length, which is 0-length here and would
+  // throw/NaN on first avatar interaction. Render an empty room, skip avatar
+  // wiring entirely, and let the caller's empty-state UI own messaging.
+  if (!games || games.length === 0) {
+    return { dispose() {}, exitFocus() {}, focusStep() {} };
+  }
 
   const domElements: HTMLElement[] = [];
 

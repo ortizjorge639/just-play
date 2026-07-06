@@ -42,7 +42,17 @@ export async function getCompletedGamesForTreehouse(): Promise<GameData[]> {
       .eq('status', 'beaten')
       .order('completed_at', { ascending: false });
 
-    if (error || !data) return [];
+    if (error) {
+      // Distinguish "real Supabase/query error" from "user genuinely has zero
+      // completed games" -- both used to fall through to the same silent []
+      // return, which is indistinguishable from the empty-state UI's
+      // perspective but very different operationally. Logging server-side
+      // means a misconfigured/unreachable backend shows up in deploy logs
+      // instead of just looking like an empty treehouse to every user.
+      console.error('[treehouse] game_progress query failed:', error.message ?? error);
+      return [];
+    }
+    if (!data) return [];
 
     return data.map((gp: any, i: number) => {
       const game = gp.games;
@@ -59,7 +69,10 @@ export async function getCompletedGamesForTreehouse(): Promise<GameData[]> {
         totalMinutes: gp.total_time_minutes ?? 0,
       } satisfies GameData;
     }).filter(Boolean) as GameData[];
-  } catch {
+  } catch (err) {
+    // Network failure, auth service down, etc. -- same reasoning as above:
+    // log it so it's visible in server logs rather than vanishing silently.
+    console.error('[treehouse] unexpected error fetching completed games:', err);
     return [];
   }
 }
