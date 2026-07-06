@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { BottomNav } from '@/components/bottom-nav'
 
 export const metadata: Metadata = {
-  title: "Just Play",
+  title: `Just Play v${process.env.NEXT_PUBLIC_APP_VERSION ?? "2.0"}`,
   description: "Every game you finish lives in your world forever.",
 }
 
