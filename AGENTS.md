@@ -30,6 +30,20 @@ feature/treehouse  →  v2  →  main
 
 If you're an autonomous/cron agent and hit a point where the next step is a merge into `main`: **stop and surface it as a question instead.** Do not merge and report after the fact.
 
+### ✅ 2026-07-06: hop (1) is DONE — merge + verification log
+
+Hop (1) `feature/treehouse` → `v2` was completed on 2026-07-06 with Jorge's explicit in-session approval. Hop (2) `v2` → `main` remains fully gated — `main` still has none of the v2 work.
+
+What happened, for the record:
+
+- Merged as `ccc6df1` (`--no-ff`). Per step 1 below, `tsconfig.tsbuildinfo` was **excluded** from the merge (`git rm --cached` inside the merge commit) and `*.tsbuildinfo` added to `.gitignore`, so it never landed on `v2` as a tracked file.
+- Runtime-verified on the merged branch with a real Supabase session (the `test@justplay.dev` test account, via the login page's "Quick Play (Test Mode)" button): login ✓; IGDB search through the app's own `/api/search-games` ✓ (200, real results); Completed screen reads real `game_progress` rows ✓ — two `beaten` rows were inserted for the test user (Celeste `igdb-11208`, Hades `igdb-113112`, left in place as demo data) and both showed up in the count badge, list view, and Recently Completed strip with real cover art; 3D treehouse scene renders with per-game buddies and `BUDDY_VOICE` dialogue ✓.
+- **Found and fixed during verification** (`a79c129` on `v2`): the three.js CDN scripts were async `<Script>` tags with no execution-order guarantee — when any addon beat `three.min.js`, it threw `THREE is not defined` and the scene stayed permanently black. Also, the readiness poll only checked 2 of 7 addons, so init could fire before `ShaderPass`/`UnrealBloomPass` existed. Scripts are now injected sequentially (`async=false`) and the readiness check covers everything `buildScene` uses. Verified across 3 fresh mounts, zero errors.
+- Known open items found during verification (real findings, not yet fixed): the status ticker in `app/(v2)/completed/completed-client.tsx` (~line 276) is **hardcoded POC text** — it shows "Hades is chilling / Celeste found a cozy spot" even for an account with zero completed games; the add-game confirm page's "✅ Add to Backlog" / "▶ Just Play" buttons have **no onClick handlers** — the add flow is UI-only, though the server actions (`addSearchedGame`, `markGameBeaten`) exist and work; Next.js warns the `middleware` file convention is deprecated in favor of `proxy`.
+- `feature/treehouse` was deleted from origin after the merge (per step 6 below, with approval). Its tip was `1be183a`, which is an ancestor of `v2` — nothing was lost.
+
+The subsections below are kept as the playbook that was followed (and for the next experimental branch); their dated claims are historical now.
+
 ### `feature/treehouse` was an experiment — treat the merge as a code review, not a rubber stamp
 
 `feature/treehouse` was built to prove out a 3D world concept, not written under the same scrutiny as the rest of `v2`. "The commit message says it's clean" is not the same as "it's clean." Before merging, actually check:
@@ -76,8 +90,8 @@ Repo: `ortizjorge639/just-play`. GH PAT for API access: `~/.ghpat` (no `gh` CLI 
 | Branch | Role | State (verify — don't trust this table blindly, see workflow below) |
 |---|---|---|
 | `main` | old baseline | far behind v2 — last commit is the pre-v2 README, never received any v2 work |
-| `v2` | active MVP branch | all 6 screens scaffolded, styled, routed; deployed to just-play-five.vercel.app |
-| `feature/treehouse` | diverged from `v2`, not simply "ahead" | has 3 commits `v2` lacks (real 3D treehouse world in `components/treehouse-world.tsx` + Supabase-wired Completed screen in `lib/treehouse.ts`, replacing the v2 mock array) — but `v2` has since picked up its own commits too (this file's history is the proof), so the two branches now have exclusive commits on *both* sides. Don't read "3 commits" as "simple fast-forward"; see the merge-gate section above and re-run the divergence check yourself before merging. |
+| `v2` | active MVP branch | all 6 screens scaffolded, styled, routed; now includes the treehouse 3D world + Supabase-wired Completed screen (merged `ccc6df1`, 2026-07-06, runtime-verified); deployed to just-play-five.vercel.app |
+| `feature/treehouse` | merged & deleted | merged into `v2` as `ccc6df1` on 2026-07-06 and deleted from origin; its tip `1be183a` is an ancestor of `v2`, so the full history is preserved |
 | `v0/officialguy639-*` | legacy v0.dev auto-generated | dead, ignore |
 
 ## Deploy targets
@@ -108,7 +122,7 @@ Both the vault roadmap (`JP-Roadmap-2026.md`, has a manually-maintained `current
 
 ## Treehouse 3D — retrospective + improvement plan (as of 2026-07-05)
 
-The `feature/treehouse` scene (`components/treehouse-world.tsx`, ported from a standalone POC previously at `~/jp-treehouse/poc/index.html`) is **hand-rolled vanilla Three.js r128**, loaded via CDN `<script>` tags with a `setInterval` poll waiting for `window.THREE` before initializing. No React Three Fiber, no npm `three` package, no GLTF/rigged models — every character and every room object (walls, roof trusses, ladder rungs, bookshelf, fireplace) is procedural `BoxGeometry`/`CylinderGeometry` calls with hardcoded `.position.set(x,y,z)`. Confirmed live via a local tunnel + browser inspection, not just reading source.
+The treehouse scene (`components/treehouse-world.tsx`, now on `v2`; ported from a standalone POC previously at `~/jp-treehouse/poc/index.html`) is **hand-rolled vanilla Three.js r128**, loaded from CDN with a `setInterval` poll waiting for `window.THREE` before initializing (since `a79c129` the scripts inject sequentially with `async=false` — the original async tags had a load-order race that black-screened the scene). No React Three Fiber, no npm `three` package, no GLTF/rigged models — every character and every room object (walls, roof trusses, ladder rungs, bookshelf, fireplace) is procedural `BoxGeometry`/`CylinderGeometry` calls with hardcoded `.position.set(x,y,z)`. Confirmed live via a local tunnel + browser inspection, not just reading source.
 
 **Why it looks "wonky" — root causes, not just symptoms:**
 
