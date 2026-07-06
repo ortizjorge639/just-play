@@ -6,10 +6,8 @@ import "./globals.css"
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
-const APP_TITLE = `Just Play v${process.env.NEXT_PUBLIC_APP_VERSION ?? "2.0"}`
-
 export const metadata: Metadata = {
-  title: APP_TITLE,
+  title: "Just Play",
   description:
     "Stop scrolling your library. Start playing. Just Play picks 1-3 games for you based on your mood, energy, and time.",
   manifest: "/manifest.json",

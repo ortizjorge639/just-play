@@ -1,15 +1,8 @@
 # Just Play — Copilot Instructions
 
-> Rewritten 2026-07-06 for the v2 architecture, which now lives on both `main` and `v2`.
-> **Read `AGENTS.md` at the repo root first** — it is the source of truth for branch
-> state, the merge gate (no merges into `main` without Jorge's explicit approval),
-> and the status-check workflow. This file only summarizes the codebase.
-
 ## What this app does
 
-"Just Play" is Jorge's game backlog / completion tracker. Users add games (IGDB
-search), track what they're playing, mark games beaten, and every finished game
-becomes a buddy living in a 3D treehouse world on the Completed screen.
+"Just Play" helps gamers stop scrolling their library and start playing. It recommends 1–3 games based on mood, energy, and available time using a swipeable card deck UI. Users lock in a game, track play sessions with a state machine, and build a session history.
 
 ## Commands
 
@@ -19,55 +12,77 @@ pnpm build        # Production build (TS errors are ignored via next.config.mjs)
 pnpm lint         # ESLint (flat config, core-web-vitals + React 19 rules)
 ```
 
-There is no test suite (as of 2026-07-06). Verify changes by running the app.
-
 ## Tech stack
 
-- **Next.js 16** (App Router, React 19) · **TypeScript** · **pnpm**
-- **Supabase** — auth (email/password + a pre-confirmed test account behind the
-  login page's "Quick Play (Test Mode)" button) and Postgres (`games`,
-  `game_progress`, `sessions`, `users` tables, RLS-enforced)
-- **Tailwind CSS v4** + **shadcn/ui** (`components/ui/`) + **Framer Motion**
-- **IGDB** via `lib/igdb.ts` (Twitch OAuth) behind `app/api/search-games`
-- **Three.js r128** (vanilla, CDN-loaded) for the treehouse scene — no React
-  Three Fiber, no npm `three` package. See the retrospective in `AGENTS.md`.
+- **Next.js 16** (App Router, React 19, Turbopack)
+- **Supabase** for auth (email/password + anonymous) and Postgres database
+- **Tailwind CSS v4** with `@tailwindcss/postcss` (no `tailwind.config` file — config is in `globals.css`)
+- **shadcn/ui** (new-york style, RSC-enabled) — components in `components/ui/`
+- **Framer Motion** for animations (card swiping, page transitions)
+- **ESLint 9** with `eslint-config-next/core-web-vitals` flat config — enforces React 19 rules (no setState in effects, no refs during render, no impure functions in render)
+- **pnpm** as package manager
 
-## Architecture — 6-screen routed app
+## Architecture
 
-Unlike v1 (single-page card-deck SPA — that architecture is gone), v2 is routed:
+### Data flow
 
-- `app/(v2)/page.tsx` — home: current game, session start, XP/streaks
-- `app/(v2)/add/` + `add/confirm/` — IGDB search and add flow
-- `app/(v2)/backlog/`, `app/(v2)/in-progress/`, `app/(v2)/avatars/`
-- `app/(v2)/completed/` — server component (`page.tsx`) fetches real
-  `game_progress` rows via `lib/treehouse.ts`, renders `completed-client.tsx`
-  + the 3D scene in `components/treehouse-world.tsx`
-- `app/(v2)/layout.tsx` wires `BottomNav`; `middleware.ts` redirects all routes
-  except `/auth/*` and `/welcome` to login without a valid Supabase session
+The root page (`app/page.tsx`) is a **Server Component** that authenticates, fetches all initial data via `Promise.all`, and passes it as props to `AppShell` — the single client component that manages all UI state. There are no nested routes; the entire app is a single-page SPA within the App Router shell.
 
-Server state lives in Server Actions (`app/actions.ts` — `addSearchedGame`,
-`markGameBeaten`, session/XP logic) and `app/auth/actions.ts` (login/signup/
-Quick Play). Supabase client factories: `lib/supabase/server.ts` (RSC/actions),
-`client.ts` (browser), `proxy.ts` (middleware) — always create per request.
+### Supabase client pattern
 
-## Versioning
+Three Supabase client factories in `lib/supabase/` — always create a fresh client per request (required for Next.js Fluid compute):
 
-The tab title is `Just Play v<major.minor>.<buildPatch>`. `major.minor` comes
-from `package.json`; the patch is the UTC build timestamp (`yymmddHHMM`)
-computed in `next.config.mjs` at build time, so every deploy shows a new patch
-number. Check the deployed title to confirm a deploy landed.
+- `server.ts` → Server Components and Server Actions (uses `cookies()`)
+- `client.ts` → Client Components (browser-side)
+- `proxy.ts` → Middleware session refresh (used in `middleware.ts`)
 
-## Known sharp edges (verified 2026-07-06, see AGENTS.md for detail)
+### Server Actions
 
-- `app/api/search-games` 401s without a Supabase session — expected, not a bug.
-- The add-flow confirm page's "Add to Backlog" / "Just Play" buttons have **no
-  onClick handlers yet** — the UI is unwired; the server actions exist and work.
-- The Completed screen's status ticker (`completed-client.tsx` ~line 276) is
-  hardcoded POC text, not real data.
-- The three.js CDN scripts must load in order — they're injected sequentially
-  (`async=false`) in `treehouse-world.tsx`. Don't convert them back to async
-  `<Script>` tags; that reintroduces a black-screen race.
-- `middleware.ts` uses the deprecated `middleware` convention (Next wants
-  `proxy`) — warning only, works today.
-- No `.env` committed: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-  and IGDB creds come from the deploy environment or `.env.local`.
+All data mutations go through Server Actions, not API routes:
+
+- `app/actions.ts` — Core game logic: recommendations, sessions, game progress
+- `app/auth/actions.ts` — Auth flows: login, signup, signout, admin bypass
+
+Every action calls `revalidatePath("/")` after mutations. Every action creates its own Supabase client and verifies `auth.getUser()` before proceeding.
+
+### Session state machine
+
+```
+LockedIn → Playing → Paused → Finished
+                  ↘           ↗
+                    Finished
+```
+
+Pause/resume tracks elapsed time via `paused_elapsed_seconds`. The `active` boolean column plus a unique partial index enforces one active session per user at the database level.
+
+### Game progress lifecycle
+
+Games have a separate progress tracker (independent from sessions): `playing` → `beaten` or `abandoned`. A game can be resumed after abandonment.
+
+## Key conventions
+
+### Styling
+
+- **Dark-only theme** — Discord-inspired palette defined as CSS custom properties in `globals.css`. No light mode.
+- Use the `cn()` helper from `lib/utils.ts` to merge Tailwind classes.
+- Custom `.glass-card` utility class for frosted glass effects.
+- The `@/*` path alias maps to the project root.
+
+### Components
+
+- Feature components live in `components/` (e.g., `app-shell.tsx`, `card-deck.tsx`, `game-card.tsx`).
+- shadcn/ui primitives live in `components/ui/` — add new ones via `npx shadcn@latest add <component>`.
+- Client components use `"use client"` directive. Keep Server Components as the default.
+
+### Database
+
+- SQL migrations are in `scripts/`, numbered sequentially (`001_create_tables.sql`, `002_rls_policies.sql`, etc.).
+- All tables have RLS enabled. Users can only access their own rows; games are read-only for authenticated users.
+- The `users` table extends `auth.users` via foreign key on `id`.
+- Types for all database entities are in `lib/types.ts`.
+
+### Auth
+
+- Middleware redirects unauthenticated users to `/auth/login` (except `/auth/*` routes).
+- Email confirmation redirects go through `/auth/callback` (PKCE code exchange).
+- Environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`.
