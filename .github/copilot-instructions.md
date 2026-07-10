@@ -86,3 +86,24 @@ Games have a separate progress tracker (independent from sessions): `playing` �
 - Middleware redirects unauthenticated users to `/auth/login` (except `/auth/*` routes).
 - Email confirmation redirects go through `/auth/callback` (PKCE code exchange).
 - Environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`.
+
+
+---
+
+## 2026-07-10 upgrade additions (branch upgrade/v1-to-v2-merge)
+
+Everything above still describes the core app correctly — the v1 single-page
+flow (AppShell, card deck, 3-tab bottom nav) is canonical. Layered on top:
+
+- **`/treehouse` route** — 3D world where every beaten game is a buddy
+  (`app/treehouse/`, `components/treehouse-world.tsx`, `lib/treehouse.ts`).
+  Entry point: the "Your Treehouse" card on the Progress tab. Three.js r128
+  is CDN-loaded and injected sequentially (`async=false`) — do not convert
+  those to async `<Script>` tags (black-screen race). Handles the empty
+  games array explicitly (no NaN crash) and logs data-layer errors.
+- **Versioned tab title** — `Just Play v<major.minor>.<buildPatch>`;
+  major.minor from `package.json`, patch = UTC build time `yymmddHHMM`
+  stamped in `next.config.mjs`. Every deploy shows a new patch number.
+- **Lost-password flow** — `/auth/forgot-password` + `/auth/update-password`
+  (see AGENTS.md for the Supabase Redirect URL allowlist requirement).
+- See `AGENTS.md` for the merge gate and the upgrade-not-replacement policy.
