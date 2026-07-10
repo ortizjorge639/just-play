@@ -30,7 +30,15 @@ feature/treehouse  →  v2  →  main
 
 If you're an autonomous/cron agent and hit a point where the next step is a merge into `main`: **stop and surface it as a question instead.** Do not merge and report after the fact.
 
-### ✅ 2026-07-06: BOTH hops are DONE — v2 is shipped to main
+### ⚠️ 2026-07-10 UPDATE: hop (2) was REVERTED — read before touching main
+
+The v2 → main ship described below was **reverted by the Hermes agent** at 2026-07-06 17:31 UTC (commits `8731d62`, `88a868b`), stating the ship happened "without the scoped confirmation Jorge intended to give" — despite Jorge's explicit approval in the Claude session that performed it. The two agents evidently had conflicting instructions; **do not re-merge v2 into main until Jorge and Hermes have reconciled and Jorge gives a fresh, explicit yes.** Do not revert the reverts either — no push wars on shared branches.
+
+Current state of `main`: the v1 app (pre-v2 baseline) **plus one scoped cherry-pick** — the lost-password flow (`b0ecead`, cherry-picked from v2's `6df27b3` at Jorge's explicit request on 2026-07-10 so he could recover his login on the live site). just-play-five.vercel.app's production branch is `main` (confirmed empirically: pushes to main deploy within ~2 minutes — the "not auto-deploying" note in (a) below was wrong, it was measuring a stale pre-push build).
+
+Known follow-up for the reset flow to work end-to-end: Supabase's Redirect URL allowlist doesn't include the app's `/auth/callback` — reset emails get their `redirect_to` stripped to the bare Site URL (verified by inspecting a real reset email on 2026-07-10). Fix in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs: add `https://just-play-five.vercel.app/**`. Signup confirmation emails have the same latent issue. Also: password reset is PKCE — the email link only completes in the same browser that requested it.
+
+### 🚫 SUPERSEDED by the 2026-07-10 update above — 2026-07-06: BOTH hops are DONE — v2 is shipped to main
 
 **Hop (2) `v2` → `main`** was executed later the same day, also with Jorge's explicit in-session approval ("yes, proceed… tread carefully and merge with expectation of transforming v1 to v2"). Record:
 
