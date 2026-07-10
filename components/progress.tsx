@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
+import Link from "next/link"
 import type { Session, Game, PlayerStats } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
 import { XPParticles } from "./xp-particles"
@@ -246,6 +247,28 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
           </div>
         </motion.div>
       )}
+
+      {/* Treehouse — every beaten game lives here */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12 }}
+        className="pb-6"
+      >
+        <Link
+          href="/treehouse"
+          className="flex items-center justify-between rounded-2xl border-2 border-emerald-500/25 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 px-5 py-4"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🌳</span>
+            <div className="flex flex-col">
+              <span className="text-base font-bold text-foreground">Your Treehouse</span>
+              <span className="text-xs text-muted-foreground">Every game you beat lives here</span>
+            </div>
+          </div>
+          <span className="text-xl text-emerald-400">→</span>
+        </Link>
+      </motion.div>
 
       {/* Stats row — centered tiles */}
       <div className="grid grid-cols-3 gap-3 pb-6">
