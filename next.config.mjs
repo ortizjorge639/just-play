@@ -14,7 +14,7 @@ const nextConfig = {
     NEXT_PUBLIC_APP_VERSION: `${majorMinor}.${buildPatch}`,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     unoptimized: true,

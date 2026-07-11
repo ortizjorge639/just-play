@@ -25,6 +25,7 @@ export interface Session {
   notes: string | null
   session_goal: string | null
   xp_awarded: number
+  paused_elapsed_seconds: number | null
   created_at: string
   games?: Game
 }
