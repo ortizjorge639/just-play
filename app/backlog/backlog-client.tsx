@@ -13,19 +13,10 @@ export interface BacklogEntry {
   status: 'playing' | 'beaten' | 'abandoned';
 }
 
-// v2 mock palette (light lavender library look, kept per design review)
-const C = {
-  primary: '#6B4FBB',
-  bg: '#FAF8FF',
-  text: '#1A1A2E',
-  textSecondary: '#6B7280',
-  chipInactiveBg: '#EDE9FF',
-};
-
 const STATUS_BADGE: Record<BacklogEntry['status'], { label: string; bg: string }> = {
   playing: { label: '▶ Playing', bg: '#3BA55D' },
-  beaten: { label: '✓ Beaten', bg: '#6B4FBB' },
-  abandoned: { label: 'Shelved', bg: '#9CA3AF' },
+  beaten: { label: '✓ Beaten', bg: '#5865F2' },
+  abandoned: { label: 'Shelved', bg: 'rgba(139,141,148,0.85)' },
 };
 
 function primaryGenre(genres: string[]): string {
@@ -47,66 +38,28 @@ function GameCard({ entry }: { entry: BacklogEntry }) {
     <motion.div
       variants={cardVariants}
       whileTap={{ scale: 0.96 }}
-      style={{
-        height: 150,
-        borderRadius: 14,
-        backgroundColor: 'white',
-        boxShadow: '0 1px 6px rgba(0,0,0,0.10)',
-        overflow: 'hidden',
-        position: 'relative',
-        flexShrink: 0,
-      }}
+      className="glass-card relative shrink-0 overflow-hidden rounded-2xl"
+      style={{ height: 150 }}
     >
-      <div
-        style={{
-          height: 96,
-          background: genreGradient(entry.genres),
-          position: 'relative',
-        }}
-      >
+      <div className="relative" style={{ height: 96, background: genreGradient(entry.genres) }}>
         {entry.coverUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={entry.coverUrl}
             alt={entry.title}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            className="h-full w-full object-cover"
           />
         )}
         <span
-          style={{
-            position: 'absolute',
-            top: 6,
-            right: 6,
-            background: badge.bg,
-            color: 'white',
-            fontFamily: 'Nunito, sans-serif',
-            fontWeight: 700,
-            fontSize: 9,
-            borderRadius: 5,
-            padding: '2px 6px',
-            lineHeight: 1.3,
-          }}
+          className="absolute right-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-bold text-white"
+          style={{ background: badge.bg }}
         >
           {badge.label}
         </span>
       </div>
-      <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontWeight: 700,
-            fontSize: 13,
-            color: C.text,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {entry.title}
-        </span>
-        <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: C.textSecondary, textTransform: 'capitalize' }}>
-          {primaryGenre(entry.genres)}
-        </span>
+      <div className="flex flex-col gap-0.5 px-2.5 py-2">
+        <span className="truncate text-[13px] font-bold text-foreground">{entry.title}</span>
+        <span className="text-[11px] capitalize text-muted-foreground">{primaryGenre(entry.genres)}</span>
       </div>
     </motion.div>
   );
@@ -120,63 +73,34 @@ export default function BacklogClient({ entries }: { entries: BacklogEntry[] }) 
     activeFilter === 'All' ? entries : entries.filter((e) => primaryGenre(e.genres) === activeFilter);
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: C.bg,
-        fontFamily: 'Nunito, sans-serif',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap');
-      `}</style>
-
+    <main className="flex min-h-dvh flex-col bg-background">
       {/* Header */}
-      <div
-        style={{
-          padding: '18px 20px 12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link href="/" aria-label="Back to home" style={{ color: C.text, fontSize: 22, lineHeight: 1, textDecoration: 'none' }}>
+      <div className="flex items-center justify-between px-5 pb-3 pt-5">
+        <div className="flex items-center gap-3">
+          <Link href="/" aria-label="Back to home" className="text-2xl leading-none text-foreground no-underline">
             ←
           </Link>
-          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 22, color: C.text }}>
-            🎮 Library
-          </span>
+          <h1 className="text-2xl font-bold text-foreground">🎮 Library</h1>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: C.textSecondary }}>
+        <span className="text-sm font-semibold text-muted-foreground">
           {entries.length} {entries.length === 1 ? 'game' : 'games'}
         </span>
       </div>
 
       {/* Filter chips */}
       {entries.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, padding: '4px 20px 14px', overflowX: 'auto' }}>
+        <div className="flex gap-2 overflow-x-auto px-5 pb-4 pt-1">
           {genreChips.map((f) => {
             const isActive = f === activeFilter;
             return (
               <button
                 key={f}
                 onClick={() => setActiveFilter(f)}
-                style={{
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: 18,
-                  padding: '7px 16px',
-                  fontFamily: 'Nunito, sans-serif',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  whiteSpace: 'nowrap',
-                  textTransform: 'capitalize',
-                  color: isActive ? 'white' : C.primary,
-                  backgroundColor: isActive ? C.primary : C.chipInactiveBg,
-                }}
+                className={`whitespace-nowrap rounded-full px-4 py-1.5 text-[13px] font-bold capitalize transition-colors ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-border bg-secondary text-muted-foreground hover:text-foreground'
+                }`}
               >
                 {f}
               </button>
@@ -191,39 +115,21 @@ export default function BacklogClient({ entries }: { entries: BacklogEntry[] }) 
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 14,
-            padding: '0 20px 32px',
-          }}
+          className="grid grid-cols-2 gap-3.5 px-5 pb-8"
         >
           {filtered.map((e) => (
             <GameCard key={e.id} entry={e} />
           ))}
         </motion.div>
       ) : (
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            padding: 40,
-            textAlign: 'center',
-          }}
-        >
-          <span style={{ fontSize: 40 }}>🕹️</span>
-          <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17, color: C.text }}>
-            No games here yet
-          </span>
-          <span style={{ fontSize: 13, color: C.textSecondary, maxWidth: 240, lineHeight: 1.5 }}>
+        <div className="flex flex-1 flex-col items-center justify-center gap-2.5 p-10 text-center">
+          <span className="text-4xl">🕹️</span>
+          <span className="text-lg font-bold text-foreground">No games here yet</span>
+          <span className="max-w-[240px] text-sm leading-relaxed text-muted-foreground">
             Open a booster pack on the Deck tab and lock in a game — it&apos;ll show up in your library.
           </span>
         </div>
       )}
-    </div>
+    </main>
   );
 }

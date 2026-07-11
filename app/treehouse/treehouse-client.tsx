@@ -48,30 +48,15 @@ const GENRE_COVER_GRADIENT: Record<string, string> = {
 };
 
 // ── sub-components ────────────────────────────────────────────────────────────
-function StatusBar() {
-  const now = new Date();
-  const h = now.getHours() % 12 || 12;
-  const m = now.getMinutes().toString().padStart(2, '0');
-  return (
-    <div style={{ height: 44, backgroundColor: '#3D2B1F', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingInline: 20 }}>
-      <span style={{ color: '#FFF8E7', fontSize: 15, fontFamily: 'Nunito', fontWeight: 700 }}>{h}:{m}</span>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', opacity: 0.75 }}>
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="4" width="3" height="8" rx="1"/><rect x="4" y="2" width="3" height="10" rx="1"/><rect x="8" y="0" width="3" height="12" rx="1"/><rect x="12" y="0" width="3" height="12" rx="1" opacity="0.3"/></svg>
-        <svg width="25" height="12" viewBox="0 0 25 12" fill="white"><rect x="0" y="1" width="22" height="10" rx="2" stroke="white" strokeWidth="1" fill="none"/><rect x="1.5" y="2.5" width="17" height="7" rx="1"/><rect x="22" y="4" width="2" height="4" rx="1" opacity="0.5"/></svg>
-      </div>
-    </div>
-  );
-}
-
 function Header({ count }: { count: number }) {
   return (
-    <div style={{ height: 52, backgroundColor: '#3D2B1F', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingInline: 20, borderBottom: '1px solid rgba(255,200,100,0.14)' }}>
+    <div style={{ height: 52, backgroundColor: 'var(--secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingInline: 20, borderBottom: '1px solid var(--border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Link href="/" aria-label="Back to home" style={{ color: '#FFF8E7', fontSize: 20, lineHeight: 1, textDecoration: 'none' }}>←</Link>
-        <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 19, color: '#FFF8E7', letterSpacing: -0.3 }}>🌳 your treehouse</span>
+        <Link href="/" aria-label="Back to home" style={{ color: 'var(--foreground)', fontSize: 20, lineHeight: 1, textDecoration: 'none' }}>←</Link>
+        <span style={{ fontWeight: 700, fontSize: 19, color: 'var(--foreground)', letterSpacing: -0.3 }}>🌳 your treehouse</span>
       </div>
       <div style={{ background: 'rgba(255,215,0,0.18)', border: '1.5px solid #FFD700', borderRadius: 20, paddingInline: 12, paddingBlock: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-        <span style={{ color: '#FFD700', fontSize: 12, fontFamily: 'Nunito', fontWeight: 700 }}>🏆 {count} Complete</span>
+        <span style={{ color: '#FFD700', fontSize: 12, fontWeight: 700 }}>🏆 {count} Complete</span>
       </div>
     </div>
   );
@@ -123,15 +108,13 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
 
   // ── layout ──────────────────────────────────────────────────────────────
   return (
-    <div style={{ width: '100%', minHeight: '100vh', backgroundColor: '#2A1810', display: 'flex', flexDirection: 'column', fontFamily: 'Nunito, sans-serif', position: 'relative', overflow: 'hidden', paddingBottom: 16 }}>
+    <div style={{ width: '100%', minHeight: '100vh', backgroundColor: 'var(--background)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', paddingBottom: 16 }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{display:none}
         button{border:none;cursor:pointer;background:none}
       `}</style>
 
-      <StatusBar />
       <Header count={games.length} />
 
       {/* ── 3D world canvas ── */}
@@ -147,13 +130,13 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
           <div style={{
             position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32,
-            textAlign: 'center', color: '#FFF8E7', pointerEvents: 'none',
+            textAlign: 'center', color: 'var(--foreground)', pointerEvents: 'none',
           }}>
             <span style={{ fontSize: 40 }}>🌱</span>
-            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 17 }}>
+            <span style={{ fontWeight: 700, fontSize: 17 }}>
               Your treehouse is waiting
             </span>
-            <span style={{ fontSize: 13, color: 'rgba(255,248,231,0.65)', maxWidth: 240, lineHeight: 1.5 }}>
+            <span style={{ fontSize: 13, color: 'var(--muted-foreground)', maxWidth: 240, lineHeight: 1.5 }}>
               Finish a game and it'll show up here as a cartridge buddy in the world.
             </span>
           </div>
@@ -178,7 +161,7 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
               style={{
                 position: 'absolute', top: '50%', right: 14,
                 transform: 'translateY(-50%)',
-                width: 270, background: '#FFF8E7',
+                width: 270, background: 'var(--secondary)',
                 border: '1.5px solid #8D6E63', borderRadius: 20,
                 padding: '18px 16px 14px',
                 boxShadow: '0 24px 64px rgba(0,0,0,0.45)',
@@ -197,26 +180,26 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
                 {GENRE_ICON[game?.genre] || '🎮'} {game?.genre?.toUpperCase()}
               </div>
               {/* title */}
-              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 18, color: '#3D2B1F', lineHeight: 1.15, marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--foreground)', lineHeight: 1.15, marginBottom: 12 }}>
                 {game?.title}
               </div>
               {/* rows */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: '#8D6E63', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Genre</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#3D2B1F' }}>{game?.genre?.charAt(0).toUpperCase()}{game?.genre?.slice(1)}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Genre</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--foreground)' }}>{game?.genre?.charAt(0).toUpperCase()}{game?.genre?.slice(1)}</span>
                 </div>
                 <div style={{ height: 1, background: 'rgba(141,110,99,0.2)' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: '#8D6E63', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Rating</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Rating</span>
                   <span style={{ color: '#FFD700', fontSize: 13, letterSpacing: 1 }}>{RATINGS[game?.genre] || '★★★★☆'}</span>
                 </div>
                 {(game?.totalMinutes && game.totalMinutes > 0) ? (
                   <>
                     <div style={{ height: 1, background: 'rgba(141,110,99,0.2)' }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: '#8D6E63', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Time Played</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#3D2B1F' }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Time Played</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--foreground)' }}>
                         {game.totalMinutes >= 60
                           ? `${(game.totalMinutes / 60).toFixed(1)} hrs`
                           : `${game.totalMinutes} min`}
@@ -226,12 +209,12 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
                 ) : null}
                 <div style={{ height: 1, background: 'rgba(141,110,99,0.2)' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: '#8D6E63', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Vibe</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#3D2B1F' }}>{REACTIONS[game?.genre] || 'GG! 🏆'}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Vibe</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--foreground)' }}>{REACTIONS[game?.genre] || 'GG! 🏆'}</span>
                 </div>
               </div>
               {/* completed pill */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#15803D' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#3BA55D' }}>
                 ✓ Completed{game?.completedAt ? ` · ${new Date(game.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
               </div>
             </motion.div>
@@ -251,9 +234,9 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
               style={{
                 position: 'absolute', top: 14, left: 14,
                 display: 'flex', alignItems: 'center', gap: 6,
-                background: '#3D2B1F', border: '1px solid rgba(255,200,130,0.28)',
+                background: 'var(--secondary)', border: '1px solid var(--border)',
                 borderRadius: 24, padding: '7px 14px 7px 10px',
-                color: '#FFF8E7', fontSize: 13, fontWeight: 700,
+                color: 'var(--foreground)', fontSize: 13, fontWeight: 700,
                 boxShadow: '0 4px 16px rgba(0,0,0,0.35)', zIndex: 10,
               }}
             >
@@ -275,20 +258,20 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
             >
               {[[-1, '‹'], [1, '›']].map(([dir, label], i) => (
                 i === 0
-                  ? <button key="prev" onClick={() => handleStep(-1)} style={{ width: 48, height: 48, borderRadius: '50%', background: '#3D2B1F', border: '1.5px solid rgba(255,215,0,0.45)', color: '#FFD700', fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.35)' }}>‹</button>
+                  ? <button key="prev" onClick={() => handleStep(-1)} style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--secondary)', border: '1.5px solid rgba(255,215,0,0.45)', color: '#FFD700', fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.35)' }}>‹</button>
                   : null
               ))}
-              <span style={{ fontFamily: 'Nunito,sans-serif', fontWeight: 700, fontSize: 13, color: 'rgba(255,248,231,0.65)', minWidth: 36, textAlign: 'center' }}>
+              <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--muted-foreground)', minWidth: 36, textAlign: 'center' }}>
                 {focusIdx + 1} / {games.length}
               </span>
-              <button onClick={() => handleStep(1)} style={{ width: 48, height: 48, borderRadius: '50%', background: '#3D2B1F', border: '1.5px solid rgba(255,215,0,0.45)', color: '#FFD700', fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.35)' }}>›</button>
+              <button onClick={() => handleStep(1)} style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--secondary)', border: '1.5px solid rgba(255,215,0,0.45)', color: '#FFD700', fontSize: 22, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.35)' }}>›</button>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* ── view picker ── */}
         {!focusMode && (
-          <div style={{ position: 'absolute', bottom: 16, right: 14, zIndex: 10, background: '#FFF8E7', border: '1.5px solid rgba(141,110,99,0.35)', borderRadius: 16, padding: 4, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+          <div style={{ position: 'absolute', bottom: 16, right: 14, zIndex: 10, background: 'var(--secondary)', border: '1.5px solid rgba(141,110,99,0.35)', borderRadius: 16, padding: 4, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
             {[{ id: 'world', icon: '👁', label: 'Look Around' }, { id: 'list', icon: '📋', label: 'List' }].map(vw => (
               <button
                 key={vw.id}
@@ -304,9 +287,9 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
 
         {/* ── activity log — real buddies from the player's completed games ── */}
         {!focusMode && view === 'world' && games.length > 0 && (
-          <div style={{ position: 'absolute', bottom: 16, left: 14, zIndex: 10, background: 'rgba(61,43,31,0.92)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,200,130,0.15)', borderRadius: 16, padding: '10px 14px', minWidth: 165, maxWidth: 205 }}>
+          <div style={{ position: 'absolute', bottom: 16, left: 14, zIndex: 10, background: 'rgba(30,31,34,0.92)', backdropFilter: 'blur(8px)', border: '1px solid var(--border)', borderRadius: 16, padding: '10px 14px', minWidth: 165, maxWidth: 205 }}>
             {games.slice(0, 2).map((g, i) => (
-              <div key={g.id} style={{ fontSize: 11, color: 'rgba(255,230,180,0.85)', lineHeight: 1.4 }}>
+              <div key={g.id} style={{ fontSize: 11, color: 'var(--foreground)', lineHeight: 1.4 }}>
                 <span style={{ fontWeight: 700, color: '#FFD700' }}>{g.title} </span>
                 {TICKER_MOODS[(g.title.length + i) % TICKER_MOODS.length]}
               </div>
@@ -331,7 +314,7 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
               left: 0,
               right: 0,
               maxHeight: listExpanded ? undefined : 'calc(100vh - 220px)',
-              background: 'rgba(255,248,231,0.97)',
+              background: 'rgba(30,31,34,0.97)',
               backdropFilter: 'blur(16px)',
               borderTop: '1.5px solid rgba(141,110,99,0.22)',
               borderRadius: listExpanded ? '16px 16px 0 0' : '20px 20px 0 0',
@@ -343,21 +326,21 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
           >
             {/* header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px 10px', flexShrink: 0 }}>
-              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 16, color: '#3D2B1F' }}>
+              <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--foreground)' }}>
                 {filteredGames.length} Completed Game{filteredGames.length !== 1 ? 's' : ''}
               </span>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button
                   onClick={() => setSearchOpen(s => !s)}
-                  style={{ width: 36, height: 36, borderRadius: '50%', background: searchOpen ? '#FFD700' : 'rgba(141,110,99,0.12)', border: '1px solid rgba(141,110,99,0.25)', color: '#6B4B3A', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: '50%', background: searchOpen ? '#FFD700' : 'rgba(141,110,99,0.12)', border: '1px solid rgba(141,110,99,0.25)', color: 'var(--muted-foreground)', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >🔍</button>
                 <button
                   onClick={() => setListExp(e => !e)}
-                  style={{ width: 36, height: 36, borderRadius: '50%', background: listExpanded ? '#FFD700' : 'rgba(141,110,99,0.12)', border: '1px solid rgba(141,110,99,0.25)', color: '#6B4B3A', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: '50%', background: listExpanded ? '#FFD700' : 'rgba(141,110,99,0.12)', border: '1px solid rgba(141,110,99,0.25)', color: 'var(--muted-foreground)', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >⊞</button>
                 <button
                   onClick={closeList}
-                  style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(141,110,99,0.12)', border: '1px solid rgba(141,110,99,0.25)', color: '#6B4B3A', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(141,110,99,0.12)', border: '1px solid rgba(141,110,99,0.25)', color: 'var(--muted-foreground)', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >×</button>
               </div>
             </div>
@@ -374,7 +357,7 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
                   placeholder="Search games…"
                   value={listSearch}
                   onChange={e => setListSearch(e.target.value)}
-                  style={{ margin: '0 18px 10px', padding: '8px 12px', background: 'rgba(141,110,99,0.1)', border: '1.5px solid rgba(141,110,99,0.2)', borderRadius: 12, fontSize: 13, fontWeight: 600, color: '#3D2B1F', outline: 'none', fontFamily: 'Nunito,sans-serif', overflow: 'hidden' }}
+                  style={{ margin: '0 18px 10px', padding: '8px 12px', background: 'var(--card)', border: '1.5px solid var(--border)', borderRadius: 12, fontSize: 13, fontWeight: 600, color: 'var(--foreground)', outline: 'none', overflow: 'hidden' }}
                 />
               )}
             </AnimatePresence>
@@ -395,9 +378,9 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
                       {cover
                         ? <img src={cover} alt={g.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', position: 'absolute', inset: 0 }} loading="lazy" />
                         : GENRE_ICON[g.genre] || '🎮'}
-                      <div style={{ position: 'absolute', top: 5, right: 5, width: 18, height: 18, borderRadius: '50%', background: '#22C55E', border: '2px solid #FFF8E7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 800 }}>✓</div>
+                      <div style={{ position: 'absolute', top: 5, right: 5, width: 18, height: 18, borderRadius: '50%', background: '#3BA55D', border: '2px solid #FFF8E7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#fff', fontWeight: 800 }}>✓</div>
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#3D2B1F', marginTop: 6, textAlign: 'center', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--foreground)', marginTop: 6, textAlign: 'center', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                       {g.title}
                     </div>
                   </motion.div>
@@ -410,10 +393,10 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
 
       {/* ── recently completed strip ── */}
       {!focusMode && games.length > 0 && (
-        <div style={{ background: 'rgba(255,248,231,0.96)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(141,110,99,0.22)', padding: '8px 0 10px' }}>
+        <div style={{ background: 'rgba(30,31,34,0.96)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(141,110,99,0.22)', padding: '8px 0 10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px 7px' }}>
-            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 12, color: '#3D2B1F' }}>Recently Completed</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#8D6E63' }}>{games.length} games</span>
+            <span style={{ fontWeight: 700, fontSize: 12, color: 'var(--foreground)' }}>Recently Completed</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted-foreground)' }}>{games.length} games</span>
           </div>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '0 16px', scrollbarWidth: 'none' }}>
             {games.map((g, i) => {
@@ -429,9 +412,9 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
                     {cover
                       ? <img src={cover} alt={g.title} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} loading="lazy" />
                       : GENRE_ICON[g.genre] || '🎮'}
-                    <div style={{ position: 'absolute', top: 3, right: 3, width: 15, height: 15, borderRadius: '50%', background: '#22C55E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: '#fff', fontWeight: 800 }}>✓</div>
+                    <div style={{ position: 'absolute', top: 3, right: 3, width: 15, height: 15, borderRadius: '50%', background: '#3BA55D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: '#fff', fontWeight: 800 }}>✓</div>
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: '#3D2B1F', marginTop: 4, textAlign: 'center', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--foreground)', marginTop: 4, textAlign: 'center', lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                     {g.title}
                   </div>
                 </motion.div>

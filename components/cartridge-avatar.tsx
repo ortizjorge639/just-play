@@ -86,12 +86,12 @@ export function CartridgeAvatar({
 
       {/* Icon */}
       <text x="30" y="41" textAnchor="middle"
-        fontFamily="Nunito, sans-serif" fontSize="10"
+        fontFamily="inherit" fontSize="10"
         fill="white" opacity="0.9">{icon}</text>
 
       {/* Title on label */}
       <text x="30" y="48" textAnchor="middle"
-        fontFamily="Nunito, sans-serif" fontWeight="700" fontSize="7"
+        fontFamily="inherit" fontWeight="700" fontSize="7"
         fill="white" opacity="0.95">{title.slice(0, 12)}</text>
 
       {/* Connector ridge */}

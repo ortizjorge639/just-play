@@ -260,7 +260,7 @@ export function Progress({ sessions, displayName, playerStats, completedGames = 
       >
         <Link
           href="/treehouse"
-          className="flex items-center justify-between rounded-2xl border-2 border-emerald-500/25 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 px-5 py-4"
+          className="flex items-center justify-between rounded-2xl border-2 border-[#3BA55D]/25 bg-gradient-to-br from-[#3BA55D]/20 to-[#3BA55D]/5 px-5 py-4"
         >
           <div className="flex w-full flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -271,7 +271,7 @@ export function Progress({ sessions, displayName, playerStats, completedGames = 
                   <span className="text-xs text-muted-foreground">Every game you beat lives here</span>
                 </div>
               </div>
-              <span className="text-xl text-emerald-400">→</span>
+              <span className="text-xl text-[#3BA55D]">→</span>
             </div>
             {completedGames.length > 0 && (
               <div className="flex gap-4 overflow-x-auto pb-1 pt-1" style={{ scrollbarWidth: "none" }}>
