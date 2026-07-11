@@ -301,15 +301,16 @@ export function Progress({ sessions, displayName, playerStats, completedGames = 
             label: "Play Time",
             delay: 0.2,
           },
-          { emoji: "🕹️", value: uniqueGames, label: "Games", delay: 0.25 },
-        ].map(({ emoji, value, label, delay }) => (
+          { emoji: "🕹️", value: uniqueGames, label: "Games", delay: 0.25, href: "/backlog" },
+        ].map(({ emoji, value, label, delay, href }: { emoji: string; value: string | number; label: string; delay: number; href?: string }) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay }}
-            className="glass-card flex flex-col items-center justify-center gap-1 p-4 text-center"
+            className="glass-card relative flex flex-col items-center justify-center gap-1 p-4 text-center"
           >
+            {href && <Link href={href} aria-label="Open your game library" className="absolute inset-0" />}
             <span className="text-lg">{emoji}</span>
             <span className="text-xl font-bold text-foreground leading-tight">
               {value}

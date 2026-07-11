@@ -101,6 +101,9 @@ flow (AppShell, card deck, 3-tab bottom nav) is canonical. Layered on top:
   is CDN-loaded and injected sequentially (`async=false`) — do not convert
   those to async `<Script>` tags (black-screen race). Handles the empty
   games array explicitly (no NaN crash) and logs data-layer errors.
+- **`/backlog` route ("Library")** — grid of every game_progress row with
+  real covers, status badges, and genre filters (`app/backlog/`), in the v2
+  mock's light-lavender style. Entry point: the "Games" stat tile on Progress.
 - **Versioned tab title** — `Just Play v<major.minor>.<buildPatch>`;
   major.minor from `package.json`, patch = UTC build time `yymmddHHMM`
   stamped in `next.config.mjs`. Every deploy shows a new patch number.
