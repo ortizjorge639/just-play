@@ -70,6 +70,9 @@ export async function getCompletedGamesForTreehouse(): Promise<GameData[]> {
       } satisfies GameData;
     }).filter(Boolean) as GameData[];
   } catch (err) {
+    // Next.js signals dynamic rendering (cookies() usage) by throwing -- that's
+    // control flow, not a failure. Let it propagate so Next handles it.
+    if ((err as { digest?: string })?.digest === 'DYNAMIC_SERVER_USAGE') throw err;
     // Network failure, auth service down, etc. -- same reasoning as above:
     // log it so it's visible in server logs rather than vanishing silently.
     console.error('[treehouse] unexpected error fetching completed games:', err);

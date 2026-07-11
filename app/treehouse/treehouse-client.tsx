@@ -77,6 +77,14 @@ function Header({ count }: { count: number }) {
   );
 }
 
+const TICKER_MOODS = [
+  'is chilling \u{1F4A4}',
+  'found a cozy spot \u{1F33F}',
+  'is reading by the fire \u{1F525}',
+  'is humming a tune \u{1F3B5}',
+  'waved at you \u{1F44B}',
+];
+
 // ── main client component ──────────────────────────────────────────────────────
 export default function TreehouseClient({ games }: { games: GameData[] }) {
   const worldRef = useRef<TreehouseWorldHandle>(null);
@@ -294,15 +302,15 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
           </div>
         )}
 
-        {/* ── activity log ── */}
-        {!focusMode && view === 'world' && (
+        {/* ── activity log — real buddies from the player's completed games ── */}
+        {!focusMode && view === 'world' && games.length > 0 && (
           <div style={{ position: 'absolute', bottom: 16, left: 14, zIndex: 10, background: 'rgba(61,43,31,0.92)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,200,130,0.15)', borderRadius: 16, padding: '10px 14px', minWidth: 165, maxWidth: 205 }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,230,180,0.85)', lineHeight: 1.4 }}>
-              <span style={{ fontWeight: 700, color: '#FFD700' }}>Hades </span>is chilling 💤
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,230,180,0.85)', lineHeight: 1.4 }}>
-              <span style={{ fontWeight: 700, color: '#FFD700' }}>Celeste </span>found a cozy spot 🌿
-            </div>
+            {games.slice(0, 2).map((g, i) => (
+              <div key={g.id} style={{ fontSize: 11, color: 'rgba(255,230,180,0.85)', lineHeight: 1.4 }}>
+                <span style={{ fontWeight: 700, color: '#FFD700' }}>{g.title} </span>
+                {TICKER_MOODS[(g.title.length + i) % TICKER_MOODS.length]}
+              </div>
+            ))}
           </div>
         )}
       </div>
