@@ -5,6 +5,8 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import type { Session, Game, PlayerStats } from "@/lib/types"
+import type { GameData } from "@/components/treehouse-world"
+import { CartridgeAvatar, genreGradient } from "@/components/cartridge-avatar"
 import { formatDistanceToNow } from "date-fns"
 import { XPParticles } from "./xp-particles"
 
@@ -12,6 +14,7 @@ interface ProgressProps {
   sessions: (Session & { games: Game })[]
   displayName: string | null
   playerStats: PlayerStats | null
+  completedGames?: GameData[]
 }
 
 interface PendingXP {
@@ -67,7 +70,7 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
   return value
 }
 
-export function Progress({ sessions, displayName, playerStats }: ProgressProps) {
+export function Progress({ sessions, displayName, playerStats, completedGames = [] }: ProgressProps) {
   const [pending, setPending] = useState<PendingXP | null>(null)
   const [showBarParticles, setShowBarParticles] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
@@ -259,14 +262,30 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
           href="/treehouse"
           className="flex items-center justify-between rounded-2xl border-2 border-emerald-500/25 bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 px-5 py-4"
         >
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🌳</span>
-            <div className="flex flex-col">
-              <span className="text-base font-bold text-foreground">Your Treehouse</span>
-              <span className="text-xs text-muted-foreground">Every game you beat lives here</span>
+          <div className="flex w-full flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🌳</span>
+                <div className="flex flex-col">
+                  <span className="text-base font-bold text-foreground">Your Treehouse</span>
+                  <span className="text-xs text-muted-foreground">Every game you beat lives here</span>
+                </div>
+              </div>
+              <span className="text-xl text-emerald-400">→</span>
             </div>
+            {completedGames.length > 0 && (
+              <div className="flex gap-4 overflow-x-auto pb-1 pt-1" style={{ scrollbarWidth: "none" }}>
+                {completedGames.map((g) => (
+                  <div key={g.id} className="flex shrink-0 flex-col items-center gap-1">
+                    <CartridgeAvatar gradient={genreGradient([g.genre])} title={g.title} size={0.55} />
+                    <span className="max-w-[64px] truncate text-[10px] font-semibold text-muted-foreground">
+                      {g.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <span className="text-xl text-emerald-400">→</span>
         </Link>
       </motion.div>
 

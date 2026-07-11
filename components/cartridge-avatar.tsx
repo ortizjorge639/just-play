@@ -160,7 +160,7 @@ const GENRE_KEYS: Record<string, string> = {
   action: 'action', shooter: 'action', fighting: 'action', roguelike: 'action', metroidvania: 'platformer',
   simulation: 'sim', strategy: 'sim',
   horror: 'horror', 'survival horror': 'horror',
-  music: 'rhythm', rhythm: 'rhythm',
+  music: 'rhythm', rhythm: 'rhythm', sim: 'sim',
 }
 
 /** Cartridge gradient for a game, derived from its genre list. */

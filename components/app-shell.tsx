@@ -13,6 +13,7 @@ import { Settings } from "./settings"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import type { UserProfile, Game, Session, GameProgress, PlayerStats } from "@/lib/types"
+import type { GameData } from "@/components/treehouse-world"
 
 type Tab = "deck" | "session" | "progress"
 
@@ -23,6 +24,7 @@ interface AppShellProps {
   activeGame: (GameProgress & { game: Game }) | null
   sessionHistory: (Session & { games: Game })[]
   playerStats: PlayerStats | null
+  completedGames?: GameData[]
   isBoosterPack: boolean
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
 }
@@ -34,6 +36,7 @@ export function AppShell({
   activeGame,
   sessionHistory: initialHistory,
   playerStats,
+  completedGames = [],
   isBoosterPack,
   boosterPackStatus,
 }: AppShellProps) {
@@ -245,6 +248,7 @@ export function AppShell({
               sessions={initialHistory}
               displayName={user.display_name}
               playerStats={playerStats}
+              completedGames={completedGames}
             />
           </motion.div>
         )}

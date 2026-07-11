@@ -10,6 +10,8 @@ import {
   backfillXP,
 } from "./actions"
 import { AppShell } from "@/components/app-shell"
+import { getCompletedGamesForTreehouse } from "@/lib/treehouse"
+import type { GameData } from "@/components/treehouse-world"
 import type { PlayerStats } from "@/lib/types"
 
 export default async function HomePage({
@@ -42,6 +44,7 @@ export default async function HomePage({
   let activeGame = null
   let sessionHistory: Awaited<ReturnType<typeof getSessionHistory>> = []
   let playerStats: PlayerStats | null = null
+  let completedGames: GameData[] = []
 
   try {
     const results = await Promise.all([
@@ -50,12 +53,14 @@ export default async function HomePage({
       getActiveGame(),
       getSessionHistory(),
       getPlayerStats(),
+      getCompletedGamesForTreehouse(),
     ])
     profile = results[0]
     activeSession = results[1]
     activeGame = results[2]
     sessionHistory = results[3]
     playerStats = results[4]
+    completedGames = results[5]
   } catch (error) {
     console.error("[v0] Error fetching user data:", error)
   }
@@ -87,6 +92,7 @@ export default async function HomePage({
       activeGame={activeGame}
       sessionHistory={sessionHistory}
       playerStats={playerStats}
+      completedGames={completedGames}
       isBoosterPack={true}
       boosterPackStatus={boosterPackStatus}
     />
