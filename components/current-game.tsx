@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
+import { CartridgeAvatar, genreGradient } from "@/components/cartridge-avatar"
 import { startSessionForGame, markGameBeaten, abandonGame } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
 import type { GameProgress, Game } from "@/lib/types"
@@ -107,11 +108,16 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
 
             {/* Game info */}
             <div className="absolute bottom-0 left-0 right-0 flex flex-col gap-3 p-5">
-              <div className="flex flex-col gap-1">
-                <h3 className="text-xl font-bold text-foreground leading-tight">{game.name}</h3>
-                <p className="text-sm text-foreground/70 leading-relaxed line-clamp-2">
-                  {game.description}
-                </p>
+              <div className="flex items-end gap-3">
+                <div className="shrink-0 rounded-xl px-1.5 pt-1.5" style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.14)" }}>
+                  <CartridgeAvatar gradient={genreGradient(game.genres)} title={game.name} animated size={0.55} />
+                </div>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <h3 className="text-xl font-bold text-foreground leading-tight">{game.name}</h3>
+                  <p className="text-sm text-foreground/70 leading-relaxed line-clamp-2">
+                    {game.description}
+                  </p>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2">

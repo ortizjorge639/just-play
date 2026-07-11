@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useTransition, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
+import { CartridgeAvatar, genreGradient } from "@/components/cartridge-avatar"
 import { 
   updateSessionStatus, 
   updateSessionNotes, 
@@ -247,6 +248,9 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
         </AnimatePresence>
 
         <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between gap-4">
+          <div className="shrink-0 rounded-xl px-1.5 pt-1.5" style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.14)" }}>
+            <CartridgeAvatar gradient={genreGradient(game.genres)} title={game.name} animated={isPlaying} size={0.6} />
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span
