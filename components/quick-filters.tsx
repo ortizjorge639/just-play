@@ -72,7 +72,7 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
               <button
                 key={mood.value}
                 onClick={() => setPreferences((prev) => ({ ...prev, mood: mood.value }))}
-                className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
                   preferences.mood === mood.value
                     ? "bg-primary text-primary-foreground"
                     : "glass-card text-foreground hover:bg-muted"
@@ -92,7 +92,7 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
               <button
                 key={time.value}
                 onClick={() => setPreferences((prev) => ({ ...prev, time_available: time.value }))}
-                className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
                   preferences.time_available === time.value
                     ? "bg-primary text-primary-foreground"
                     : "glass-card text-foreground hover:bg-muted"
@@ -112,7 +112,7 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
               <button
                 key={energy.value}
                 onClick={() => setPreferences((prev) => ({ ...prev, energy: energy.value }))}
-                className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
                   preferences.energy === energy.value
                     ? "bg-primary text-primary-foreground"
                     : "glass-card text-foreground hover:bg-muted"
@@ -129,7 +129,7 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
           <button
             onClick={handleApply}
             disabled={isPending}
-            className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+            className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
           >
             {isPending ? "Applying..." : "Apply & Refresh"}
           </button>

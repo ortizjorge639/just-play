@@ -14,6 +14,8 @@ import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import type { UserProfile, Game, Session, GameProgress, PlayerStats } from "@/lib/types"
 import type { GameData } from "@/components/treehouse-world"
+import { EASE_OUT_STRONG } from "@/lib/motion"
+import { MotionConfig } from "framer-motion"
 
 type Tab = "deck" | "session" | "progress"
 
@@ -93,6 +95,7 @@ export function AppShell({
   }, [needsRefresh, activeSession, activeGame])
 
   return (
+    <MotionConfig reducedMotion="user">
     <XPToastProvider playerStats={playerStats}>
     <div className="flex min-h-dvh flex-col pb-16">
       {/* Top bar */}
@@ -167,10 +170,10 @@ export function AppShell({
         {activeTab === "deck" && !activeSession && (
           <motion.div
             key="deck"
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, x: -8, transition: { duration: 0.1, ease: EASE_OUT_STRONG } }}
+            transition={{ duration: 0.15, ease: EASE_OUT_STRONG }}
             className="flex flex-1 flex-col"
           >
             <CardDeck
@@ -186,10 +189,10 @@ export function AppShell({
         {activeTab === "session" && (
           <motion.div
             key="session"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, x: 8, transition: { duration: 0.1, ease: EASE_OUT_STRONG } }}
+            transition={{ duration: 0.15, ease: EASE_OUT_STRONG }}
             className="flex flex-1 flex-col"
           >
             {activeSession ? (
@@ -238,10 +241,10 @@ export function AppShell({
         {activeTab === "progress" && (
           <motion.div
             key="progress"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.2 }}
+            exit={{ opacity: 0, x: 8, transition: { duration: 0.1, ease: EASE_OUT_STRONG } }}
+            transition={{ duration: 0.15, ease: EASE_OUT_STRONG }}
             className="flex flex-1 flex-col"
           >
             <Progress
@@ -290,5 +293,6 @@ export function AppShell({
       </AnimatePresence>
     </div>
     </XPToastProvider>
+    </MotionConfig>
   )
 }

@@ -405,7 +405,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
             <button
               onClick={() => transition("Playing")}
               disabled={isPending}
-              className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+              className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
             >
               {isPending ? "Starting..." : "Start Playing"}
             </button>
@@ -416,7 +416,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
               <button
                 onClick={() => transition("Paused")}
                 disabled={isPending}
-                className="h-14 w-full rounded-xl glass-card text-base font-semibold text-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-2"
+                className="h-14 w-full rounded-xl glass-card text-base font-semibold text-foreground transition active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-2"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
@@ -425,7 +425,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
               </button>
               <button
                 onClick={() => setShowEndOptions(true)}
-                className="h-12 w-full rounded-xl border border-muted-foreground/20 text-sm font-semibold text-muted-foreground transition-all active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2 hover:border-destructive/50 hover:text-destructive"
+                className="h-12 w-full rounded-xl border border-muted-foreground/20 text-sm font-semibold text-muted-foreground transition active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2 hover:border-destructive/50 hover:text-destructive"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
@@ -440,7 +440,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
               <button
                 onClick={() => transition("Playing")}
                 disabled={isPending}
-                className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-2"
+                className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-2"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
@@ -449,7 +449,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
               </button>
               <button
                 onClick={() => setShowEndOptions(true)}
-                className="h-12 w-full rounded-xl border border-muted-foreground/20 text-sm font-semibold text-muted-foreground transition-all active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2 hover:border-destructive/50 hover:text-destructive"
+                className="h-12 w-full rounded-xl border border-muted-foreground/20 text-sm font-semibold text-muted-foreground transition active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2 hover:border-destructive/50 hover:text-destructive"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9" />
@@ -499,7 +499,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
                 <button
                   onClick={() => { transition("Finished"); setShowEndOptions(false) }}
                   disabled={isPending}
-                  className="h-14 w-full rounded-xl glass-card text-base font-semibold text-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
+                  className="h-14 w-full rounded-xl glass-card text-base font-semibold text-foreground transition active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
                 >
                   <svg className="h-5 w-5 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -511,7 +511,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
                 <button
                   onClick={handleMarkBeaten}
                   disabled={isPending}
-                  className="h-14 w-full rounded-xl text-base font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
+                  className="h-14 w-full rounded-xl text-base font-semibold text-white transition active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
                   style={{ backgroundColor: "#3BA55D" }}
                 >
                   <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -523,14 +523,14 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
                 <button
                   onClick={handleAbandon}
                   disabled={isPending}
-                  className="h-11 w-full rounded-xl text-sm font-medium text-destructive transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                  className="h-11 w-full rounded-xl text-sm font-medium text-destructive transition active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                 >
                   Abandon Game
                 </button>
 
                 <button
                   onClick={() => setShowEndOptions(false)}
-                  className="h-11 w-full rounded-xl text-sm font-medium text-muted-foreground transition-all active:scale-[0.98] min-h-[44px]"
+                  className="h-11 w-full rounded-xl text-sm font-medium text-muted-foreground transition active:scale-[0.98] min-h-[44px]"
                 >
                   Cancel
                 </button>

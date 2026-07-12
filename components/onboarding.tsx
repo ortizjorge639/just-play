@@ -221,7 +221,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
                     <button
                       key={genre}
                       onClick={() => toggleGenre(genre)}
-                      className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-medium transition-all ${
+                      className={`min-h-[44px] rounded-xl px-4 py-2 text-sm font-medium transition ${
                         preferences.genre_preferences?.includes(genre)
                           ? "bg-primary text-primary-foreground"
                           : "glass-card text-foreground hover:bg-muted"
@@ -261,7 +261,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
         <button
           onClick={next}
           disabled={!canProceed() || isPending}
-          className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {isPending
             ? "Saving..."
@@ -308,7 +308,7 @@ function OptionButton({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col gap-0.5 rounded-xl p-4 text-left transition-all min-h-[60px] ${
+      className={`flex flex-col gap-0.5 rounded-xl p-4 text-left transition min-h-[60px] ${
         selected
           ? "bg-primary/15 border-2 border-primary"
           : "glass-card hover:bg-muted"

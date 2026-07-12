@@ -250,7 +250,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
         <button
           onClick={handleStartSession}
           disabled={isPending}
-          className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+          className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
         >
           {isPending ? "Starting..." : "Start Today's Session"}
         </button>
@@ -291,7 +291,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
                 <button
                   onClick={handleMarkBeaten}
                   disabled={isPending}
-                  className="h-14 w-full rounded-xl text-base font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                  className="h-14 w-full rounded-xl text-base font-semibold text-white transition active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                   style={{ backgroundColor: "#3BA55D" }}
                 >
                   I Beat This Game!
@@ -300,7 +300,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
                 <button
                   onClick={handleAbandon}
                   disabled={isPending}
-                  className="h-14 w-full rounded-xl bg-destructive text-base font-semibold text-destructive-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                  className="h-14 w-full rounded-xl bg-destructive text-base font-semibold text-destructive-foreground transition active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                 >
                   Abandon Game
                 </button>

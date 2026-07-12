@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { TreehouseWorldHandle, GameData } from '@/components/treehouse-world';
@@ -108,6 +108,7 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
 
   // ── layout ──────────────────────────────────────────────────────────────
   return (
+    <MotionConfig reducedMotion="user">
     <div style={{ width: '100%', minHeight: '100vh', backgroundColor: 'var(--background)', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', paddingBottom: 16 }}>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0}
@@ -425,5 +426,6 @@ export default function TreehouseClient({ games }: { games: GameData[] }) {
       )}
 
     </div>
+    </MotionConfig>
   );
 }

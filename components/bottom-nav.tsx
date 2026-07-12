@@ -86,8 +86,8 @@ function NavItem({
         </span>
         {badge && (
           <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-success"
           />
         )}

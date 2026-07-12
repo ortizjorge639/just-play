@@ -110,9 +110,9 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
       <AnimatePresence>
         {!isOpen && (
           <motion.button
-            initial={{ scale: 0, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
+            exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             onClick={() => setIsOpen(true)}
             className="fixed right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full glass-card shadow-lg active:scale-95 transition-transform"

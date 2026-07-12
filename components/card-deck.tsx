@@ -119,7 +119,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                   <p className="text-sm text-muted-foreground">{"This becomes your active session. You'll see it on your dashboard."}</p>
                 </div>
                 <div className="flex flex-col gap-3">
-                  <button onClick={confirmLockIn} disabled={isPending} className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]">
+                  <button onClick={confirmLockIn} disabled={isPending} className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]">
                     {isPending ? "Starting session..." : "Lock In"}
                   </button>
                   <button onClick={cancelLockIn} className="h-12 w-full rounded-xl bg-secondary text-base font-medium text-foreground transition-colors hover:bg-muted min-h-[44px]">Go back</button>
@@ -231,7 +231,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                   <button
                     onClick={confirmLockIn}
                     disabled={isPending}
-                    className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                    className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                   >
                     {isPending ? "Starting session..." : "Lock In"}
                   </button>
@@ -372,7 +372,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                 <button
                   onClick={confirmLockIn}
                   disabled={isPending}
-                  className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                  className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                 >
                   {isPending ? "Starting session..." : "Lock In"}
                 </button>

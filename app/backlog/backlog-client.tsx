@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig } from 'framer-motion';
 import Link from 'next/link';
 import { genreGradient } from '@/components/cartridge-avatar';
 
@@ -73,6 +73,7 @@ export default function BacklogClient({ entries }: { entries: BacklogEntry[] }) 
     activeFilter === 'All' ? entries : entries.filter((e) => primaryGenre(e.genres) === activeFilter);
 
   return (
+    <MotionConfig reducedMotion="user">
     <main className="flex min-h-dvh flex-col bg-background">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pb-3 pt-5">
@@ -131,5 +132,6 @@ export default function BacklogClient({ entries }: { entries: BacklogEntry[] }) 
         </div>
       )}
     </main>
+    </MotionConfig>
   );
 }

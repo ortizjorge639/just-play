@@ -103,7 +103,7 @@ export function SessionNotepad({
       <div>
         <button
           onClick={() => setGoalOpen(o => !o)}
-          className="flex items-center gap-2 w-full px-4 py-3 rounded-xl glass-card transition-all active:scale-[0.98] min-h-[44px]"
+          className="flex items-center gap-2 w-full px-4 py-3 rounded-xl glass-card transition active:scale-[0.98] min-h-[44px]"
         >
           <span className="text-sm">🎯</span>
           <span className="text-sm font-medium text-foreground flex-1 text-left truncate">
@@ -218,7 +218,7 @@ export function SessionNotepad({
       <div>
         <button
           onClick={() => setNotesOpen(o => !o)}
-          className="flex items-center gap-2 w-full px-4 py-3 rounded-xl glass-card transition-all active:scale-[0.98] min-h-[44px]"
+          className="flex items-center gap-2 w-full px-4 py-3 rounded-xl glass-card transition active:scale-[0.98] min-h-[44px]"
         >
           <span className="text-sm">📝</span>
           <span className="text-sm font-medium text-foreground flex-1 text-left">
@@ -311,12 +311,12 @@ export function SessionNotepad({
                             setDirection(i > currentPage ? 1 : -1)
                             setCurrentPage(i)
                           }}
-                          className={`rounded-full transition-all ${
+                          className={`h-2 w-2 rounded-full transition-[background-color,transform] ${
                             i === currentPage
-                              ? "w-2 h-2 bg-primary"
+                              ? "scale-100 bg-primary"
                               : pages[i]?.trim()
-                                ? "w-1.5 h-1.5 bg-foreground/30"
-                                : "w-1.5 h-1.5 bg-muted-foreground/15"
+                                ? "scale-75 bg-foreground/30"
+                                : "scale-75 bg-muted-foreground/15"
                           }`}
                           aria-label={`Page ${i + 1}`}
                         />

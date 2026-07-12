@@ -79,13 +79,13 @@ export function StillPlayingModal({
         <div className="flex flex-col gap-3">
           <button
             onClick={onStillPlaying}
-            className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-all active:scale-[0.98] min-h-[44px]"
+            className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition active:scale-[0.98] min-h-[44px]"
           >
             Still Playing
           </button>
           <button
             onClick={onFinishSession}
-            className="h-12 w-full rounded-xl border border-muted-foreground/20 text-sm font-semibold text-muted-foreground transition-all active:scale-[0.98] min-h-[44px] hover:border-destructive/50 hover:text-destructive"
+            className="h-12 w-full rounded-xl border border-muted-foreground/20 text-sm font-semibold text-muted-foreground transition active:scale-[0.98] min-h-[44px] hover:border-destructive/50 hover:text-destructive"
           >
             Finish Session
           </button>

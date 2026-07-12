@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence , MotionConfig } from "framer-motion"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
@@ -73,6 +73,7 @@ export default function WelcomePage() {
   const slide = SLIDES[currentSlide]
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       {/* Skip button */}
       {!isLastSlide && (
@@ -200,5 +201,6 @@ export default function WelcomePage() {
         </motion.button>
       </div>
     </div>
+    </MotionConfig>
   )
 }

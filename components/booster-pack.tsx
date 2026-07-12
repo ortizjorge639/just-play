@@ -116,7 +116,7 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
                 onClick={openPack}
                 disabled={isDisabled}
                 whileTap={isDisabled ? {} : { scale: 0.96 }}
-                className={`h-14 w-full rounded-2xl text-base font-semibold transition-all min-h-[56px] ${
+                className={`h-14 w-full rounded-2xl text-base font-semibold transition min-h-[56px] ${
                   isDisabled
                     ? "bg-secondary text-muted-foreground cursor-not-allowed"
                     : "bg-primary text-primary-foreground hover:bg-primary/90"
