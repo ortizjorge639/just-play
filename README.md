@@ -20,6 +20,7 @@ Just Play is a game tracker built around a simple idea: every game you finish be
 - [Supabase](https://supabase.com/) — auth + database
 - [shadcn/ui](https://ui.shadcn.com/) + Tailwind CSS v4
 - [Framer Motion](https://www.framer.com/motion/) — animations
+- [Three.js](https://threejs.org/) + React Three Fiber — the original Canopy demo world
 - [IGDB](https://www.igdb.com/api) — game metadata
 
 ---
@@ -27,6 +28,16 @@ Just Play is a game tracker built around a simple idea: every game you finish be
 ## Status
 
 **v2 in progress** — full redesign. Building in public.
+
+The [treehouse world study](docs/treehouse-world-study.md) analyzes Yukagecho
+and maps its spatial experience to a proposed Just Play gaming home. It is
+research and a world-model proposal, not a description of shipped 3D features.
+
+The **Canopy demo** at `/demo` makes that direction playable: explore a treehouse
+settlement, welcome visiting game characters, give completed adventures a
+permanent home, and leave the world on display as ambient art. It uses original
+procedural scenery, fictional sample games, and browser-local saves.
+See the [presenter guide](docs/demo.md).
 
 Follow the build → [@jojiguy639](https://x.com/jojiguy639)
 
@@ -39,7 +50,8 @@ pnpm install
 pnpm dev
 ```
 
-Requires a `.env.local` with Supabase and IGDB credentials.
+The account-backed app requires a `.env.local` with Supabase and IGDB credentials.
+The public `/demo` route does not require those credentials or a login.
 
 ---
 

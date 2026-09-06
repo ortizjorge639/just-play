@@ -2,11 +2,14 @@
   "name": "just-play",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
+    "test": "tsx --test lib/demo/*.test.ts",
+    "typecheck:demo": "tsc --noEmit --project tsconfig.demo.json",
     "seed:igdb": "tsx scripts/seed-igdb.ts"
   },
   "dependencies": {
@@ -38,6 +41,7 @@
     "@radix-ui/react-toggle": "1.1.10",
     "@radix-ui/react-toggle-group": "1.1.11",
     "@radix-ui/react-tooltip": "1.2.8",
+    "@react-three/fiber": "^9.7.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
     "@vercel/analytics": "1.6.1",
@@ -60,6 +64,7 @@
     "recharts": "2.15.0",
     "sonner": "^1.7.1",
     "tailwind-merge": "^3.3.1",
+    "three": "^0.185.1",
     "vaul": "^1.1.2",
     "zod": "^3.24.1"
   },
@@ -69,6 +74,7 @@
     "@types/node": "^22",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@types/three": "^0.185.4",
     "dotenv": "^17.3.1",
     "eslint": "^9.39.3",
     "eslint-config-next": "^16.1.6",

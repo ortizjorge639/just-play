@@ -1,7 +1,10 @@
 import { updateSession } from '@/lib/supabase/proxy'
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname === '/demo' || request.nextUrl.pathname === '/demo/') {
+    return NextResponse.next()
+  }
   return await updateSession(request)
 }
 
