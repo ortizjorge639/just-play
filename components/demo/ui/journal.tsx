@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Check, MapPin } from "lucide-react"
 import type { DemoAction, DemoGame, DemoState, GameId, LocationId } from "@/lib/demo/contracts"
 import { GAMES, GAME_BY_ID } from "@/lib/demo/state"
 
-export type ApplyDemoAction = (action: DemoAction, message: string) => boolean
+export type ApplyDemoAction = (action: DemoAction, message: string) => Promise<boolean>
 
 export function GameMark({ game, large = false }: { game: DemoGame; large?: boolean }) {
   return <span className={`demo-game-mark${large ? " is-large" : ""}`} style={{ color: game.color }} aria-hidden="true">{game.symbol}</span>

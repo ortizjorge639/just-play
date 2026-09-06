@@ -18,6 +18,7 @@ import {
   createDemoState, GAMES, GAME_BY_ID, matchesObservedDemoSave, observeDemoSave,
   parseDemoSave, reduceDemoState, residentsFor, SAVE_KEY, type DemoSaveObservation,
 } from "@/lib/demo/state"
+import { getDemoLockManager, mutateDemoSave, resetDemoSave } from "@/lib/demo/storage"
 import { LOCATION_BY_ID, SPAWN, visibleLocations } from "@/lib/demo/world"
 import { BuildPanel } from "./ui/build-panel"
 import { GameMark, Journal } from "./ui/journal"
@@ -53,9 +54,22 @@ function loadDemo(): InitialSave {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
     const observed = observeDemoSave(raw)
-    if (raw === null) return { world: createDemoState(), mode: "local", issue: null, observed }
+    const locks = getDemoLockManager()
+    if (raw === null) return locks
+      ? { world: createDemoState(), mode: "local", issue: null, observed }
+      : {
+          world: createDemoState(), mode: "session",
+          issue: "This browser can't safely coordinate local saves across tabs. You can still explore; changes will last only for this visit.",
+          observed,
+        }
     const parsed = parseDemoSave(raw)
-    if (parsed.ok) return { world: parsed.value, mode: "local", issue: null, observed }
+    if (parsed.ok) return locks
+      ? { world: parsed.value, mode: "local", issue: null, observed }
+      : {
+          world: parsed.value, mode: "session",
+          issue: "Your saved world is loaded, but this browser can't safely coordinate changes across tabs. New changes will last only for this visit.",
+          observed,
+        }
     return { world: createDemoState(), mode: "blocked", issue: `${parsed.error} Your stored save is untouched.`, observed }
   } catch {
     return {
@@ -208,16 +222,21 @@ export default function DemoApp() {
   const [fullscreen, setFullscreen] = useState(false)
   const [storyStep, setStoryStep] = useState<number | null>(null)
   const [tourFinished, setTourFinished] = useState(false)
+  const [actionPending, setActionPending] = useState(false)
   const commandSerial = useRef(0)
   const toastSerial = useRef(0)
   const observedSave = useRef(initial.observed)
+  const worldRef = useRef(initial.world)
+  const saveModeRef = useRef(initial.mode)
+  const actionPendingRef = useRef(false)
   const root = useRef<HTMLDivElement>(null)
   const downloadUrls = useRef(new Set<string>())
   const reducedOS = useSyncExternalStore(subscribeMotion, prefersReducedMotion, SERVER_FALSE)
   const fullscreenSupported = useSyncExternalStore(NOOP_SUBSCRIBE, () => Boolean(document.fullscreenEnabled), SERVER_FALSE)
   const reducedMotion = motion === "system" ? reducedOS : motion === "reduce"
   const preferences = useMemo(() => ({ camera, light, quality, reducedMotion }), [camera, light, quality, reducedMotion])
-  const blocked = saveMode === "blocked" || saveMode === "conflict"
+  const saveBlocked = saveMode === "blocked" || saveMode === "conflict"
+  const blocked = saveBlocked || actionPending
   const fallback = !webgl || Boolean(sceneError)
   const ambient = camera === "ambient" || camera === "still"
   const residents = residentsFor(world)
@@ -259,7 +278,7 @@ export default function DemoApp() {
     const onStorage = (event: StorageEvent) => {
       if (event.storageArea !== localStorage || (event.key !== SAVE_KEY && event.key !== null) ||
         matchesObservedDemoSave(observedSave.current, event.newValue)) return
-      setSaveMode("conflict")
+      updateSaveMode("conflict")
       setSaveIssue("This saved world changed in another tab. Your world in this tab is still here and has not overwritten it.")
     }
     window.addEventListener("storage", onStorage)
@@ -395,44 +414,79 @@ export default function DemoApp() {
     return () => window.removeEventListener("keydown", onKey)
   }, [panel, ambient, reducedMotion, openPanel])
 
-  function applyAction(action: DemoAction, message: string) {
-    if (blocked) {
+  function updateWorld(next: DemoState) {
+    worldRef.current = next
+    setWorld(next)
+  }
+
+  function updateSaveMode(next: SaveMode) {
+    saveModeRef.current = next
+    setSaveMode(next)
+  }
+
+  async function applyAction(action: DemoAction, message: string) {
+    if (actionPendingRef.current) {
+      notify("Finish the current change before making another one.")
+      return false
+    }
+    if (saveBlocked) {
       notify(saveMode === "conflict" ? "Choose which world to keep before making another change." : "Choose how to handle your unreadable save before changing this world.")
       return false
     }
-    const result = reduceDemoState(world, action)
-    if (!result.ok) { notify(result.error); return false }
-    if (saveMode === "local" && result.value !== world) {
-      try {
-        const currentRaw = localStorage.getItem(SAVE_KEY)
-        if (!matchesObservedDemoSave(observedSave.current, currentRaw)) {
-          setWorld(result.value)
-          setSaveMode("conflict")
-          setSaveIssue("This saved world changed in another tab. Your latest change is safe in this tab and has not overwritten it.")
-          notify(`${message} Choose whether to load the newer saved world or keep this tab session-only.`)
+    actionPendingRef.current = true
+    setActionPending(true)
+    try {
+      const currentWorld = worldRef.current
+      const currentMode = saveModeRef.current
+      if (currentMode === "local") {
+        const locks = getDemoLockManager()
+        if (!locks) {
+          const result = reduceDemoState(currentWorld, action)
+          if (!result.ok) { notify(result.error); return false }
+          updateWorld(result.value)
+          updateSaveMode("session")
+          setSaveIssue("Safe local saving became unavailable. This world is preserved for this visit, and the previous stored save is untouched.")
+          notify(`${message} This change is session-only.`)
           return true
         }
-        const serialized = JSON.stringify(result.value)
-        localStorage.setItem(SAVE_KEY, serialized)
-        observedSave.current = observeDemoSave(serialized)
+        try {
+          const mutation = await mutateDemoSave(localStorage, locks, observedSave.current, currentWorld, action)
+          if (mutation.status === "rejected") { notify(mutation.error); return false }
+          updateWorld(mutation.world)
+          if (mutation.status === "conflict") {
+            updateSaveMode("conflict")
+            setSaveIssue("This saved world changed in another tab. Your latest change is safe in this tab and has not overwritten it.")
+            notify(`${message} Choose whether to load the newer saved world or keep this tab session-only.`)
+            return true
+          }
+          observedSave.current = mutation.observed
+          notify(message)
+          return true
+        } catch {
+          const result = reduceDemoState(currentWorld, action)
+          if (!result.ok) { notify(result.error); return false }
+          updateWorld(result.value)
+          updateSaveMode("session")
+          setSaveIssue("Your browser couldn't safely save this change. The world is safe in this tab, but changes will be lost when you leave. Your previous stored save is untouched.")
+          notify(`${message} This change is session-only.`)
+          return true
+        }
       }
-      catch {
-        setWorld(result.value)
-        setSaveMode("session")
-        setSaveIssue("Your browser couldn't save this change. The world is safe in this tab, but changes will be lost when you leave. Your previous stored save is untouched.")
-        notify(`${message} This change is session-only.`)
-        return true
-      }
+      const result = reduceDemoState(currentWorld, action)
+      if (!result.ok) { notify(result.error); return false }
+      updateWorld(result.value)
+      notify(`${message.replace("in this browser", "for this visit")} (Session only.)`)
+      return true
+    } finally {
+      actionPendingRef.current = false
+      setActionPending(false)
     }
-    setWorld(result.value)
-    notify(saveMode === "session" ? `${message.replace("in this browser", "for this visit")} (Session only.)` : message)
-    return true
   }
 
   function retrySave() {
     const next = loadDemo()
-    setWorld(next.world)
-    setSaveMode(next.mode)
+    updateWorld(next.world)
+    updateSaveMode(next.mode)
     setSaveIssue(next.issue)
     observedSave.current = next.observed
     notify(next.mode === "local" ? "Your local demo save is ready." : "Local saving still isn't available.")
@@ -441,54 +495,58 @@ export default function DemoApp() {
   function loadNewerSave() {
     const next = loadDemo()
     if (next.mode === "session") {
-      setSaveMode("session")
+      updateSaveMode("session")
       setSaveIssue(next.issue)
       notify("The saved world couldn't be loaded. This tab remains session-only.")
       return
     }
     if (next.mode === "blocked") {
-      setSaveMode("blocked")
+      updateSaveMode("blocked")
       setSaveIssue(`${next.issue} Your current world is still safe in this tab.`)
       observedSave.current = next.observed
       notify("The newer saved world couldn't be read.")
       return
     }
-    setWorld(next.world)
-    setSaveMode("local")
+    updateWorld(next.world)
+    updateSaveMode("local")
     setSaveIssue(null)
     observedSave.current = next.observed
     notify("The newer saved world is loaded.")
   }
 
   function keepCurrentSession() {
-    setSaveMode("session")
+    updateSaveMode("session")
     setSaveIssue(null)
     notify("This tab's world is now session-only. The newer saved world remains untouched.")
   }
 
-  function resetDemo() {
+  async function resetDemo() {
+    if (actionPendingRef.current) return
+    actionPendingRef.current = true
+    setActionPending(true)
     const freshWorld = createDemoState()
-    let nextMode: SaveMode = saveMode === "session" ? "session" : "local"
+    let nextMode: SaveMode = saveModeRef.current === "local" ? "local" : "session"
     let nextIssue: string | null = null
-    if (saveMode !== "session" && saveMode !== "conflict") {
+    const locks = getDemoLockManager()
+    if (!locks) {
+      nextMode = "session"
+      nextIssue = "This browser can't safely coordinate removal of the old demo save. This fresh world is session-only; the stored save may return next visit."
+    } else {
       try {
-        const currentRaw = localStorage.getItem(SAVE_KEY)
-        if (!matchesObservedDemoSave(observedSave.current, currentRaw)) {
+        const mutation = await resetDemoSave(localStorage, locks, observedSave.current)
+        if (mutation.status === "conflict") {
           nextMode = "conflict"
           nextIssue = "This saved world changed in another tab. Your fresh world is safe in this tab and the other saved world was not removed."
         } else {
-          localStorage.removeItem(SAVE_KEY)
-          observedSave.current = observeDemoSave(null)
+          observedSave.current = mutation.observed
         }
       } catch {
         nextMode = "session"
         nextIssue = "The browser wouldn't remove the old demo save. This fresh world is session-only; the stored save may return next visit."
       }
-    } else if (saveMode === "conflict") {
-      nextIssue = "This saved world changed in another tab. Your fresh world is safe in this tab and the other saved world remains untouched."
     }
-    setWorld(freshWorld)
-    setSaveMode(nextMode)
+    updateWorld(freshWorld)
+    updateSaveMode(nextMode)
     setSaveIssue(nextIssue)
     setSelectedGame(null)
     setStoryStep(null)
@@ -500,6 +558,8 @@ export default function DemoApp() {
     setSceneKey(previous => previous + 1)
     sendCommand({ type: "travel", location: "plaza" })
     notify("A fresh canopy. Pip and Wren are home, and four adventures are waiting.")
+    actionPendingRef.current = false
+    setActionPending(false)
   }
 
   function takePhoto() {
@@ -532,27 +592,29 @@ export default function DemoApp() {
     openPanel("story")
   }
 
-  function advanceStory() {
+  async function advanceStory() {
     const step = storyStep ?? 0
     if (step === 0) {
       const active = GAMES.find(game => world.games[game.id] === "playing" && game.id !== "ember")
       if (active && world.games.ember === "backlog") { setSelectedGame(active.id); openPanel("journal"); return }
-      if (world.games.ember === "backlog" && !applyAction({ type: "start", gameId: "ember", at: new Date().toISOString() }, "Sol has arrived. A visitor for a story just beginning.")) return
+      if (world.games.ember === "backlog" && !await applyAction({ type: "start", gameId: "ember", at: new Date().toISOString() }, "Sol has arrived. A visitor for a story just beginning.")) return
+      const currentWorld = worldRef.current
       setStoryStep(1)
-      travel(world.completions.ember ? (world.homes.ember ?? "grove") : "lodge")
+      travel(currentWorld.completions.ember ? (currentWorld.homes.ember ?? "grove") : "lodge")
     } else if (step === 1) {
       setStoryStep(2)
       travel(world.completions.ember ? (world.homes.ember ?? "grove") : "lodge")
     } else if (step === 2) {
       if (world.games.ember === "backlog") { setStoryStep(0); return }
-      if (world.games.ember === "playing" && !applyAction({ type: "complete", gameId: "ember", at: new Date().toISOString() }, "Sol is a permanent resident now. Same face. A place to stay.")) return
+      if (world.games.ember === "playing" && !await applyAction({ type: "complete", gameId: "ember", at: new Date().toISOString() }, "Sol is a permanent resident now. Same face. A place to stay.")) return
+      const currentWorld = worldRef.current
       setStoryStep(3)
-      travel(world.homes.ember ?? "grove")
+      travel(currentWorld.homes.ember ?? "grove")
     } else if (step === 3) {
       if (!world.builtHouse) {
-        if (applyAction({ type: "build" }, "Fern House and its bridge are ready. Next, invite Sol to move in.")) travel("plot")
+        if (await applyAction({ type: "build" }, "Fern House and its bridge are ready. Next, invite Sol to move in.")) travel("plot")
       } else if (world.completions.ember && world.homes.ember !== "plot") {
-        if (applyAction({ type: "move", gameId: "ember", home: "plot" }, "Sol now lives at Fern House. Their story came with them.")) {
+        if (await applyAction({ type: "move", gameId: "ember", home: "plot" }, "Sol now lives at Fern House. Their story came with them.")) {
           setStoryStep(4)
           travel("plot")
         }
@@ -630,9 +692,9 @@ export default function DemoApp() {
             <button className="demo-text-button" onClick={loadNewerSave}>Load newer saved world</button>
             <button className="demo-text-button" onClick={keepCurrentSession}>Keep this world session-only</button>
           </> : blocked ? <>
-            <button className="demo-text-button" onClick={retrySave}>Retry saved world</button>
-            <button className="demo-text-button" onClick={() => { setSaveMode("session"); setSaveIssue(null); notify("This visit is session-only. Your stored save won't be changed.") }}>Continue session-only</button>
-            <button className="demo-text-button" onClick={() => openPanel("reset")}>Reset demo save</button>
+            <button className="demo-text-button" disabled={actionPending} onClick={retrySave}>Retry saved world</button>
+            <button className="demo-text-button" disabled={actionPending} onClick={() => { updateSaveMode("session"); setSaveIssue(null); notify("This visit is session-only. Your stored save won't be changed.") }}>Continue session-only</button>
+            <button className="demo-text-button" disabled={actionPending} onClick={() => openPanel("reset")}>Reset demo save</button>
           </> : <button className="demo-text-button" onClick={() => setSaveIssue(null)}>Continue session-only <Check size={16} aria-hidden="true" /></button>}
         </div>
       </div>}
@@ -647,7 +709,7 @@ export default function DemoApp() {
         <button className="demo-dock-button" onClick={() => openPanel("map")} title="Map and residents (M)"><MapIcon size={19} aria-hidden="true" /><span>Map</span></button>
         <button className="demo-dock-button" onClick={() => openPanel("build")} title="Build and move residents"><Home size={19} aria-hidden="true" /><span>Build</span></button>
         <span className="demo-dock-divider" aria-hidden="true" />
-        <button className="demo-dock-button demo-tour-button" onClick={storyStep === null ? startTour : () => openPanel("story")} title={storyStep === null ? "Take a guided tour" : "Continue guided tour"}><Sparkles size={18} aria-hidden="true" /><span>{storyStep === null ? tourFinished ? "Replay tour" : "Take a tour" : `Tour · ${storyStep + 1}/5`}</span></button>
+        <button className="demo-dock-button demo-tour-button" disabled={actionPending} onClick={storyStep === null ? startTour : () => openPanel("story")} title={storyStep === null ? "Take a guided tour" : "Continue guided tour"}><Sparkles size={18} aria-hidden="true" /><span>{storyStep === null ? tourFinished ? "Replay tour" : "Take a tour" : `Tour · ${storyStep + 1}/5`}</span></button>
       </nav>
 
       {!ambient && !panel && <div className="demo-context-controls">
@@ -749,7 +811,7 @@ export default function DemoApp() {
             <button className="demo-text-button" onClick={() => { setStoryStep(null); closePanel() }}>End tour</button>
           </div><p className="demo-small-copy">The world pauses while you read. After each action, have a look around and use “Tour” below to continue.</p>
         </section>}
-        {panel === "reset" && <div className="demo-reset"><p>You&apos;ll return to two residents, four backlog games, and an unbuilt plot. This can&apos;t be undone.</p><div className="demo-action-row"><button data-demo-cancel className="demo-button is-secondary" onClick={() => openPanel("settings")}>Keep my canopy</button><button className="demo-button is-destructive" onClick={resetDemo}>Reset only this demo</button></div></div>}
+        {panel === "reset" && <div className="demo-reset"><p>You&apos;ll return to two residents, four backlog games, and an unbuilt plot. This can&apos;t be undone.</p><div className="demo-action-row"><button data-demo-cancel className="demo-button is-secondary" disabled={actionPending} onClick={() => openPanel("settings")}>Keep my canopy</button><button className="demo-button is-destructive" disabled={actionPending} onClick={resetDemo}>Reset only this demo</button></div></div>}
         {blocked && panel !== "reset" && <p className="demo-inline-notice">Your stored save couldn&apos;t be read. Close this panel and choose “Continue session-only,” retry it, or reset only the demo save before making changes.</p>}
       </DemoModal>}
     </div>
