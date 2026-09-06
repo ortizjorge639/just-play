@@ -14,7 +14,10 @@ import type {
   CameraMode, DemoAction, DemoState, GameId, LocationId, SceneCommand,
   ScenePreferences, SceneSnapshot,
 } from "@/lib/demo/contracts"
-import { createDemoState, GAMES, GAME_BY_ID, parseDemoSave, reduceDemoState, residentsFor, SAVE_KEY } from "@/lib/demo/state"
+import {
+  createDemoState, GAMES, GAME_BY_ID, matchesObservedDemoSave, observeDemoSave,
+  parseDemoSave, reduceDemoState, residentsFor, SAVE_KEY, type DemoSaveObservation,
+} from "@/lib/demo/state"
 import { LOCATION_BY_ID, SPAWN, visibleLocations } from "@/lib/demo/world"
 import { BuildPanel } from "./ui/build-panel"
 import { GameMark, Journal } from "./ui/journal"
@@ -32,8 +35,8 @@ import { WorldMap } from "./ui/world-map"
 const DemoScene = dynamic(() => import("./demo-scene"), { ssr: false })
 
 type Panel = "journal" | "map" | "build" | "settings" | "help" | "story" | "reset"
-type SaveMode = "local" | "session" | "blocked"
-type InitialSave = { world: DemoState; mode: SaveMode; issue: string | null }
+type SaveMode = "local" | "session" | "blocked" | "conflict"
+type InitialSave = { world: DemoState; mode: SaveMode; issue: string | null; observed: DemoSaveObservation }
 type PendingCommand = SceneCommand extends infer Command
   ? Command extends SceneCommand ? Omit<Command, "serial"> : never
   : never
@@ -49,12 +52,17 @@ const SERVER_FALSE = () => false
 function loadDemo(): InitialSave {
   try {
     const raw = localStorage.getItem(SAVE_KEY)
-    if (raw === null) return { world: createDemoState(), mode: "local", issue: null }
+    const observed = observeDemoSave(raw)
+    if (raw === null) return { world: createDemoState(), mode: "local", issue: null, observed }
     const parsed = parseDemoSave(raw)
-    if (parsed.ok) return { world: parsed.value, mode: "local", issue: null }
-    return { world: createDemoState(), mode: "blocked", issue: `${parsed.error} Your stored save is untouched.` }
+    if (parsed.ok) return { world: parsed.value, mode: "local", issue: null, observed }
+    return { world: createDemoState(), mode: "blocked", issue: `${parsed.error} Your stored save is untouched.`, observed }
   } catch {
-    return { world: createDemoState(), mode: "session", issue: "This browser won't allow local saves. You can still explore; changes will last only for this visit." }
+    return {
+      world: createDemoState(), mode: "session",
+      issue: "This browser won't allow local saves. You can still explore; changes will last only for this visit.",
+      observed: observeDemoSave(null),
+    }
   }
 }
 
@@ -87,7 +95,9 @@ class SceneBoundary extends Component<{ children: ReactNode; onError: (message: 
 }
 
 function TouchPad({ onMove }: { onMove: (axis: { x: number; y: number }) => void }) {
-  const held = useRef(new Map<number, { x: number; y: number }>())
+  const held = useRef(new Map<number | string, { x: number; y: number }>())
+  const clickTimers = useRef(new Map<string, number>())
+  const suppressClick = useRef(new Set<string>())
   const update = () => {
     const axes = [...held.current.values()]
     onMove({
@@ -96,13 +106,19 @@ function TouchPad({ onMove }: { onMove: (axis: { x: number; y: number }) => void
     })
   }
   useEffect(() => {
-    const reset = () => { held.current.clear(); onMove(STOP) }
+    const reset = () => {
+      held.current.clear()
+      for (const timer of clickTimers.current.values()) window.clearTimeout(timer)
+      clickTimers.current.clear()
+      suppressClick.current.clear()
+      onMove(STOP)
+    }
     window.addEventListener("blur", reset)
     document.addEventListener("visibilitychange", reset)
     return () => {
       window.removeEventListener("blur", reset)
       document.removeEventListener("visibilitychange", reset)
-      onMove(STOP)
+      reset()
     }
   }, [onMove])
   return <div className="demo-touch-pad" aria-label="Touch movement controls">
@@ -122,6 +138,40 @@ function TouchPad({ onMove }: { onMove: (axis: { x: number; y: number }) => void
       onPointerUp={event => { held.current.delete(event.pointerId); update() }}
       onPointerCancel={event => { held.current.delete(event.pointerId); update() }}
       onLostPointerCapture={event => { held.current.delete(event.pointerId); update() }}
+      onKeyDown={event => {
+        if (event.key !== " " && event.key !== "Enter") return
+        event.preventDefault()
+        if (event.repeat) return
+        suppressClick.current.add(key)
+        held.current.set(`keyboard:${key}`, { x, y })
+        update()
+      }}
+      onKeyUp={event => {
+        if (event.key !== " " && event.key !== "Enter") return
+        event.preventDefault()
+        held.current.delete(`keyboard:${key}`)
+        update()
+        window.setTimeout(() => suppressClick.current.delete(key), 0)
+      }}
+      onBlur={() => {
+        held.current.delete(`keyboard:${key}`)
+        suppressClick.current.delete(key)
+        update()
+      }}
+      onClick={event => {
+        if (event.detail !== 0) return
+        if (suppressClick.current.delete(key)) return
+        const token = `click:${key}`
+        const previous = clickTimers.current.get(key)
+        if (previous !== undefined) window.clearTimeout(previous)
+        held.current.set(token, { x, y })
+        update()
+        clickTimers.current.set(key, window.setTimeout(() => {
+          held.current.delete(token)
+          clickTimers.current.delete(key)
+          update()
+        }, 180))
+      }}
       onContextMenu={event => event.preventDefault()}
     ><Icon size={21} aria-hidden="true" /></button>)}
   </div>
@@ -160,13 +210,14 @@ export default function DemoApp() {
   const [tourFinished, setTourFinished] = useState(false)
   const commandSerial = useRef(0)
   const toastSerial = useRef(0)
+  const observedSave = useRef(initial.observed)
   const root = useRef<HTMLDivElement>(null)
   const downloadUrls = useRef(new Set<string>())
   const reducedOS = useSyncExternalStore(subscribeMotion, prefersReducedMotion, SERVER_FALSE)
   const fullscreenSupported = useSyncExternalStore(NOOP_SUBSCRIBE, () => Boolean(document.fullscreenEnabled), SERVER_FALSE)
   const reducedMotion = motion === "system" ? reducedOS : motion === "reduce"
   const preferences = useMemo(() => ({ camera, light, quality, reducedMotion }), [camera, light, quality, reducedMotion])
-  const blocked = saveMode === "blocked"
+  const blocked = saveMode === "blocked" || saveMode === "conflict"
   const fallback = !webgl || Boolean(sceneError)
   const ambient = camera === "ambient" || camera === "still"
   const residents = residentsFor(world)
@@ -202,6 +253,18 @@ export default function DemoApp() {
     document.addEventListener("fullscreenchange", changed)
     return () => document.removeEventListener("fullscreenchange", changed)
   }, [])
+
+  useEffect(() => {
+    if (saveMode !== "local") return
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea !== localStorage || (event.key !== SAVE_KEY && event.key !== null) ||
+        matchesObservedDemoSave(observedSave.current, event.newValue)) return
+      setSaveMode("conflict")
+      setSaveIssue("This saved world changed in another tab. Your world in this tab is still here and has not overwritten it.")
+    }
+    window.addEventListener("storage", onStorage)
+    return () => window.removeEventListener("storage", onStorage)
+  }, [saveMode])
 
   useEffect(() => {
     if (!ambient || panel) return
@@ -333,19 +396,35 @@ export default function DemoApp() {
   }, [panel, ambient, reducedMotion, openPanel])
 
   function applyAction(action: DemoAction, message: string) {
-    if (blocked) { notify("Choose how to handle your unreadable save before changing this world."); return false }
+    if (blocked) {
+      notify(saveMode === "conflict" ? "Choose which world to keep before making another change." : "Choose how to handle your unreadable save before changing this world.")
+      return false
+    }
     const result = reduceDemoState(world, action)
     if (!result.ok) { notify(result.error); return false }
-    setWorld(result.value)
     if (saveMode === "local" && result.value !== world) {
-      try { localStorage.setItem(SAVE_KEY, JSON.stringify(result.value)) }
+      try {
+        const currentRaw = localStorage.getItem(SAVE_KEY)
+        if (!matchesObservedDemoSave(observedSave.current, currentRaw)) {
+          setWorld(result.value)
+          setSaveMode("conflict")
+          setSaveIssue("This saved world changed in another tab. Your latest change is safe in this tab and has not overwritten it.")
+          notify(`${message} Choose whether to load the newer saved world or keep this tab session-only.`)
+          return true
+        }
+        const serialized = JSON.stringify(result.value)
+        localStorage.setItem(SAVE_KEY, serialized)
+        observedSave.current = observeDemoSave(serialized)
+      }
       catch {
+        setWorld(result.value)
         setSaveMode("session")
         setSaveIssue("Your browser couldn't save this change. The world is safe in this tab, but changes will be lost when you leave. Your previous stored save is untouched.")
         notify(`${message} This change is session-only.`)
         return true
       }
     }
+    setWorld(result.value)
     notify(saveMode === "session" ? `${message.replace("in this browser", "for this visit")} (Session only.)` : message)
     return true
   }
@@ -355,15 +434,62 @@ export default function DemoApp() {
     setWorld(next.world)
     setSaveMode(next.mode)
     setSaveIssue(next.issue)
+    observedSave.current = next.observed
     notify(next.mode === "local" ? "Your local demo save is ready." : "Local saving still isn't available.")
   }
 
+  function loadNewerSave() {
+    const next = loadDemo()
+    if (next.mode === "session") {
+      setSaveMode("session")
+      setSaveIssue(next.issue)
+      notify("The saved world couldn't be loaded. This tab remains session-only.")
+      return
+    }
+    if (next.mode === "blocked") {
+      setSaveMode("blocked")
+      setSaveIssue(`${next.issue} Your current world is still safe in this tab.`)
+      observedSave.current = next.observed
+      notify("The newer saved world couldn't be read.")
+      return
+    }
+    setWorld(next.world)
+    setSaveMode("local")
+    setSaveIssue(null)
+    observedSave.current = next.observed
+    notify("The newer saved world is loaded.")
+  }
+
+  function keepCurrentSession() {
+    setSaveMode("session")
+    setSaveIssue(null)
+    notify("This tab's world is now session-only. The newer saved world remains untouched.")
+  }
+
   function resetDemo() {
-    let removed = true
-    try { localStorage.removeItem(SAVE_KEY) } catch { removed = false }
-    setWorld(createDemoState())
-    setSaveMode(removed ? "local" : "session")
-    setSaveIssue(removed ? null : "The browser wouldn't remove the old demo save. This fresh world is session-only; the stored save may return next visit.")
+    const freshWorld = createDemoState()
+    let nextMode: SaveMode = saveMode === "session" ? "session" : "local"
+    let nextIssue: string | null = null
+    if (saveMode !== "session" && saveMode !== "conflict") {
+      try {
+        const currentRaw = localStorage.getItem(SAVE_KEY)
+        if (!matchesObservedDemoSave(observedSave.current, currentRaw)) {
+          nextMode = "conflict"
+          nextIssue = "This saved world changed in another tab. Your fresh world is safe in this tab and the other saved world was not removed."
+        } else {
+          localStorage.removeItem(SAVE_KEY)
+          observedSave.current = observeDemoSave(null)
+        }
+      } catch {
+        nextMode = "session"
+        nextIssue = "The browser wouldn't remove the old demo save. This fresh world is session-only; the stored save may return next visit."
+      }
+    } else if (saveMode === "conflict") {
+      nextIssue = "This saved world changed in another tab. Your fresh world is safe in this tab and the other saved world remains untouched."
+    }
+    setWorld(freshWorld)
+    setSaveMode(nextMode)
+    setSaveIssue(nextIssue)
     setSelectedGame(null)
     setStoryStep(null)
     setTourFinished(false)
@@ -498,9 +624,12 @@ export default function DemoApp() {
       {!sceneReady && !fallback && <div className="demo-loading" role="status"><span className="demo-loading-seed" />Growing your canopy…</div>}
 
       {saveIssue && <div className="demo-storage-notice" role="alert">
-        <div><strong>{blocked ? "Your saved world needs a moment" : "Playing without a local save"}</strong><p>{saveIssue}</p></div>
+        <div><strong>{saveMode === "conflict" ? "Another tab saved a different world" : blocked ? "Your saved world needs a moment" : "Playing without a local save"}</strong><p>{saveIssue}</p></div>
         <div className="demo-storage-actions">
-          {blocked ? <>
+          {saveMode === "conflict" ? <>
+            <button className="demo-text-button" onClick={loadNewerSave}>Load newer saved world</button>
+            <button className="demo-text-button" onClick={keepCurrentSession}>Keep this world session-only</button>
+          </> : blocked ? <>
             <button className="demo-text-button" onClick={retrySave}>Retry saved world</button>
             <button className="demo-text-button" onClick={() => { setSaveMode("session"); setSaveIssue(null); notify("This visit is session-only. Your stored save won't be changed.") }}>Continue session-only</button>
             <button className="demo-text-button" onClick={() => openPanel("reset")}>Reset demo save</button>

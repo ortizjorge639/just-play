@@ -2,6 +2,11 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import { NextRequest } from "next/server"
 import { middleware } from "../../middleware"
+import { metadata } from "../../app/demo/layout"
+
+test("the public demo removes the authenticated app manifest", () => {
+  assert.equal(metadata.manifest, null)
+})
 
 test("the demo renders without any Supabase configuration or authentication", async () => {
   const beforeURL = process.env.NEXT_PUBLIC_SUPABASE_URL

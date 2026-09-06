@@ -2,7 +2,8 @@ import test from "node:test"
 import assert from "node:assert/strict"
 import type { DemoAction, DemoState, GameId, Result } from "./contracts"
 import {
-  GAMES, GAME_BY_ID, SAVE_KEY, createDemoState, parseDemoSave, reduceDemoState, residentsFor,
+  GAMES, GAME_BY_ID, SAVE_KEY, createDemoState, matchesObservedDemoSave, observeDemoSave,
+  parseDemoSave, reduceDemoState, residentsFor,
 } from "./state"
 
 const START = "2026-09-05T18:00:00.000Z"
@@ -312,6 +313,25 @@ for (const [name, save] of corruptSaves) {
 test("malformed JSON and non-string runtime save values are rejected", () => {
   for (const raw of ["", "{", "undefined", '{"version":1,}', "[] trailing"]) rejected(parseDemoSave(raw))
   rejected(parseDemoSave(null as unknown as string))
+})
+
+test("save observations detect cross-tab replacement, deletion, and same-revision edits", () => {
+  const state = createDemoState()
+  const raw = JSON.stringify(state)
+  const observed = observeDemoSave(raw)
+
+  assert.equal(matchesObservedDemoSave(observed, raw), true)
+  assert.equal(matchesObservedDemoSave(observed, null), false)
+  assert.equal(matchesObservedDemoSave(observed, JSON.stringify({ ...state, notes: { ...state.notes, ember: "Elsewhere" } })), false)
+  assert.equal(matchesObservedDemoSave(observed, JSON.stringify({ ...state, revision: state.revision + 1 })), false)
+  assert.equal(matchesObservedDemoSave(observeDemoSave(null), null), true)
+  assert.equal(matchesObservedDemoSave(observeDemoSave(null), raw), false)
+})
+
+test("unreadable saves can only be reset while the exact observed value remains stored", () => {
+  const observed = observeDemoSave("{bad json")
+  assert.equal(matchesObservedDemoSave(observed, "{bad json"), true)
+  assert.equal(matchesObservedDemoSave(observed, "{different bad json"), false)
 })
 
 test("malformed runtime state is rejected instead of crashing or spreading corrupt data", () => {

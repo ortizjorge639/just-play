@@ -28,9 +28,11 @@ class SceneBoundary extends Component<{ onError: (message: string) => void; chil
   render() { return this.state.failed ? null : this.props.children }
 }
 
-function FrameClock({ ambient, quality }: { ambient: boolean; quality: DemoSceneProps["preferences"]["quality"] }) {
+function FrameClock({ ambient, paused, quality }: { ambient: boolean; paused: boolean; quality: DemoSceneProps["preferences"]["quality"] }) {
   const invalidate = useThree(state => state.invalidate)
   useEffect(() => {
+    invalidate()
+    if (paused) return
     let frame = 0, last = 0
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick)
@@ -40,7 +42,7 @@ function FrameClock({ ambient, quality }: { ambient: boolean; quality: DemoScene
     }
     frame = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(frame)
-  }, [ambient, quality, invalidate])
+  }, [ambient, paused, quality, invalidate])
   return null
 }
 
@@ -404,7 +406,7 @@ export default function DemoScene(props: DemoSceneProps) {
       shadows={props.preferences.quality === "high"} frameloop="demand"
       gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true, powerPreference: "high-performance", toneMapping: ACESFilmicToneMapping }}
       fallback="This browser cannot display the 3D canvas. Use the accessible journal and map.">
-      <FrameClock ambient={props.preferences.camera === "ambient" || props.preferences.camera === "still"} quality={props.preferences.quality} />
+      <FrameClock ambient={props.preferences.camera === "ambient" || props.preferences.camera === "still"} paused={props.paused} quality={props.preferences.quality} />
       <World {...props} />
     </Canvas>
   </SceneBoundary>

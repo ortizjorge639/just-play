@@ -1,5 +1,9 @@
-import type { Viewport } from "next"
+import type { Metadata, Viewport } from "next"
 import type { ReactNode } from "react"
+
+export const metadata: Metadata = {
+  manifest: null,
+}
 
 export const viewport: Viewport = {
   width: "device-width",

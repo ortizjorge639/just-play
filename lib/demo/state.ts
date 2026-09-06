@@ -277,6 +277,25 @@ export function parseDemoSave(raw: string): Result<DemoState> {
   return validateState(value)
 }
 
+export type DemoSaveObservation = {
+  raw: string | null
+  revision: number | null
+}
+
+export function observeDemoSave(raw: string | null): DemoSaveObservation {
+  if (raw === null) return { raw, revision: null }
+  const parsed = parseDemoSave(raw)
+  return { raw, revision: parsed.ok ? parsed.value.revision : null }
+}
+
+export function matchesObservedDemoSave(observed: DemoSaveObservation, currentRaw: string | null) {
+  if (currentRaw !== observed.raw) return false
+  if (observed.revision === null) return true
+  if (currentRaw === null) return false
+  const parsed = parseDemoSave(currentRaw)
+  return parsed.ok && parsed.value.revision === observed.revision
+}
+
 export function residentsFor(state: DemoState): Resident[] {
   return GAMES.flatMap(({ id }): Resident[] => {
     if (state.completions[id] && state.homes[id]) {
