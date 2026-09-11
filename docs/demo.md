@@ -126,6 +126,9 @@ never leaves them inaccessible behind it.
 
 Photos are downloaded locally;
 they are not uploaded or added to an online album.
+Capture copies a freshly rendered display frame synchronously to a temporary
+canvas, preserving on-screen tone mapping and antialiasing without retaining
+the WebGL drawing buffer during ordinary viewing.
 
 ## Technical boundaries
 

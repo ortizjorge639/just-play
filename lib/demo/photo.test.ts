@@ -1,109 +1,106 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import { SRGBColorSpace, type Camera, type Scene, type WebGLRenderer, type WebGLRenderTarget } from "three"
+import { PerspectiveCamera, Scene, Vector2, WebGLRenderTarget } from "three"
 import { captureScenePng } from "./photo"
 
-test("photo capture flips WebGL pixels, restores renderer state and releases its target", async () => {
+async function fixture(run: (value: {
+  renderer: Parameters<typeof captureScenePng>[0]
+  events: string[]
+  size: () => [number, number]
+  setBlank: () => void
+  setRenderFailure: () => void
+}) => Promise<void>) {
   const originalDocument = Object.getOwnPropertyDescriptor(globalThis, "document")
-  let encoded: Uint8ClampedArray | null = null
-  let canvasWidth = 0
-  let canvasHeight = 0
-  let encodedWidth = 0
-  let encodedHeight = 0
+  const events: string[] = []
+  let width = 0, height = 0, blank = false, renderFailure = false
+  const source = {} as HTMLCanvasElement
+  const previousTarget = new WebGLRenderTarget(1, 1)
+  let current: ReturnType<Parameters<typeof captureScenePng>[0]["getRenderTarget"]> = previousTarget
   Object.defineProperty(globalThis, "document", {
     configurable: true,
     value: {
       createElement: () => ({
-        get width() { return canvasWidth },
-        set width(value: number) { canvasWidth = value },
-        get height() { return canvasHeight },
-        set height(value: number) { canvasHeight = value },
+        get width() { return width },
+        set width(value: number) { width = value },
+        get height() { return height },
+        set height(value: number) { height = value },
         getContext: () => ({
-          createImageData: (width: number, height: number) => ({
-            data: new Uint8ClampedArray(width * height * 4),
-          }),
-          putImageData: (image: ImageData) => { encoded = image.data },
+          drawImage: (image: HTMLCanvasElement, x: number, y: number, w: number, h: number) => {
+            assert.equal(current, null, "Copy the display framebuffer, not a linear render target")
+            assert.equal(image, source)
+            assert.deepEqual([x, y, w, h], [0, 0, 2, 2])
+            events.push("copy")
+          },
+          getImageData: () => ({ data: new Uint8ClampedArray(blank ? [0, 0, 0, 0] : [10, 20, 30, 255]) }),
         }),
         toBlob: (callback: BlobCallback, type: string) => {
-          encodedWidth = canvasWidth
-          encodedHeight = canvasHeight
-          callback(new Blob([encoded!], { type }))
+          assert.deepEqual([width, height], [2, 2])
+          assert.equal(current, previousTarget)
+          events.push("encode")
+          callback(new Blob(["copied display pixels"], { type }))
         },
       }),
     },
   })
-
-  const previous = {} as WebGLRenderTarget
-  let current: WebGLRenderTarget | null = previous
-  let disposed = false
-  let renders = 0
-  let captureColorSpace = ""
-  let restoredCubeFace = -1
-  let restoredMipmapLevel = -1
-  const renderer = {
-    outputColorSpace: SRGBColorSpace,
-    getDrawingBufferSize: (size: { set: (x: number, y: number) => unknown }) => size.set(2, 2),
+  const renderer: Parameters<typeof captureScenePng>[0] = {
+    domElement: source,
+    getDrawingBufferSize: (size: Vector2) => size.set(2, 2),
     getRenderTarget: () => current,
     getActiveCubeFace: () => 3,
     getActiveMipmapLevel: () => 2,
-    setRenderTarget: (target: WebGLRenderTarget | null, cubeFace?: number, mipmapLevel?: number) => {
-      current = target
-      if (target && target !== previous) {
-        captureColorSpace = target.texture.colorSpace
-        target.addEventListener("dispose", () => { disposed = true })
-      } else if (target === previous) {
-        restoredCubeFace = cubeFace ?? -1
-        restoredMipmapLevel = mipmapLevel ?? -1
-      }
+    setRenderTarget: (target, face, level) => {
+      assert.ok(target === null || target === previousTarget, "Capture must not allocate an off-screen render target")
+      current = target === null ? null : previousTarget
+      if (target === previousTarget) {
+        assert.equal(face, 3)
+        assert.equal(level, 2)
+        events.push("restore")
+      } else events.push("display")
     },
-    render: () => { renders++ },
-    readRenderTargetPixels: (_target: WebGLRenderTarget, _x: number, _y: number, _width: number, _height: number, pixels: Uint8Array) => {
-      pixels.set([
-        220, 20, 10, 255, 220, 20, 10, 255,
-        10, 20, 220, 255, 10, 20, 220, 255,
-      ])
+    render: () => {
+      assert.equal(current, null)
+      events.push("render")
+      if (renderFailure) throw new Error("render failed")
     },
-  } as unknown as WebGLRenderer
-
+  }
   try {
-    const blob = await captureScenePng(renderer, {} as Scene, {} as Camera)
-    assert.equal(blob.type, "image/png")
-    assert.ok(blob.size > 0)
-    assert.equal(renders, 1)
-    assert.equal(current, previous)
-    assert.equal(disposed, true)
-    assert.equal(captureColorSpace, SRGBColorSpace)
-    assert.equal(restoredCubeFace, 3)
-    assert.equal(restoredMipmapLevel, 2)
-    assert.equal(encodedWidth, 2)
-    assert.equal(encodedHeight, 2)
-    assert.equal(canvasWidth, 0)
-    assert.equal(canvasHeight, 0)
-    assert.deepEqual(Array.from(encoded!.slice(0, 4)), [10, 20, 220, 255])
+    await run({
+      renderer, events, size: () => [width, height],
+      setBlank: () => { blank = true },
+      setRenderFailure: () => { renderFailure = true },
+    })
   } finally {
+    previousTarget.dispose()
     if (originalDocument) Object.defineProperty(globalThis, "document", originalDocument)
     else Reflect.deleteProperty(globalThis, "document")
   }
+}
+
+test("photo copies the display synchronously before encoding, then releases its canvas", async () => {
+  await fixture(async ({ renderer, events, size }) => {
+    const pending = captureScenePng(renderer, new Scene(), new PerspectiveCamera())
+    assert.deepEqual(events, ["display", "render", "copy", "restore", "encode"])
+    const blob = await pending
+    assert.equal(blob.type, "image/png")
+    assert.ok(blob.size > 0)
+    assert.deepEqual(size(), [0, 0])
+  })
 })
 
-test("photo capture rejects a blank render and still releases its target", async () => {
-  let current: WebGLRenderTarget | null = null
-  let disposed = false
-  const renderer = {
-    outputColorSpace: SRGBColorSpace,
-    getDrawingBufferSize: (size: { set: (x: number, y: number) => unknown }) => size.set(1, 1),
-    getRenderTarget: () => null,
-    getActiveCubeFace: () => 0,
-    getActiveMipmapLevel: () => 0,
-    setRenderTarget: (target: WebGLRenderTarget | null) => {
-      current = target
-      if (target) target.addEventListener("dispose", () => { disposed = true })
-    },
-    render: () => undefined,
-    readRenderTargetPixels: () => undefined,
-  } as unknown as WebGLRenderer
+test("photo restores the previous renderer target and releases memory on render failure", async () => {
+  await fixture(async ({ renderer, events, size, setRenderFailure }) => {
+    setRenderFailure()
+    await assert.rejects(captureScenePng(renderer, new Scene(), new PerspectiveCamera()), /render failed/)
+    assert.deepEqual(events, ["display", "render", "restore"])
+    assert.deepEqual(size(), [0, 0])
+  })
+})
 
-  await assert.rejects(captureScenePng(renderer, {} as Scene, {} as Camera), /blank/)
-  assert.equal(current, null)
-  assert.equal(disposed, true)
+test("photo rejects an empty copied frame and releases its canvas", async () => {
+  await fixture(async ({ renderer, events, size, setBlank }) => {
+    setBlank()
+    await assert.rejects(captureScenePng(renderer, new Scene(), new PerspectiveCamera()), /blank/)
+    assert.deepEqual(events, ["display", "render", "copy", "restore"])
+    assert.deepEqual(size(), [0, 0])
+  })
 })
