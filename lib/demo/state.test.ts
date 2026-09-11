@@ -200,6 +200,21 @@ test("replay and stopping after arrival preserve resident, contribution, notes a
   assert.equal(stopped.games.ember, "completed")
 })
 
+test("ended replays round-trip with their latest start after the permanent arrival", () => {
+  const arrived = confirm(start())
+  const stopped = stop(start(arrived, "ember", REPLAY), "ember", REFINISH)
+  assert.ok(Date.parse(stopped.completions.ember!) < Date.parse(stopped.started.ember!))
+  assert.deepEqual(value(parseDemoSave(JSON.stringify(stopped))), stopped)
+
+  const old = legacy()
+  old.games.mosslight = "playing"
+  old.started.mosslight = REPLAY
+  const migrated = value(parseDemoSave(JSON.stringify(old)))
+  const migratedStopped = stop(migrated, "mosslight", REFINISH)
+  assert.ok(Date.parse(migratedStopped.completions.mosslight!) < Date.parse(migratedStopped.started.mosslight!))
+  assert.deepEqual(value(parseDemoSave(JSON.stringify(migratedStopped))), migratedStopped)
+})
+
 test("one active invitation includes replays; invalid dates are rejected", () => {
   const state = start()
   for (const id of ["tide", "mosslight", "paper"] as const) rejected(reduceDemoState(state, { type: "start", gameId: id, at: START }))

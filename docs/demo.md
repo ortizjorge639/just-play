@@ -117,8 +117,10 @@ cannot be safely coordinated. Save/reset operations compare the exact observed
 serialized save under a Web Lock, including same-revision replacements. Conflicts
 offer **Load newer saved world** or **Keep this world session-only**; recovery
 choices are disabled while a mutation is pending. Reset removes only this demo key,
-including when the current world is session-only, and never erases a newer
-cross-tab save without an explicit recovery choice.
+including when the current world is session-only and Web Locks are available,
+and never erases a newer cross-tab save without an explicit recovery choice.
+Without Web Locks, reset affects only the in-memory visit so the protected
+stored world may return after a reload.
 Recovery controls appear inside any open panel, so the dialog's focus boundary
 never leaves them inaccessible behind it.
 
