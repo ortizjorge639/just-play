@@ -36,6 +36,7 @@ export function DemoModal({
   }, [])
 
   useEffect(() => {
+    if (ref.current) ref.current.scrollTop = 0
     const target = ref.current?.querySelector<HTMLElement>(alert ? "[data-demo-cancel]" : "button")
     target?.focus({ preventScroll: true })
   }, [title, alert])

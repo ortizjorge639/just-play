@@ -33,6 +33,17 @@ wrapper to bootstrap an unrelated package-manager version.
 
 ## The story to present
 
+Use **Spec guide** beneath the Just Play name to see the supplied Treehouse App
+Specs mapped to the demo. Nine expandable annotations distinguish **From your
+brief**, **Demonstrated here**, and **Demo boundary**. Each opens the relevant
+journal, map, Build, settings, or gathering-tree view with a contextual note.
+Use **Back to spec guide** or **Hide note** to dismiss it. Opening examples only
+navigates; it never changes proof, invitations, placements, or the saved world.
+The last two annotations explicitly come from the earlier connected-world and
+ambient-art brief, not the supplied Treehouse App Specs. The guide also calls
+out fictional avatars, starter scenery, self-confirmed proof, finite construction,
+and the difference between browser ambient view and an OS screensaver.
+
 Begin with the whole scene. This is a home made from adventures, not a game
 library with a 3D background.
 

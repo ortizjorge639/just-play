@@ -264,6 +264,39 @@
 .canopy-demo .demo-panel-toast { display: flex; align-items: center; gap: 10px; padding: 10px 8px 10px 15px; margin-bottom: 20px; background: #314a37; border: 1px solid #86986d; border-radius: 5px; font-size: 14px; }
 .canopy-demo .demo-panel-toast > span { flex: 1; }
 
+.canopy-demo .demo-spec-launcher.is-secondary {
+  position: absolute; top: max(86px, calc(env(safe-area-inset-top) + 62px)); left: 30px;
+  z-index: 10; background: var(--demo-pine); padding-inline: 14px;
+}
+.canopy-demo[data-ambient-idle="true"] .demo-spec-launcher { visibility: hidden; }
+.canopy-demo .demo-spec-examples { margin-top: 24px; }
+.canopy-demo .demo-spec-example { border-top: 1px solid var(--demo-line); }
+.canopy-demo .demo-spec-example:last-child { border-bottom: 1px solid var(--demo-line); }
+.canopy-demo .demo-spec-example summary { cursor: pointer; padding: 17px 0; font-size: 16px; font-weight: 550; text-wrap: pretty; }
+.canopy-demo .demo-spec-example[open] summary { color: var(--demo-amber); }
+.canopy-demo .demo-spec-example > div { padding: 0 0 16px; }
+.canopy-demo .demo-spec-example .demo-small-copy { margin-top: 0; }
+.canopy-demo .demo-spec-example dt { margin-top: 17px; font-size: 13px; font-weight: 600; color: var(--demo-amber); }
+.canopy-demo .demo-spec-example dd { margin: 5px 0 0; line-height: 1.65; font-size: 14px; }
+.canopy-demo .demo-spec-example .demo-text-button { margin-top: 12px; }
+.canopy-demo .demo-spec-annotation { padding-bottom: 18px; margin-bottom: 24px; border-bottom: 1px solid var(--demo-line); }
+.canopy-demo .demo-spec-annotation h3 { font: 22px/1.3 Georgia, serif; color: var(--demo-amber); text-wrap: pretty; }
+.canopy-demo .demo-spec-annotation p { margin-top: 10px; line-height: 1.6; font-size: 14px; }
+.canopy-demo .demo-spec-annotation > div { display: flex; gap: 4px 20px; flex-wrap: wrap; margin-top: 8px; }
+.canopy-demo .demo-location-caption.has-spec-note {
+  pointer-events: auto; top: max(86px, calc(env(safe-area-inset-top) + 62px)); bottom: auto;
+  max-height: calc(100dvh - 240px); overflow: auto; overscroll-behavior: contain;
+  scrollbar-color: #698269 var(--demo-panel); scrollbar-width: thin;
+}
+.canopy-demo .has-spec-note .demo-spec-annotation { padding: 0; margin: 0; border: 0; }
+@media (max-width: 700px) {
+  .canopy-demo .demo-spec-launcher.is-secondary { top: max(76px, calc(env(safe-area-inset-top) + 62px)); left: 14px; font-size: 13px; }
+  .canopy-demo .demo-location-caption.has-spec-note { top: max(76px, calc(env(safe-area-inset-top) + 62px)); max-height: calc(100dvh - 235px); }
+}
+@media (max-width: 700px) and (pointer: coarse) {
+  .canopy-demo .demo-location-caption.has-spec-note { max-height: calc(100dvh - 330px); }
+}
+
 @media (max-width: 1180px) {
   .canopy-demo .demo-context-controls { bottom: calc(112px + env(safe-area-inset-bottom)); left: auto; right: 245px; transform: none; }
   .canopy-demo .demo-context-button { max-width: 280px; white-space: normal; text-align: left; }
@@ -359,6 +392,8 @@
 }
 @media (max-width: 370px) {
   .canopy-demo .demo-brand > svg { display: none; }
+  .canopy-demo .demo-brand { white-space: nowrap; }
+  .canopy-demo .demo-brand .demo-indicator { display: none; }
   .canopy-demo .demo-dock-button { padding-inline: 6px; }
   .canopy-demo .demo-panel-body { padding: 18px; }
   .canopy-demo .demo-panel-heading { padding-left: 18px; }

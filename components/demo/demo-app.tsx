@@ -26,6 +26,7 @@ import { BuildPanel } from "./ui/build-panel"
 import { GameMark, Journal } from "./ui/journal"
 import { DemoModal } from "./ui/modal"
 import { WorldMap } from "./ui/world-map"
+import { SPEC_EXAMPLES, SpecAnnotation, SpecGuide, type SpecId } from "./ui/spec-guide"
 
 /*
  * THESIS: Games become people who stay; the canopy, not a dashboard, leads.
@@ -37,7 +38,7 @@ import { WorldMap } from "./ui/world-map"
 
 const DemoScene = dynamic(() => import("./demo-scene"), { ssr: false })
 
-type Panel = "journal" | "map" | "build" | "settings" | "help" | "story" | "reset"
+type Panel = "journal" | "map" | "build" | "settings" | "help" | "story" | "reset" | "spec"
 type SaveMode = "local" | "session" | "blocked" | "conflict"
 type InitialSave = { world: DemoState; mode: SaveMode; issue: string | null; observed: DemoSaveObservation }
 type PendingCommand = SceneCommand extends infer Command
@@ -210,6 +211,7 @@ export default function DemoApp() {
   const [saveMode, setSaveMode] = useState<SaveMode>(initial.mode)
   const [saveIssue, setSaveIssue] = useState(initial.issue)
   const [panel, setPanel] = useState<Panel | null>(null)
+  const [specNote, setSpecNote] = useState<SpecId | null>(null)
   const [selectedGame, setSelectedGame] = useState<GameId | null>(null)
   const [snapshot, setSnapshot] = useState<SceneSnapshot>(INITIAL_SNAPSHOT)
   const [command, setCommand] = useState<SceneCommand | null>(null)
@@ -246,6 +248,7 @@ export default function DemoApp() {
   const blocked = saveBlocked || actionPending
   const fallback = !webgl || Boolean(sceneError)
   const ambient = camera === "ambient" || camera === "still"
+  const worldSpecNote = specNote === "trinkets" && snapshot.location === "plaza" && !snapshot.inside ? specNote : null
   const residents = residentsFor(world)
   const location = LOCATION_BY_ID[snapshot.location]
 
@@ -323,13 +326,15 @@ export default function DemoApp() {
 
   const openPanel = useCallback((next: Panel) => {
     interaction.navigate()
+    setSpecNote(null)
     setTouch(STOP)
     setPanel(next)
   }, [interaction])
-  const closePanel = useCallback(() => { interaction.navigate(); setPanel(null) }, [interaction])
+  const closePanel = useCallback(() => { interaction.navigate(); setPanel(null); setSpecNote(null) }, [interaction])
 
   const travel = useCallback((destination: LocationId) => {
     interaction.navigate()
+    setSpecNote(null)
     if (!isLocationVisible(destination, worldRef.current)) return
     setTouch(STOP)
     setPanel(null)
@@ -341,6 +346,16 @@ export default function DemoApp() {
       setSnapshot({ player: { x: point.arrival[0], y: point.arrival[1], z: point.arrival[2], yaw: 0 }, location: destination, nearby: destination, inside: false, residents: [] })
     }
   }, [sendCommand, fallback, interaction])
+
+  function inspectSpec(id: SpecId) {
+    const { destination } = SPEC_EXAMPLES.find(example => example.id === id)!
+    if ("location" in destination) travel(destination.location)
+    else {
+      if (destination.panel === "journal") setSelectedGame(destination.game)
+      openPanel(destination.panel)
+    }
+    setSpecNote(id)
+  }
 
   const enterHouse = useCallback(() => {
     interaction.navigate()
@@ -686,6 +701,7 @@ export default function DemoApp() {
     settings: { title: "Make yourself comfortable", description: "Set the light, camera, and pace of your canopy." },
     help: { title: "Find your feet", description: "Explore freely. Nothing here is a task to keep up with." },
     story: { title: "A small story, together", description: "A guided tour using the real demo. Leave or skip at any time." },
+    spec: { title: "Your spec, in this demo", description: "What is demonstrated, where to find it, and what is still a stand-in." },
     reset: { title: "Start with a fresh canopy?", description: "This removes only this demo's local save: notes, proofs, rules, postcards, and builds. Your Just Play account and real games are not touched." },
   }
 
@@ -742,10 +758,14 @@ export default function DemoApp() {
 
       {!panel && storageNotice}
 
-      <div className="demo-location-caption">
+      {!panel && !worldSpecNote && !toast && !saveIssue && <button className="demo-spec-launcher demo-button is-secondary" onClick={() => openPanel("spec")}>Spec guide <BookOpen size={16} aria-hidden="true" /></button>}
+
+      {!panel && worldSpecNote ? <div className="demo-location-caption has-spec-note">
+        <SpecAnnotation id={worldSpecNote} onBack={() => openPanel("spec")} onDismiss={() => setSpecNote(null)} />
+      </div> : <div className="demo-location-caption">
         <p>{snapshot.inside ? "A home among the branches" : locationTitle(location.id, world)}</p>
         <span>{snapshot.inside ? "The story is on the shelves. The door is always open." : location.subtitle}</span>
-      </div>
+      </div>}
 
       <nav id="demo-world-controls" className="demo-world-controls" aria-label="World controls" tabIndex={-1}>
         <button data-demo-menu className="demo-dock-button" onClick={() => { setSelectedGame(null); openPanel("journal") }} title="Game journal (J)"><BookOpen size={19} aria-hidden="true" /><span>Journal</span></button>
@@ -789,6 +809,8 @@ export default function DemoApp() {
 
       {panel && <DemoModal title={panelHeading[panel].title} description={panelHeading[panel].description} onClose={closePanel} alert={panel === "reset"}>
         {storageNotice}
+        {panel === "spec" && <SpecGuide onInspect={inspectSpec} onHelp={() => openPanel("help")} />}
+        {specNote && <SpecAnnotation id={specNote} onBack={() => openPanel("spec")} onDismiss={() => setSpecNote(null)} />}
         {toast && <div className="demo-panel-toast" role="status" aria-live="polite">
           <span>{toast.message}</span><button className="demo-icon-button" onClick={() => setToast(null)} aria-label="Dismiss message" title="Dismiss message"><X size={17} aria-hidden="true" /></button>
         </div>}
@@ -837,6 +859,7 @@ export default function DemoApp() {
           <button className="demo-button" onClick={closePanel}>Back to the canopy <ArrowRight size={17} aria-hidden="true" /></button>
         </>}
         {panel === "help" && <>
+          <button className="demo-text-button" onClick={() => openPanel("spec")}>See your spec demonstrated here <ArrowRight size={17} aria-hidden="true" /></button>
           <section className="demo-help-section"><h3>A few ways to wander</h3><dl className="demo-key-list">
             <div><dt><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd></dt><dd>Walk along platforms and bridges</dd></div>
             <div><dt>Drag the world</dt><dd>Turn the camera; scroll to zoom</dd></div>
