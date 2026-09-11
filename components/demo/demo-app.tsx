@@ -15,11 +15,13 @@ import type {
   ScenePreferences, SceneSnapshot,
 } from "@/lib/demo/contracts"
 import {
-  createDemoState, GAMES, GAME_BY_ID, matchesObservedDemoSave, observeDemoSave,
-  parseDemoSave, reduceDemoState, residentsFor, SAVE_KEY, type DemoSaveObservation,
+  CONTRIBUTIONS, createDemoState, earnedStructure, GAMES, GAME_BY_ID, matchesObservedDemoSave, observeDemoSave,
+  parseDemoSave, reduceDemoState, residentsFor, rulesFor, SAVE_KEY, type DemoSaveObservation,
 } from "@/lib/demo/state"
 import { getDemoLockManager, mutateDemoSave, resetDemoSave } from "@/lib/demo/storage"
-import { LOCATION_BY_ID, SPAWN, visibleLocations } from "@/lib/demo/world"
+import { isLocationVisible, LOCATION_BY_ID, locationTitle, SPAWN, visibleLocations } from "@/lib/demo/world"
+import { DemoInteractionGuard } from "@/lib/demo/interaction"
+import { RulesEditor } from "./ui/rules-editor"
 import { BuildPanel } from "./ui/build-panel"
 import { GameMark, Journal } from "./ui/journal"
 import { DemoModal } from "./ui/modal"
@@ -28,7 +30,7 @@ import { WorldMap } from "./ui/world-map"
 /*
  * THESIS: Games become people who stay; the canopy, not a dashboard, leads.
  * OWN-WORLD: Dark pine backplates, warm ivory, restrained amber, Georgia place names.
- * STORY: Start a fictional game, meet its visitor, finish it, and make them a home.
+ * STORY: Invite a fictional game, choose proof, welcome a neighbor, place an earned contribution.
  * FIRST VIEWPORT: Full-bleed world; quiet brand above, place name below, compact edge controls.
  * FORM: The approved experience-first direction. Focused field-guide panels yield to the scene.
  */
@@ -192,11 +194,14 @@ function TouchPad({ onMove }: { onMove: (axis: { x: number; y: number }) => void
 }
 
 const STORY = [
-  { title: "A story starts with a visitor", text: "Try The Last Ember. Starting this fictional game brings Sol to the travelers' lodge—someone to share the tree with while their story unfolds.", action: "Start The Last Ember" },
-  { title: "Meet a familiar face", text: "Sol is part of the world now. Visit the lodge and look for the ember-colored traveler. Characters wander through the shared plaza, just like neighbors.", action: "Visit the travelers' lodge" },
-  { title: "The adventure ends. Sol stays.", text: "Mark the sample game complete. The same Sol becomes a permanent resident, with a memory of the journey. No replacement, no disappearing friend.", action: "Complete the sample game" },
-  { title: "Make room for someone", text: "Build Fern House on the next branch, then give Sol a place there. Their memory and identity come with them.", action: "Build Fern House" },
-  { title: "Nothing left to do. Just be here.", text: "Head to the lookout, choose the evening light, or leave the canopy in ambient view. Wandering earns no points and adds no game progress. This part is simply yours to enjoy.", action: "Admire from the lookout" },
+  { title: "An invitation beyond the tree", text: "Invite Sol from The Last Ember. Until your chosen proof is met, Sol travels outside the settlement: visible in the journal and map, not waiting at the lodge.", action: "Invite The Last Ember" },
+  { title: "You decide what is enough", text: "Choose Sol's permanent arrival stamp below, or keep the default. Two hours can mean enough; later credits can mean more. Tier names never decide whether a neighbor belongs.", action: "Use this stamp · continue" },
+  { title: "One stamp. A permanent neighbor.", text: "Self-confirm your chosen fictional milestone. The same Sol arrives permanently, with an ember reliquary beside the gathering tree. This is demonstration data, not externally verified play.", action: "Self-confirm arrival stamp" },
+  { title: "A deeper story changes the world", text: "Self-confirm a structural tier. It earns Sol's hearth deck, not a duplicate Sol. The addition waits for you to choose a branch; later tiers enrich that same place.", action: "Self-confirm structural tier" },
+  { title: "Choose where the memory belongs", text: "Place Sol's earned hearth deck on a compatible branch below. The platform, bridge, map entry, and walkable connection arrive together. No cost or timer.", action: "Continue after placement" },
+  { title: "Some journeys take another shape", text: "Try a separate invitation to demonstrate an unfinished attempt. Nothing is replaced: if another game is active, handle it in the journal or skip this part.", action: "Invite for the postcard path" },
+  { title: "Keep a little of the journey", text: "End that unarrived invitation. One postcard stays by the trailhead and in the journal. Re-inviting keeps it; arrival replaces it. You may delete it whenever you like.", action: "End invitation · leave postcard" },
+  { title: "Nothing left to do. Just be here.", text: "The furnished grove home is open, and your earned additions are part of the canopy. Head to the lookout or leave the world in ambient view. Watching never earns progress.", action: "Admire from the lookout" },
 ] as const
 
 export default function DemoApp() {
@@ -228,7 +233,9 @@ export default function DemoApp() {
   const observedSave = useRef(initial.observed)
   const worldRef = useRef(initial.world)
   const saveModeRef = useRef(initial.mode)
-  const actionPendingRef = useRef(false)
+  const [interaction] = useState(() => new DemoInteractionGuard())
+  const [tourRemnant, setTourRemnant] = useState<GameId>("rain")
+  const [tourTier, setTourTier] = useState("")
   const root = useRef<HTMLDivElement>(null)
   const downloadUrls = useRef(new Set<string>())
   const reducedOS = useSyncExternalStore(subscribeMotion, prefersReducedMotion, SERVER_FALSE)
@@ -315,12 +322,15 @@ export default function DemoApp() {
   }, [])
 
   const openPanel = useCallback((next: Panel) => {
+    interaction.navigate()
     setTouch(STOP)
     setPanel(next)
-  }, [])
-  const closePanel = useCallback(() => setPanel(null), [])
+  }, [interaction])
+  const closePanel = useCallback(() => { interaction.navigate(); setPanel(null) }, [interaction])
 
   const travel = useCallback((destination: LocationId) => {
+    interaction.navigate()
+    if (!isLocationVisible(destination, worldRef.current)) return
     setTouch(STOP)
     setPanel(null)
     setCamera("explore")
@@ -330,9 +340,10 @@ export default function DemoApp() {
       const point = LOCATION_BY_ID[destination]
       setSnapshot({ player: { x: point.arrival[0], y: point.arrival[1], z: point.arrival[2], yaw: 0 }, location: destination, nearby: destination, inside: false, residents: [] })
     }
-  }, [sendCommand, fallback])
+  }, [sendCommand, fallback, interaction])
 
   const enterHouse = useCallback(() => {
+    interaction.navigate()
     setPanel(null)
     setTouch(STOP)
     setCamera("explore")
@@ -340,7 +351,7 @@ export default function DemoApp() {
       setSnapshot(previous => ({ ...previous, inside: true, nearby: "exit", location: "grove" }))
     } else sendCommand({ type: "enter" })
     notify("Inside the grove home. The door will take you back outside.")
-  }, [fallback, sendCommand, notify])
+  }, [fallback, sendCommand, notify, interaction])
 
   const exitHouse = useCallback(() => {
     if (fallback) setSnapshot(previous => ({ ...previous, inside: false, nearby: "grove" }))
@@ -351,7 +362,7 @@ export default function DemoApp() {
   const onInteract = useCallback((target: LocationId | "door" | "exit") => {
     if (target === "door") enterHouse()
     else if (target === "exit") exitHouse()
-    else if (target === "plot") openPanel("build")
+    else if (["plot", "brook", "crown", "fern", "dusk", "meadow", "sunrise"].includes(target)) openPanel("build")
     else if (target === "grove" || target === "lookout") openPanel("map")
     else { setSelectedGame(null); openPanel("journal") }
   }, [enterHouse, exitHouse, openPanel])
@@ -417,6 +428,7 @@ export default function DemoApp() {
   function updateWorld(next: DemoState) {
     worldRef.current = next
     setWorld(next)
+    setSnapshot(previous => isLocationVisible(previous.location, next) ? previous : INITIAL_SNAPSHOT)
   }
 
   function updateSaveMode(next: SaveMode) {
@@ -425,15 +437,15 @@ export default function DemoApp() {
   }
 
   async function applyAction(action: DemoAction, message: string) {
-    if (actionPendingRef.current) {
+    if (interaction.pending) {
       notify("Finish the current change before making another one.")
       return false
     }
-    if (saveBlocked) {
+    if (saveModeRef.current === "blocked" || saveModeRef.current === "conflict") {
       notify(saveMode === "conflict" ? "Choose which world to keep before making another change." : "Choose how to handle your unreadable save before changing this world.")
       return false
     }
-    actionPendingRef.current = true
+    if (!interaction.beginMutation()) return false
     setActionPending(true)
     try {
       const currentWorld = worldRef.current
@@ -478,12 +490,14 @@ export default function DemoApp() {
       notify(`${message.replace("in this browser", "for this visit")} (Session only.)`)
       return true
     } finally {
-      actionPendingRef.current = false
+      interaction.endMutation()
       setActionPending(false)
     }
   }
 
   function retrySave() {
+    if (interaction.pending) return
+    interaction.navigate()
     const next = loadDemo()
     updateWorld(next.world)
     updateSaveMode(next.mode)
@@ -493,6 +507,8 @@ export default function DemoApp() {
   }
 
   function loadNewerSave() {
+    if (interaction.pending) return
+    interaction.navigate()
     const next = loadDemo()
     if (next.mode === "session") {
       updateSaveMode("session")
@@ -515,14 +531,16 @@ export default function DemoApp() {
   }
 
   function keepCurrentSession() {
+    if (interaction.pending) return
+    interaction.navigate()
     updateSaveMode("session")
     setSaveIssue(null)
-    notify("This tab's world is now session-only. The newer saved world remains untouched.")
+    notify("This tab's world is now session-only. Any existing stored demo save remains untouched.")
   }
 
   async function resetDemo() {
-    if (actionPendingRef.current) return
-    actionPendingRef.current = true
+    if (!interaction.beginMutation()) return
+    interaction.navigate()
     setActionPending(true)
     const freshWorld = createDemoState()
     let nextMode: SaveMode = saveModeRef.current === "local" ? "local" : "session"
@@ -558,7 +576,7 @@ export default function DemoApp() {
     setSceneKey(previous => previous + 1)
     sendCommand({ type: "travel", location: "plaza" })
     notify("A fresh canopy. Pip and Wren are home, and four adventures are waiting.")
-    actionPendingRef.current = false
+    interaction.endMutation()
     setActionPending(false)
   }
 
@@ -587,38 +605,57 @@ export default function DemoApp() {
   }
 
   function startTour() {
+    interaction.navigate()
+    setTourRemnant(GAMES.find(game => game.id === "rain" && !world.completions[game.id])?.id ??
+      GAMES.find(game => game.id !== "ember" && !world.completions[game.id])?.id ?? "rain")
+    setTourTier("")
     setStoryStep(0)
     setTourFinished(false)
     openPanel("story")
   }
 
   async function advanceStory() {
+    if (interaction.pending) return
+    const token = interaction.capture()
+    const apply = async (action: DemoAction, message: string) =>
+      await applyAction(action, message) && interaction.isCurrent(token)
     const step = storyStep ?? 0
     if (step === 0) {
       const active = GAMES.find(game => world.games[game.id] === "playing" && game.id !== "ember")
       if (active && world.games.ember === "backlog") { setSelectedGame(active.id); openPanel("journal"); return }
-      if (world.games.ember === "backlog" && !await applyAction({ type: "start", gameId: "ember", at: new Date().toISOString() }, "Sol has arrived. A visitor for a story just beginning.")) return
-      const currentWorld = worldRef.current
+      if (world.games.ember === "backlog" && !await apply({ type: "start", gameId: "ember", at: new Date().toISOString() }, "Sol is invited, traveling beyond the settlement.")) return
       setStoryStep(1)
-      travel(currentWorld.completions.ember ? (currentWorld.homes.ember ?? "grove") : "lodge")
+      openPanel("story")
     } else if (step === 1) {
       setStoryStep(2)
-      travel(world.completions.ember ? (world.homes.ember ?? "grove") : "lodge")
+      openPanel("story")
     } else if (step === 2) {
       if (world.games.ember === "backlog") { setStoryStep(0); return }
-      if (world.games.ember === "playing" && !await applyAction({ type: "complete", gameId: "ember", at: new Date().toISOString() }, "Sol is a permanent resident now. Same face. A place to stay.")) return
-      const currentWorld = worldRef.current
+      if (!world.completions.ember && !await apply({ type: "confirm", gameId: "ember", target: "stamp", at: new Date().toISOString() }, "Sol has arrived permanently. The ember reliquary is beside the gathering tree.")) return
       setStoryStep(3)
-      travel(currentWorld.homes.ember ?? "grove")
+      travel(worldRef.current.homes.ember ?? "grove")
     } else if (step === 3) {
-      if (!world.builtHouse) {
-        if (await applyAction({ type: "build" }, "Fern House and its bridge are ready. Next, invite Sol to move in.")) travel("plot")
-      } else if (world.completions.ember && world.homes.ember !== "plot") {
-        if (await applyAction({ type: "move", gameId: "ember", home: "plot" }, "Sol now lives at Fern House. Their story came with them.")) {
-          setStoryStep(4)
-          travel("plot")
-        }
-      } else { setStoryStep(4); openPanel("story") }
+      if (!world.completions.ember) { setStoryStep(2); return }
+      const structural = rulesFor(world, "ember").tiers.filter(tier => tier.structural)
+      const target = structural.find(tier => tier.id === tourTier) ?? structural[0]
+      if (!earnedStructure(world, "ember")) {
+        if (!target) { setSelectedGame("ember"); openPanel("journal"); return }
+        if (!await apply({ type: "confirm", gameId: "ember", target: target.id, at: new Date().toISOString() }, "Self-confirmed. Sol's hearth deck is earned and ready for your choice of branch.")) return
+      }
+      setStoryStep(4); openPanel("story")
+    } else if (step === 4) {
+      if (!world.placements.ember) return
+      setStoryStep(5); travel(world.placements.ember)
+    } else if (step === 5) {
+      if (world.completions[tourRemnant]) { setStoryStep(7); return }
+      const active = GAMES.find(game => world.games[game.id] === "playing" && game.id !== tourRemnant)
+      if (active) { setSelectedGame(active.id); openPanel("journal"); return }
+      if (world.games[tourRemnant] !== "playing" && !await apply({ type: "start", gameId: tourRemnant, at: new Date().toISOString() }, `${GAME_BY_ID[tourRemnant].character} is invited beyond the tree.`)) return
+      setStoryStep(6); openPanel("story")
+    } else if (step === 6) {
+      if (world.games[tourRemnant] === "playing" && !world.completions[tourRemnant] &&
+        !await apply({ type: "stop", gameId: tourRemnant, at: new Date().toISOString() }, "One postcard stays by the trailhead. No debt, no decay.")) return
+      setStoryStep(7); travel("trailhead")
     } else {
       setTourFinished(true)
       setStoryStep(null)
@@ -630,23 +667,41 @@ export default function DemoApp() {
   const storyIndex = storyStep ?? 0
   const story = STORY[storyIndex]
   const activeOther = GAMES.find(game => world.games[game.id] === "playing" && game.id !== "ember")
+  const structuralTiers = rulesFor(world, "ember").tiers.filter(tier => tier.structural)
   const storyAction = storyIndex === 0
-    ? world.games.ember !== "backlog" ? "Find Sol in the world" : activeOther ? `Open ${activeOther.title}` : story.action
-    : storyIndex === 1 && world.completions.ember ? "Visit Sol's home"
+    ? world.games.ember !== "backlog" ? "Continue Sol's existing story" : activeOther ? `Open ${activeOther.title}` : story.action
     : storyIndex === 2 && world.games.ember === "backlog" ? "Go back to Sol's beginning"
-    : storyIndex === 2 && world.games.ember === "completed" ? "See Sol in the grove"
-    : storyIndex === 3 && world.builtHouse ? world.completions.ember && world.homes.ember !== "plot" ? "Move Sol into Fern House" : "Enjoy the new branch"
+    : storyIndex === 2 && world.completions.ember ? "See Sol's permanent home"
+    : storyIndex === 3 && !world.completions.ember ? "Return to arrival stamp"
+    : storyIndex === 3 && earnedStructure(world, "ember") ? "See the earned contribution"
+    : storyIndex === 3 && !structuralTiers.length ? "Choose a structural tier in the journal"
+    : storyIndex === 5 && world.completions[tourRemnant] ? "All these neighbors already arrived · skip"
+    : storyIndex === 6 && world.games[tourRemnant] !== "playing" ? "See the current trailhead"
     : story.action
 
   const panelHeading: Record<Panel, { title: string; description: string }> = {
     journal: { title: "Your game journal", description: "Six fictional games. A real little world to try." },
     map: { title: "A place for everyone", description: "Find a path, a neighbor, or a quiet corner." },
-    build: { title: "Room on the next branch", description: "One new home, made for stories that stay." },
+    build: { title: "Room on the next branch", description: "Earned additions. Your choice of place." },
     settings: { title: "Make yourself comfortable", description: "Set the light, camera, and pace of your canopy." },
     help: { title: "Find your feet", description: "Explore freely. Nothing here is a task to keep up with." },
     story: { title: "A small story, together", description: "A guided tour using the real demo. Leave or skip at any time." },
-    reset: { title: "Start with a fresh canopy?", description: "This removes only this demo's local save, including your notes and Fern House. Your Just Play account and real games are not touched." },
+    reset: { title: "Start with a fresh canopy?", description: "This removes only this demo's local save: notes, proofs, rules, postcards, and builds. Your Just Play account and real games are not touched." },
   }
+
+  const storageNotice = saveIssue ? <div className="demo-storage-notice" role="alert">
+    <div><strong>{saveMode === "conflict" ? "Another tab saved a different world" : blocked ? "Your saved world needs a moment" : "Playing without a local save"}</strong><p>{saveIssue}</p></div>
+    <div className="demo-storage-actions">
+      {saveMode === "conflict" ? <>
+        <button className="demo-text-button" disabled={actionPending} onClick={loadNewerSave}>Load newer saved world</button>
+        <button className="demo-text-button" disabled={actionPending} onClick={keepCurrentSession}>Keep this world session-only</button>
+      </> : saveBlocked ? <>
+        <button className="demo-text-button" disabled={actionPending} onClick={retrySave}>Retry saved world</button>
+        <button className="demo-text-button" disabled={actionPending} onClick={keepCurrentSession}>Continue session-only</button>
+        <button className="demo-text-button" disabled={actionPending} onClick={() => openPanel("reset")}>Reset demo save</button>
+      </> : <button className="demo-text-button" onClick={() => setSaveIssue(null)}>Continue session-only <Check size={16} aria-hidden="true" /></button>}
+    </div>
+  </div> : null
 
   return (
     <div ref={root} className={`canopy-demo${ambient ? " is-ambient" : ""}${fallback ? " is-fallback" : ""}`} data-reduced-motion={reducedMotion}>
@@ -662,7 +717,7 @@ export default function DemoApp() {
             <WorldMap world={world} snapshot={snapshot} />
             <div>
               <h1>Your canopy is still here.</h1>
-              <p>{sceneError ?? "This browser doesn't support the 3D view. You can still meet the cast, keep notes, and build a home using the controls below."}</p>
+              <p>{sceneError ?? "This browser doesn't support the 3D view. You can still invite games, confirm milestones, keep notes, and place earned additions using the controls below."}</p>
               <div className="demo-action-row">
                 <button className="demo-button" onClick={() => openPanel("journal")}><BookOpen size={18} aria-hidden="true" /> Open game journal</button>
                 <button className="demo-button is-secondary" onClick={retryScene}>Retry 3D at lower detail</button>
@@ -685,37 +740,25 @@ export default function DemoApp() {
 
       {!sceneReady && !fallback && <div className="demo-loading" role="status"><span className="demo-loading-seed" />Growing your canopy…</div>}
 
-      {saveIssue && <div className="demo-storage-notice" role="alert">
-        <div><strong>{saveMode === "conflict" ? "Another tab saved a different world" : blocked ? "Your saved world needs a moment" : "Playing without a local save"}</strong><p>{saveIssue}</p></div>
-        <div className="demo-storage-actions">
-          {saveMode === "conflict" ? <>
-            <button className="demo-text-button" onClick={loadNewerSave}>Load newer saved world</button>
-            <button className="demo-text-button" onClick={keepCurrentSession}>Keep this world session-only</button>
-          </> : blocked ? <>
-            <button className="demo-text-button" disabled={actionPending} onClick={retrySave}>Retry saved world</button>
-            <button className="demo-text-button" disabled={actionPending} onClick={() => { updateSaveMode("session"); setSaveIssue(null); notify("This visit is session-only. Your stored save won't be changed.") }}>Continue session-only</button>
-            <button className="demo-text-button" disabled={actionPending} onClick={() => openPanel("reset")}>Reset demo save</button>
-          </> : <button className="demo-text-button" onClick={() => setSaveIssue(null)}>Continue session-only <Check size={16} aria-hidden="true" /></button>}
-        </div>
-      </div>}
+      {!panel && storageNotice}
 
       <div className="demo-location-caption">
-        <p>{snapshot.inside ? "A home among the branches" : location.title}</p>
+        <p>{snapshot.inside ? "A home among the branches" : locationTitle(location.id, world)}</p>
         <span>{snapshot.inside ? "The story is on the shelves. The door is always open." : location.subtitle}</span>
       </div>
 
       <nav id="demo-world-controls" className="demo-world-controls" aria-label="World controls" tabIndex={-1}>
         <button data-demo-menu className="demo-dock-button" onClick={() => { setSelectedGame(null); openPanel("journal") }} title="Game journal (J)"><BookOpen size={19} aria-hidden="true" /><span>Journal</span></button>
         <button className="demo-dock-button" onClick={() => openPanel("map")} title="Map and residents (M)"><MapIcon size={19} aria-hidden="true" /><span>Map</span></button>
-        <button className="demo-dock-button" onClick={() => openPanel("build")} title="Build and move residents"><Home size={19} aria-hidden="true" /><span>Build</span></button>
+        <button className="demo-dock-button" onClick={() => openPanel("build")} title="Place earned contributions"><Home size={19} aria-hidden="true" /><span>Build</span></button>
         <span className="demo-dock-divider" aria-hidden="true" />
-        <button className="demo-dock-button demo-tour-button" disabled={actionPending} onClick={storyStep === null ? startTour : () => openPanel("story")} title={storyStep === null ? "Take a guided tour" : "Continue guided tour"}><Sparkles size={18} aria-hidden="true" /><span>{storyStep === null ? tourFinished ? "Replay tour" : "Take a tour" : `Tour · ${storyStep + 1}/5`}</span></button>
+        <button className="demo-dock-button demo-tour-button" onClick={storyStep === null ? startTour : () => openPanel("story")} title={storyStep === null ? "Take a guided tour" : "Continue guided tour"}><Sparkles size={18} aria-hidden="true" /><span>{storyStep === null ? tourFinished ? "Replay tour" : "Take a tour" : `Tour · ${storyStep + 1}/${STORY.length}`}</span></button>
       </nav>
 
       {!ambient && !panel && <div className="demo-context-controls">
         {snapshot.inside ? <button className="demo-context-button" onClick={exitHouse}><DoorOpen size={18} aria-hidden="true" /> Leave home {snapshot.nearby === "exit" && <kbd>E</kbd>}</button>
           : snapshot.location === "grove" ? <button className="demo-context-button" onClick={enterHouse}><DoorOpen size={18} aria-hidden="true" /> Enter grove home {snapshot.nearby === "door" && <kbd>E</kbd>}</button>
-          : snapshot.nearby && <button className="demo-context-button" onClick={() => onInteract(snapshot.nearby ?? "plaza")}><MapPin size={17} aria-hidden="true" />{snapshot.nearby === "lodge" ? "Meet the visitors" : snapshot.nearby === "trailhead" ? "Find your next adventure" : snapshot.nearby === "plot" ? "Make this a home" : snapshot.nearby === "lookout" ? "Look around" : "Open your journal"}<kbd>E</kbd></button>}
+          : snapshot.nearby && <button className="demo-context-button" onClick={() => onInteract(snapshot.nearby ?? "plaza")}><MapPin size={17} aria-hidden="true" />{snapshot.nearby === "lodge" ? "Read the game journal" : snapshot.nearby === "trailhead" ? "Find your next adventure" : ["plot", "brook", "crown", "fern", "dusk", "meadow", "sunrise"].includes(snapshot.nearby) ? "See contributions" : snapshot.nearby === "lookout" ? "Look around" : "Open your journal"}<kbd>E</kbd></button>}
       </div>}
 
       <aside className="demo-wayfinding" aria-label="Map and camera">
@@ -745,10 +788,14 @@ export default function DemoApp() {
       </div>}
 
       {panel && <DemoModal title={panelHeading[panel].title} description={panelHeading[panel].description} onClose={closePanel} alert={panel === "reset"}>
+        {storageNotice}
         {toast && <div className="demo-panel-toast" role="status" aria-live="polite">
           <span>{toast.message}</span><button className="demo-icon-button" onClick={() => setToast(null)} aria-label="Dismiss message" title="Dismiss message"><X size={17} aria-hidden="true" /></button>
         </div>}
-        {panel === "journal" && <Journal world={world} selected={selectedGame} onSelect={setSelectedGame} onAction={applyAction} onTravel={travel} blocked={blocked} />}
+        {panel === "journal" && <>
+          {world.migratedFrom === 1 && <p className="demo-inline-notice">Your version-one world was upgraded without resetting it. Established residents, notes, first-arrival dates, and home assignments stay. {world.builtHouse ? "Fern House and its branch are preserved as a legacy build; the other six sites remain available." : "New additions are now earned through your own milestone rules."}</p>}
+          <Journal world={world} selected={selectedGame} onSelect={setSelectedGame} onAction={applyAction} onTravel={travel} onBuild={() => openPanel("build")} blocked={blocked} />
+        </>}
         {panel === "build" && <BuildPanel world={world} onAction={applyAction} onTravel={travel} blocked={blocked} />}
         {panel === "map" && <>
           <WorldMap world={world} snapshot={snapshot} />
@@ -756,15 +803,19 @@ export default function DemoApp() {
           {snapshot.inside && <button className="demo-button is-secondary" onClick={() => { exitHouse(); closePanel() }}><DoorOpen size={17} aria-hidden="true" /> Leave the grove home</button>}
           {!snapshot.inside && snapshot.location === "grove" && <button className="demo-button" onClick={enterHouse}><DoorOpen size={17} aria-hidden="true" /> Enter the furnished grove home</button>}
           <section className="demo-map-directory"><h3>Places to go</h3><ul>
-            {visibleLocations(world.builtHouse).map(place => <li key={place.id}><button onClick={() => travel(place.id)}><span><strong>{place.title}</strong><span>{place.id === "grove" ? "Travel here, then enter the furnished home." : place.subtitle}</span></span><ArrowRight size={18} aria-hidden="true" /><span className="demo-sr-only">Travel to {place.title}</span></button></li>)}
+            {visibleLocations(world).map(place => <li key={place.id}><button onClick={() => travel(place.id)}><span><strong>{locationTitle(place.id, world)}</strong><span>{place.id === "grove" ? "Travel here, then enter the furnished home." : place.subtitle}</span></span><ArrowRight size={18} aria-hidden="true" /><span className="demo-sr-only">Travel to {locationTitle(place.id, world)}</span></button></li>)}
           </ul></section>
           <section className="demo-map-directory"><h3>Neighbors, near and far</h3><p>Everyone wanders. Their home is always a good place to begin.</p><ul>
             {residents.map(resident => {
               const game = GAME_BY_ID[resident.gameId]
               const live = snapshot.residents.find(value => value.gameId === resident.gameId)
-              return <li key={resident.gameId}><button onClick={() => travel(resident.home)}><GameMark game={game} /><span><strong>{game.character} <small>{resident.kind === "visitor" ? "Visiting" : "At home"}</small></strong><span>{game.title} · {LOCATION_BY_ID[resident.home].title}{live ? ` · ${live.activity}` : ""}</span></span><ArrowRight size={18} aria-hidden="true" /><span className="demo-sr-only">Visit {game.character}&apos;s home</span></button></li>
+              return <li key={resident.gameId}><button onClick={() => travel(resident.home)}><GameMark game={game} /><span><strong>{game.character} <small>Arrived · permanent</small></strong><span>{game.title} · {LOCATION_BY_ID[resident.home].title}{live ? ` · ${live.activity}` : ""}</span></span><ArrowRight size={18} aria-hidden="true" /><span className="demo-sr-only">Visit {game.character}&apos;s home</span></button></li>
             })}
           </ul></section>
+          <section className="demo-map-directory"><h3>Beyond the settlement</h3><p>Unarrived avatars are outside, not lodge visitors. Dashed circles mark compatible sites, not walkable destinations until an earned addition is placed.</p><ul>
+            {GAMES.filter(game => !world.completions[game.id]).map(game => <li key={game.id}><button onClick={() => { setSelectedGame(game.id); openPanel("journal") }}><GameMark game={game} /><span><strong>{game.character} · {world.games[game.id] === "playing" ? "Invited, traveling" : "Backlogged possibility"}</strong><span>{rulesFor(world, game.id).stamp}{world.remnants[game.id] ? " · Postcard kept at the trailhead" : ""}</span></span><ArrowRight size={17} aria-hidden="true" /></button></li>)}
+          </ul></section>
+          <section className="demo-map-directory"><h3>What your games brought home</h3><ul>{GAMES.filter(game => world.completions[game.id]).map(game => <li key={game.id}><button onClick={() => travel(world.placements[game.id] ?? "plaza")}><GameMark game={game} /><span><strong>{game.character} · {world.placements[game.id] ? CONTRIBUTIONS[game.id].structure : CONTRIBUTIONS[game.id].small}</strong><span>{world.placements[game.id] ? locationTitle(world.placements[game.id]!, world) : earnedStructure(world, game.id) ? "Small exhibit at the gathering tree; earned addition awaiting placement in Build." : "Small exhibit beside the gathering tree."}</span></span><ArrowRight size={17} aria-hidden="true" /></button></li>)}</ul></section>
         </>}
         {panel === "settings" && <>
           <fieldset className="demo-setting-group"><legend>Camera</legend><div className="demo-option-grid">
@@ -782,7 +833,7 @@ export default function DemoApp() {
             <option value="system">Follow device preference</option><option value="reduce">Reduce motion</option><option value="full">Allow full motion</option>
           </select><p>{reducedMotion ? "Reduced motion is on. Ambient camera movement is held still." : "Slow character and camera movement is enabled."}</p></div>
           {fullscreenSupported && <div className="demo-setting-group"><button className="demo-button is-secondary" onClick={toggleFullscreen}>{fullscreen ? <Minimize2 size={17} aria-hidden="true" /> : <Maximize2 size={17} aria-hidden="true" />}{fullscreen ? "Leave fullscreen" : "Enter fullscreen"}</button></div>}
-          <div className="demo-setting-group"><h3>Your local world</h3><p>{saveMode === "local" ? "Only this demo's game choices, homes, and notes are saved in this browser. Camera positions and settings aren't saved." : "This visit is session-only. Your changes won't be saved after you leave."}</p><button className="demo-text-button is-danger" onClick={() => openPanel("reset")}><RotateCcw size={17} aria-hidden="true" /> Reset demo world</button></div>
+          <div className="demo-setting-group"><h3>Your local world</h3><p>{saveMode === "local" ? "Only this demo's invitations, rules, proofs, notes, postcards, and placements are saved in this browser. Camera positions and settings aren't saved." : "This visit is session-only. Your changes won't be saved after you leave."}</p><p>Version 2 preserves version-one residents and builds. Real accounts are separate.</p><button className="demo-text-button is-danger" onClick={() => openPanel("reset")}><RotateCcw size={17} aria-hidden="true" /> Reset demo world</button></div>
           <button className="demo-button" onClick={closePanel}>Back to the canopy <ArrowRight size={17} aria-hidden="true" /></button>
         </>}
         {panel === "help" && <>
@@ -794,25 +845,37 @@ export default function DemoApp() {
             <div><dt><kbd>H</kbd></dt><dd>Enter or leave ambient view</dd></div>
             <div><dt><kbd>Esc</kbd></dt><dd>Close a panel or leave ambient view</dd></div>
           </dl><p>On touchscreens, hold the arrow buttons to walk. Use the map for direct travel without steering. Keyboard shortcuts stay quiet while you use a panel, button, or text field.</p></section>
-          <section className="demo-help-section"><h3>This is your little demo</h3><p>All six games and their characters are fictional. Starting a sample welcomes a visitor. Completing it makes that same character a resident. Replaying never removes their home or creates a second character.</p><p>There are no points for wandering, no ticking game timer, and no real account connection. Friends&apos; visits are not part of this demo. Ambient view works in this browser—it is not a system screensaver.</p></section>
+          <section className="demo-help-section"><h3>This is your little demo</h3><p>All six games and their characters are fictional. An invitation travels outside the settlement. Self-confirming your chosen stamp welcomes that same avatar permanently. Deeper tiers earn or enrich original contributions; choose a branch in Build to place an earned addition. Replaying never removes a resident.</p><p>Ending an unarrived invitation leaves one optional postcard, visible by the trailhead and in the journal. It stays through re-invites until arrival or manual deletion.</p><p>There are no points for wandering, no ticking game timer, and no real account connection. Friends&apos; visits are not part of this demo. Ambient view works in this browser—it is not a system screensaver.</p></section>
           <div className="demo-action-row"><button className="demo-button" onClick={startTour}>Take the guided tour <ArrowRight size={17} aria-hidden="true" /></button><button className="demo-button is-secondary" onClick={() => openPanel("map")}>Open accessible map</button></div>
         </>}
         {panel === "story" && <section className="demo-story">
-          <div className="demo-story-progress" aria-label={`Tour step ${storyIndex + 1} of 5`}><span>Step {storyIndex + 1} of 5</span><div>{STORY.map((_, index) => <span key={index} className={index <= storyIndex ? "is-current" : ""} />)}</div></div>
-          <GameMark game={GAME_BY_ID.ember} large />
+          <div className="demo-story-progress" aria-label={`Tour step ${storyIndex + 1} of ${STORY.length}`}><span>Step {storyIndex + 1} of {STORY.length}</span><div>{STORY.map((_, index) => <span key={index} className={index <= storyIndex ? "is-current" : ""} />)}</div></div>
+          <GameMark game={GAME_BY_ID[storyIndex === 5 || storyIndex === 6 ? tourRemnant : "ember"]} large />
           <h3>{story.title}</h3><p>{story.text}</p>
-          {storyIndex === 0 && activeOther && world.games.ember === "backlog" && <p className="demo-inline-notice">You already have an adventure underway. Finish {activeOther.title} in the journal, then return to the tour. Nothing will be replaced.</p>}
+          {storyIndex === 0 && activeOther && world.games.ember === "backlog" && <p className="demo-inline-notice">You already have an adventure underway. Handle {activeOther.title} in the journal or skip this step. Nothing will be replaced.</p>}
           {storyIndex <= 2 && world.completions.ember && <p className="demo-inline-notice">Sol already has a permanent home in this save. We&apos;ll show you around without creating another Sol.</p>}
-          {storyIndex === 3 && !world.completions.ember && <p className="demo-inline-notice">Sol hasn&apos;t finished their story yet. You can still build the house, then use Build to move Pip or Wren in.</p>}
-          <button className="demo-button" onClick={advanceStory} disabled={blocked}>{storyAction}<ArrowRight size={18} aria-hidden="true" /></button>
+          {storyIndex === 1 && <RulesEditor world={world} gameId="ember" onAction={applyAction} blocked={blocked} />}
+          {storyIndex === 2 && <p className="demo-inline-notice">Selected arrival stamp: {rulesFor(world, "ember").stamp}. Self-confirmation of a fictional sample only.</p>}
+          {storyIndex === 3 && <div className="demo-setting-group">
+            {!world.completions.ember && <p className="demo-inline-notice">Sol is not arrived yet. Return to the stamp or skip; nothing is granted automatically.</p>}
+            {structuralTiers.length > 0 && <><label htmlFor="demo-tour-tier">Choose the deeper milestone</label><select id="demo-tour-tier" value={structuralTiers.some(tier => tier.id === tourTier) ? tourTier : structuralTiers[0].id} disabled={blocked} onChange={event => { interaction.navigate(); setTourTier(event.target.value) }}>{structuralTiers.map(tier => <option key={tier.id} value={tier.id}>{tier.name} · {tier.milestone}</option>)}</select></>}
+            {earnedStructure(world, "ember") && <p>This addition is already earned in your save. We won&apos;t create a duplicate.</p>}
+          </div>}
+          {storyIndex === 4 && <BuildPanel world={world} onAction={applyAction} onTravel={travel} blocked={blocked} />}
+          {storyIndex === 5 && <div className="demo-setting-group"><label htmlFor="demo-tour-remnant">Choose the invitation to try</label><select id="demo-tour-remnant" value={tourRemnant} disabled={blocked} onChange={event => { interaction.navigate(); setTourRemnant(event.target.value as GameId) }}>
+            {GAMES.filter(game => game.id !== "ember" && (!world.completions[game.id] || game.id === tourRemnant)).map(game => <option key={game.id} value={game.id}>{game.title}{world.completions[game.id] ? " · already arrived, will not be dropped" : ""}</option>)}
+          </select></div>}
+          {storyIndex === 6 && <p className="demo-inline-notice">{world.completions[tourRemnant] ? `${GAME_BY_ID[tourRemnant].character} already arrived. Their residency will not be changed.` : world.games[tourRemnant] === "playing" ? `${GAME_BY_ID[tourRemnant].character}'s active invitation will end; no arrival will be granted.` : world.remnants[tourRemnant] ? "A postcard from this invitation is already kept." : "No invitation is active for this game. Nothing will be dropped; go Back to invite or skip."}</p>}
+          <button className="demo-button" onClick={advanceStory} disabled={blocked || storyIndex === 4 && !world.placements.ember}>{storyAction}<ArrowRight size={18} aria-hidden="true" /></button>
           <div className="demo-story-navigation">
-            <button className="demo-text-button" disabled={storyIndex === 0} onClick={() => setStoryStep(Math.max(0, storyIndex - 1))}><ArrowLeft size={16} aria-hidden="true" /> Back</button>
-            <button className="demo-text-button" onClick={() => storyIndex < 4 ? setStoryStep(storyIndex + 1) : closePanel()}>{storyIndex < 4 ? "Skip this step" : "Keep exploring"}</button>
+            <button className="demo-text-button" disabled={storyIndex === 0} onClick={() => { interaction.navigate(); setStoryStep(Math.max(0, storyIndex - 1)) }}><ArrowLeft size={16} aria-hidden="true" /> Back</button>
+            <button className="demo-text-button" onClick={() => { interaction.navigate(); if (storyIndex < STORY.length - 1) setStoryStep(storyIndex + 1); else closePanel() }}>{storyIndex < STORY.length - 1 ? "Skip this step" : "Keep exploring"}</button>
             <button className="demo-text-button" onClick={() => { setStoryStep(null); closePanel() }}>End tour</button>
           </div><p className="demo-small-copy">The world pauses while you read. After each action, have a look around and use “Tour” below to continue.</p>
         </section>}
         {panel === "reset" && <div className="demo-reset"><p>You&apos;ll return to two residents, four backlog games, and an unbuilt plot. This can&apos;t be undone.</p><div className="demo-action-row"><button data-demo-cancel className="demo-button is-secondary" disabled={actionPending} onClick={() => openPanel("settings")}>Keep my canopy</button><button className="demo-button is-destructive" disabled={actionPending} onClick={resetDemo}>Reset only this demo</button></div></div>}
-        {blocked && panel !== "reset" && <p className="demo-inline-notice">Your stored save couldn&apos;t be read. Close this panel and choose “Continue session-only,” retry it, or reset only the demo save before making changes.</p>}
+        {actionPending && <p className="demo-inline-notice" role="status">Saving your change… waiting for safe access to this device&apos;s demo save. You can close or leave the tour; its saved action will not bring you back.</p>}
+        {saveBlocked && panel !== "reset" && <p className="demo-inline-notice">Resolve the saved-world notice before making another change. Close this panel to load the saved world, keep this one session-only, or reset only the demo.</p>}
       </DemoModal>}
     </div>
   )

@@ -8,7 +8,9 @@
 **Status:** original reference study and world-model proposal. The owner
 subsequently approved a public demo, with the refinements below. Statements
 about the existing app in this study refer to baseline `b0ecead`, not the
-later demo implementation.
+later demo implementation. The September 10 revision below supersedes the
+earlier proposed lifecycle and construction rules; the reference observations
+and historical proposals remain intact.
 
 **The central idea:** Just Play should not simply display completed games inside
 a 3D scene. Playing should leave something behind: a resident, a memory, a home,
@@ -35,13 +37,15 @@ reference points are movement, spatial exploration, style, art direction, and
 resident presence. The last of these is an ambition for Just Play, not a feature
 this study found in Yukagecho.
 
-### Decisions made after the initial study
+### September 5 decisions after the initial study
 
 The owner confirmed **visitor-to-resident progression**: starting a game brings
 a visiting character to the travelers' lodge; completion makes that same
 character a permanent neighbor. Backlog adventures have no character yet.
 These areas are addresses, not boundaries: visitors and residents can use the
 same plaza and paths. Replaying a completed game does not revoke residency.
+This lodge-based invitation model was implemented in the first demo and
+subsequently superseded by the September 10 decision below.
 
 The owner also established **ambient art mode** as a core experience: hide the
 interface and admire the settlement through a still composition or slow camera
@@ -51,6 +55,108 @@ For the first implementation, the owner chose a **shareable, no-login demo**
 with explicitly fictional sample games and local saves rather than real account
 integration. The demo uses original characters; licensed game characters,
 multiplayer, and native screensaver packaging remain outside its scope.
+
+### September 10 revision: stamps, remnants, and earned contributions
+
+**Source:** the owner's supplied "Treehouse App Specs" and the explicit
+follow-up choices recorded in this conversation. The owner chose to adapt the
+current presentation demo to this direction, not defer it to a later iteration.
+The following is the accepted product mapping, now implemented in the public
+local-first `/demo`. It does not describe the separate account-backed app.
+The [presenter guide](demo.md) documents the actual controls and demo limits.
+
+#### The revised think piece
+
+The treehouse is no longer simply a place where completed games retire. It is
+a physical autobiography of attention: the worlds someone tried, the journeys
+they consider meaningful enough to welcome home, and the adventures that changed
+the shape of their space. The player, not a universal completion percentage,
+defines the threshold of belonging. A two-hour encounter can be enough to make
+an avatar permanent; later reaching the credits can give that same neighbor a
+larger contribution. A postcard can honor a journey that stopped without
+turning it into a failed quest. The map explains where the world could grow,
+earned additions give that growth a cause, and choosing where to place them
+makes the result personal. In ambient view, those decisions remain legible
+without counters: this plant, that room, and this familiar face are there because
+of something the player actually chose to spend time with.
+
+#### Accepted vocabulary and rules
+
+| Term | Accepted meaning |
+| --- | --- |
+| Backlogged | A game in the library that is not currently invited and has not earned arrival. Its avatar is outside the settlement, not an idle NPC waiting for attention inside it. |
+| Invited | The user has started or re-invited the game. Before arrival, its avatar is traveling outside the settlement, represented in the journal and map rather than visiting the lodge. |
+| Stamp of proof | The user's chosen "done enough" milestone, configured per game or inherited from a default rule. Examples include hours played, a story milestone, or full completion. |
+| Arrived | The chosen stamp has been met. The same avatar becomes a permanent resident; replay, stopping a later replay, and unearned higher tiers do not revoke that belonging. |
+| Merit tier | A deeper level of engagement that changes the existing avatar's treatment or contribution. Visited, Resident, and Elder are example tier names, not three successive grants of permanence. |
+| Contribution | An original, game-inspired trinket, furnishing, decoration, or structural addition that records the depth of engagement. Later tiers enrich the same game's contribution rather than duplicate its avatar. |
+| Remnant | A small keepsake, such as a postcard, left by an invitation that ended before arrival. It persists until the user deletes it or earns the game's arrival after re-inviting it. It is not a debt or penalty. |
+| Compatible branch | A valid attachment site for an earned structural addition, including its footprint and navigation connection. The player chooses placement; there are no costs or timers. |
+
+The three-state product cycle stays **Backlogged -> Invited -> Arrived**.
+Remnants record attempts alongside that cycle rather than inventing a punitive
+fourth status. A replay is activity attached to a game whose permanent arrival
+already exists, not a transition that sends its resident away.
+
+The owner resolved the concrete two-hour example: if two hours is the chosen
+stamp, the avatar arrives permanently with a small contribution. Reaching the
+credits later enriches that same resident's contribution into an earned room,
+deck, or similar structural addition. The player then places the addition.
+
+For the public fictional demo, the user explicitly confirms that the configured
+milestone has been met. This is labeled as self-confirmation of a sample-game
+milestone, not a claim of verified telemetry. Leaving the scene running never
+advances hours, stamps, or tiers.
+
+#### Source details retained from the supplied specifications
+
+- Remnants persist indefinitely, can be deleted manually, and are replaced by
+  the avatar's full contribution when a re-invited game earns arrival. Merely
+  re-inviting a game does not itself erase the attempt.
+- Users can define multiple tiers and use default rules or per-game thresholds
+  to accommodate short, long, and open-ended games fairly.
+- Lower engagement can contribute a figurine, framed icon, or small prop.
+  Deeper engagement can earn a room, deck extension, loft, or garden patio.
+- The supplied examples contrast a fantasy RPG's small treasure chest with a
+  great-hall extension and sword display, and a farming game's potted plant
+  with an outdoor garden patio. These illustrate the contribution system;
+  they are not promises to copy licensed game art.
+- Avatars should have a personable, customizable-character feel. The demo keeps
+  its own original character designs rather than reproducing Nintendo assets.
+
+#### Implemented mapping from the first demo
+
+| First demo surface | September 10 adaptation |
+| --- | --- |
+| Journal: Backlog / Visiting / At home | Explain Backlogged / Invited / Arrived; show invitations traveling outside the settlement and keep permanent residents visible during replay. |
+| Start sample game | Invite the avatar and show the selected stamp; do not spawn a lodge visitor. |
+| Complete sample game | Self-confirm a configured milestone, granting permanent arrival when it meets the chosen stamp and enriching contributions at later tiers. |
+| No stopped-game keepsakes | Allow ending an unarrived invitation, displaying its remnant in the world and journal, manually deleting it, and re-inviting without shame. |
+| Freely available Build Fern House | Show earned structural contributions and let the player choose a compatible placement. A bridge, destination, collision surface, and map entry must become available together. |
+| Shared resident appearances and houses | Preserve avatar identity while adding game-specific props, structural contributions, and tier treatments to the authored visual world. |
+| Guided completion-to-house tour | Demonstrate invitation, a self-defined stamp, permanent arrival, deeper merit, and player-chosen placement using real saved state. Include a dropped-attempt/remnant path. |
+| Version-one browser save | Preserve notes and established residents when adapting existing saves; do not silently reset a user's world to demonstrate the new model. |
+| Ambient art, photography, furnished interior, public route | Retain these capabilities without awarding progress for viewing or requiring accounts. |
+
+#### Boundaries and deliberately deferred details
+
+The approved demo remains public, local-first, and built from clearly fictional
+games and original art. It does not introduce real game launchers, achievement
+verification, accounts, multiplayer, licensed characters, an economy, native
+screensaver packaging, or unrestricted architecture.
+
+The full production policy for editing already-achieved thresholds and catalog
+of contribution shapes remain deferred. The demo retains immutable proof
+snapshots and never revokes an arrival, earned depth, or placed addition after a
+rule edit. Changed milestones need another explicit confirmation. It supports
+one to five configurable tiers, 200 proof snapshots per game, six original
+contribution themes, and seven authored branch sites. Additions are open-air,
+placed once, and enriched in place; they are not unrestricted construction.
+Legacy residents and Fern House are preserved without invented proof records.
+
+The sections below retain the September 5 analysis and proposed mapping for
+historical context. Where they describe lodge visitors, fixed completion-based
+residency, or freely available construction, this revision takes precedence.
 
 ---
 

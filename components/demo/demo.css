@@ -23,7 +23,7 @@
 .canopy-demo button { cursor: pointer; }
 .canopy-demo button:disabled { cursor: not-allowed; opacity: .48; }
 .canopy-demo button, .canopy-demo a, .canopy-demo select, .canopy-demo textarea { -webkit-tap-highlight-color: transparent; }
-.canopy-demo :where(button, a, select, textarea, [tabindex]):focus-visible { outline: 2px solid #f7d79b; outline-offset: 4px; }
+.canopy-demo :where(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid #f7d79b; outline-offset: 4px; }
 .canopy-demo :where(h1, h2, h3, h4, p, blockquote, ul, dl) { margin: 0; }
 .canopy-demo ul { padding: 0; list-style: none; }
 .canopy-demo svg { flex-shrink: 0; }
@@ -100,11 +100,37 @@
 .canopy-demo.demo-boot > p { color: var(--demo-muted); }
 .canopy-demo .demo-storage-notice { position: absolute; top: 92px; left: 30px; right: 30px; z-index: 18; max-width: 720px; margin-inline: auto; background: #243d30; border: 1px solid var(--demo-amber); border-radius: 7px; padding: 16px 20px; box-shadow: 0 12px 36px #06130d50; }
 .canopy-demo .demo-storage-notice strong { color: var(--demo-amber); }
+.canopy-demo .demo-panel-body > .demo-storage-notice { position: static; max-width: none; margin: 0 0 20px; box-shadow: none; }
 .canopy-demo .demo-storage-notice p { color: var(--demo-ivory); margin-top: 4px; font-size: 14px; }
 .canopy-demo .demo-storage-actions { display: flex; flex-wrap: wrap; gap: 0 20px; margin-top: 4px; }
 .canopy-demo .demo-toast { position: absolute; top: 94px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; z-index: 25; max-width: min(520px, calc(100% - 36px)); width: max-content; padding: 10px 8px 10px 18px; color: var(--demo-ivory); background: #243e31; border: 1px solid #adbd8b; border-radius: 7px; box-shadow: 0 8px 32px #071a1145; font-size: 14px; }
 .canopy-demo .demo-toast > span { max-width: 48ch; }
 .canopy-demo .demo-touch-pad { display: none; }
+.canopy-demo .demo-rules { margin-top: 24px; border-block: 1px solid var(--demo-line); padding: 12px 0; }
+.canopy-demo .demo-rules summary { cursor: pointer; color: var(--demo-amber); min-height: 44px; padding-block: 10px; }
+.canopy-demo .demo-rules fieldset { border: 0; padding: 0; margin: 16px 0 0; min-width: 0; }
+.canopy-demo .demo-rules label, .canopy-demo .demo-placement-form label { display: block; margin: 16px 0 7px; font-size: 14px; }
+.canopy-demo .demo-rules input:not([type="checkbox"]), .canopy-demo .demo-rules select, .canopy-demo .demo-placement-form select {
+  display: block; width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #718369;
+  border-radius: 5px; color: var(--demo-ivory); background: #14291f;
+}
+.canopy-demo .demo-rules h4 { margin: 25px 0 10px; }
+.canopy-demo .demo-tier-editor { padding-bottom: 8px; border-bottom: 1px solid var(--demo-line); }
+.canopy-demo .demo-rules .demo-check-label { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.canopy-demo .demo-check-label input { width: 18px; height: 18px; accent-color: var(--demo-amber); }
+.canopy-demo .demo-proof { margin-top: 25px; padding-top: 22px; border-top: 1px solid var(--demo-line); }
+.canopy-demo .demo-proof > p { margin-block: 10px 15px; }
+.canopy-demo .demo-proof h4 { color: var(--demo-amber); }
+.canopy-demo .demo-merits { margin-top: 30px; }
+.canopy-demo .demo-merits li { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding-block: 20px; border-bottom: 1px solid var(--demo-line); }
+.canopy-demo .demo-merits li p { margin-top: 5px; }
+.canopy-demo .demo-merits li .demo-small-copy { display: block; margin-top: 6px; }
+.canopy-demo .demo-proof-history li { padding: 12px 0; border-bottom: 1px solid var(--demo-line); font-size: 14px; }
+.canopy-demo .demo-proof-history span { display: block; font-size: 12px; color: var(--demo-muted); margin-top: 4px; }
+.canopy-demo .demo-contribution-choice { margin-top: 28px; padding-top: 8px; border-top: 1px solid var(--demo-line); }
+.canopy-demo .demo-contribution-choice .demo-built-line { margin-top: 15px; flex-wrap: wrap; }
+.canopy-demo .demo-placement-form > button { margin-top: 15px; }
+.canopy-demo .demo-game-detail-heading, .canopy-demo .demo-merits, .canopy-demo .demo-proof-history, .canopy-demo .demo-proof { overflow-wrap: anywhere; }
 
 /* Dialogs are native top-layer surfaces: the browser traps focus and makes the world inert. */
 .canopy-demo .demo-dialog {

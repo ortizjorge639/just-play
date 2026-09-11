@@ -51,7 +51,7 @@ export function DemoModal({
       onKeyDown={event => {
         if (event.key !== "Tab") return
         const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
-          "button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1'])",
+          "button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]:not([tabindex='-1'])",
         )).filter(control => control.getClientRects().length > 0)
         const first = controls[0], last = controls.at(-1)
         if (event.shiftKey && document.activeElement === first && last) {

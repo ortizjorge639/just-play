@@ -71,11 +71,11 @@ test("serial actions use the latest committed world and observation", async () =
   assert.equal(first.status, "saved")
   if (first.status !== "saved") return
 
-  const second = await mutateDemoSave(storage, locks, first.observed, first.world, { type: "build" })
+  const second = await mutateDemoSave(storage, locks, first.observed, first.world, { type: "start", gameId: "ember", at: "2026-09-10T18:00:00.000Z" })
   assert.equal(second.status, "saved")
   if (second.status !== "saved") return
   assert.equal(second.world.notes.ember, "Remember this")
-  assert.equal(second.world.builtHouse, true)
+  assert.equal(second.world.games.ember, "playing")
   assert.equal(second.world.revision, 2)
 })
 

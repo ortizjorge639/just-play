@@ -1,5 +1,6 @@
 import type {
   DemoAction, DemoGame, DemoState, GameId, GameStatus, HomeId, Resident, Result,
+  LegacyDemoState, MilestoneRules, Merit, Confirmation, SiteId,
 } from "./contracts"
 
 export const SAVE_KEY = "just-play-canopy-demo-v1"
@@ -50,8 +51,11 @@ export const GAME_BY_ID: Record<GameId, DemoGame> = Object.freeze(
 const STATE_KEYS = ["version", "revision", "games", "started", "completions", "homes", "notes", "builtHouse"]
 const ACTION_KEYS = {
   start: ["type", "gameId", "at"],
-  complete: ["type", "gameId", "at"],
-  build: ["type"],
+  confirm: ["type", "gameId", "target", "at"],
+  stop: ["type", "gameId", "at"],
+  "delete-remnant": ["type", "gameId"],
+  rules: ["type", "gameId", "rules"],
+  place: ["type", "gameId", "site"],
   move: ["type", "gameId", "home"],
   note: ["type", "gameId", "text"],
 } as const
@@ -107,7 +111,7 @@ function failure(error: string): Result<never> {
   return { ok: false, error }
 }
 
-function validateState(value: unknown): Result<DemoState> {
+function validateLegacyState(value: unknown): Result<LegacyDemoState> {
   if (!isRecord(value)) return failure("This save must contain a demo world object.")
   if (value.version !== 1) return failure("This save uses an unsupported demo version.")
   if (!hasKeys(value, STATE_KEYS)) return failure("This save has missing or unknown fields.")
@@ -161,6 +165,100 @@ function validateState(value: unknown): Result<DemoState> {
   }
 }
 
+export const SITE_IDS: readonly SiteId[] = ["plot", "brook", "crown", "fern", "dusk", "meadow", "sunrise"]
+const isSite = (value: unknown): value is SiteId => typeof value === "string" && SITE_IDS.includes(value as SiteId)
+const shortText = (value: unknown, max: number): value is string =>
+  typeof value === "string" && value.trim().length > 0 && value.length <= max
+
+export function defaultRules(): MilestoneRules {
+  return {
+    stamp: "Play for 2 hours",
+    tiers: [
+      { id: "tier-1", name: "Visited", milestone: "Play for 2 hours", structural: false },
+      { id: "tier-2", name: "Resident", milestone: "Reach the credits", structural: true },
+      { id: "tier-3", name: "Elder", milestone: "Finish my personal full-completion goal", structural: true },
+    ],
+  }
+}
+
+function isRules(value: unknown): value is MilestoneRules {
+  if (!isRecord(value) || !hasKeys(value, ["stamp", "tiers"]) || !shortText(value.stamp, 120) ||
+    !Array.isArray(value.tiers) || value.tiers.length < 1 || value.tiers.length > 5) return false
+  const ids = new Set<string>()
+  return value.tiers.every(tier => {
+    if (!isRecord(tier) || !hasKeys(tier, ["id", "name", "milestone", "structural"]) ||
+      typeof tier.id !== "string" || !/^tier-[1-5]$/.test(tier.id) || ids.has(tier.id) ||
+      !shortText(tier.name, 30) || !shortText(tier.milestone, 120) || typeof tier.structural !== "boolean") return false
+    ids.add(tier.id)
+    return true
+  })
+}
+
+function isConfirmation(value: unknown): value is Confirmation {
+  return isRecord(value) && hasKeys(value, ["key", "milestone", "tier", "depth", "structural", "at"]) &&
+    shortText(value.key, 300) && shortText(value.milestone, 120) && shortText(value.tier, 30) &&
+    typeof value.depth === "number" && Number.isInteger(value.depth) && value.depth >= 0 && value.depth <= 5 &&
+    typeof value.structural === "boolean" && isDate(value.at)
+}
+
+function isMerit(value: unknown): value is Merit {
+  if (!isRecord(value) || !hasKeys(value, ["depth", "structural", "history"]) ||
+    !Array.isArray(value.history) || value.history.length > 200 || !value.history.every(isConfirmation)) return false
+  return new Set(value.history.map(item => item.key)).size === value.history.length &&
+    value.depth === Math.max(0, ...value.history.map(item => item.depth)) &&
+    value.structural === value.history.some(item => item.structural)
+}
+
+function validateState(value: unknown): Result<DemoState> {
+  if (!isRecord(value)) return failure("This save must contain a demo world object.")
+  if (value.version !== 2) return failure("This save uses an unsupported demo version.")
+  if (!hasKeys(value, [...STATE_KEYS, "rules", "merits", "remnants", "placements", "migratedFrom"])) return failure("This save has missing or unknown fields.")
+  if (typeof value.revision !== "number" || !Number.isSafeInteger(value.revision) || value.revision < 0 ||
+    typeof value.builtHouse !== "boolean" || (value.migratedFrom !== null && value.migratedFrom !== 1)) return failure("This save has invalid world metadata.")
+  if (value.builtHouse && value.migratedFrom !== 1) return failure("Fern House is reserved for preserved legacy construction.")
+  if (!isCompleteGameMap(value.games, isStatus) || !isGameMap(value.started, isDate) ||
+    !isGameMap(value.completions, isDate) || !isGameMap(value.homes, isHome) ||
+    !isGameMap(value.notes, (note): note is string => typeof note === "string" && note.length <= 500)) return failure("This save has invalid games, dates, homes, or notes.")
+  if (!isRecord(value.rules) || !hasKeys(value.rules, ["defaults", "games"]) ||
+    !isRules(value.rules.defaults) || !isGameMap(value.rules.games, isRules)) return failure("This save has invalid milestone rules. Use one to five named tiers and a stamp.")
+  if (!isGameMap(value.merits, isMerit) || !isGameMap(value.remnants, isDate) ||
+    !isGameMap(value.placements, isSite)) return failure("This save has invalid merit history, keepsakes, or placements.")
+  if (Object.values(value.games).filter(status => status === "playing").length > 1) return failure("Only one invitation or replay can be active at a time.")
+  const occupied = new Set<SiteId>(value.builtHouse ? ["plot"] : [])
+  for (const { id } of GAMES) {
+    const arrived = value.completions[id]
+    if ((arrived === undefined) !== (value.homes[id] === undefined)) return failure("Every arrival needs its permanent home and arrival date.")
+    if ((value.games[id] !== "backlog" || arrived) && !value.started[id]) return failure("An invitation needs a valid start date.")
+    if (value.games[id] === "completed" && !arrived || value.games[id] === "backlog" && arrived) return failure("Arrival and game status disagree.")
+    if (value.games[id] === "playing" && arrived && Date.parse(value.started[id]!) < Date.parse(arrived)) return failure("A replay cannot begin before arrival.")
+    if (value.homes[id] === "plot" && !value.builtHouse) return failure("This legacy home has not been built.")
+    if (value.remnants[id] && (arrived || !value.started[id])) return failure("A keepsake needs an unarrived invitation history.")
+    const site = value.placements[id]
+    if (site) {
+      if (!arrived || !value.merits[id]?.structural || occupied.has(site)) return failure("Each placed addition needs an arrival, an earned structure, and a vacant branch.")
+      occupied.add(site)
+    }
+  }
+  return {
+    ok: true,
+    value: {
+      version: value.version,
+      revision: value.revision,
+      games: value.games,
+      started: value.started,
+      completions: value.completions,
+      homes: value.homes,
+      notes: value.notes,
+      builtHouse: value.builtHouse,
+      rules: { defaults: value.rules.defaults, games: value.rules.games },
+      merits: value.merits,
+      remnants: value.remnants,
+      placements: value.placements,
+      migratedFrom: value.migratedFrom,
+    },
+  }
+}
+
 function validateAction(value: unknown): Result<DemoAction> {
   if (!isRecord(value) || typeof value.type !== "string" ||
     !Object.prototype.hasOwnProperty.call(ACTION_KEYS, value.type)) {
@@ -168,14 +266,27 @@ function validateAction(value: unknown): Result<DemoAction> {
   }
   const type = value.type as DemoAction["type"]
   if (!hasKeys(value, ACTION_KEYS[type])) return failure("This demo action has missing or unknown fields.")
-  if (type === "build") return { ok: true, value: { type } }
+  if (type === "rules") {
+    if (value.gameId !== null && !isGameId(value.gameId)) return failure("Choose default rules or a sample game.")
+    if (value.rules === null && value.gameId !== null) return { ok: true, value: { type, gameId: value.gameId, rules: null } }
+    if (!isRules(value.rules)) return failure("Use a stamp and one to five tiers, each with a name and milestone.")
+    return { ok: true, value: { type, gameId: value.gameId, rules: structuredClone(value.rules) } }
+  }
   if (!isGameId(value.gameId)) return failure("Choose one of the six sample games.")
   const gameId = value.gameId
   switch (type) {
     case "start":
-    case "complete":
+    case "stop":
       if (!isDate(value.at)) return failure("This action needs a valid ISO UTC date.")
       return { ok: true, value: { type, gameId, at: value.at } }
+    case "confirm":
+      if (!isDate(value.at) || typeof value.target !== "string" || !/^(stamp|tier-[1-5])$/.test(value.target)) return failure("Choose a configured stamp or tier and a valid date.")
+      return { ok: true, value: { type, gameId, target: value.target, at: value.at } }
+    case "delete-remnant":
+      return { ok: true, value: { type, gameId } }
+    case "place":
+      if (!isSite(value.site)) return failure("Choose an authored compatible branch.")
+      return { ok: true, value: { type, gameId, site: value.site } }
     case "move":
       if (!isHome(value.home)) return failure("Choose the resident grove or Fern House.")
       return { ok: true, value: { type, gameId, home: value.home } }
@@ -189,7 +300,7 @@ function validateAction(value: unknown): Result<DemoAction> {
 
 export function createDemoState(): DemoState {
   return {
-    version: 1,
+    version: 2,
     revision: 0,
     games: {
       mosslight: "completed", ember: "backlog", paper: "completed",
@@ -206,6 +317,11 @@ export function createDemoState(): DemoState {
     homes: { mosslight: "grove", paper: "grove" },
     notes: {},
     builtHouse: false,
+    rules: { defaults: defaultRules(), games: {} },
+    merits: {},
+    remnants: {},
+    placements: {},
+    migratedFrom: null,
   }
 }
 
@@ -220,11 +336,12 @@ export function reduceDemoState(state: DemoState, action: DemoAction): Result<De
   const validAction = validateAction(action)
   if (!validAction.ok) return validAction
 
+  action = validAction.value
   switch (action.type) {
     case "start": {
       if (state.games[action.gameId] === "playing") return { ok: true, value: state }
       const playing = GAMES.find(game => state.games[game.id] === "playing")
-      if (playing) return failure(`Finish ${playing.title} before starting another game.`)
+      if (playing) return failure(`End ${playing.title}'s invitation or replay before inviting another game.`)
       const completed = state.completions[action.gameId]
       if (completed && Date.parse(action.at) < Date.parse(completed)) {
         return failure("A replay cannot start before the game's first completion.")
@@ -234,23 +351,62 @@ export function reduceDemoState(state: DemoState, action: DemoAction): Result<De
         started: { ...state.started, [action.gameId]: action.at },
       })
     }
-    case "complete": {
-      if (state.games[action.gameId] === "completed") return { ok: true, value: state }
-      if (state.games[action.gameId] !== "playing") return failure("Start this game before completing it.")
-      const started = state.started[action.gameId]!
-      if (Date.parse(action.at) < Date.parse(started)) {
-        return failure("A game cannot be completed before its start date.")
-      }
+    case "confirm": {
+      const id = action.gameId
+      if (state.games[id] !== "playing" && !state.completions[id]) return failure("Invite this game before confirming a sample milestone.")
+      if (Date.parse(action.at) < Date.parse(state.started[id]!)) return failure("A milestone cannot predate this invitation.")
+      const proof = proofFor(state, id, action.target)
+      if (!proof) return failure("This tier no longer exists. Review the current rules.")
+      const { milestone, depth, structural } = proof
+      const record: Confirmation = { ...proof, at: action.at }
+      const merit = state.merits[id] ?? { depth: 0, structural: false, history: [] }
+      if (merit.history.some(item => item.key === record.key)) return { ok: true, value: state }
+      if (merit.history.length >= 200) return failure("This sample has reached its 200-entry confirmation limit. Your existing history is safe.")
+      const arrives = !state.completions[id] && milestone === rulesFor(state, id).stamp
+      const remnants = { ...state.remnants }
+      if (arrives) delete remnants[id]
       return changed(state, {
-        games: { ...state.games, [action.gameId]: "completed" },
-        // The first finish is the permanent residency milestone, not a replay's finish.
-        completions: { ...state.completions, [action.gameId]: state.completions[action.gameId] ?? action.at },
-        homes: { ...state.homes, [action.gameId]: state.homes[action.gameId] ?? "grove" },
+        ...(arrives ? {
+          games: { ...state.games, [id]: "completed" },
+          completions: { ...state.completions, [id]: action.at },
+          homes: { ...state.homes, [id]: "grove" },
+        } : {}),
+        remnants,
+        merits: { ...state.merits, [id]: { depth: Math.max(merit.depth, depth), structural: merit.structural || structural, history: [...merit.history, record] } },
       })
     }
-    case "build":
-      if (state.builtHouse) return { ok: true, value: state }
-      return changed(state, { builtHouse: true })
+    case "stop": {
+      const id = action.gameId
+      if (state.games[id] !== "playing") return { ok: true, value: state }
+      if (Date.parse(action.at) < Date.parse(state.started[id]!)) return failure("An invitation cannot end before it starts.")
+      return changed(state, {
+        games: { ...state.games, [id]: state.completions[id] ? "completed" : "backlog" },
+        remnants: state.completions[id] ? state.remnants : { ...state.remnants, [id]: state.remnants[id] ?? action.at },
+      })
+    }
+    case "delete-remnant": {
+      if (!state.remnants[action.gameId]) return { ok: true, value: state }
+      const remnants = { ...state.remnants }
+      delete remnants[action.gameId]
+      return changed(state, { remnants })
+    }
+    case "rules": {
+      if (action.gameId === null) {
+        if (JSON.stringify(state.rules.defaults) === JSON.stringify(action.rules)) return { ok: true, value: state }
+        return changed(state, { rules: { ...state.rules, defaults: action.rules! } })
+      }
+      const games = { ...state.rules.games }
+      if (action.rules === null) delete games[action.gameId]
+      else games[action.gameId] = action.rules
+      if (JSON.stringify(games) === JSON.stringify(state.rules.games)) return { ok: true, value: state }
+      return changed(state, { rules: { ...state.rules, games } })
+    }
+    case "place":
+      if (state.placements[action.gameId] === action.site) return { ok: true, value: state }
+      if (state.placements[action.gameId]) return failure("This contribution is already placed. Later tiers enrich it in place.")
+      if (!state.completions[action.gameId] || !state.merits[action.gameId]?.structural) return failure("Earn arrival and a structural tier before choosing a branch.")
+      if (Object.values(state.placements).includes(action.site) || state.builtHouse && action.site === "plot") return failure("That branch already holds a contribution.")
+      return changed(state, { placements: { ...state.placements, [action.gameId]: action.site } })
     case "move":
       if (!state.completions[action.gameId]) return failure("Only permanent residents can move home.")
       if (action.home === "plot" && !state.builtHouse) return failure("Build Fern House before moving anyone in.")
@@ -273,6 +429,14 @@ export function parseDemoSave(raw: string): Result<DemoState> {
     value = JSON.parse(raw)
   } catch {
     return failure("This local save is not valid JSON. Your current world has not been changed.")
+  }
+  if (isRecord(value) && value.version === 1) {
+    const legacy = validateLegacyState(value)
+    if (!legacy.ok) return legacy
+    return validateState({
+      ...legacy.value, version: 2, rules: { defaults: defaultRules(), games: {} },
+      merits: {}, remnants: {}, placements: {}, migratedFrom: 1,
+    })
   }
   return validateState(value)
 }
@@ -301,7 +465,42 @@ export function residentsFor(state: DemoState): Resident[] {
     if (state.completions[id] && state.homes[id]) {
       return [{ gameId: id, kind: "resident", home: state.homes[id] }]
     }
-    if (state.games[id] === "playing") return [{ gameId: id, kind: "visitor", home: "lodge" }]
     return []
   })
+}
+
+export function rulesFor(state: DemoState, id: GameId) {
+  return state.rules.games[id] ?? state.rules.defaults
+}
+
+export function proofFor(state: DemoState, id: GameId, target: string): Omit<Confirmation, "at"> | null {
+  const rules = rulesFor(state, id)
+  const tier = rules.tiers.find(tier => tier.id === target)
+  if (target !== "stamp" && !tier) return null
+  const milestone = tier?.milestone ?? rules.stamp
+  const matching = rules.tiers.map((tier, index) => ({ ...tier, depth: index + 1 })).filter(tier => tier.milestone === milestone)
+  const depth = Math.max(0, ...matching.map(tier => tier.depth))
+  const structural = matching.some(tier => tier.structural)
+  return {
+    key: JSON.stringify([target, milestone, tier?.name ?? "Arrival stamp", depth, structural]),
+    milestone, tier: tier?.name ?? "Arrival stamp", depth, structural,
+  }
+}
+
+export function hasConfirmed(state: DemoState, id: GameId, target: string) {
+  const proof = proofFor(state, id, target)
+  return Boolean(proof && state.merits[id]?.history.some(item => item.key === proof.key))
+}
+
+export function earnedStructure(state: DemoState, id: GameId) {
+  return Boolean(state.completions[id] && state.merits[id]?.structural)
+}
+
+export const CONTRIBUTIONS: Record<GameId, { small: string; structure: string; detail: string }> = {
+  mosslight: { small: "Lantern seedling", structure: "Lantern garden", detail: "Pip's glowing planters and garden pergola" },
+  ember: { small: "Ember reliquary", structure: "Ember hearth deck", detail: "Sol's open hearth, timber canopy, and ember display" },
+  paper: { small: "Folded glider", structure: "Letter-writing loft", detail: "Wren's airy writing pavilion and suspended paper gliders" },
+  tide: { small: "Tideglass vessel", structure: "Tide garden", detail: "Nori's tide pool, stepping stones, and chart table" },
+  orbit: { small: "Pocket orrery", structure: "Stargazing deck", detail: "Io's telescope, orbital sculpture, and star chart" },
+  rain: { small: "Rainflower pot", structure: "Rain garden patio", detail: "Rue's rain chains, flowering trellis, and reflecting basin" },
 }

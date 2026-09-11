@@ -1,8 +1,8 @@
-import { INTERIOR_CENTER, visibleObstacles, groundHeight } from "./world"
+import { INTERIOR_CENTER, visibleObstacles, groundHeight, type WorldLayout } from "./world"
 import type { WorldPoint } from "./navigation"
 
 /** Pull the camera in before a building or trunk obscures its subject. */
-export function unobstructedCamera(focus: WorldPoint, desired: WorldPoint, built: boolean, inside: boolean): WorldPoint {
+export function unobstructedCamera(focus: WorldPoint, desired: WorldPoint, built: WorldLayout, inside: boolean): WorldPoint {
   if (inside) return {
     x: Math.max(INTERIOR_CENTER - 4.7, Math.min(INTERIOR_CENTER + 4.7, desired.x)),
     y: Math.max(1.5, desired.y),

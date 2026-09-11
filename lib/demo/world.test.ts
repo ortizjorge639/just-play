@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import {
-  CONNECTIONS, LOCATIONS, LOCATION_BY_ID, OBSTACLES, SPAWN,
+  LOCATION_BY_ID, OBSTACLES, SPAWN,
   bridgeEndpoints, canWalk, groundHeight, nearestLocation, routeBetween,
   visibleConnections, visibleLocations,
 } from "./world"
@@ -46,7 +46,7 @@ test("bridge endpoints overlap both platforms and every point between them is wa
 })
 
 test("the suspended bridge follows its elevation profile and has bounded walkable width", () => {
-  for (const [from, to] of CONNECTIONS) {
+  for (const [from, to] of visibleConnections(true)) {
     const { start, end, length } = bridgeEndpoints(LOCATION_BY_ID[from], LOCATION_BY_ID[to])
     const x = (start.x + end.x) / 2
     const z = (start.z + end.z) / 2
@@ -59,7 +59,7 @@ test("the suspended bridge follows its elevation profile and has bounded walkabl
 })
 
 test("the unbuilt plot and its bridge are absent and inaccessible", () => {
-  assert.equal(visibleLocations(false).length, LOCATIONS.length - 1)
+  assert.equal(visibleLocations(false).length, 5)
   assert.ok(visibleLocations(false).every(location => location.id !== "plot"))
   assert.ok(visibleConnections(false).every(connection => !connection.includes("plot")))
   const plot = LOCATION_BY_ID.plot
@@ -93,8 +93,8 @@ test("the visible graph connects every pair and building adds exactly one branch
       }
     }
   }
-  assert.equal(visibleLocations(true).length, LOCATIONS.length)
-  assert.equal(visibleConnections(true).length, CONNECTIONS.length)
+  assert.equal(visibleLocations(true).length, 6)
+  assert.equal(visibleConnections(true).length, 5)
   assert.deepEqual(routeBetween("lodge", "plot", true), ["lodge", "plaza", "grove", "plot"])
   assert.deepEqual(routeBetween("trailhead", "lookout", false), ["trailhead", "plaza", "lookout"])
 })

@@ -4,7 +4,9 @@ import {
   SphereGeometry, SRGBColorSpace, Vector3,
 } from "three"
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js"
-import { bridgeEndpoints, INTERIOR_CENTER, LOCATION_BY_ID, visibleConnections, visibleLocations } from "@/lib/demo/world"
+import { bridgeEndpoints, INTERIOR_CENTER, legacyBuilt, LOCATION_BY_ID, visibleConnections, visibleLocations, type WorldLayout } from "@/lib/demo/world"
+import type { DemoState, GameId } from "@/lib/demo/contracts"
+import { CONTRIBUTIONS, GAMES } from "@/lib/demo/state"
 
 const COLORS = {
   wood: "#93644a", woodLight: "#b9895b", woodDark: "#493f36", endgrain: "#c1a276",
@@ -20,6 +22,7 @@ const BOX = new BoxGeometry(1, 1, 1)
 const CYLINDER = new CylinderGeometry(1, 1, 1, 9)
 const SPHERE = new SphereGeometry(1, 10, 7)
 const LEAVES = new DodecahedronGeometry(1, 1)
+const BUD = new DodecahedronGeometry(1, 0)
 const UP = new Vector3(0, 1, 0)
 
 export const seeded = (n: number) => {
@@ -141,7 +144,9 @@ function sign(b: VillageBuilder, x: number, y: number, z: number, label: string,
   context.fillStyle = "#364b3e"; context.fillRect(0, 0, 512, 160)
   context.strokeStyle = "#bdab7f"; context.lineWidth = 3; context.strokeRect(12, 12, 488, 136)
   context.fillStyle = "#f4e5bf"; context.textAlign = "center"; context.textBaseline = "middle"
-  context.font = "30px Georgia, serif"; context.fillText(label, 256, 82)
+  context.font = "30px Georgia, serif"
+  const lines = label.split("|")
+  lines.forEach((line, index) => context.fillText(line, 256, lines.length === 1 ? 82 : 57 + index * 49, 470))
   const texture = new CanvasTexture(canvas); texture.colorSpace = SRGBColorSpace
   const material = new MeshStandardMaterial({ map: texture, roughness: 0.95 })
   const mesh = new Mesh(new BoxGeometry(width, 0.7, 0.02), material)
@@ -249,7 +254,7 @@ function platform(b: VillageBuilder, x: number, y: number, z: number, radius: nu
   }
 }
 
-function bridges(b: VillageBuilder, built: boolean) {
+function bridges(b: VillageBuilder, built: WorldLayout) {
   for (const [a, c] of visibleConnections(built)) {
     const { start, end, length } = bridgeEndpoints(LOCATION_BY_ID[a], LOCATION_BY_ID[c])
     const dx = end.x - start.x, dz = end.z - start.z
@@ -317,7 +322,7 @@ function interior(b: VillageBuilder) {
 }
 
 /** Original modular scenery is merged by material so detail does not multiply draw calls. */
-export function buildVillage(built: boolean) {
+export function buildVillage(built: WorldLayout) {
   const b = new VillageBuilder()
   for (const location of visibleLocations(built)) platform(b, location.x, location.y, location.z, location.radius, location.x + 100)
   bridges(b, built)
@@ -329,7 +334,7 @@ export function buildVillage(built: boolean) {
   house(b, -23, 2, -4, 1.12, "lodge", 4)
   house(b, 17, 3, -6.5, 1, "home", 11)
   house(b, 24, 3, -6.5, 0.76, "fern", 18)
-  if (built) {
+  if (legacyBuilt(built)) {
     tree(b, 40, 4, 7, 12, 0.75, 53)
     house(b, 38, 4, 8, 1, "fern", 61)
     sign(b, 34, 4, 12, "FERN HOUSE", true)
@@ -383,6 +388,112 @@ export function buildVillage(built: boolean) {
     tree(b, x, -15 - seeded(i) * 4, z, 24 + seeded(i + 2) * 20, 2, i + 70)
   }
   interior(b)
+  return b.finish()
+}
+
+function keepsake(b: VillageBuilder, id: GameId, x: number, y: number, z: number, depth: number) {
+  if (id === "mosslight" || id === "rain") {
+    b.add(CYLINDER, "clay", x, y + 0.2, z, 0.36, 0.4, 0.36)
+    b.beam("leafDeep", v(x, y + 0.4, z), v(x, y + 1.1, z), 0.06)
+    for (let i = 0; i < 3 + depth; i++) {
+      const a = i * 2.4
+      b.add(BUD, "leaf", x + Math.cos(a) * 0.3, y + 0.6 + i * 0.08, z + Math.sin(a) * 0.3, 0.27, 0.1, 0.16)
+    }
+    b.ball(id === "mosslight" ? "window" : "flower", x, y + 1.2, z, 0.23)
+  } else if (id === "ember") {
+    b.box("woodDark", x, y + 0.25, z, 0.75, 0.5, 0.55)
+    b.box("brass", x, y + 0.53, z, 0.78, 0.09, 0.58)
+    const ember = new DodecahedronGeometry(0.24)
+    b.add(ember, "window", x, y + 0.81, z, 1, 1.2 + depth * 0.2, 1); ember.dispose()
+  } else if (id === "paper") {
+    b.box("blue", x, y + 0.6, z, 1.05, 0.04, 0.18, 0.4)
+    b.box("paper", x - 0.22, y + 0.68, z, 0.6 + depth * 0.06, 0.05, 0.48, -0.7)
+    b.box("paper", x + 0.22, y + 0.68, z, 0.6 + depth * 0.06, 0.05, 0.48, 0.7)
+    b.beam("brass", v(x, y, z), v(x, y + 0.65, z), 0.025)
+  } else if (id === "tide") {
+    b.add(CYLINDER, "brass", x, y + 0.08, z, 0.4, 0.12, 0.4)
+    b.ball("water", x, y + 0.45, z, 0.32, 0.4, 0.32)
+    b.ball("paper", x, y + 0.84, z, 0.14, 0.07, 0.14)
+    for (let i = 0; i < depth; i++) b.ball("paper", x + Math.cos(i * 2.4) * 0.4, y + 0.18, z + Math.sin(i * 2.4) * 0.4, 0.08, 0.04, 0.06)
+  } else {
+    b.beam("brass", v(x, y, z), v(x, y + 0.65, z), 0.045)
+    b.ball("window", x, y + 0.75, z, 0.17)
+    for (let i = 0; i < 3 + depth; i++) {
+      const a = i * 2.4
+      const p = v(x + Math.cos(a) * 0.48, y + 0.75 + Math.sin(a) * 0.2, z + Math.sin(a) * 0.48)
+      b.beam("brass", v(x, y + 0.75, z), p, 0.02)
+      b.ball(i % 2 ? "blue" : "clay", p.x, p.y, p.z, 0.1)
+    }
+  }
+}
+
+/** One authored exhibit per game; deeper proofs enrich it rather than clone it. */
+export function buildContributions(world: Pick<DemoState, "completions" | "merits" | "placements" | "remnants">) {
+  const b = new VillageBuilder()
+  GAMES.forEach((game, index) => {
+    const site = world.placements[game.id]
+    const merit = world.merits[game.id]
+    const depth = merit?.depth ?? 0
+    const rich = depth >= 3
+    const tier = merit?.history.reduce((best, item) => item.depth >= best.depth ? item : best, { depth: -1, tier: "Welcome" }).tier ?? "Welcome"
+    if (world.completions[game.id]) {
+      if (!site) {
+        const x = -6.7 + index * 2.1, z = 7.2 - Math.abs(index - 2.5) * 0.45
+        b.box("woodDark", x, 0.42, z, 0.85, 0.8, 0.7)
+        keepsake(b, game.id, x, 0.83, z, depth)
+        sign(b, x, -0.5, z - 0.55, `${game.character} · ${game.title}|${tier} · ${CONTRIBUTIONS[game.id].small}`, true)
+      } else {
+        const point = LOCATION_BY_ID[site], x = point.x, y = point.y, z = point.z - 1.7
+        b.beam("bark", v(x, y - 6, z), v(x, y - 0.5, z), 0.7, 0.45)
+        b.box("woodDark", x, y + 0.15, z, 3.2, 0.3, 2.15)
+        if (game.id === "mosslight" || game.id === "rain") {
+          for (const side of [-1, 1]) {
+            b.box("woodDark", x + side * 1.35, y + 1.5, z, 0.12, 3, 0.12)
+            b.box("clay", x + side * 0.9, y + 0.4, z, 0.75, 0.6, 1.8)
+            for (let row = 0; row < Math.min(5, 1 + depth); row++) keepsake(b, game.id, x + side * 0.9, y + 0.7, z - 0.6 + row * 0.3, depth)
+          }
+          for (let row = -1; row <= 1; row++) b.box("woodLight", x, y + 3, z + row * 0.6, 3.2, 0.12, 0.1)
+          if (game.id === "rain") {
+            b.box("water", x, y + 0.34, z, 0.85, 0.04, 1.6)
+            for (let drop = 0; drop < 8; drop++) b.ball("brass", x - 1.3, y + 0.5 + drop * 0.3, z, 0.065)
+          }
+        } else if (game.id === "ember") {
+          b.add(CYLINDER, "stone", x, y + 0.55, z, 0.95, 0.8, 0.7)
+          for (const side of [-1, 1]) b.box("woodDark", x + side * 1.4, y + 1.6, z - 0.6, 0.15, 3.2, 0.15)
+          b.box("roofDark", x, y + 3.15, z, 3.25, 0.22, 2.2)
+          keepsake(b, game.id, x, y + 1, z, depth)
+          if (rich) for (const side of [-1, 1]) lantern(b, x + side * 1.25, y + 1.9, z + 0.5, false)
+          for (let i = 0; i < Math.max(0, depth - 1); i++) {
+            b.beam("brass", v(x - 1 + i * 0.65, y + 1.2, z - 0.8), v(x - 1 + i * 0.65, y + 2.5, z - 0.8), 0.04)
+            b.box("clay", x - 1 + i * 0.65, y + 2.1, z - 0.8, 0.35, 0.6, 0.04)
+          }
+        } else if (game.id === "paper") {
+          for (const side of [-1, 1]) b.box("woodDark", x + side * 1.4, y + 1.5, z - 0.7, 0.12, 3, 0.12)
+          b.box("blue", x, y + 3, z, 3.15, 0.14, 2.1)
+          b.box("woodLight", x, y + 1, z, 2.5, 0.15, 1.2)
+          for (let i = 0; i < Math.min(5, 1 + depth); i++) keepsake(b, game.id, x - 1 + i * 0.45, y + 1.15 + i * 0.16, z, depth)
+        } else if (game.id === "tide") {
+          b.add(CYLINDER, "stone", x, y + 0.4, z, 1.45, 0.4, 0.95)
+          b.add(CYLINDER, "water", x, y + 0.63, z, 1.28, 0.05, 0.8)
+          for (let i = 0; i < 2 + depth; i++) b.ball("paper", x + Math.cos(i * 2.4), y + 0.68, z + Math.sin(i * 2.4) * 0.65, 0.17, 0.08, 0.15)
+          keepsake(b, game.id, x - 1.1, y + 0.65, z, depth)
+        } else {
+          for (const side of [-1, 1]) b.beam("brass", v(x + side * 0.7, y + 0.3, z + 0.5), v(x, y + 1.6, z), 0.065)
+          b.beam("blue", v(x - 0.75, y + 1.65, z), v(x + 0.75, y + 2.3, z), 0.25)
+          b.ball("window", x + 0.78, y + 2.3, z, 0.23, 0.25, 0.25)
+          keepsake(b, game.id, x - 1.05, y + 0.3, z - 0.35, depth)
+        }
+        sign(b, x + 2.5, y, point.z + 1, `${game.title}|${tier} · ${CONTRIBUTIONS[game.id].structure}`, true)
+        bench(b, x - 2.8, y, point.z + 0.5, Math.PI / 2)
+      }
+    } else if (world.remnants[game.id]) {
+      const x = -10 + index * 1.45, z = 25
+      b.box("woodDark", x, -0.6, z, 0.1, 0.8, 0.1)
+      b.box("paper", x, -0.05, z, 0.95, 0.6, 0.05)
+      b.box("blue", x + 0.3, 0.12, z + 0.04, 0.16, 0.18, 0.015)
+      sign(b, x, -1.2, z - 0.2, `${game.character}'s postcard|${game.title}`, true)
+    }
+  })
   return b.finish()
 }
 

@@ -1,11 +1,11 @@
-import { canWalk, groundHeight } from "./world"
+import { canWalk, groundHeight, type WorldLayout } from "./world"
 
 export interface WorldPoint { x: number; y: number; z: number }
 const STEP = 0.6
-const MIN_X = -31, MAX_X = 46, MIN_Z = -34, MAX_Z = 30
+const MIN_X = -45, MAX_X = 46, MIN_Z = -47, MAX_Z = 33
 const key = (x: number, z: number) => `${x},${z}`
 
-function nearestCell(point: Pick<WorldPoint, "x" | "z">, built: boolean) {
+function nearestCell(point: Pick<WorldPoint, "x" | "z">, built: WorldLayout) {
   const x = Math.round(point.x / STEP), z = Math.round(point.z / STEP)
   for (let radius = 0; radius <= 4; radius++) {
     for (let dx = -radius; dx <= radius; dx++) for (let dz = -radius; dz <= radius; dz++) {
@@ -18,7 +18,7 @@ function nearestCell(point: Pick<WorldPoint, "x" | "z">, built: boolean) {
   return null
 }
 
-export function clearSegment(from: Pick<WorldPoint, "x" | "z">, to: Pick<WorldPoint, "x" | "z">, built: boolean) {
+export function clearSegment(from: Pick<WorldPoint, "x" | "z">, to: Pick<WorldPoint, "x" | "z">, built: WorldLayout) {
   const count = Math.ceil(Math.hypot(to.x - from.x, to.z - from.z) / 0.18)
   for (let i = 0; i <= count; i++) {
     const t = count ? i / count : 0
@@ -28,7 +28,7 @@ export function clearSegment(from: Pick<WorldPoint, "x" | "z">, to: Pick<WorldPo
 }
 
 /** A small grid over the authored surfaces keeps residents on the same paths as the player. */
-export function findWorldPath(from: WorldPoint, to: WorldPoint, built: boolean): WorldPoint[] {
+export function findWorldPath(from: WorldPoint, to: WorldPoint, built: WorldLayout): WorldPoint[] {
   if (!canWalk(from.x, from.z, built) || !canWalk(to.x, to.z, built)) return []
   const start = nearestCell(from, built), goal = nearestCell(to, built)
   if (!start || !goal) return []
@@ -72,6 +72,7 @@ export function findWorldPath(from: WorldPoint, to: WorldPoint, built: boolean):
       if (dx && dz && (!canWalk(current.x * STEP, nz * STEP, built) || !canWalk(nx * STEP, current.z * STEP, built))) continue
       const cost = current.cost + Math.hypot(dx, dz)
       if (cost >= (costs.get(nextKey) ?? Infinity)) continue
+      if (!clearSegment({ x: current.x * STEP, z: current.z * STEP }, { x: nx * STEP, z: nz * STEP }, built)) continue
       costs.set(nextKey, cost)
       parent.set(nextKey, currentKey)
       open.push({ x: nx, z: nz, cost, score: cost + Math.hypot(goal.x - nx, goal.z - nz) })

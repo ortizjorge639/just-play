@@ -8,10 +8,10 @@ import {
 } from "three"
 import type { DemoSceneProps, GameId, Resident, SceneSnapshot } from "@/lib/demo/contracts"
 import { GAME_BY_ID, residentsFor } from "@/lib/demo/state"
-import { canWalk, DOOR, groundHeight, INTERIOR_CENTER, LOCATION_BY_ID, nearestLocation, SPAWN } from "@/lib/demo/world"
+import { canWalk, DOOR, groundHeight, INTERIOR_CENTER, isLocationVisible, LOCATION_BY_ID, nearestLocation, SPAWN, type WorldLayout } from "@/lib/demo/world"
 import { findWorldPath, type WorldPoint } from "@/lib/demo/navigation"
 import { unobstructedCamera } from "@/lib/demo/camera"
-import { buildCharacter, buildVillage, disposeVillage, seeded } from "./geometry"
+import { buildCharacter, buildContributions, buildVillage, disposeVillage, seeded } from "./geometry"
 
 type ResidentPosition = SceneSnapshot["residents"][number]
 const TEMP = new Vector3()
@@ -61,8 +61,10 @@ function Sky({ night }: { night: boolean }) {
   return <mesh material={material} renderOrder={-1}><sphereGeometry args={[220, 24, 16]} /></mesh>
 }
 
-function Village({ built, night }: { built: boolean; night: boolean }) {
-  const village = useMemo(() => buildVillage(built), [built])
+function Village({ world, night }: { world: DemoSceneProps["world"]; night: boolean }) {
+  const { builtHouse, placements, completions, merits, remnants } = world
+  const village = useMemo(() => buildVillage({ builtHouse, placements }), [builtHouse, placements])
+  const contributions = useMemo(() => buildContributions({ placements, completions, merits, remnants }), [placements, completions, merits, remnants])
   useEffect(() => {
     village.traverse(object => {
       if (object instanceof Mesh && object.material instanceof MeshStandardMaterial && object.material.emissiveIntensity) {
@@ -71,7 +73,8 @@ function Village({ built, night }: { built: boolean; night: boolean }) {
     })
   }, [village, night])
   useEffect(() => () => disposeVillage(village), [village])
-  return <primitive object={village} />
+  useEffect(() => () => disposeVillage(contributions), [contributions])
+  return <><primitive object={village} /><primitive object={contributions} /></>
 }
 
 function Clouds({ reducedMotion, night }: { reducedMotion: boolean; night: boolean }) {
@@ -92,7 +95,7 @@ function Clouds({ reducedMotion, night }: { reducedMotion: boolean; night: boole
 }
 
 function ResidentActor({ resident, built, paused, reducedMotion, positions }: {
-  resident: Resident; built: boolean; paused: boolean; reducedMotion: boolean
+  resident: Resident; built: WorldLayout; paused: boolean; reducedMotion: boolean
   positions: RefObject<Map<GameId, ResidentPosition>>
 }) {
   const game = GAME_BY_ID[resident.gameId]
@@ -151,7 +154,7 @@ function ResidentActor({ resident, built, paused, reducedMotion, positions }: {
           route.current.shift()
           if (!route.current.length) {
             wait.current = 7 + seeded(cycle.current + index) * 10
-            activity.current = resident.kind === "visitor" ? "Making themselves at home" : ["Watching the canopy", "Enjoying a quiet moment", "Remembering an adventure"][index % 3]
+            activity.current = ["Watching the canopy", "Enjoying a quiet moment", "Remembering an adventure"][index % 3]
           }
         } else {
           position.current.x += dx / distance * step
@@ -192,6 +195,7 @@ function World(props: DemoSceneProps) {
   const registry = useRef(new Map<GameId, ResidentPosition>())
   const lastCommand = useRef(-1)
   const residents = useMemo(() => residentsFor(world), [world])
+  const layout = useMemo(() => ({ builtHouse: world.builtHouse, placements: world.placements }), [world.builtHouse, world.placements])
   const live = useRef({ paused, preferences, onInteract, onError, onPhoto, touch })
   useEffect(() => { live.current = { paused, preferences, onInteract, onError, onPhoto, touch } }, [paused, preferences, onInteract, onError, onPhoto, touch])
 
@@ -265,16 +269,15 @@ function World(props: DemoSceneProps) {
   }, [gl])
   useEffect(() => { if (paused || preferences.camera !== "explore") keys.current.clear() }, [paused, preferences.camera])
   useEffect(() => {
-    if (!world.builtHouse && nearestLocation(player.current.x, player.current.z, true).id === "plot") {
+    if (!inside.current && !canWalk(player.current.x, player.current.z, layout)) {
       player.current.set(...SPAWN); inside.current = false
     }
-  }, [world.builtHouse])
+  }, [layout])
   useEffect(() => {
     if (!command || command.serial === lastCommand.current) return
     lastCommand.current = command.serial
     if (command.type === "travel") {
-      if (command.location === "plot" && !world.builtHouse) {
-        onError("Build Fern House before traveling to that branch.")
+      if (!isLocationVisible(command.location, layout)) {
         return
       }
       if (inside.current) distance.current = 46
@@ -301,7 +304,7 @@ function World(props: DemoSceneProps) {
         else onError("The photo could not be created. Try a lower graphics quality and capture again.")
       }, "image/png")
     }
-  }, [command, world.builtHouse, camera, gl, scene, onError, onPhoto])
+  }, [command, layout, camera, gl, scene, onError, onPhoto])
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.1)
@@ -327,9 +330,9 @@ function World(props: DemoSceneProps) {
           if (isClear(x, player.current.z)) player.current.x = x
           if (isClear(player.current.x, z)) player.current.z = z
         } else {
-          if (canWalk(x, player.current.z, world.builtHouse)) player.current.x = x
-          if (canWalk(player.current.x, z, world.builtHouse)) player.current.z = z
-          player.current.y = groundHeight(player.current.x, player.current.z, world.builtHouse) ?? player.current.y
+          if (canWalk(x, player.current.z, layout)) player.current.x = x
+          if (canWalk(player.current.x, z, layout)) player.current.z = z
+          player.current.y = groundHeight(player.current.x, player.current.z, layout) ?? player.current.y
         }
       }
       if (length > 0.01) {
@@ -363,11 +366,11 @@ function World(props: DemoSceneProps) {
     }
     camera.position.lerp(TEMP, lerp)
     if (!isAmbient && preferences.camera === "explore") {
-      const safe = unobstructedCamera(focus.current, camera.position, world.builtHouse, inside.current)
+      const safe = unobstructedCamera(focus.current, camera.position, layout, inside.current)
       camera.position.set(safe.x, safe.y, safe.z)
     }
     camera.lookAt(focus.current)
-    const location = inside.current ? LOCATION_BY_ID.grove : nearestLocation(player.current.x, player.current.z, world.builtHouse)
+    const location = inside.current ? LOCATION_BY_ID.grove : nearestLocation(player.current.x, player.current.z, layout)
     nearest.current = inside.current ? (player.current.z > 2.2 ? "exit" : null)
       : Math.hypot(player.current.x - DOOR[0], player.current.z - DOOR[2]) < 2 ? "door"
       : Math.hypot(player.current.x - location.arrival[0], player.current.z - location.arrival[2]) < 4.3 ? location.id : null
@@ -391,10 +394,10 @@ function World(props: DemoSceneProps) {
       shadow-camera-left={-45} shadow-camera-right={45} shadow-camera-top={40} shadow-camera-bottom={-35}
       shadow-camera-far={130} shadow-normalBias={0.08} shadow-bias={-0.0003} />
     <pointLight position={[INTERIOR_CENTER, 3.3, 0]} intensity={12} distance={14} color="#ffc777" />
-    <Village built={world.builtHouse} night={night} />
+    <Village world={world} night={night} />
     <Clouds reducedMotion={preferences.reducedMotion || paused} night={night} />
     <primitive object={character.group} />
-    {residents.map(resident => <ResidentActor key={resident.gameId} resident={resident} built={world.builtHouse}
+    {residents.map(resident => <ResidentActor key={resident.gameId} resident={resident} built={layout}
       paused={paused} reducedMotion={preferences.reducedMotion} positions={registry} />)}
   </>
 }

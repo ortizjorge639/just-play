@@ -2,7 +2,7 @@
 
 > *You don't track games. You collect proof that you showed up.*
 
-Just Play is a game tracker built around a simple idea: every game you finish becomes a permanent part of your world. Not a spreadsheet. Not a list. A treehouse full of characters that grew from every hour you put in.
+Just Play is a game tracker built around a simple idea: meaningful time with a game becomes a permanent part of your world. You choose what counts as done enough. Not a spreadsheet. Not a list. A treehouse full of characters and memories, built game by game.
 
 ---
 
@@ -34,9 +34,11 @@ and maps its spatial experience to a proposed Just Play gaming home. It is
 research and a world-model proposal, not a description of shipped 3D features.
 
 The **Canopy demo** at `/demo` makes that direction playable: explore a treehouse
-settlement, welcome visiting game characters, give completed adventures a
-permanent home, and leave the world on display as ambient art. It uses original
-procedural scenery, fictional sample games, and browser-local saves.
+settlement, invite game characters, choose a stamp of proof for permanent
+arrival, and place the additions earned through deeper engagement. Dropped
+invitations leave removable postcards, not penalties. Leave the world on
+display as ambient art. It uses original procedural scenery, fictional sample
+games, explicit milestone self-confirmation, and browser-local saves.
 See the [presenter guide](docs/demo.md).
 
 Follow the build → [@jojiguy639](https://x.com/jojiguy639)
