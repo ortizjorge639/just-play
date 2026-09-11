@@ -11,6 +11,7 @@ import { GAME_BY_ID, residentsFor } from "@/lib/demo/state"
 import { canWalk, DOOR, groundHeight, INTERIOR_CENTER, isLocationVisible, LOCATION_BY_ID, nearestLocation, SPAWN, type WorldLayout } from "@/lib/demo/world"
 import { findWorldPath, type WorldPoint } from "@/lib/demo/navigation"
 import { unobstructedCamera } from "@/lib/demo/camera"
+import { captureScenePng } from "@/lib/demo/photo"
 import { buildCharacter, buildContributions, buildVillage, disposeVillage, seeded } from "./geometry"
 
 type ResidentPosition = SceneSnapshot["residents"][number]
@@ -298,11 +299,9 @@ function World(props: DemoSceneProps) {
     } else if (command.type === "recenter") {
       yaw.current = 0.45; pitch.current = 0.6; distance.current = inside.current ? 12 : 46
     } else if (command.type === "photo") {
-      gl.render(scene, camera)
-      gl.domElement.toBlob(blob => {
-        if (blob) onPhoto(blob)
-        else onError("The photo could not be created. Try a lower graphics quality and capture again.")
-      }, "image/png")
+      void captureScenePng(gl, scene, camera).then(onPhoto, () => {
+        onError("The photo could not be created. Try a lower graphics quality and capture again.")
+      })
     }
   }, [command, layout, camera, gl, scene, onError, onPhoto])
 
@@ -407,7 +406,7 @@ export default function DemoScene(props: DemoSceneProps) {
     <Canvas camera={{ position: [18, 31, 39], fov: 48, near: 0.1, far: 300 }}
       dpr={props.preferences.quality === "low" ? 0.85 : [1, 1.5]}
       shadows={props.preferences.quality === "high"} frameloop="demand"
-      gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true, powerPreference: "high-performance", toneMapping: ACESFilmicToneMapping }}
+      gl={{ antialias: true, alpha: false, powerPreference: "high-performance", toneMapping: ACESFilmicToneMapping }}
       fallback="This browser cannot display the 3D canvas. Use the accessible journal and map.">
       <FrameClock ambient={props.preferences.camera === "ambient" || props.preferences.camera === "still"} paused={props.paused} quality={props.preferences.quality} />
       <World {...props} />

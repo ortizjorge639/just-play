@@ -1,7 +1,7 @@
 import test from "node:test"
 import assert from "node:assert/strict"
 import { unobstructedCamera } from "./camera"
-import { INTERIOR_CENTER } from "./world"
+import { canWalk, INTERIOR_CENTER } from "./world"
 
 test("the camera stays on the near side of an intervening house", () => {
   const focus = { x: 17, y: 4.5, z: 0 }
@@ -12,6 +12,21 @@ test("the camera stays on the near side of an intervening house", () => {
 test("unobstructed camera views are unchanged", () => {
   const desired = { x: 8, y: 17, z: 30 }
   assert.deepEqual(unobstructedCamera({ x: 1, y: 2, z: 6 }, desired, false, false), desired)
+})
+
+test("a legal focus inside a trunk proxy cannot send the camera through the trunk", () => {
+  const focus = { x: -1.1, y: 2.4, z: -0.1 }
+  const desired = { x: -5, y: 3, z: -4 }
+  assert.equal(canWalk(focus.x, focus.z, false), true)
+
+  const camera = unobstructedCamera(focus, desired, false, false)
+  assert.notDeepEqual(camera, desired)
+
+  const dx = camera.x - focus.x
+  const dz = camera.z - focus.z
+  const lengthSquared = dx * dx + dz * dz
+  const closest = Math.max(0, Math.min(1, ((-3 - focus.x) * dx + (-2 - focus.z) * dz) / lengthSquared))
+  assert.ok(Math.hypot(focus.x + dx * closest + 3, focus.z + dz * closest + 2) >= 1.8)
 })
 
 test("the room camera cannot drift through the side walls", () => {

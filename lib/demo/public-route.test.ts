@@ -1,11 +1,17 @@
 import test from "node:test"
 import assert from "node:assert/strict"
+import { readFile } from "node:fs/promises"
 import { NextRequest } from "next/server"
 import { middleware } from "../../middleware"
 import { metadata } from "../../app/demo/layout"
 
 test("the public demo removes the authenticated app manifest", () => {
   assert.equal(metadata.manifest, null)
+})
+
+test("photo support does not retain the WebGL drawing buffer", async () => {
+  const scene = await readFile(new URL("../../components/demo/demo-scene.tsx", import.meta.url), "utf8")
+  assert.doesNotMatch(scene, /preserveDrawingBuffer\s*:\s*true/)
 })
 
 test("the demo renders without any Supabase configuration or authentication", async () => {
