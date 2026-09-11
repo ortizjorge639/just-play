@@ -62,16 +62,22 @@ export function unobstructedCamera(focus: WorldPoint, desired: WorldPoint, built
   let fraction = 1
   for (const obstacle of visibleObstacles(built)) {
     const base = groundHeight(obstacle.x, obstacle.z, built) ?? 0
-    const intersection = obstacle.radius
-      ? trunkIntersection(focus, { x: dx, y: dy, z: dz }, obstacle.x, obstacle.z, obstacle.radius + 0.35, base - 0.5, base + 17)
+    const intersectionAtPadding = (padding: number) => obstacle.radius
+      ? trunkIntersection(focus, { x: dx, y: dy, z: dz }, obstacle.x, obstacle.z, obstacle.radius + padding, base - 0.5, base + 17)
       : boxIntersection(
         [focus.x, focus.y, focus.z],
         [dx, dy, dz],
-        [obstacle.x - (obstacle.halfX ?? 0) - 0.35, base - 0.5, obstacle.z - (obstacle.halfZ ?? 0) - 0.35],
-        [obstacle.x + (obstacle.halfX ?? 0) + 0.35, base + 7, obstacle.z + (obstacle.halfZ ?? 0) + 0.35],
+        [obstacle.x - (obstacle.halfX ?? 0) - padding, base - 0.5, obstacle.z - (obstacle.halfZ ?? 0) - padding],
+        [obstacle.x + (obstacle.halfX ?? 0) + padding, base + 7, obstacle.z + (obstacle.halfZ ?? 0) + padding],
       )
+    const intersection = intersectionAtPadding(0.35)
     if (intersection && intersection[0] > 0 && intersection[0] < fraction) {
       fraction = Math.max(0.08, intersection[0] - 0.025)
+    } else if (intersection?.[0] === 0) {
+      const actualIntersection = intersectionAtPadding(0)
+      if (actualIntersection && actualIntersection[0] > 0 && actualIntersection[0] < fraction) {
+        fraction = Math.max(0, actualIntersection[0] - 0.025)
+      }
     }
   }
   return { x: focus.x + dx * fraction, y: focus.y + dy * fraction, z: focus.z + dz * fraction }

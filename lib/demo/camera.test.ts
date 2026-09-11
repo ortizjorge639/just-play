@@ -15,9 +15,10 @@ test("unobstructed camera views are unchanged", () => {
 })
 
 test("a legal focus inside a trunk proxy cannot send the camera through the trunk", () => {
-  const focus = { x: -1.1, y: 2.4, z: -0.1 }
-  const desired = { x: -5, y: 3, z: -4 }
+  const focus = { x: -0.875, y: 2.4, z: -2 }
+  const desired = { x: -6, y: 3, z: -2 }
   assert.equal(canWalk(focus.x, focus.z, false), true)
+  assert.ok(Math.hypot(focus.x + 3, focus.z + 2) < 1.8 + 0.35)
 
   const camera = unobstructedCamera(focus, desired, false, false)
   assert.notDeepEqual(camera, desired)
@@ -27,6 +28,10 @@ test("a legal focus inside a trunk proxy cannot send the camera through the trun
   const lengthSquared = dx * dx + dz * dz
   const closest = Math.max(0, Math.min(1, ((-3 - focus.x) * dx + (-2 - focus.z) * dz) / lengthSquared))
   assert.ok(Math.hypot(focus.x + dx * closest + 3, focus.z + dz * closest + 2) >= 1.8)
+  assert.ok(Math.hypot(camera.x + 3, camera.z + 2) >= 1.8)
+
+  const outward = { x: 2, y: 3, z: -2 }
+  assert.deepEqual(unobstructedCamera(focus, outward, false, false), outward)
 })
 
 test("the room camera cannot drift through the side walls", () => {

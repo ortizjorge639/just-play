@@ -169,6 +169,15 @@ export const SITE_IDS: readonly SiteId[] = ["plot", "brook", "crown", "fern", "d
 const isSite = (value: unknown): value is SiteId => typeof value === "string" && SITE_IDS.includes(value as SiteId)
 const shortText = (value: unknown, max: number): value is string =>
   typeof value === "string" && value.trim().length > 0 && value.length <= max
+const MAX_MILESTONE_LENGTH = 120
+const MAX_TIER_NAME_LENGTH = 30
+const MAX_CONFIRMATION_KEY_LENGTH = JSON.stringify([
+  "tier-5",
+  "\u0000".repeat(MAX_MILESTONE_LENGTH),
+  "\u0000".repeat(MAX_TIER_NAME_LENGTH),
+  5,
+  false,
+]).length
 
 export function defaultRules(): MilestoneRules {
   return {
@@ -182,13 +191,14 @@ export function defaultRules(): MilestoneRules {
 }
 
 function isRules(value: unknown): value is MilestoneRules {
-  if (!isRecord(value) || !hasKeys(value, ["stamp", "tiers"]) || !shortText(value.stamp, 120) ||
+  if (!isRecord(value) || !hasKeys(value, ["stamp", "tiers"]) || !shortText(value.stamp, MAX_MILESTONE_LENGTH) ||
     !Array.isArray(value.tiers) || value.tiers.length < 1 || value.tiers.length > 5) return false
   const ids = new Set<string>()
   return value.tiers.every(tier => {
     if (!isRecord(tier) || !hasKeys(tier, ["id", "name", "milestone", "structural"]) ||
       typeof tier.id !== "string" || !/^tier-[1-5]$/.test(tier.id) || ids.has(tier.id) ||
-      !shortText(tier.name, 30) || !shortText(tier.milestone, 120) || typeof tier.structural !== "boolean") return false
+      !shortText(tier.name, MAX_TIER_NAME_LENGTH) || !shortText(tier.milestone, MAX_MILESTONE_LENGTH) ||
+      typeof tier.structural !== "boolean") return false
     ids.add(tier.id)
     return true
   })
@@ -196,7 +206,8 @@ function isRules(value: unknown): value is MilestoneRules {
 
 function isConfirmation(value: unknown): value is Confirmation {
   return isRecord(value) && hasKeys(value, ["key", "milestone", "tier", "depth", "structural", "at"]) &&
-    shortText(value.key, 300) && shortText(value.milestone, 120) && shortText(value.tier, 30) &&
+    shortText(value.key, MAX_CONFIRMATION_KEY_LENGTH) &&
+    shortText(value.milestone, MAX_MILESTONE_LENGTH) && shortText(value.tier, MAX_TIER_NAME_LENGTH) &&
     typeof value.depth === "number" && Number.isInteger(value.depth) && value.depth >= 0 && value.depth <= 5 &&
     typeof value.structural === "boolean" && isDate(value.at)
 }

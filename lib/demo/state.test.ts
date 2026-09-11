@@ -167,6 +167,25 @@ test("changing a tier's contribution rule requires fresh self-confirmation, not 
   assert.equal(state.merits.ember?.history[0].structural, false)
 })
 
+test("maximal escaped proof criteria remain valid after persistence and later mutations", () => {
+  const escaped = "\u0000\"\\"
+  const milestone = escaped.repeat(40)
+  const name = escaped.repeat(10)
+  const rules = {
+    stamp: milestone,
+    tiers: [{ id: "tier-5" as const, name, milestone, structural: true }],
+  }
+  let state = act(createDemoState(), { type: "rules", gameId: "ember", rules })
+  state = confirm(start(state), "tier-5")
+  assert.ok(state.merits.ember!.history[0].key.length > 300)
+  assert.equal(state.merits.ember!.history[0].milestone, milestone)
+  assert.equal(state.merits.ember!.history[0].tier, name)
+
+  state = value(parseDemoSave(JSON.stringify(state)))
+  state = act(state, { type: "note", gameId: "ember", text: "Still writable" })
+  assert.equal(state.notes.ember, "Still writable")
+})
+
 test("stopping an invitation keeps exactly one postcard across repeats and re-invites", () => {
   const first = stop(start())
   assert.equal(first.games.ember, "backlog")
