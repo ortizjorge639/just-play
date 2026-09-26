@@ -1,0 +1,8 @@
+{
+  "frames": 192,
+  "uniqueIdleFrames": 40,
+  "uniqueWalkFrames": 15,
+  "uniqueGreetingFrames": 70,
+  "repeatedWalkFramePairs": 24,
+  "byteIdenticalWalkFramePairs": 24
+}

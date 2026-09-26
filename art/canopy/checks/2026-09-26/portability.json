@@ -1,0 +1,222 @@
+{
+  "status": "passed",
+  "date": "2026-09-26",
+  "art_approval": "pending",
+  "scope": "Repo archival/reproducibility only; no application integration or new art approval",
+  "versions": {
+    "blender": "5.2.1 LTS",
+    "node": "26.7.0",
+    "python": "3.14.7",
+    "three": "0.180.0",
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12"
+  },
+  "checks": {
+    "python_tests": 4,
+    "viewer_tests": 4,
+    "original_files_sha256_checked": 64,
+    "original_brief_lines": 128,
+    "glbs": 9,
+    "source_rebuild": "passed",
+    "exact_blend_reopen": "passed",
+    "exact_blend_reexport": "9/9 byte-identical GLBs",
+    "final_and_rebuilt_browser_imports": "passed",
+    "media_probe": "passed"
+  },
+  "normalization": "Fresh JSON copies only: absolute worktree prefix removed from string values. Historical approval-v003 evidence is unchanged. Generated paths below are traceability references, not required dependencies.",
+  "report_origins": {
+    "blender-final.json": {
+      "generated_source": "generated/final-reopen/blender-audit.json",
+      "raw_sha256": "acf3f202ec93c2fb37e6150137c039a92136be1462f84be388913452393bf1db",
+      "archived_sha256": "acf3f202ec93c2fb37e6150137c039a92136be1462f84be388913452393bf1db"
+    },
+    "blender-rebuild.json": {
+      "generated_source": "generated/portability-rebuild/blender-audit.json",
+      "raw_sha256": "bad8197b5424783350e73e2c29f7c9e353254716ace9bac54914ac824641f3db",
+      "archived_sha256": "bad8197b5424783350e73e2c29f7c9e353254716ace9bac54914ac824641f3db"
+    },
+    "export-rebuild.json": {
+      "generated_source": "generated/portability-rebuild/export-report.json",
+      "raw_sha256": "7db19dc8a34d91de240391ada16b7a7ad07b4d347b47bf9abbfd752e319f9d2e",
+      "archived_sha256": "7db19dc8a34d91de240391ada16b7a7ad07b4d347b47bf9abbfd752e319f9d2e"
+    },
+    "browser-final.json": {
+      "generated_source": "generated/portability-final/core/verification.json",
+      "raw_sha256": "527e0f95ce8d3be1c4e726dc4214b7cab238e82bb3adc276a62dadbc529a4631",
+      "archived_sha256": "c54a8083547203055cdeb894607a419b219249c74c9dfaacea27bde5dd00ee4f"
+    },
+    "cameras-final.json": {
+      "generated_source": "generated/portability-final/cameras/camera-import-verification.json",
+      "raw_sha256": "4565873dd75615dad43a4d998875abcca74ff82e903e10669ad731e73e61b5da",
+      "archived_sha256": "2654a851ecdbc944f6437bd7d07df8a46f4e85f3a9d4d347342801029614faae"
+    },
+    "optional-final.json": {
+      "generated_source": "generated/portability-final/optional/optional-import-verification.json",
+      "raw_sha256": "76bbacf5cc253436b3e2bcdbe8d2cc73311321504a4301051c13517ede954e1d",
+      "archived_sha256": "a87ed443c58fb04b1b6d3df8592411108a817480cdbc94fa60c87f9daadc69bb"
+    },
+    "browser-rebuild.json": {
+      "generated_source": "generated/portability-rebuilt-browser/core/verification.json",
+      "raw_sha256": "129ecfb6c6f5de4e64d3414c22e40b68d6f2ab91116640a3ffb89278de10172b",
+      "archived_sha256": "ac8b18c2ac64a914873b297c098157de694838d790ffb7971ba3b52668ad4996"
+    },
+    "cameras-rebuild.json": {
+      "generated_source": "generated/portability-rebuilt-browser/cameras/camera-import-verification.json",
+      "raw_sha256": "4565873dd75615dad43a4d998875abcca74ff82e903e10669ad731e73e61b5da",
+      "archived_sha256": "2654a851ecdbc944f6437bd7d07df8a46f4e85f3a9d4d347342801029614faae"
+    },
+    "optional-rebuild.json": {
+      "generated_source": "generated/portability-rebuilt-browser/optional/optional-import-verification.json",
+      "raw_sha256": "807c2f71fe19da32a87486a8f8136367f2fdd679b3c8da076edadb47410ab3af",
+      "archived_sha256": "87cf0bfa7711753f42ce0313b1321da25ea4c37d8818b61432adc8c68da6691e"
+    },
+    "character-source.json": {
+      "generated_source": "generated/portability-characters/character-smoke/smoke-report.json",
+      "raw_sha256": "b071c7bfe114b72a08a586d4b2a9fa30548518848e106b5f9ef6ef4c2ee10083",
+      "archived_sha256": "97ca7e324e8c2b59d0dbd39db0cbc36ca88d07e34f4ccdc365a181b9d2e0cceb"
+    },
+    "character-isolation.json": {
+      "generated_source": "generated/portability-characters/character-smoke/integration-report.json",
+      "raw_sha256": "ae5f6b01676313c2ec7edbb5cef9031fe87e34fcb71263bae89e2aeddec77eb7",
+      "archived_sha256": "d0e57027f366ef18854cf70984d1cd14cfa6fc053e7d1be64d8f7bec0b8e3e0d"
+    }
+  },
+  "tooling_snapshot_at_archive_sha256": {
+    "art/canopy/source/build_canopy.py": "ab07ad67b570ff27cae35aa859ac820c871f4ccd1beaa2198b853a9f192d2459",
+    "art/canopy/source/character-smoke/integration-check.py": "2dff76dafa208e18a474ba94aac12a4d01890504397d9a1ab00ee31fde56d392",
+    "art/canopy/source/character-smoke/smoke.py": "4628164d5c7acfc3eb12ce96847e657bed9a07e8aa405536aed492ab33c31a46",
+    "art/canopy/source/character-smoke/verify.py": "d6bb301350f388c78b918dfd1b3499336ce867de705139720c1475c4230c573e",
+    "art/canopy/source/characters.py": "8a2cb92c2e54955ccc4f9a44ea73f1eceaf35ecf7bbb1037bd5851511b22fd4c",
+    "art/canopy/source/export_cameras.py": "b83cd8998f7e1994b2baccab844bf4dc5636738fbe53c000e1695ee6e60e9529",
+    "art/canopy/source/export_canopy.py": "691e99e02243e694ef6365c5ecdd6095c3edb63f6066dfaf145dbfe0f09f60dd",
+    "art/canopy/source/export_collision.py": "04fceeabdf189335e17e1c7d1bf5ba028df0967ea83dbf5a3f5f6b1a8b5443ee",
+    "art/canopy/source/finalize_canopy.py": "09b9d59a285d126110251beab2324f002879576c62a642752c8a588c478538f3",
+    "art/canopy/source/finalize_evidence.py": "aac1f9e429ea9eb59dc95d77e5d9d89047e3bb00582b24d153e0376737dc27f3",
+    "art/canopy/source/glb.py": "1d8da6cac777b0b31fa684aed2d2abb1ce4294289dd0b6af2889395deb84762b",
+    "art/canopy/source/make_manifest.py": "ecda917876ff24fc22e03535f63a65d43611e4dd51bc460d7c71640b1a181e46",
+    "art/canopy/source/package_canopy.py": "40897a52e25db170a41385fcab4c8ed636b9654fc5d63ad23b423aee12d45a89",
+    "art/canopy/source/paths.py": "1fb09f0edf518e970d0ba2ec4b983f3bd30ebe644a6efd527f3df55f21cffd1f",
+    "art/canopy/source/render_canopy.py": "de204628a440540a6b1b82861cba5ab5bb88ac76d05f8019adfbbc2ddce28229",
+    "art/canopy/source/render_suite.py": "08d80608a15e81286685a8f67f410a34be0486275a770b5e1ae23a4c88dc2e40",
+    "art/canopy/source/run.py": "8b9f76a282109110fa789c3dab33c5f33001030d688001c69910538b6572a3af",
+    "art/canopy/source/test_archive.py": "520c93dea4673d41aaaa647f56b46fba8e4d5f2a04cc83d05671e93829e23bd7",
+    "art/canopy/source/verify_archive.py": "5a087c946a216ece46114d50eaf52240e4a2ddf5d28b5c077dd03ea5ab91e467",
+    "art/canopy/source/verify_canopy.py": "5cd777f74e90fdd8e3e2a9f29c1f962369e3ffce5507e30ffad7a144c030e740",
+    "art/canopy/viewer/README.md": "479814a6ad0d6e3dfae314aa7b67f0d22abaabe526700d1f7c4d5ed96c0a4954",
+    "art/canopy/viewer/bootstrap.js": "5273a473d0e8596ad6f9c280d6fb197a00c538b995aea6594e337501d6f1a687",
+    "art/canopy/viewer/browser-runtime.mjs": "f3536df1f498bdbd0bd8885a6f94144894e50b175323b26b837890e964d48aea",
+    "art/canopy/viewer/capture-frames.mjs": "2b06b44b6fde9b9f5ce23fad070d505d66a974ba7f1fa7b56bdb46017c49e675",
+    "art/canopy/viewer/fixture.mjs": "1b1e95dc20b3d3d970240fc556ed80360a657675950941b3b15abc130daa55e2",
+    "art/canopy/viewer/index.html": "aac3c3b31a42192adfd0a8c9eb1218e589846df3df433b27c453e2f8675cdcc3",
+    "art/canopy/viewer/package-lock.json": "f0df5bb48af35617be6a3a01d83dea3e2e1cc0ddfce1158d0862d1a6d8d7f78d",
+    "art/canopy/viewer/package.json": "e1215d99088e35af04a8ccb67be9a20d9a7e958109486ee9e95abd7ea98cc8b6",
+    "art/canopy/viewer/paths.mjs": "ed129b643f8f8600e18b07d93054a60382f4066b7bb3768c3d5f8119fc28cd80",
+    "art/canopy/viewer/record-characters.mjs": "324e34d77ec344c7a7fb146961fff46bde34b827694c5a3f52f0503faab70d14",
+    "art/canopy/viewer/record.mjs": "750058d35cb7f724213eff9ba1c78d089c0c6bb08bdef927c2cc3ebc7f9b30e0",
+    "art/canopy/viewer/server.mjs": "816e646b90a7a950ab3e442571cfc288a59028473824fab5e2968dacea961790",
+    "art/canopy/viewer/smoke.test.mjs": "2b3cadff76a68669d8b1f0a81f851ac8cd871ba157c321c57cba04562bde143d",
+    "art/canopy/viewer/style.css": "5bd75bb01025014efc6fddeb028a8c249e50601b2fed4d9081babd1ad09501cb",
+    "art/canopy/viewer/validation.mjs": "fc8adafde58c6782efc7b085b77fa17e07b2106d7594b1e7816ce564825c6c35",
+    "art/canopy/viewer/verify-cameras.mjs": "df90a4c79773a38ee7ff264924eb1ef3025e8aaa6dcafd726820f22aded2c279",
+    "art/canopy/viewer/verify-optional.mjs": "ce85a5db3dabea88c83fc73e7e44071e02b9112da3b63f651191f1c70aed931a",
+    "art/canopy/viewer/verify.mjs": "79c8336dc489cbb916ca4f7c885609588ecd916995931b978b5b5e9b03834c12",
+    "art/canopy/viewer/viewer.js": "4cc01ee027fdc58a06899a12879f6fd7aeee04af9fc00fdb59e75a4fbd5a5183"
+  },
+  "asset_comparison": {
+    "cameras.glb": {
+      "original_sha256": "a25d562700f234da19ee0605370edfde1f52ba34d7177e1a05fff76a82f5df11",
+      "rebuilt_sha256": "a25d562700f234da19ee0605370edfde1f52ba34d7177e1a05fff76a82f5df11",
+      "reexported_sha256": "a25d562700f234da19ee0605370edfde1f52ba34d7177e1a05fff76a82f5df11",
+      "rebuilt_byte_identical": true,
+      "reexported_byte_identical": true
+    },
+    "collision-proxies.glb": {
+      "original_sha256": "559c35bd82284b79c750557d46efc9b954f1402710046b7099ed10ca290df7d9",
+      "rebuilt_sha256": "82bc33d2a95d1fa3a2b2eb74f0a1ecc8612c379cbd363370ee96da03b9ab24c1",
+      "reexported_sha256": "559c35bd82284b79c750557d46efc9b954f1402710046b7099ed10ca290df7d9",
+      "rebuilt_byte_identical": false,
+      "reexported_byte_identical": true
+    },
+    "ember-small.glb": {
+      "original_sha256": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+      "rebuilt_sha256": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+      "reexported_sha256": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+      "rebuilt_byte_identical": true,
+      "reexported_byte_identical": true
+    },
+    "environment.glb": {
+      "original_sha256": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819",
+      "rebuilt_sha256": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819",
+      "reexported_sha256": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819",
+      "rebuilt_byte_identical": true,
+      "reexported_byte_identical": true
+    },
+    "hearth-deck.glb": {
+      "original_sha256": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+      "rebuilt_sha256": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+      "reexported_sha256": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+      "rebuilt_byte_identical": true,
+      "reexported_byte_identical": true
+    },
+    "hearth-enrichment.glb": {
+      "original_sha256": "feb4598b208ee58755cb35e989ada99525af46f52ab9e49f31134a85c2ac6e47",
+      "rebuilt_sha256": "feb4598b208ee58755cb35e989ada99525af46f52ab9e49f31134a85c2ac6e47",
+      "reexported_sha256": "feb4598b208ee58755cb35e989ada99525af46f52ab9e49f31134a85c2ac6e47",
+      "rebuilt_byte_identical": true,
+      "reexported_byte_identical": true
+    },
+    "pip.glb": {
+      "original_sha256": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+      "rebuilt_sha256": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+      "reexported_sha256": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+      "rebuilt_byte_identical": true,
+      "reexported_byte_identical": true
+    },
+    "rain-postcard.glb": {
+      "original_sha256": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+      "rebuilt_sha256": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+      "reexported_sha256": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+      "rebuilt_byte_identical": true,
+      "reexported_byte_identical": true
+    },
+    "sol.glb": {
+      "original_sha256": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+      "rebuilt_sha256": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+      "reexported_sha256": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+      "rebuilt_byte_identical": true,
+      "reexported_byte_identical": true
+    }
+  },
+  "rebuild_difference": {
+    "file": "collision-proxies.glb",
+    "json_identical": true,
+    "different_binary_bytes": 6,
+    "field": "shared unsigned-short indices accessor 7 / bufferView 7",
+    "original_indices": [
+      0,
+      3,
+      2,
+      0,
+      2,
+      1
+    ],
+    "rebuilt_indices": [
+      3,
+      2,
+      1,
+      3,
+      1,
+      0
+    ],
+    "positions_and_normals_identical": true,
+    "upward_bridge_rays_passed": 85
+  },
+  "not_claimed": [
+    "artistic approval",
+    "full settlement completion",
+    "production integration",
+    "target-device fps",
+    "bit-identical regenerated blend",
+    "new full Cycles renders or complete capture sequences"
+  ]
+}

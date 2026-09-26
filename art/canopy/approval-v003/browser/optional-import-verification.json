@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "files": {
+    "hearth-enrichment.glb": {
+      "sha256": "feb4598b208ee58755cb35e989ada99525af46f52ab9e49f31134a85c2ac6e47",
+      "triangles": 428,
+      "meshes": 6,
+      "upwardBridgeRayHits": 0,
+      "bounds": {
+        "min": [
+          37.300000703092834,
+          4.247499704360962,
+          7.884999880236615
+        ],
+        "max": [
+          38.23963630316529,
+          5.529999732971191,
+          8.748461394705348
+        ]
+      }
+    },
+    "collision-proxies.glb": {
+      "sha256": "559c35bd82284b79c750557d46efc9b954f1402710046b7099ed10ca290df7d9",
+      "triangles": 726,
+      "meshes": 94,
+      "upwardBridgeRayHits": 85,
+      "bounds": {
+        "min": [
+          -12.000000905974815,
+          -1.2000000476837158,
+          -13.00000120796642
+        ],
+        "max": [
+          43.000000905974815,
+          5.6000001430511475,
+          28.000000905974815
+        ]
+      }
+    }
+  },
+  "collisionNavigationCertified": false
+}

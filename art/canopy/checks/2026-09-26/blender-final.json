@@ -1,0 +1,164 @@
+{
+  "saved_path": "approval-v003/canopy-approval-v003.blend",
+  "saved_sha256": "b7066e12e3a7bac94c1d70a04c3fa8beaa880d0215f7909bbcdbdfb8119da6b1",
+  "blender_version": "5.2.1 LTS",
+  "verified_in_blender": true,
+  "source_scene_count": 2,
+  "source_objects": 4865,
+  "source_actions": 7,
+  "characters": {
+    "Pip": {
+      "height_m": 1.660858154296875,
+      "bones": [
+        "pelvis",
+        "spine",
+        "neck",
+        "head",
+        "upper_arm.L",
+        "lower_arm.L",
+        "hand.L",
+        "upper_arm.R",
+        "lower_arm.R",
+        "hand.R",
+        "upper_leg.L",
+        "lower_leg.L",
+        "foot.L",
+        "upper_leg.R",
+        "lower_leg.R",
+        "foot.R"
+      ],
+      "meshes": 72,
+      "triangles": 7158,
+      "clips": {
+        "Idle": {
+          "name": "Pip_Idle",
+          "period_seconds": 3.0
+        },
+        "Walk": {
+          "name": "Pip_Walk",
+          "period_seconds": 1.0
+        },
+        "Greeting": {
+          "name": "Pip_Greeting",
+          "period_seconds": 3.0
+        }
+      }
+    },
+    "Sol": {
+      "height_m": 1.6679999828338623,
+      "bones": [
+        "pelvis",
+        "spine",
+        "neck",
+        "head",
+        "upper_arm.L",
+        "lower_arm.L",
+        "hand.L",
+        "upper_arm.R",
+        "lower_arm.R",
+        "hand.R",
+        "upper_leg.L",
+        "lower_leg.L",
+        "foot.L",
+        "upper_leg.R",
+        "lower_leg.R",
+        "foot.R"
+      ],
+      "meshes": 70,
+      "triangles": 6470,
+      "clips": {
+        "Idle": {
+          "name": "Sol_Idle",
+          "period_seconds": 3.0
+        },
+        "Walk": {
+          "name": "Sol_Walk",
+          "period_seconds": 1.0
+        },
+        "Greeting": {
+          "name": "Sol_Greeting",
+          "period_seconds": 3.0
+        }
+      }
+    }
+  },
+  "triangles_by_collection": {
+    "Environment": 105232,
+    "Foliage": 11532,
+    "Interior": 4096,
+    "Characters": 13628,
+    "Ember Small": 344,
+    "Hearth Deck": 29190,
+    "Hearth Enrichment": 428,
+    "Rain Postcard": 200
+  },
+  "environment_contribution_triangles": 151022,
+  "environment_budget": 180000,
+  "source_topology_markers": {
+    "LOCATION_Gathering": [
+      0,
+      0,
+      0
+    ],
+    "LOCATION_Grove": [
+      20,
+      5,
+      3
+    ],
+    "LOCATION_Trailhead": [
+      -6,
+      -22,
+      -1
+    ],
+    "ATTACH_plot": [
+      37,
+      -10,
+      4
+    ],
+    "DOOR_Grove": [
+      17,
+      3.1,
+      3
+    ],
+    "ATTACH_brook": [
+      30,
+      23,
+      4
+    ],
+    "ATTACH_crown": [
+      12,
+      40,
+      6
+    ],
+    "ATTACH_fern": [
+      -18,
+      29,
+      5
+    ],
+    "ATTACH_dusk": [
+      -39,
+      7,
+      3
+    ],
+    "ATTACH_meadow": [
+      -27,
+      -17,
+      1
+    ],
+    "ATTACH_sunrise": [
+      12,
+      -25,
+      0
+    ]
+  },
+  "missing_dependencies": [],
+  "external_texture_count": 0,
+  "material_detail": "Authored geometry and portable constant PBR values; no procedural shader texture detail to bake.",
+  "camera_loop_frames_inspected": 145,
+  "camera_loop_matrix_seam_error": 0.0,
+  "collision_objects": 94,
+  "not_verified_here": [
+    "production integration",
+    "target-device frame rate"
+  ]
+}

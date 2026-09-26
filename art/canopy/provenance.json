@@ -1,0 +1,595 @@
+{
+  "created": "2026-09-12",
+  "archived": "2026-09-26",
+  "study_commit": "2cb9d46f77d519d7818d917d7762fcc3c6cb1196",
+  "description": "Source hashes at ingestion. approval-v003 and source-brief.txt remain byte-identical. source/ and viewer/ are portability adaptations, not immutable historical scripts.",
+  "origins": {
+    "curated": "Canopy Approval 2026-09-12 delivery folder",
+    "development": "2026-09-12/blender-128-lines-build-304a9069",
+    "original-brief": "128-line supplied art brief"
+  },
+  "files": [
+    {
+      "path": "art/canopy/approval-v003/ASSET-MANIFEST.md",
+      "source": "curated/canopy-v001/ASSET-MANIFEST.md",
+      "source_sha256": "29175e4c9e578e477f213968cb0776af791b9016604f502918812a62bf79073f",
+      "bytes": 9949
+    },
+    {
+      "path": "art/canopy/approval-v003/blender-audit.json",
+      "source": "curated/canopy-v001/blender-audit.json",
+      "source_sha256": "ffcda20094a6d91cf2f9a83ea627f464837be609a851219c0e755c4d700a34aa",
+      "bytes": 1590
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/ambient-night-phased.mp4",
+      "source": "curated/canopy-v001/browser/ambient-night-phased.mp4",
+      "source_sha256": "3d77760d0739671586c7f1fdd54ce0b3f1e8cc5df4a9f279b43740f49f3fe9ab",
+      "bytes": 705220
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/ambient-night-video-probe.json",
+      "source": "curated/canopy-v001/browser/ambient-night-video-probe.json",
+      "source_sha256": "3a19c78eb632e996252705bc8c1e27075cd356408fae8768c1f9e9ff0f37b824",
+      "bytes": 265
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/ambient-phased-motion-sheet.png",
+      "source": "curated/canopy-v001/browser/ambient-phased-motion-sheet.png",
+      "source_sha256": "27c6e84f9bdbd05cc50015ce44dc6cae5372f6826f1e53da847f71315d5d24c0",
+      "bytes": 454139
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/ambient-phased.mp4",
+      "source": "curated/canopy-v001/browser/ambient-phased.mp4",
+      "source_sha256": "b070263b787a0c6aeaa57603fd0031b7966a92a4dd8de54463b64e84382282c2",
+      "bytes": 1081001
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/ambient-video-probe.json",
+      "source": "curated/canopy-v001/browser/ambient-video-probe.json",
+      "source_sha256": "3a19c78eb632e996252705bc8c1e27075cd356408fae8768c1f9e9ff0f37b824",
+      "bytes": 265
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/camera-import-verification.json",
+      "source": "curated/canopy-v001/browser/camera-import-verification.json",
+      "source_sha256": "4565873dd75615dad43a4d998875abcca74ff82e903e10669ad731e73e61b5da",
+      "bytes": 3554
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/cast-day.png",
+      "source": "curated/canopy-v001/browser/cast-day.png",
+      "source_sha256": "6666707a6784e8c99ca63d6cb1264c46c49f3ca96f5b3df7ec05db1fe8f30716",
+      "bytes": 77130
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/cast-night.png",
+      "source": "curated/canopy-v001/browser/cast-night.png",
+      "source_sha256": "c8c30d9db5ebbac7c277a9617a626cfe419b01c3076a0befe2a35f0e981618fe",
+      "bytes": 72328
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/cast-turnaround-back.png",
+      "source": "curated/canopy-v001/browser/cast-turnaround-back.png",
+      "source_sha256": "115135248f22cc48d113545b6378fb60265106b5943ae70aa06a57f57fa46cd4",
+      "bytes": 121285
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/cast-turnaround-front-grayscale.png",
+      "source": "curated/canopy-v001/browser/cast-turnaround-front-grayscale.png",
+      "source_sha256": "7d3d3f31e5c4872a3e7734f48ff1b8dd748c4d240cdd65f96fdefbf615b09115",
+      "bytes": 66315
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/cast-turnaround-front.png",
+      "source": "curated/canopy-v001/browser/cast-turnaround-front.png",
+      "source_sha256": "1b7d075ded03427d725df4ebaebd05a5a097372c84aa4f11272b15c85e549a21",
+      "bytes": 164342
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/cast-turnaround-left.png",
+      "source": "curated/canopy-v001/browser/cast-turnaround-left.png",
+      "source_sha256": "64ec63250361a944527b7959d6a7532f57311cec69893cf4d98c874daa9c10b8",
+      "bytes": 100537
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/cast-turnaround-right.png",
+      "source": "curated/canopy-v001/browser/cast-turnaround-right.png",
+      "source_sha256": "b7fd01910110e0e8ddf34e979edf97b88602a99e6d01a15b7f783032aca02b56",
+      "bytes": 101783
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/character-action-pixel-check.json",
+      "source": "curated/canopy-v001/browser/character-action-pixel-check.json",
+      "source_sha256": "4902ff26c89fea11335789107650abce660a0b338eab1b4179ef2a7131bfc431",
+      "bytes": 171
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/character-actions-video-probe.json",
+      "source": "curated/canopy-v001/browser/character-actions-video-probe.json",
+      "source_sha256": "2b6152d42fe29390e279a904392c50756550761c2d09088cf06481d189670d87",
+      "bytes": 265
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/character-actions.mp4",
+      "source": "curated/canopy-v001/browser/character-actions.mp4",
+      "source_sha256": "0db84e4b1bc808826ad8489b745321ad96729b9524883bc47a81ff3c42b9bc59",
+      "bytes": 592226
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/character-motion-sheet.png",
+      "source": "curated/canopy-v001/browser/character-motion-sheet.png",
+      "source_sha256": "1c02f3422721ded4eed035ddfc00558b2273f159dbd4a1826b6334110253ec01",
+      "bytes": 1125575
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/delivery.json",
+      "source": "curated/canopy-v001/browser/delivery.json",
+      "source_sha256": "b6be05431716c9791b98f89585e74ce79651f89910c79faeb97fad7ad6591daa",
+      "bytes": 17544
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/interior-day.png",
+      "source": "curated/canopy-v001/browser/interior-day.png",
+      "source_sha256": "e5e5ef50aef68286ff03a5db18256347d341e4dfc0efe2107f2c95f39cc8a6b4",
+      "bytes": 55176
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/interior-night.png",
+      "source": "curated/canopy-v001/browser/interior-night.png",
+      "source_sha256": "b180253038c5babb5bd014b0fa80a64df7adbd9024ec89e613e93e3d92ea612d",
+      "bytes": 285760
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/interior-roof-hidden.png",
+      "source": "curated/canopy-v001/browser/interior-roof-hidden.png",
+      "source_sha256": "c5254aa991d9959186d0abf5d239799075be503641c68105301297e7dafdd426",
+      "bytes": 53525
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/network-diagnostic.json",
+      "source": "curated/canopy-v001/browser/network-diagnostic.json",
+      "source_sha256": "89a1c5882593f9b949dfc40d885ba3fe306f24b1120789772d5ffaaa453dd453",
+      "bytes": 7005
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/optional-enrichment.png",
+      "source": "curated/canopy-v001/browser/optional-enrichment.png",
+      "source_sha256": "505f626786112ee32a6b8e12860ad0c3fc8656f2346036a5d6a23cbde765a684",
+      "bytes": 17384
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/optional-import-verification.json",
+      "source": "curated/canopy-v001/browser/optional-import-verification.json",
+      "source_sha256": "76bbacf5cc253436b3e2bcdbe8d2cc73311321504a4301051c13517ede954e1d",
+      "bytes": 993
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/overview-day.png",
+      "source": "curated/canopy-v001/browser/overview-day.png",
+      "source_sha256": "10f772d72459c7bbd90f79cf566a85ad02fec569332891f2a2a2b5b2470d195d",
+      "bytes": 219958
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/overview-night.png",
+      "source": "curated/canopy-v001/browser/overview-night.png",
+      "source_sha256": "c0fa3852716426fba94508432b19d53fa2b1e33f399906186ebeeb71d3939987",
+      "bytes": 250162
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/pip_greeting-maximum-motion.png",
+      "source": "curated/canopy-v001/browser/pip_greeting-maximum-motion.png",
+      "source_sha256": "968ea3a624bf3ad0381a61635d6c1f14d315dac4ffee7b69bb5703eca62a9279",
+      "bytes": 168169
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/pip_idle-maximum-motion.png",
+      "source": "curated/canopy-v001/browser/pip_idle-maximum-motion.png",
+      "source_sha256": "e16f467c4f719521d54dd787c36d3ffbd13f9bdfb32eafb82035fd8ffded0138",
+      "bytes": 165781
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/pip_walk-maximum-motion.png",
+      "source": "curated/canopy-v001/browser/pip_walk-maximum-motion.png",
+      "source_sha256": "b04e7c421eeff528fab7129dece540571bab40b37dca6d973edcae71fd40ba74",
+      "bytes": 167329
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/sol_greeting-maximum-motion.png",
+      "source": "curated/canopy-v001/browser/sol_greeting-maximum-motion.png",
+      "source_sha256": "79f1668f82caf64b5545a0c48e8592728144ebaec426c20539221957521ce8cc",
+      "bytes": 168580
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/sol_idle-maximum-motion.png",
+      "source": "curated/canopy-v001/browser/sol_idle-maximum-motion.png",
+      "source_sha256": "e16f467c4f719521d54dd787c36d3ffbd13f9bdfb32eafb82035fd8ffded0138",
+      "bytes": 165781
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/sol_walk-maximum-motion.png",
+      "source": "curated/canopy-v001/browser/sol_walk-maximum-motion.png",
+      "source_sha256": "65db779a0d5d4cb7d8270d6e2f10355235f21b78e6e49e465df43e5e78ab8984",
+      "bytes": 168933
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/verification.json",
+      "source": "curated/canopy-v001/browser/verification.json",
+      "source_sha256": "6bbe4ac1e6e4ca7697021e4139f3b2a9c58c9b6bd0de34ca78d9ddae4aa7e92f",
+      "bytes": 99570
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/walking-day.png",
+      "source": "curated/canopy-v001/browser/walking-day.png",
+      "source_sha256": "6b502426eca4109de794b0c05fdf981d8a3e50c8a2f7f10f76d33632ae4756dd",
+      "bytes": 201722
+    },
+    {
+      "path": "art/canopy/approval-v003/browser/walking-night.png",
+      "source": "curated/canopy-v001/browser/walking-night.png",
+      "source_sha256": "f66cbc106bf7f80701782e2d573765fc363e79b613ad181605dba9caa0704dca",
+      "bytes": 285592
+    },
+    {
+      "path": "art/canopy/approval-v003/canopy-approval-v003.blend",
+      "source": "curated/canopy-v001/canopy-approval-v003.blend",
+      "source_sha256": "b7066e12e3a7bac94c1d70a04c3fa8beaa880d0215f7909bbcdbdfb8119da6b1",
+      "bytes": 2112260
+    },
+    {
+      "path": "art/canopy/approval-v003/character-evidence/01-idle.png",
+      "source": "curated/canopy-v001/character-evidence/01-idle.png",
+      "source_sha256": "99a4f9d8fe14d7ef1debb764a8c7d639c720a6c62d9c3dd6b97471ae3e0d9df6",
+      "bytes": 619215
+    },
+    {
+      "path": "art/canopy/approval-v003/character-evidence/02-walk.png",
+      "source": "curated/canopy-v001/character-evidence/02-walk.png",
+      "source_sha256": "d6885040c868d457a7204b117580395383aa72e479f11c2c2e4f6795219ddd9d",
+      "bytes": 616064
+    },
+    {
+      "path": "art/canopy/approval-v003/character-evidence/03-greeting.png",
+      "source": "curated/canopy-v001/character-evidence/03-greeting.png",
+      "source_sha256": "554762350bcf315bc9b121978ceac885968a641d63e2f8bf02714cce35acfb1b",
+      "bytes": 621263
+    },
+    {
+      "path": "art/canopy/approval-v003/character-evidence/04-back.png",
+      "source": "curated/canopy-v001/character-evidence/04-back.png",
+      "source_sha256": "b1418db21474e4cb9d253d856be2b9feb3a7197959d93b6398036c37444fe101",
+      "bytes": 586664
+    },
+    {
+      "path": "art/canopy/approval-v003/character-evidence/contact-sheet.png",
+      "source": "curated/canopy-v001/character-evidence/contact-sheet.png",
+      "source_sha256": "80123c12fa08d62a2db7177f6abd2e3343b07e9a8da417dfa584ba7ef46106db",
+      "bytes": 2033443
+    },
+    {
+      "path": "art/canopy/approval-v003/character-evidence/integration-report.json",
+      "source": "curated/canopy-v001/character-evidence/integration-report.json",
+      "source_sha256": "b5da83cd0abacecd795af35c6874127c49358f4dc636f7a9cadd666353d03d14",
+      "bytes": 2480
+    },
+    {
+      "path": "art/canopy/approval-v003/character-evidence/smoke-report.json",
+      "source": "curated/canopy-v001/character-evidence/smoke-report.json",
+      "source_sha256": "1cb975fe4e1e082951e2124383ecf15949ac2c835da4b2280f9b86e2720ab22a",
+      "bytes": 9932
+    },
+    {
+      "path": "art/canopy/approval-v003/character-interface.json",
+      "source": "curated/canopy-v001/character-interface.json",
+      "source_sha256": "52174790baf2f8cdc85b7f26d559898eddd4aba8fff8dbb4e954dfcf83777a8e",
+      "bytes": 3973
+    },
+    {
+      "path": "art/canopy/approval-v003/export-report.json",
+      "source": "curated/canopy-v001/export-report.json",
+      "source_sha256": "9be308f4761ba8f363e2928a9e869e05a69080b1dd60b5f480b4b8b3e2b1b431",
+      "bytes": 2202
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/cameras.glb",
+      "source": "curated/canopy-v001/exports/cameras.glb",
+      "source_sha256": "a25d562700f234da19ee0605370edfde1f52ba34d7177e1a05fff76a82f5df11",
+      "bytes": 8036
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/collision-proxies.glb",
+      "source": "curated/canopy-v001/exports/collision-proxies.glb",
+      "source_sha256": "559c35bd82284b79c750557d46efc9b954f1402710046b7099ed10ca290df7d9",
+      "bytes": 88016
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/ember-small.glb",
+      "source": "curated/canopy-v001/exports/ember-small.glb",
+      "source_sha256": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+      "bytes": 25384
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/environment.glb",
+      "source": "curated/canopy-v001/exports/environment.glb",
+      "source_sha256": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819",
+      "bytes": 8923848
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/hearth-deck.glb",
+      "source": "curated/canopy-v001/exports/hearth-deck.glb",
+      "source_sha256": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+      "bytes": 1708680
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/hearth-enrichment.glb",
+      "source": "curated/canopy-v001/exports/hearth-enrichment.glb",
+      "source_sha256": "feb4598b208ee58755cb35e989ada99525af46f52ab9e49f31134a85c2ac6e47",
+      "bytes": 30388
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/pip.glb",
+      "source": "curated/canopy-v001/exports/pip.glb",
+      "source_sha256": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+      "bytes": 298668
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/rain-postcard.glb",
+      "source": "curated/canopy-v001/exports/rain-postcard.glb",
+      "source_sha256": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+      "bytes": 15796
+    },
+    {
+      "path": "art/canopy/approval-v003/exports/sol.glb",
+      "source": "curated/canopy-v001/exports/sol.glb",
+      "source_sha256": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+      "bytes": 286368
+    },
+    {
+      "path": "art/canopy/approval-v003/manifest.json",
+      "source": "curated/canopy-v001/manifest.json",
+      "source_sha256": "887f71be2a5295a299cf50be2e69fa321d40dc30e18af860fbd22ee37ed3d0c0",
+      "bytes": 9155
+    },
+    {
+      "path": "art/canopy/approval-v003/renders-v002/furnished-interior.png",
+      "source": "curated/canopy-v001/renders-v002/furnished-interior.png",
+      "source_sha256": "6fa6039aec6e4351978d2893c8c79cefba34c8f663c675d0b872e9f9d0295990",
+      "bytes": 1191637
+    },
+    {
+      "path": "art/canopy/approval-v003/renders-v002/golden-hour.png",
+      "source": "curated/canopy-v001/renders-v002/golden-hour.png",
+      "source_sha256": "049c095826ae485acd031abc4f07694acd1bc7232f8ee9f1df2dbf5b9873b50e",
+      "bytes": 1914921
+    },
+    {
+      "path": "art/canopy/approval-v003/renders-v002/grove-home.png",
+      "source": "curated/canopy-v001/renders-v002/grove-home.png",
+      "source_sha256": "cfb61b59e857359c0a45b1fa5205ff4a2a13f68007a70d1fc0eb65351bcf1404",
+      "bytes": 1436384
+    },
+    {
+      "path": "art/canopy/approval-v003/renders-v002/hearth-night.png",
+      "source": "curated/canopy-v001/renders-v002/hearth-night.png",
+      "source_sha256": "30cd3d8b47c97073ffe5a50b66240d83153b7146d2176e17fb0899a85f94297c",
+      "bytes": 1391820
+    },
+    {
+      "path": "art/canopy/approval-v003/renders-v002/lantern-night.png",
+      "source": "curated/canopy-v001/renders-v002/lantern-night.png",
+      "source_sha256": "ab9b90ce24ae03aed04f46a3c7669b157246869f63b56ba8eeaaa3fe8283c953",
+      "bytes": 2012993
+    },
+    {
+      "path": "art/canopy/approval-v003/renders-v002/walking-scale.png",
+      "source": "curated/canopy-v001/renders-v002/walking-scale.png",
+      "source_sha256": "77da97da2eb6e2de9c06100c6bbb34430bc16a9e5e97726369e4343d980551db",
+      "bytes": 1652616
+    },
+    {
+      "path": "art/canopy/source/build_canopy.py",
+      "source": "development/build_canopy.py",
+      "source_sha256": "cf21d9f0033c6fd622c3b7895a79165732f631bec3c9e2923f38ca256855fcb3",
+      "bytes": 39818
+    },
+    {
+      "path": "art/canopy/source/characters.py",
+      "source": "development/characters.py",
+      "source_sha256": "8a2cb92c2e54955ccc4f9a44ea73f1eceaf35ecf7bbb1037bd5851511b22fd4c",
+      "bytes": 32049
+    },
+    {
+      "path": "art/canopy/source/export_cameras.py",
+      "source": "development/export_cameras.py",
+      "source_sha256": "01586b94c133dd8ae9a59dc2fb0a735fed4c42bb7486bb7b49b35747a8224216",
+      "bytes": 1441
+    },
+    {
+      "path": "art/canopy/source/export_canopy.py",
+      "source": "development/export_canopy.py",
+      "source_sha256": "de6eac7b114a7b3019482218c837becde6e6578b2bae5ada4cfcf802ba62154d",
+      "bytes": 5296
+    },
+    {
+      "path": "art/canopy/source/export_collision.py",
+      "source": "development/export_collision.py",
+      "source_sha256": "62ecce936c0f49fa2738ccd5e8421642f6e5928b6bab939125ca9322e07f2711",
+      "bytes": 807
+    },
+    {
+      "path": "art/canopy/source/finalize_canopy.py",
+      "source": "development/finalize_canopy.py",
+      "source_sha256": "c7cabf7b1e2f3485bd5757e1f973b54cd2a54e8e8f4353f8e41e0d2e012259d1",
+      "bytes": 3819
+    },
+    {
+      "path": "art/canopy/source/finalize_evidence.py",
+      "source": "development/finalize_evidence.py",
+      "source_sha256": "dc80e593e5941cde192892ba7ed4f8469e4afec665a374df056606a4b92c6a5c",
+      "bytes": 2207
+    },
+    {
+      "path": "art/canopy/source/make_manifest.py",
+      "source": "development/make_manifest.py",
+      "source_sha256": "31a2b94da3a21399b3819cf1364ad5de3339f12d90920f2b5cda6296e3ead453",
+      "bytes": 5406
+    },
+    {
+      "path": "art/canopy/source/package_canopy.py",
+      "source": "development/package_canopy.py",
+      "source_sha256": "f90674093c0403734c51f9b3e6c6114255d9580b1ab269594c3a62b4655d4977",
+      "bytes": 2749
+    },
+    {
+      "path": "art/canopy/source/render_canopy.py",
+      "source": "development/render_canopy.py",
+      "source_sha256": "bacf72702c3889fe7d854378c0a5982911535341907dcc37138c2dacd6a5306f",
+      "bytes": 1507
+    },
+    {
+      "path": "art/canopy/source/render_suite.py",
+      "source": "development/render_suite.py",
+      "source_sha256": "886a13a6d2662041500b2334ab212a7c3e0da02865ee9e36c0c312acdaef03c7",
+      "bytes": 1470
+    },
+    {
+      "path": "art/canopy/source/verify_canopy.py",
+      "source": "development/verify_canopy.py",
+      "source_sha256": "8881a000643e45682035841c2cd600efcb7fb9b8d6f362487a1e3bfd9efe592e",
+      "bytes": 4063
+    },
+    {
+      "path": "art/canopy/viewer/README.md",
+      "source": "development/web/README.md",
+      "source_sha256": "bf376d07f119807dcee7e62c6f9d7c03d1ea77d9f814e98685050c16ab0998e7",
+      "bytes": 12048
+    },
+    {
+      "path": "art/canopy/viewer/bootstrap.js",
+      "source": "development/web/bootstrap.js",
+      "source_sha256": "9eccd17ab8ae3b104c5a1038161fb082784300ca8abf9057c6b700b6e88d36ad",
+      "bytes": 1233
+    },
+    {
+      "path": "art/canopy/viewer/browser-runtime.mjs",
+      "source": "development/web/browser-runtime.mjs",
+      "source_sha256": "129454abe9d1ccf5caee3c3e080f38501be238a39c7459ef750d507b95a8b2ba",
+      "bytes": 2576
+    },
+    {
+      "path": "art/canopy/viewer/capture-frames.mjs",
+      "source": "development/web/capture-frames.mjs",
+      "source_sha256": "2b06b44b6fde9b9f5ce23fad070d505d66a974ba7f1fa7b56bdb46017c49e675",
+      "bytes": 741
+    },
+    {
+      "path": "art/canopy/viewer/fixture.mjs",
+      "source": "development/web/fixture.mjs",
+      "source_sha256": "1b1e95dc20b3d3d970240fc556ed80360a657675950941b3b15abc130daa55e2",
+      "bytes": 3625
+    },
+    {
+      "path": "art/canopy/viewer/index.html",
+      "source": "development/web/index.html",
+      "source_sha256": "aac3c3b31a42192adfd0a8c9eb1218e589846df3df433b27c453e2f8675cdcc3",
+      "bytes": 2399
+    },
+    {
+      "path": "art/canopy/viewer/package-lock.json",
+      "source": "development/web/package-lock.json",
+      "source_sha256": "f0df5bb48af35617be6a3a01d83dea3e2e1cc0ddfce1158d0862d1a6d8d7f78d",
+      "bytes": 1553
+    },
+    {
+      "path": "art/canopy/viewer/package.json",
+      "source": "development/web/package.json",
+      "source_sha256": "42fd4378f7ec1177f6266468808cd93c5458842bb3b572b5b240d9f163d6fd87",
+      "bytes": 679
+    },
+    {
+      "path": "art/canopy/viewer/record-characters.mjs",
+      "source": "development/web/record-characters.mjs",
+      "source_sha256": "dc4bb6e3b983d0948c3b03e38d09aba984338cb468ac0d38b668a2892a43897e",
+      "bytes": 2770
+    },
+    {
+      "path": "art/canopy/viewer/record.mjs",
+      "source": "development/web/record.mjs",
+      "source_sha256": "ae2661b5e1f0c943d27c4697885c70ed5d310ee48b4b6e7f42ebff99dab98a58",
+      "bytes": 2240
+    },
+    {
+      "path": "art/canopy/viewer/server.mjs",
+      "source": "development/web/server.mjs",
+      "source_sha256": "cf00fde5525348b5182ee3853fa9d40d263419b381dd195cb6d9d1df836d5c94",
+      "bytes": 3709
+    },
+    {
+      "path": "art/canopy/viewer/smoke.test.mjs",
+      "source": "development/web/smoke.test.mjs",
+      "source_sha256": "38d1449bf41402cad4f05651168e4d3abb62b7678b93a25884c5dc2bb725f225",
+      "bytes": 7440
+    },
+    {
+      "path": "art/canopy/viewer/style.css",
+      "source": "development/web/style.css",
+      "source_sha256": "5bd75bb01025014efc6fddeb028a8c249e50601b2fed4d9081babd1ad09501cb",
+      "bytes": 2489
+    },
+    {
+      "path": "art/canopy/viewer/validation.mjs",
+      "source": "development/web/validation.mjs",
+      "source_sha256": "fc8adafde58c6782efc7b085b77fa17e07b2106d7594b1e7816ce564825c6c35",
+      "bytes": 8863
+    },
+    {
+      "path": "art/canopy/viewer/verify-cameras.mjs",
+      "source": "development/web/verify-cameras.mjs",
+      "source_sha256": "d019aa3d7447999a27fc521c23c71568a7730544606b11d3da7361af00557654",
+      "bytes": 6652
+    },
+    {
+      "path": "art/canopy/viewer/verify.mjs",
+      "source": "development/web/verify.mjs",
+      "source_sha256": "e7e2915f7e3de8c42901ccaacef08237605777e7143edf618377eb8c1b5fb87c",
+      "bytes": 4680
+    },
+    {
+      "path": "art/canopy/viewer/viewer.js",
+      "source": "development/web/viewer.js",
+      "source_sha256": "4cc01ee027fdc58a06899a12879f6fd7aeee04af9fc00fdb59e75a4fbd5a5183",
+      "bytes": 20458
+    },
+    {
+      "path": "art/canopy/viewer/verify-optional.mjs",
+      "source": "development/verify_optional.mjs",
+      "source_sha256": "39fb7e2c33f483769e4179bc72ff554a0805d777ebd8b5dee8dac18321b797b6",
+      "bytes": 4494
+    },
+    {
+      "path": "art/canopy/source/character-smoke/smoke.py",
+      "source": "development/character-smoke/smoke.py",
+      "source_sha256": "e16c24c8e1a1ee9b55d647e0bcc97e52afaa868ae3f93ccc62bc4797361f97ac",
+      "bytes": 11724
+    },
+    {
+      "path": "art/canopy/source/character-smoke/verify.py",
+      "source": "development/character-smoke/verify.py",
+      "source_sha256": "f41081134eaad4ce632903c0455a0277e3b0385ba978154bac00216816cd1caa",
+      "bytes": 8169
+    },
+    {
+      "path": "art/canopy/source/character-smoke/integration-check.py",
+      "source": "development/character-smoke/integration-check.py",
+      "source_sha256": "1e9c18bb2bf8c9fd5fe679c9728246796d4c3681bc76768fd520c03e297e7ef8",
+      "bytes": 4692
+    },
+    {
+      "path": "docs/canopy-art/source-brief.txt",
+      "source": "original-brief/pasted-text-f2d6991c-1178-435c-87dc-002570ac2bc8.txt",
+      "source_sha256": "cb58d0c4b467c75514d948ae27967fb17fea49fe40230a7c66a9b4e9a994da32",
+      "bytes": 11387
+    }
+  ]
+}

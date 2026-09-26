@@ -103,6 +103,10 @@ or game-character assets.
 
 ## Evidence on Hand
 
+- [Canopy art archive](docs/canopy-art/README.md): September 12 representative
+  Blender slice, original brief, current scope, portable source, and verification.
+  Archived September 26; technically complete, visual approval pending, and
+  separate from application integration or approval of a full settlement.
 - [README](README.md): existing product narrative and v2-in-progress status.
 - [Domain types](lib/types.ts): games, sessions, game progress, users, and stats.
 - [Application shell](components/app-shell.tsx): current navigation and behavior.

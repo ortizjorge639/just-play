@@ -1,0 +1,108 @@
+{
+  "Pip": {
+    "animations": [
+      "Pip_Greeting",
+      "Pip_Idle",
+      "Pip_Walk"
+    ],
+    "timings": {
+      "Pip_Greeting": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 3.0
+      },
+      "Pip_Idle": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 3.0
+      },
+      "Pip_Walk": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 1.0
+      }
+    },
+    "skins": 1,
+    "meshes": 72,
+    "joints": 16,
+    "path": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/pip-origin.glb",
+    "requested_scene_location": [
+      0.0,
+      -3.0,
+      0.0
+    ],
+    "requested_scene_rotation_z": 0.0,
+    "selected_recursive_descendants": 73,
+    "active_action_after_export": "Pip_Idle"
+  },
+  "single_armature_true_diagnostic": {
+    "animations": [
+      "Pip_Greeting",
+      "Pip_Idle",
+      "Pip_Walk",
+      "Sol_Greeting",
+      "Sol_Idle",
+      "Sol_Walk"
+    ],
+    "timings": {
+      "Pip_Greeting": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 3.0
+      },
+      "Pip_Idle": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 3.0
+      },
+      "Pip_Walk": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 1.0
+      },
+      "Sol_Greeting": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 3.0
+      },
+      "Sol_Idle": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 3.0
+      },
+      "Sol_Walk": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 1.0
+      }
+    },
+    "skins": 1,
+    "meshes": 72,
+    "joints": 16
+  },
+  "Sol": {
+    "animations": [
+      "Sol_Greeting",
+      "Sol_Idle",
+      "Sol_Walk"
+    ],
+    "timings": {
+      "Sol_Greeting": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 3.0
+      },
+      "Sol_Idle": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 3.0
+      },
+      "Sol_Walk": {
+        "first_key_seconds": 0.0,
+        "duration_seconds": 1.0
+      }
+    },
+    "skins": 1,
+    "meshes": 70,
+    "joints": 16,
+    "path": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/sol-origin.glb",
+    "requested_scene_location": [
+      4.0,
+      -2.0,
+      0.0
+    ],
+    "requested_scene_rotation_z": -0.11999999731779099,
+    "selected_recursive_descendants": 71,
+    "active_action_after_export": "Sol_Idle"
+  },
+  "status": "passed_with_export_anim_single_armature_false"
+}

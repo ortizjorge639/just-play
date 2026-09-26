@@ -12,6 +12,11 @@ later demo implementation. The September 10 revision below supersedes the
 earlier proposed lifecycle and construction rules; the reference observations
 and historical proposals remain intact.
 
+**Art follow-up:** the [Canopy art archive](canopy-art/README.md) preserves the
+September 12 representative Blender slice and its source, specs, and findings.
+Archived September 26: technically complete, visual approval pending, no
+production integration or approval to expand the full settlement.
+
 **The central idea:** Just Play should not simply display completed games inside
 a 3D scene. Playing should leave something behind: a resident, a memory, a home,
 and eventually a neighborhood that could only belong to this player.

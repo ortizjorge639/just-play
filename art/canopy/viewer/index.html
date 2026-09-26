@@ -1,0 +1,42 @@
+<!doctype html>
+<!--
+THESIS: The scene is the evidence; this is an inspection bench, not a product.
+OWN-WORLD: Slate tools, clear system text, compact native controls, one green accent.
+STORY: Load local exports, inspect views and motion, then approve outside this tool.
+FIRST VIEWPORT: One narrow toolbar above an unobstructed, full-width scene.
+FORM: Brief-pinned diagnostic canvas; no navigation shell, cards, or lifecycle claims.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Canopy · local scene inspection</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+    {"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}
+  </script>
+  <script src="./bootstrap.js"></script>
+  <script type="module" src="./viewer.js"></script>
+</head>
+<body>
+  <header>
+    <div class="identity"><h1>Canopy</h1><span>Local scene inspection</span></div>
+    <form id="controls" aria-label="Scene controls">
+      <fieldset disabled>
+        <label>Light<select id="lighting"><option value="day">Daylight</option><option value="night">Night</option></select></label>
+        <label>Camera<select id="view"><option value="overview">Overview</option><option value="walking">Walking</option><option value="interior">Interior</option><option value="cast">Cast</option><option value="ambient">Ambient · 6s</option></select></label>
+        <label>Action<select id="action"><option value="Idle">Idle</option><option value="Walk">Walk</option><option value="Greeting">Greeting</option></select></label>
+        <label class="check"><input id="roof" type="checkbox" checked> Roof</label>
+        <button type="button" id="play" aria-pressed="false">Play</button>
+        <button type="button" id="turn">Turn cast 90°</button>
+      </fieldset>
+    </form>
+  </header>
+  <main>
+    <canvas id="scene" aria-label="Interactive woodland scene; drag to orbit, scroll to zoom" tabindex="0"></canvas>
+    <div id="message" role="status" aria-live="polite"><strong>Loading local exports…</strong><span>No files leave this computer.</span></div>
+  </main>
+  <footer><span id="status" role="status">Waiting for exports</span><span>Drag to orbit · scroll to zoom · paused by default</span></footer>
+</body>
+</html>

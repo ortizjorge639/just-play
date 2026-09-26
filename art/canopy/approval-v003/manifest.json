@@ -1,0 +1,343 @@
+{
+  "title": "Canopy - representative art-direction approval slice",
+  "version": "approval-v001 / Blender collision revision v003",
+  "blend": "canopy-approval-v003.blend",
+  "scope": [
+    "gathering tree",
+    "connected furnished grove home",
+    "Pip",
+    "Sol",
+    "ember small contribution",
+    "hearth earned deck and enrichment",
+    "rain postcard",
+    "trailhead threshold",
+    "seven authored attachment sites"
+  ],
+  "awaiting_art_approval": true,
+  "source_revision": "2cb9d46f77d519d7818d917d7762fcc3c6cb1196",
+  "application_modified": false,
+  "source_units": "meters",
+  "coordinates": {
+    "blender_from_application": "(x, -z, y)",
+    "gltf": "Application-aligned +Y up. No further rotation or scale.",
+    "character_forward": "+Z in glTF; -Y in Blender",
+    "character_preview_positions_gltf": {
+      "Pip": [
+        0,
+        0,
+        3
+      ],
+      "Sol": [
+        4,
+        0,
+        2
+      ]
+    },
+    "expected_markers_gltf": {
+      "LOCATION_Gathering": [
+        0,
+        0,
+        0
+      ],
+      "LOCATION_Grove": [
+        20,
+        3,
+        -5
+      ],
+      "LOCATION_Trailhead": [
+        -6,
+        -1,
+        22
+      ],
+      "ATTACH_plot": [
+        37,
+        4,
+        10
+      ],
+      "DOOR_Grove": [
+        17,
+        3,
+        -3.1
+      ],
+      "ATTACH_brook": [
+        30,
+        4,
+        -23
+      ],
+      "ATTACH_crown": [
+        12,
+        6,
+        -40
+      ],
+      "ATTACH_fern": [
+        -18,
+        5,
+        -29
+      ],
+      "ATTACH_dusk": [
+        -39,
+        3,
+        -7
+      ],
+      "ATTACH_meadow": [
+        -27,
+        1,
+        17
+      ],
+      "ATTACH_sunrise": [
+        12,
+        0,
+        25
+      ]
+    }
+  },
+  "exports": {
+    "collision-proxies.glb": {
+      "bytes": 88016,
+      "triangles": 726,
+      "meshes": 94,
+      "material_primitives": 94,
+      "materials": 1,
+      "nodes": 94,
+      "animations": [],
+      "skins": 0
+    },
+    "ember-small.glb": {
+      "bytes": 25384,
+      "triangles": 344,
+      "meshes": 1,
+      "material_primitives": 4,
+      "materials": 4,
+      "nodes": 1,
+      "animations": [],
+      "skins": 0
+    },
+    "environment.glb": {
+      "bytes": 8923848,
+      "triangles": 120860,
+      "meshes": 4,
+      "material_primitives": 51,
+      "materials": 25,
+      "nodes": 35,
+      "animations": [],
+      "skins": 0
+    },
+    "hearth-deck.glb": {
+      "bytes": 1708680,
+      "triangles": 29190,
+      "meshes": 2,
+      "material_primitives": 16,
+      "materials": 15,
+      "nodes": 2,
+      "animations": [],
+      "skins": 0
+    },
+    "hearth-enrichment.glb": {
+      "bytes": 30388,
+      "triangles": 428,
+      "meshes": 1,
+      "material_primitives": 6,
+      "materials": 6,
+      "nodes": 1,
+      "animations": [],
+      "skins": 0
+    },
+    "pip.glb": {
+      "bytes": 298668,
+      "triangles": 7158,
+      "meshes": 72,
+      "material_primitives": 72,
+      "materials": 17,
+      "nodes": 90,
+      "animations": [
+        "Pip_Greeting",
+        "Pip_Idle",
+        "Pip_Walk"
+      ],
+      "skins": 1
+    },
+    "rain-postcard.glb": {
+      "bytes": 15796,
+      "triangles": 200,
+      "meshes": 1,
+      "material_primitives": 5,
+      "materials": 5,
+      "nodes": 1,
+      "animations": [],
+      "skins": 0
+    },
+    "sol.glb": {
+      "bytes": 286368,
+      "triangles": 6470,
+      "meshes": 70,
+      "material_primitives": 70,
+      "materials": 17,
+      "nodes": 88,
+      "animations": [
+        "Sol_Greeting",
+        "Sol_Idle",
+        "Sol_Walk"
+      ],
+      "skins": 1
+    },
+    "cameras.glb": {
+      "bytes": 8036,
+      "triangles": 0,
+      "meshes": 0,
+      "material_primitives": 0,
+      "materials": 0,
+      "nodes": 6,
+      "cameras": 6,
+      "skins": 0,
+      "animations": [
+        "Ambient loopAction"
+      ]
+    }
+  },
+  "budgets": {
+    "environment_contribution_baseline_triangles": 180000,
+    "environment_contribution_actual_triangles": 151022,
+    "characters": {
+      "Pip": 7158,
+      "Sol": 6470
+    },
+    "character_draw_call_optimization": "Deferred; modular source parts remain separate in approval GLBs."
+  },
+  "characters": {
+    "Pip": {
+      "height_m": 1.660858154296875,
+      "bones": [
+        "pelvis",
+        "spine",
+        "neck",
+        "head",
+        "upper_arm.L",
+        "lower_arm.L",
+        "hand.L",
+        "upper_arm.R",
+        "lower_arm.R",
+        "hand.R",
+        "upper_leg.L",
+        "lower_leg.L",
+        "foot.L",
+        "upper_leg.R",
+        "lower_leg.R",
+        "foot.R"
+      ],
+      "clips": {
+        "Idle": {
+          "name": "Pip_Idle",
+          "period_seconds": 3.0
+        },
+        "Walk": {
+          "name": "Pip_Walk",
+          "period_seconds": 1.0
+        },
+        "Greeting": {
+          "name": "Pip_Greeting",
+          "period_seconds": 3.0
+        }
+      }
+    },
+    "Sol": {
+      "height_m": 1.6679999828338623,
+      "bones": [
+        "pelvis",
+        "spine",
+        "neck",
+        "head",
+        "upper_arm.L",
+        "lower_arm.L",
+        "hand.L",
+        "upper_arm.R",
+        "lower_arm.R",
+        "hand.R",
+        "upper_leg.L",
+        "lower_leg.L",
+        "foot.L",
+        "upper_leg.R",
+        "lower_leg.R",
+        "foot.R"
+      ],
+      "clips": {
+        "Idle": {
+          "name": "Sol_Idle",
+          "period_seconds": 3.0
+        },
+        "Walk": {
+          "name": "Sol_Walk",
+          "period_seconds": 1.0
+        },
+        "Greeting": {
+          "name": "Sol_Greeting",
+          "period_seconds": 3.0
+        }
+      }
+    }
+  },
+  "materials": {
+    "kind": "Constant metallic/roughness PBR with restrained emission",
+    "external_images": 0,
+    "procedural_texture_bakes_required": false,
+    "browser_recreation": [
+      "world light",
+      "area-light approximation",
+      "lantern point lights",
+      "tone mapping"
+    ]
+  },
+  "product_state_contract": {
+    "backlogged": "No resident instantiated.",
+    "invited": "Outside-world journal/map only.",
+    "arrived": "Exactly one permanent resident plus small contribution.",
+    "deeper_merit": "Enrich same resident's contribution; optional earned structure.",
+    "dropped": "Optional warm postcard; no decay; retain through reinvite, remove at arrival or user deletion.",
+    "construction": "Place structure, bridge, collision and map entry together without costs or timers."
+  },
+  "verification": {
+    "blender": "Verified exact saved file in isolated Blender5.2.1LTS; see blender-audit.json.",
+    "character_loops": "All-frame numeric and posed-render checks; see character-evidence/smoke-report.json.",
+    "browser": "Verified core scene/characters, source cameras, optional enrichment and collision geometry in isolated Three.js/Chromium.",
+    "browser_reports": [
+      "browser/verification.json",
+      "browser/camera-import-verification.json",
+      "browser/optional-import-verification.json",
+      "browser/delivery.json"
+    ],
+    "full_duration_character_samples": 342,
+    "production_integration": "Not integrated or authorized.",
+    "target_device_performance": "Not measured; no frame-rate claim."
+  },
+  "integration_caveats": [
+    "App uses a remote interior at INTERIOR_CENTER190; physical furnished room is not a drop-in navigation replacement.",
+    "Collision proxies do not constitute a complete pedestrian navigation mesh.",
+    "Source scene markers for deferred locations are not built settlement modules.",
+    "Higher-tier scenery does not create another resident."
+  ],
+  "files_sha256": {
+    "canopy-approval-v003.blend": "b7066e12e3a7bac94c1d70a04c3fa8beaa880d0215f7909bbcdbdfb8119da6b1",
+    "exports/cameras.glb": "a25d562700f234da19ee0605370edfde1f52ba34d7177e1a05fff76a82f5df11",
+    "exports/collision-proxies.glb": "559c35bd82284b79c750557d46efc9b954f1402710046b7099ed10ca290df7d9",
+    "exports/ember-small.glb": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+    "exports/environment.glb": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819",
+    "exports/hearth-deck.glb": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+    "exports/hearth-enrichment.glb": "feb4598b208ee58755cb35e989ada99525af46f52ab9e49f31134a85c2ac6e47",
+    "exports/pip.glb": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+    "exports/rain-postcard.glb": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+    "exports/sol.glb": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f"
+  },
+  "preview_media": {
+    "golden_hour": "renders-v002/golden-hour.png",
+    "lantern_night": "renders-v002/lantern-night.png",
+    "lineup": "character-evidence/contact-sheet.png",
+    "turnaround": "browser/cast-turnaround-front.png",
+    "character_actions": "browser/character-actions.mp4",
+    "ambient_day": "browser/ambient-phased.mp4",
+    "ambient_night": "browser/ambient-night-phased.mp4",
+    "ambient_camera": "Viewer-authored closed sweep; source camera export separately verified.",
+    "ambient_resident_phase_seconds": {
+      "Pip": 0,
+      "Sol": 0.85
+    }
+  }
+}

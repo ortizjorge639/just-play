@@ -1,0 +1,4584 @@
+{
+  "status": "passed",
+  "scope": "Local exported-artifact browser diagnostics; not production integration or artistic approval",
+  "createdAt": "2026-09-26T18:40:56.378Z",
+  "browserVersion": "153.0.8010.12",
+  "viewerSourceSha256": "4cc01ee027fdc58a06899a12879f6fd7aeee04af9fc00fdb59e75a4fbd5a5183",
+  "runtimeErrors": [],
+  "blockedRequests": [],
+  "artifactHashes": {
+    "exports/ember-small.glb": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+    "exports/pip.glb": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+    "exports/sol.glb": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+    "exports/hearth-deck.glb": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+    "exports/rain-postcard.glb": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+    "exports/environment.glb": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819"
+  },
+  "excludedOptionalExports": [
+    "hearth-enrichment.glb",
+    "collision-proxies.glb",
+    "cameras.glb"
+  ],
+  "stats": {
+    "meshes": 218,
+    "triangles": 164222,
+    "environmentTriangles": 150594,
+    "characterTriangles": 13628,
+    "materials": 83,
+    "geometries": 218,
+    "assets": {
+      "ember-small": {
+        "meshes": 4,
+        "triangles": 344,
+        "bytes": 25384,
+        "sha256": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+        "bounds": {
+          "min": [
+            0.9749999642372131,
+            0,
+            0.4750000238418579
+          ],
+          "max": [
+            1.6249999403953552,
+            1.2399999499320984,
+            1.125
+          ],
+          "size": [
+            0.6499999761581421,
+            1.2399999499320984,
+            0.6499999761581421
+          ]
+        },
+        "restBounds": {
+          "min": [
+            0.9749999642372131,
+            0,
+            0.4750000238418579
+          ],
+          "max": [
+            1.6249999403953552,
+            1.2399999499320984,
+            1.125
+          ],
+          "size": [
+            0.6499999761581421,
+            1.2399999499320984,
+            0.6499999761581421
+          ]
+        },
+        "height": null,
+        "clips": []
+      },
+      "pip": {
+        "meshes": 72,
+        "triangles": 7158,
+        "bytes": 298668,
+        "sha256": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+        "bounds": {
+          "min": [
+            -0.4113200325166229,
+            1.1399462676275825e-07,
+            2.7790459394454956
+          ],
+          "max": [
+            0.4113200325166229,
+            1.660858154296875,
+            3.282748579978943
+          ],
+          "size": [
+            0.8226400650332458,
+            1.6608580403022482,
+            0.5037026405334473
+          ]
+        },
+        "restBounds": {
+          "min": [
+            -0.41132013391567834,
+            1.6243567093419884e-07,
+            2.7790459394454956
+          ],
+          "max": [
+            0.41132013391567834,
+            1.660858154296875,
+            3.282748579978943
+          ],
+          "size": [
+            0.8226402678313567,
+            1.660857991861204,
+            0.5037026405334473
+          ]
+        },
+        "height": 1.660857991861204,
+        "clips": [
+          {
+            "name": "Pip_Greeting",
+            "duration": 3,
+            "tracks": 48,
+            "startTime": 0,
+            "valid": true
+          },
+          {
+            "name": "Pip_Idle",
+            "duration": 3,
+            "tracks": 48,
+            "startTime": 0,
+            "valid": true
+          },
+          {
+            "name": "Pip_Walk",
+            "duration": 1,
+            "tracks": 48,
+            "startTime": 0,
+            "valid": true
+          }
+        ]
+      },
+      "sol": {
+        "meshes": 70,
+        "triangles": 6470,
+        "bytes": 286368,
+        "sha256": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+        "bounds": {
+          "min": [
+            3.588679967483377,
+            1.1399462676275825e-07,
+            1.7209999859333038
+          ],
+          "max": [
+            4.411320032516623,
+            1.6679999828338623,
+            2.2730000019073486
+          ],
+          "size": [
+            0.8226400650332462,
+            1.6679998688392355,
+            0.5520000159740448
+          ]
+        },
+        "restBounds": {
+          "min": [
+            3.588679866084322,
+            1.6243567093419884e-07,
+            1.7209999859333038
+          ],
+          "max": [
+            4.4113201339156785,
+            1.6679999828338623,
+            2.2730000019073486
+          ],
+          "size": [
+            0.8226402678313565,
+            1.6679998203981914,
+            0.5520000159740448
+          ]
+        },
+        "height": 1.6679998203981914,
+        "clips": [
+          {
+            "name": "Sol_Greeting",
+            "duration": 3,
+            "tracks": 48,
+            "startTime": 0,
+            "valid": true
+          },
+          {
+            "name": "Sol_Idle",
+            "duration": 3,
+            "tracks": 48,
+            "startTime": 0,
+            "valid": true
+          },
+          {
+            "name": "Sol_Walk",
+            "duration": 1,
+            "tracks": 48,
+            "startTime": 0,
+            "valid": true
+          }
+        ]
+      },
+      "hearth-deck": {
+        "meshes": 16,
+        "triangles": 29190,
+        "bytes": 1708680,
+        "sha256": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+        "bounds": {
+          "min": [
+            24.45789623260498,
+            -2.999999761581421,
+            -1.2396736145019531
+          ],
+          "max": [
+            43.153000831604004,
+            7.235000133514404,
+            16.12775945663452
+          ],
+          "size": [
+            18.695104598999023,
+            10.234999895095825,
+            17.367433071136475
+          ]
+        },
+        "restBounds": {
+          "min": [
+            24.45789623260498,
+            -2.999999761581421,
+            -1.2396736145019531
+          ],
+          "max": [
+            43.153000831604004,
+            7.235000133514404,
+            16.12775945663452
+          ],
+          "size": [
+            18.695104598999023,
+            10.234999895095825,
+            17.367433071136475
+          ]
+        },
+        "height": null,
+        "clips": []
+      },
+      "rain-postcard": {
+        "meshes": 5,
+        "triangles": 200,
+        "bytes": 15796,
+        "sha256": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+        "bounds": {
+          "min": [
+            -4.864999890327454,
+            0.019999995827674866,
+            21.68300076201558
+          ],
+          "max": [
+            -4.334999918937683,
+            0.4349999874830246,
+            21.77899970859289
+          ],
+          "size": [
+            0.5299999713897705,
+            0.41499999165534973,
+            0.09599894657731056
+          ]
+        },
+        "restBounds": {
+          "min": [
+            -4.864999890327454,
+            0.019999995827674866,
+            21.68300076201558
+          ],
+          "max": [
+            -4.334999918937683,
+            0.4349999874830246,
+            21.77899970859289
+          ],
+          "size": [
+            0.5299999713897705,
+            0.41499999165534973,
+            0.09599894657731056
+          ]
+        },
+        "height": null,
+        "clips": []
+      },
+      "environment": {
+        "meshes": 51,
+        "triangles": 120860,
+        "bytes": 8923848,
+        "sha256": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819",
+        "bounds": {
+          "min": [
+            -12.127759456634521,
+            -7.999999850988388,
+            -15.5662202835083
+          ],
+          "max": [
+            28.31538963317871,
+            13.550692558288574,
+            28.127759218215942
+          ],
+          "size": [
+            40.44314908981323,
+            21.550692409276962,
+            43.69397950172424
+          ]
+        },
+        "restBounds": {
+          "min": [
+            -12.127759456634521,
+            -7.999999850988388,
+            -15.5662202835083
+          ],
+          "max": [
+            28.31538963317871,
+            13.550692558288574,
+            28.127759218215942
+          ],
+          "size": [
+            40.44314908981323,
+            21.550692409276962,
+            43.69397950172424
+          ]
+        },
+        "height": null,
+        "clips": []
+      }
+    },
+    "bounds": {
+      "min": [
+        -12.127759456634521,
+        -7.999999850988388,
+        -15.5662202835083
+      ],
+      "max": [
+        43.153000831604004,
+        13.550692558288574,
+        28.127759218215942
+      ],
+      "size": [
+        55.280760288238525,
+        21.550692409276962,
+        43.69397950172424
+      ]
+    },
+    "markers": [
+      {
+        "asset": "ember-small",
+        "name": "Canopy_|_Approval_slice",
+        "extras": {
+          "coordinate_mapping": "Blender (x,y,z) = application (x,-z,y); glTF exporter restores application axes.",
+          "approval_scope": "Representative slice only. Full settlement and remaining avatars await art approval.",
+          "topology_source": "just-play 2cb9d46f77d519d7818d917d7762fcc3c6cb1196 lib/demo/world.ts"
+        },
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "ember-small",
+        "name": "Ember_Small",
+        "extras": {
+          "name": "Ember_Small",
+          "asset_batch": "Ember_Small"
+        },
+        "position": [
+          1.2999999523162842,
+          0.38999998569488525,
+          0.800000011920929
+        ]
+      },
+      {
+        "asset": "ember-small",
+        "name": "Ember_exhibit_pedestal",
+        "extras": {},
+        "position": [
+          1.2999999523162842,
+          0.38999998569488525,
+          0.800000011920929
+        ]
+      },
+      {
+        "asset": "ember-small",
+        "name": "Ember_exhibit_pedestal_1",
+        "extras": {},
+        "position": [
+          1.2999999523162842,
+          0.38999998569488525,
+          0.800000011920929
+        ]
+      },
+      {
+        "asset": "ember-small",
+        "name": "Ember_exhibit_pedestal_2",
+        "extras": {},
+        "position": [
+          1.2999999523162842,
+          0.38999998569488525,
+          0.800000011920929
+        ]
+      },
+      {
+        "asset": "ember-small",
+        "name": "Ember_exhibit_pedestal_3",
+        "extras": {},
+        "position": [
+          1.2999999523162842,
+          0.38999998569488525,
+          0.800000011920929
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Canopy_|_Approval_slice",
+        "extras": {
+          "coordinate_mapping": "Blender (x,y,z) = application (x,-z,y); glTF exporter restores application axes.",
+          "approval_scope": "Representative slice only. Full settlement and remaining avatars await art approval.",
+          "topology_source": "just-play 2cb9d46f77d519d7818d917d7762fcc3c6cb1196 lib/demo/world.ts"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Root",
+        "extras": {
+          "name": "Pip_Root",
+          "canopy_character": "Pip",
+          "forward_axis": "-Y",
+          "rest_sole_z": 0,
+          "standing_height": 1.660858154296875,
+          "head_to_body_ratio": 2.7,
+          "lifecycle_preview": "arrived",
+          "residency_is_permanent": true
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_Bib",
+        "extras": {
+          "name": "Pip_Apron_Bib",
+          "kit_part": "Apron_Bib",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_Button_L",
+        "extras": {
+          "name": "Pip_Apron_Button_L",
+          "kit_part": "Apron_Button_L",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_Button_R",
+        "extras": {
+          "name": "Pip_Apron_Button_R",
+          "kit_part": "Apron_Button_R",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_Hem",
+        "extras": {
+          "name": "Pip_Apron_Hem",
+          "kit_part": "Apron_Hem",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_Pocket",
+        "extras": {
+          "name": "Pip_Apron_Pocket",
+          "kit_part": "Apron_Pocket",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_PocketStitch",
+        "extras": {
+          "name": "Pip_Apron_PocketStitch",
+          "kit_part": "Apron_PocketStitch",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_SeedPacket",
+        "extras": {
+          "name": "Pip_Apron_SeedPacket",
+          "kit_part": "Apron_SeedPacket",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_Skirt",
+        "extras": {
+          "name": "Pip_Apron_Skirt",
+          "kit_part": "Apron_Skirt",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_SprigLeaf",
+        "extras": {
+          "name": "Pip_Apron_SprigLeaf",
+          "kit_part": "Apron_SprigLeaf",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_SprigStem",
+        "extras": {
+          "name": "Pip_Apron_SprigStem",
+          "kit_part": "Apron_SprigStem",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_Strap_L",
+        "extras": {
+          "name": "Pip_Apron_Strap_L",
+          "kit_part": "Apron_Strap_L",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Apron_Strap_R",
+        "extras": {
+          "name": "Pip_Apron_Strap_R",
+          "kit_part": "Apron_Strap_R",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Collar",
+        "extras": {
+          "name": "Pip_Collar",
+          "kit_part": "Collar",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Cuff_L",
+        "extras": {
+          "name": "Pip_Cuff_L",
+          "kit_part": "Cuff_L",
+          "deform_bone": "upper_arm.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Cuff_R",
+        "extras": {
+          "name": "Pip_Cuff_R",
+          "kit_part": "Cuff_R",
+          "deform_bone": "upper_arm.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Blush_L",
+        "extras": {
+          "name": "Pip_Face_Blush_L",
+          "kit_part": "Face_Blush_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Blush_R",
+        "extras": {
+          "name": "Pip_Face_Blush_R",
+          "kit_part": "Face_Blush_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Brow_L",
+        "extras": {
+          "name": "Pip_Face_Brow_L",
+          "kit_part": "Face_Brow_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Brow_R",
+        "extras": {
+          "name": "Pip_Face_Brow_R",
+          "kit_part": "Face_Brow_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Cheek_L",
+        "extras": {
+          "name": "Pip_Face_Cheek_L",
+          "kit_part": "Face_Cheek_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Cheek_R",
+        "extras": {
+          "name": "Pip_Face_Cheek_R",
+          "kit_part": "Face_Cheek_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Ear_L",
+        "extras": {
+          "name": "Pip_Face_Ear_L",
+          "kit_part": "Face_Ear_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Ear_R",
+        "extras": {
+          "name": "Pip_Face_Ear_R",
+          "kit_part": "Face_Ear_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_EarInset_L",
+        "extras": {
+          "name": "Pip_Face_EarInset_L",
+          "kit_part": "Face_EarInset_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_EarInset_R",
+        "extras": {
+          "name": "Pip_Face_EarInset_R",
+          "kit_part": "Face_EarInset_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_EyeGlint_L",
+        "extras": {
+          "name": "Pip_Face_EyeGlint_L",
+          "kit_part": "Face_EyeGlint_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_EyeGlint_R",
+        "extras": {
+          "name": "Pip_Face_EyeGlint_R",
+          "kit_part": "Face_EyeGlint_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_EyeWhite_L",
+        "extras": {
+          "name": "Pip_Face_EyeWhite_L",
+          "kit_part": "Face_EyeWhite_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_EyeWhite_R",
+        "extras": {
+          "name": "Pip_Face_EyeWhite_R",
+          "kit_part": "Face_EyeWhite_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Iris_L",
+        "extras": {
+          "name": "Pip_Face_Iris_L",
+          "kit_part": "Face_Iris_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Iris_R",
+        "extras": {
+          "name": "Pip_Face_Iris_R",
+          "kit_part": "Face_Iris_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_LowerLip",
+        "extras": {
+          "name": "Pip_Face_LowerLip",
+          "kit_part": "Face_LowerLip",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_NoseBridge",
+        "extras": {
+          "name": "Pip_Face_NoseBridge",
+          "kit_part": "Face_NoseBridge",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_NoseTip",
+        "extras": {
+          "name": "Pip_Face_NoseTip",
+          "kit_part": "Face_NoseTip",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Pupil_L",
+        "extras": {
+          "name": "Pip_Face_Pupil_L",
+          "kit_part": "Face_Pupil_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Pupil_R",
+        "extras": {
+          "name": "Pip_Face_Pupil_R",
+          "kit_part": "Face_Pupil_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_SculptedHead",
+        "extras": {
+          "name": "Pip_Face_SculptedHead",
+          "kit_part": "Face_SculptedHead",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Face_Smile",
+        "extras": {
+          "name": "Pip_Face_Smile",
+          "kit_part": "Face_Smile",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Forearm_L",
+        "extras": {
+          "name": "Pip_Forearm_L",
+          "kit_part": "Forearm_L",
+          "deform_bone": "lower_arm.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Forearm_R",
+        "extras": {
+          "name": "Pip_Forearm_R",
+          "kit_part": "Forearm_R",
+          "deform_bone": "lower_arm.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hair_Cap",
+        "extras": {
+          "name": "Pip_Hair_Cap",
+          "kit_part": "Hair_Cap",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hair_ForelockRidge",
+        "extras": {
+          "name": "Pip_Hair_ForelockRidge",
+          "kit_part": "Hair_ForelockRidge",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hair_TousledLock_00",
+        "extras": {
+          "name": "Pip_Hair_TousledLock_00",
+          "kit_part": "Hair_TousledLock_00",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hair_TousledLock_01",
+        "extras": {
+          "name": "Pip_Hair_TousledLock_01",
+          "kit_part": "Hair_TousledLock_01",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hair_TousledLock_02",
+        "extras": {
+          "name": "Pip_Hair_TousledLock_02",
+          "kit_part": "Hair_TousledLock_02",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hair_TousledLock_03",
+        "extras": {
+          "name": "Pip_Hair_TousledLock_03",
+          "kit_part": "Hair_TousledLock_03",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hair_TousledLock_04",
+        "extras": {
+          "name": "Pip_Hair_TousledLock_04",
+          "kit_part": "Hair_TousledLock_04",
+          "deform_bone": "head"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hand_L",
+        "extras": {
+          "name": "Pip_Hand_L",
+          "kit_part": "Hand_L",
+          "deform_bone": "hand.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hand_R",
+        "extras": {
+          "name": "Pip_Hand_R",
+          "kit_part": "Hand_R",
+          "deform_bone": "hand.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Hips",
+        "extras": {
+          "name": "Pip_Hips",
+          "kit_part": "Hips",
+          "deform_bone": "pelvis"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Knee_L",
+        "extras": {
+          "name": "Pip_Knee_L",
+          "kit_part": "Knee_L",
+          "deform_bone": "lower_leg.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Knee_R",
+        "extras": {
+          "name": "Pip_Knee_R",
+          "kit_part": "Knee_R",
+          "deform_bone": "lower_leg.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_LowerTrouser_L",
+        "extras": {
+          "name": "Pip_LowerTrouser_L",
+          "kit_part": "LowerTrouser_L",
+          "deform_bone": "lower_leg.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_LowerTrouser_R",
+        "extras": {
+          "name": "Pip_LowerTrouser_R",
+          "kit_part": "LowerTrouser_R",
+          "deform_bone": "lower_leg.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Neck",
+        "extras": {
+          "name": "Pip_Neck",
+          "kit_part": "Neck",
+          "deform_bone": "neck"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Rig",
+        "extras": {
+          "name": "Pip_Rig",
+          "rig_contract": "Canopy_v1_shared_16_bones",
+          "clip_names": "Pip_Idle,Pip_Walk,Pip_Greeting"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "pelvis",
+        "extras": {
+          "name": "pelvis"
+        },
+        "position": [
+          0,
+          0.5799999833106995,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "spine",
+        "extras": {
+          "name": "spine"
+        },
+        "position": [
+          0,
+          0.7200000286102295,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "neck",
+        "extras": {
+          "name": "neck"
+        },
+        "position": [
+          0,
+          1.0149999856948853,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "head",
+        "extras": {
+          "name": "head"
+        },
+        "position": [
+          0,
+          1.100000023841858,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "upper_armL",
+        "extras": {
+          "name": "upper_arm.L"
+        },
+        "position": [
+          0.22499999403953552,
+          0.9549999535083771,
+          3.0000000000000013
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "lower_armL",
+        "extras": {
+          "name": "lower_arm.L"
+        },
+        "position": [
+          0.3149999212316298,
+          0.7449999118421107,
+          3.0000000050670774
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "handL",
+        "extras": {
+          "name": "hand.L"
+        },
+        "position": [
+          0.3399998732890197,
+          0.5856228055281669,
+          3.0205896618010373
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "upper_armR",
+        "extras": {
+          "name": "upper_arm.R"
+        },
+        "position": [
+          -0.22499999403953552,
+          0.9549999535083771,
+          3.0000000000000013
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "lower_armR",
+        "extras": {
+          "name": "lower_arm.R"
+        },
+        "position": [
+          -0.3149999212316298,
+          0.7449999118421107,
+          3.0000000050670774
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "handR",
+        "extras": {
+          "name": "hand.R"
+        },
+        "position": [
+          -0.3399998732890197,
+          0.5856228055281669,
+          3.0205896618010373
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "upper_legL",
+        "extras": {
+          "name": "upper_leg.L"
+        },
+        "position": [
+          0.11499999463558197,
+          0.6049999855458736,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "lower_legL",
+        "extras": {
+          "name": "lower_leg.L"
+        },
+        "position": [
+          0.11999998249955936,
+          0.3450000647434708,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "footL",
+        "extras": {
+          "name": "foot.L"
+        },
+        "position": [
+          0.11999998124260479,
+          0.10500007724249055,
+          2.9999999925623855
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "upper_legR",
+        "extras": {
+          "name": "upper_leg.R"
+        },
+        "position": [
+          -0.11499999463558197,
+          0.6049999855458736,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "lower_legR",
+        "extras": {
+          "name": "lower_leg.R"
+        },
+        "position": [
+          -0.11999998249955936,
+          0.3450000647434708,
+          2.999999999999999
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "footR",
+        "extras": {
+          "name": "foot.R"
+        },
+        "position": [
+          -0.11999998130212437,
+          0.10500007724249055,
+          2.9999999903974883
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Satchel_Clasp",
+        "extras": {
+          "name": "Pip_Satchel_Clasp",
+          "kit_part": "Satchel_Clasp",
+          "deform_bone": "pelvis"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Satchel_CrossbodyStrap",
+        "extras": {
+          "name": "Pip_Satchel_CrossbodyStrap",
+          "kit_part": "Satchel_CrossbodyStrap",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Satchel_Flap",
+        "extras": {
+          "name": "Pip_Satchel_Flap",
+          "kit_part": "Satchel_Flap",
+          "deform_bone": "pelvis"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Satchel_SeedBag",
+        "extras": {
+          "name": "Pip_Satchel_SeedBag",
+          "kit_part": "Satchel_SeedBag",
+          "deform_bone": "pelvis"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Shoe_L",
+        "extras": {
+          "name": "Pip_Shoe_L",
+          "kit_part": "Shoe_L",
+          "deform_bone": "foot.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Shoe_R",
+        "extras": {
+          "name": "Pip_Shoe_R",
+          "kit_part": "Shoe_R",
+          "deform_bone": "foot.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_ShoeSeam_L",
+        "extras": {
+          "name": "Pip_ShoeSeam_L",
+          "kit_part": "ShoeSeam_L",
+          "deform_bone": "foot.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_ShoeSeam_R",
+        "extras": {
+          "name": "Pip_ShoeSeam_R",
+          "kit_part": "ShoeSeam_R",
+          "deform_bone": "foot.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Sleeve_L",
+        "extras": {
+          "name": "Pip_Sleeve_L",
+          "kit_part": "Sleeve_L",
+          "deform_bone": "upper_arm.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Sleeve_R",
+        "extras": {
+          "name": "Pip_Sleeve_R",
+          "kit_part": "Sleeve_R",
+          "deform_bone": "upper_arm.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Sole_L",
+        "extras": {
+          "name": "Pip_Sole_L",
+          "kit_part": "Sole_L",
+          "deform_bone": "foot.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Sole_R",
+        "extras": {
+          "name": "Pip_Sole_R",
+          "kit_part": "Sole_R",
+          "deform_bone": "foot.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Thumb_L",
+        "extras": {
+          "name": "Pip_Thumb_L",
+          "kit_part": "Thumb_L",
+          "deform_bone": "hand.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Thumb_R",
+        "extras": {
+          "name": "Pip_Thumb_R",
+          "kit_part": "Thumb_R",
+          "deform_bone": "hand.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Trouser_L",
+        "extras": {
+          "name": "Pip_Trouser_L",
+          "kit_part": "Trouser_L",
+          "deform_bone": "upper_leg.L"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Trouser_R",
+        "extras": {
+          "name": "Pip_Trouser_R",
+          "kit_part": "Trouser_R",
+          "deform_bone": "upper_leg.R"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "pip",
+        "name": "Pip_Tunic",
+        "extras": {
+          "name": "Pip_Tunic",
+          "kit_part": "Tunic",
+          "deform_bone": "spine"
+        },
+        "position": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Canopy_|_Approval_slice",
+        "extras": {
+          "coordinate_mapping": "Blender (x,y,z) = application (x,-z,y); glTF exporter restores application axes.",
+          "approval_scope": "Representative slice only. Full settlement and remaining avatars await art approval.",
+          "topology_source": "just-play 2cb9d46f77d519d7818d917d7762fcc3c6cb1196 lib/demo/world.ts"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Root",
+        "extras": {
+          "name": "Sol_Root",
+          "canopy_character": "Sol",
+          "forward_axis": "-Y",
+          "rest_sole_z": 0,
+          "standing_height": 1.6679999828338623,
+          "head_to_body_ratio": 2.7,
+          "lifecycle_preview": "arrived",
+          "residency_is_permanent": true
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Belt",
+        "extras": {
+          "name": "Sol_Belt",
+          "kit_part": "Belt",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Belt_Buckle",
+        "extras": {
+          "name": "Sol_Belt_Buckle",
+          "kit_part": "Belt_Buckle",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Belt_Pouch",
+        "extras": {
+          "name": "Sol_Belt_Pouch",
+          "kit_part": "Belt_Pouch",
+          "deform_bone": "pelvis"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_BootCuff_L",
+        "extras": {
+          "name": "Sol_BootCuff_L",
+          "kit_part": "BootCuff_L",
+          "deform_bone": "lower_leg.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_BootCuff_R",
+        "extras": {
+          "name": "Sol_BootCuff_R",
+          "kit_part": "BootCuff_R",
+          "deform_bone": "lower_leg.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_BootShaft_L",
+        "extras": {
+          "name": "Sol_BootShaft_L",
+          "kit_part": "BootShaft_L",
+          "deform_bone": "lower_leg.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_BootShaft_R",
+        "extras": {
+          "name": "Sol_BootShaft_R",
+          "kit_part": "BootShaft_R",
+          "deform_bone": "lower_leg.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_BootToe_L",
+        "extras": {
+          "name": "Sol_BootToe_L",
+          "kit_part": "BootToe_L",
+          "deform_bone": "foot.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_BootToe_R",
+        "extras": {
+          "name": "Sol_BootToe_R",
+          "kit_part": "BootToe_R",
+          "deform_bone": "foot.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Cape_AsymmetricBack",
+        "extras": {
+          "name": "Sol_Cape_AsymmetricBack",
+          "kit_part": "Cape_AsymmetricBack",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Cape_EmbroideredEdge",
+        "extras": {
+          "name": "Sol_Cape_EmbroideredEdge",
+          "kit_part": "Cape_EmbroideredEdge",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Cape_FrontTrim",
+        "extras": {
+          "name": "Sol_Cape_FrontTrim",
+          "kit_part": "Cape_FrontTrim",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Cape_ShoulderDrape",
+        "extras": {
+          "name": "Sol_Cape_ShoulderDrape",
+          "kit_part": "Cape_ShoulderDrape",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Collar",
+        "extras": {
+          "name": "Sol_Collar",
+          "kit_part": "Collar",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Cuff_L",
+        "extras": {
+          "name": "Sol_Cuff_L",
+          "kit_part": "Cuff_L",
+          "deform_bone": "upper_arm.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Cuff_R",
+        "extras": {
+          "name": "Sol_Cuff_R",
+          "kit_part": "Cuff_R",
+          "deform_bone": "upper_arm.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Blush_L",
+        "extras": {
+          "name": "Sol_Face_Blush_L",
+          "kit_part": "Face_Blush_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Blush_R",
+        "extras": {
+          "name": "Sol_Face_Blush_R",
+          "kit_part": "Face_Blush_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Brow_L",
+        "extras": {
+          "name": "Sol_Face_Brow_L",
+          "kit_part": "Face_Brow_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Brow_R",
+        "extras": {
+          "name": "Sol_Face_Brow_R",
+          "kit_part": "Face_Brow_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Cheek_L",
+        "extras": {
+          "name": "Sol_Face_Cheek_L",
+          "kit_part": "Face_Cheek_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Cheek_R",
+        "extras": {
+          "name": "Sol_Face_Cheek_R",
+          "kit_part": "Face_Cheek_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Ear_L",
+        "extras": {
+          "name": "Sol_Face_Ear_L",
+          "kit_part": "Face_Ear_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Ear_R",
+        "extras": {
+          "name": "Sol_Face_Ear_R",
+          "kit_part": "Face_Ear_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_EarInset_L",
+        "extras": {
+          "name": "Sol_Face_EarInset_L",
+          "kit_part": "Face_EarInset_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_EarInset_R",
+        "extras": {
+          "name": "Sol_Face_EarInset_R",
+          "kit_part": "Face_EarInset_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_EyeGlint_L",
+        "extras": {
+          "name": "Sol_Face_EyeGlint_L",
+          "kit_part": "Face_EyeGlint_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_EyeGlint_R",
+        "extras": {
+          "name": "Sol_Face_EyeGlint_R",
+          "kit_part": "Face_EyeGlint_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_EyeWhite_L",
+        "extras": {
+          "name": "Sol_Face_EyeWhite_L",
+          "kit_part": "Face_EyeWhite_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_EyeWhite_R",
+        "extras": {
+          "name": "Sol_Face_EyeWhite_R",
+          "kit_part": "Face_EyeWhite_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Iris_L",
+        "extras": {
+          "name": "Sol_Face_Iris_L",
+          "kit_part": "Face_Iris_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Iris_R",
+        "extras": {
+          "name": "Sol_Face_Iris_R",
+          "kit_part": "Face_Iris_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_LowerLip",
+        "extras": {
+          "name": "Sol_Face_LowerLip",
+          "kit_part": "Face_LowerLip",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_NoseSculpt",
+        "extras": {
+          "name": "Sol_Face_NoseSculpt",
+          "kit_part": "Face_NoseSculpt",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Pupil_L",
+        "extras": {
+          "name": "Sol_Face_Pupil_L",
+          "kit_part": "Face_Pupil_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Pupil_R",
+        "extras": {
+          "name": "Sol_Face_Pupil_R",
+          "kit_part": "Face_Pupil_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_SculptedHead",
+        "extras": {
+          "name": "Sol_Face_SculptedHead",
+          "kit_part": "Face_SculptedHead",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Face_Smile",
+        "extras": {
+          "name": "Sol_Face_Smile",
+          "kit_part": "Face_Smile",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Forearm_L",
+        "extras": {
+          "name": "Sol_Forearm_L",
+          "kit_part": "Forearm_L",
+          "deform_bone": "lower_arm.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Forearm_R",
+        "extras": {
+          "name": "Sol_Forearm_R",
+          "kit_part": "Forearm_R",
+          "deform_bone": "lower_arm.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Hair_Cap",
+        "extras": {
+          "name": "Sol_Hair_Cap",
+          "kit_part": "Hair_Cap",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Hair_SweptCrest",
+        "extras": {
+          "name": "Sol_Hair_SweptCrest",
+          "kit_part": "Hair_SweptCrest",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Hair_SweptHighlight",
+        "extras": {
+          "name": "Sol_Hair_SweptHighlight",
+          "kit_part": "Hair_SweptHighlight",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Hair_Temple_L",
+        "extras": {
+          "name": "Sol_Hair_Temple_L",
+          "kit_part": "Hair_Temple_L",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Hair_Temple_R",
+        "extras": {
+          "name": "Sol_Hair_Temple_R",
+          "kit_part": "Hair_Temple_R",
+          "deform_bone": "head"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Hand_L",
+        "extras": {
+          "name": "Sol_Hand_L",
+          "kit_part": "Hand_L",
+          "deform_bone": "hand.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Hand_R",
+        "extras": {
+          "name": "Sol_Hand_R",
+          "kit_part": "Hand_R",
+          "deform_bone": "hand.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Hips",
+        "extras": {
+          "name": "Sol_Hips",
+          "kit_part": "Hips",
+          "deform_bone": "pelvis"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Knee_L",
+        "extras": {
+          "name": "Sol_Knee_L",
+          "kit_part": "Knee_L",
+          "deform_bone": "lower_leg.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Knee_R",
+        "extras": {
+          "name": "Sol_Knee_R",
+          "kit_part": "Knee_R",
+          "deform_bone": "lower_leg.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_LowerTrouser_L",
+        "extras": {
+          "name": "Sol_LowerTrouser_L",
+          "kit_part": "LowerTrouser_L",
+          "deform_bone": "lower_leg.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_LowerTrouser_R",
+        "extras": {
+          "name": "Sol_LowerTrouser_R",
+          "kit_part": "LowerTrouser_R",
+          "deform_bone": "lower_leg.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Neck",
+        "extras": {
+          "name": "Sol_Neck",
+          "kit_part": "Neck",
+          "deform_bone": "neck"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Pendant_Cord",
+        "extras": {
+          "name": "Sol_Pendant_Cord",
+          "kit_part": "Pendant_Cord",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Pendant_Ember",
+        "extras": {
+          "name": "Sol_Pendant_Ember",
+          "kit_part": "Pendant_Ember",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Pendant_Inset",
+        "extras": {
+          "name": "Sol_Pendant_Inset",
+          "kit_part": "Pendant_Inset",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Rig",
+        "extras": {
+          "name": "Sol_Rig",
+          "rig_contract": "Canopy_v1_shared_16_bones",
+          "clip_names": "Sol_Idle,Sol_Walk,Sol_Greeting"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "pelvis",
+        "extras": {
+          "name": "pelvis"
+        },
+        "position": [
+          4,
+          0.5799999833106995,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "spine",
+        "extras": {
+          "name": "spine"
+        },
+        "position": [
+          4,
+          0.7200000286102295,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "neck",
+        "extras": {
+          "name": "neck"
+        },
+        "position": [
+          4,
+          1.0149999856948853,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "head",
+        "extras": {
+          "name": "head"
+        },
+        "position": [
+          4,
+          1.100000023841858,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "upper_armL",
+        "extras": {
+          "name": "upper_arm.L"
+        },
+        "position": [
+          4.2249999940395355,
+          0.9549999535083771,
+          2.0000000000000013
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "lower_armL",
+        "extras": {
+          "name": "lower_arm.L"
+        },
+        "position": [
+          4.31499992123163,
+          0.7449999118421107,
+          2.0000000050670774
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "handL",
+        "extras": {
+          "name": "hand.L"
+        },
+        "position": [
+          4.3399998732890195,
+          0.5856228055281669,
+          2.0205896618010373
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "upper_armR",
+        "extras": {
+          "name": "upper_arm.R"
+        },
+        "position": [
+          3.7750000059604645,
+          0.9549999535083771,
+          2.0000000000000013
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "lower_armR",
+        "extras": {
+          "name": "lower_arm.R"
+        },
+        "position": [
+          3.68500007876837,
+          0.7449999118421107,
+          2.0000000050670774
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "handR",
+        "extras": {
+          "name": "hand.R"
+        },
+        "position": [
+          3.66000012671098,
+          0.5856228055281669,
+          2.0205896618010373
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "upper_legL",
+        "extras": {
+          "name": "upper_leg.L"
+        },
+        "position": [
+          4.114999994635582,
+          0.6049999855458736,
+          1.9999999999999998
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "lower_legL",
+        "extras": {
+          "name": "lower_leg.L"
+        },
+        "position": [
+          4.119999982499559,
+          0.3450000647434708,
+          1.9999999999999998
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "footL",
+        "extras": {
+          "name": "foot.L"
+        },
+        "position": [
+          4.1199999812426045,
+          0.10500007724249055,
+          1.9999999925623853
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "upper_legR",
+        "extras": {
+          "name": "upper_leg.R"
+        },
+        "position": [
+          3.885000005364418,
+          0.6049999855458736,
+          1.9999999999999998
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "lower_legR",
+        "extras": {
+          "name": "lower_leg.R"
+        },
+        "position": [
+          3.8800000175004405,
+          0.3450000647434708,
+          1.999999999999999
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "footR",
+        "extras": {
+          "name": "foot.R"
+        },
+        "position": [
+          3.8800000186978756,
+          0.10500007724249055,
+          1.999999990397488
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_ShoeSeam_L",
+        "extras": {
+          "name": "Sol_ShoeSeam_L",
+          "kit_part": "ShoeSeam_L",
+          "deform_bone": "foot.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_ShoeSeam_R",
+        "extras": {
+          "name": "Sol_ShoeSeam_R",
+          "kit_part": "ShoeSeam_R",
+          "deform_bone": "foot.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Sleeve_L",
+        "extras": {
+          "name": "Sol_Sleeve_L",
+          "kit_part": "Sleeve_L",
+          "deform_bone": "upper_arm.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Sleeve_R",
+        "extras": {
+          "name": "Sol_Sleeve_R",
+          "kit_part": "Sleeve_R",
+          "deform_bone": "upper_arm.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Sole_L",
+        "extras": {
+          "name": "Sol_Sole_L",
+          "kit_part": "Sole_L",
+          "deform_bone": "foot.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Sole_R",
+        "extras": {
+          "name": "Sol_Sole_R",
+          "kit_part": "Sole_R",
+          "deform_bone": "foot.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Thumb_L",
+        "extras": {
+          "name": "Sol_Thumb_L",
+          "kit_part": "Thumb_L",
+          "deform_bone": "hand.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Thumb_R",
+        "extras": {
+          "name": "Sol_Thumb_R",
+          "kit_part": "Thumb_R",
+          "deform_bone": "hand.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Trouser_L",
+        "extras": {
+          "name": "Sol_Trouser_L",
+          "kit_part": "Trouser_L",
+          "deform_bone": "upper_leg.L"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Trouser_R",
+        "extras": {
+          "name": "Sol_Trouser_R",
+          "kit_part": "Trouser_R",
+          "deform_bone": "upper_leg.R"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Tunic",
+        "extras": {
+          "name": "Sol_Tunic",
+          "kit_part": "Tunic",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Tunic_Seam_0",
+        "extras": {
+          "name": "Sol_Tunic_Seam_0",
+          "kit_part": "Tunic_Seam_0",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Tunic_Seam_1",
+        "extras": {
+          "name": "Sol_Tunic_Seam_1",
+          "kit_part": "Tunic_Seam_1",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "sol",
+        "name": "Sol_Tunic_Seam_2",
+        "extras": {
+          "name": "Sol_Tunic_Seam_2",
+          "kit_part": "Tunic_Seam_2",
+          "deform_bone": "spine"
+        },
+        "position": [
+          4,
+          0,
+          2
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Canopy_|_Approval_slice",
+        "extras": {
+          "coordinate_mapping": "Blender (x,y,z) = application (x,-z,y); glTF exporter restores application axes.",
+          "approval_scope": "Representative slice only. Full settlement and remaining avatars await art approval.",
+          "topology_source": "just-play 2cb9d46f77d519d7818d917d7762fcc3c6cb1196 lib/demo/world.ts"
+        },
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Ember_Hearth_Deck",
+        "extras": {
+          "name": "Ember_Hearth_Deck",
+          "asset_batch": "Ember_Hearth_Deck"
+        },
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_1",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_2",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_3",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_4",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_5",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_6",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_7",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_8",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_9",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_10",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_11",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_12",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_13",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Hearth_plot_plank_14",
+        "extras": {},
+        "position": [
+          31.190000534057617,
+          3.9100000858306885,
+          10.748982429504395
+        ]
+      },
+      {
+        "asset": "hearth-deck",
+        "name": "Ember_Hearth_Deck_Roof",
+        "extras": {
+          "name": "Ember_Hearth_Deck_Roof",
+          "asset_batch": "Ember_Hearth_Deck",
+          "configurable": "roof"
+        },
+        "position": [
+          37.97999954223633,
+          6.353750228881836,
+          9.029999732971191
+        ]
+      },
+      {
+        "asset": "rain-postcard",
+        "name": "Canopy_|_Approval_slice",
+        "extras": {
+          "coordinate_mapping": "Blender (x,y,z) = application (x,-z,y); glTF exporter restores application axes.",
+          "approval_scope": "Representative slice only. Full settlement and remaining avatars await art approval.",
+          "topology_source": "just-play 2cb9d46f77d519d7818d917d7762fcc3c6cb1196 lib/demo/world.ts"
+        },
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "rain-postcard",
+        "name": "Rain_Postcard",
+        "extras": {
+          "name": "Rain_Postcard",
+          "asset_batch": "Rain_Postcard"
+        },
+        "position": [
+          -4.599999904632568,
+          0.20000000298023224,
+          21.700000762939453
+        ]
+      },
+      {
+        "asset": "rain-postcard",
+        "name": "Postcard_paper",
+        "extras": {},
+        "position": [
+          -4.599999904632568,
+          0.20000000298023224,
+          21.700000762939453
+        ]
+      },
+      {
+        "asset": "rain-postcard",
+        "name": "Postcard_paper_1",
+        "extras": {},
+        "position": [
+          -4.599999904632568,
+          0.20000000298023224,
+          21.700000762939453
+        ]
+      },
+      {
+        "asset": "rain-postcard",
+        "name": "Postcard_paper_2",
+        "extras": {},
+        "position": [
+          -4.599999904632568,
+          0.20000000298023224,
+          21.700000762939453
+        ]
+      },
+      {
+        "asset": "rain-postcard",
+        "name": "Postcard_paper_3",
+        "extras": {},
+        "position": [
+          -4.599999904632568,
+          0.20000000298023224,
+          21.700000762939453
+        ]
+      },
+      {
+        "asset": "rain-postcard",
+        "name": "Postcard_paper_4",
+        "extras": {},
+        "position": [
+          -4.599999904632568,
+          0.20000000298023224,
+          21.700000762939453
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Canopy_|_Approval_slice",
+        "extras": {
+          "coordinate_mapping": "Blender (x,y,z) = application (x,-z,y); glTF exporter restores application axes.",
+          "approval_scope": "Representative slice only. Full settlement and remaining avatars await art approval.",
+          "topology_source": "just-play 2cb9d46f77d519d7818d917d7762fcc3c6cb1196 lib/demo/world.ts"
+        },
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "ATTACH_brook",
+        "extras": {
+          "name": "ATTACH_brook",
+          "kind": "attachment",
+          "site": "brook",
+          "radius": 5,
+          "parent_location": "grove",
+          "occupied_preview": false
+        },
+        "position": [
+          30,
+          4,
+          -23
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "ATTACH_crown",
+        "extras": {
+          "name": "ATTACH_crown",
+          "kind": "attachment",
+          "site": "crown",
+          "radius": 5,
+          "parent_location": "lookout",
+          "occupied_preview": false
+        },
+        "position": [
+          12,
+          6,
+          -40
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "ATTACH_dusk",
+        "extras": {
+          "name": "ATTACH_dusk",
+          "kind": "attachment",
+          "site": "dusk",
+          "radius": 5,
+          "parent_location": "lodge",
+          "occupied_preview": false
+        },
+        "position": [
+          -39,
+          3,
+          -7
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "ATTACH_fern",
+        "extras": {
+          "name": "ATTACH_fern",
+          "kind": "attachment",
+          "site": "fern",
+          "radius": 5,
+          "parent_location": "lookout",
+          "occupied_preview": false
+        },
+        "position": [
+          -18,
+          5,
+          -29
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "ATTACH_meadow",
+        "extras": {
+          "name": "ATTACH_meadow",
+          "kind": "attachment",
+          "site": "meadow",
+          "radius": 5,
+          "parent_location": "lodge",
+          "occupied_preview": false
+        },
+        "position": [
+          -27,
+          1,
+          17
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "ATTACH_plot",
+        "extras": {
+          "name": "ATTACH_plot",
+          "kind": "attachment",
+          "site": "plot",
+          "radius": 6,
+          "parent_location": "grove",
+          "occupied_preview": true
+        },
+        "position": [
+          37,
+          4,
+          10
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "ATTACH_sunrise",
+        "extras": {
+          "name": "ATTACH_sunrise",
+          "kind": "attachment",
+          "site": "sunrise",
+          "radius": 5,
+          "parent_location": "trailhead",
+          "occupied_preview": false
+        },
+        "position": [
+          12,
+          0,
+          25
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "BRIDGE_Grove_to_plot_end",
+        "extras": {
+          "name": "BRIDGE_Grove_to_plot_end",
+          "kind": "bridge_endpoint"
+        },
+        "position": [
+          33.25081253051758,
+          4,
+          6.691891670227051
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "BRIDGE_Grove_to_plot_start",
+        "extras": {
+          "name": "BRIDGE_Grove_to_plot_start",
+          "kind": "bridge_endpoint"
+        },
+        "position": [
+          25.248865127563477,
+          3,
+          -0.3686485290527344
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "BRIDGE_Plaza_to_grove_end",
+        "extras": {
+          "name": "BRIDGE_Plaza_to_grove_end",
+          "kind": "bridge_endpoint"
+        },
+        "position": [
+          13.209002494812012,
+          3,
+          -3.302250623703003
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "BRIDGE_Plaza_to_grove_start",
+        "extras": {
+          "name": "BRIDGE_Plaza_to_grove_start",
+          "kind": "bridge_endpoint"
+        },
+        "position": [
+          8.731282234191895,
+          0,
+          -2.1828205585479736
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "BRIDGE_Plaza_to_trailhead_end",
+        "extras": {
+          "name": "BRIDGE_Plaza_to_trailhead_end",
+          "kind": "bridge_endpoint"
+        },
+        "position": [
+          -4.684412956237793,
+          -1,
+          17.17618179321289
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "BRIDGE_Plaza_to_trailhead_start",
+        "extras": {
+          "name": "BRIDGE_Plaza_to_trailhead_start",
+          "kind": "bridge_endpoint"
+        },
+        "position": [
+          -2.368056535720825,
+          0,
+          8.682873725891113
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "CONTRIBUTION_ember_small",
+        "extras": {
+          "name": "CONTRIBUTION_ember_small",
+          "kind": "small_contribution",
+          "game_id": "ember",
+          "replaces_remnant": true,
+          "resident_count": 1
+        },
+        "position": [
+          1.2999999523162842,
+          0,
+          0.800000011920929
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "CONTRIBUTION_ember_structure",
+        "extras": {
+          "name": "CONTRIBUTION_ember_structure",
+          "kind": "earned_structure",
+          "game_id": "ember",
+          "site": "plot",
+          "footprint_radius": 6,
+          "starter": false
+        },
+        "position": [
+          37,
+          4,
+          10
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "DOOR_Grove",
+        "extras": {
+          "name": "DOOR_Grove",
+          "kind": "doorway",
+          "clear_width": 1.46,
+          "clear_height": 2.21,
+          "actual_threshold": [
+            17,
+            4.3,
+            3
+          ],
+          "app_remote_interior_center": 190
+        },
+        "position": [
+          17,
+          3,
+          -3.0999999046325684
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Foliage",
+        "extras": {
+          "name": "Foliage",
+          "asset_batch": "Foliage"
+        },
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_oak_trunk",
+        "extras": {},
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_oak_trunk_1",
+        "extras": {},
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_oak_trunk_2",
+        "extras": {},
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_oak_trunk_3",
+        "extras": {},
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_oak_trunk_4",
+        "extras": {},
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_oak_trunk_5",
+        "extras": {},
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Grove_Interior",
+        "extras": {
+          "name": "Grove_Interior",
+          "asset_batch": "Grove_Interior"
+        },
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_1",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_2",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_3",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_4",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_5",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_6",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_7",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_8",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_9",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_10",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_11",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_12",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_13",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_14",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_15",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_16",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Home_floorboard_17",
+        "extras": {},
+        "position": [
+          17,
+          3.0250000953674316,
+          -4.422222137451172
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "LOCATION_Gathering",
+        "extras": {
+          "name": "LOCATION_Gathering",
+          "kind": "location",
+          "radius": 10
+        },
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "LOCATION_Grove",
+        "extras": {
+          "name": "LOCATION_Grove",
+          "kind": "location",
+          "radius": 8
+        },
+        "position": [
+          20,
+          3,
+          -5
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "LOCATION_Hearth_plot",
+        "extras": {
+          "name": "LOCATION_Hearth_plot",
+          "kind": "location",
+          "radius": 6
+        },
+        "position": [
+          37,
+          4,
+          10
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "LOCATION_Lodge_deferred",
+        "extras": {
+          "name": "LOCATION_Lodge_deferred",
+          "kind": "deferred_location",
+          "radius": 7
+        },
+        "position": [
+          -21,
+          2,
+          -2
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "LOCATION_Lookout_deferred",
+        "extras": {
+          "name": "LOCATION_Lookout_deferred",
+          "kind": "deferred_location",
+          "radius": 6
+        },
+        "position": [
+          0,
+          5,
+          -25
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "LOCATION_Trailhead",
+        "extras": {
+          "name": "LOCATION_Trailhead",
+          "kind": "location",
+          "radius": 6
+        },
+        "position": [
+          -6,
+          -1,
+          22
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "REMNANT_rain",
+        "extras": {
+          "name": "REMNANT_rain",
+          "kind": "remnant",
+          "game_id": "rain",
+          "decay": false,
+          "survives_reinvite": true,
+          "removed_on_arrival": true
+        },
+        "position": [
+          -4.599999904632568,
+          0.20000000298023224,
+          21.700000762939453
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "SEAT_Gathering_seat",
+        "extras": {
+          "name": "SEAT_Gathering seat",
+          "kind": "seat",
+          "facing": -0.8
+        },
+        "position": [
+          -5.800000190734863,
+          0.5600000023841858,
+          -1
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "SEAT_Gathering_seat001",
+        "extras": {
+          "name": "SEAT_Gathering seat.001",
+          "kind": "seat",
+          "facing": 3.141592653589793
+        },
+        "position": [
+          -2.700000047683716,
+          0.5600000023841858,
+          -5
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "SEAT_Gathering_seat002",
+        "extras": {
+          "name": "SEAT_Gathering seat.002",
+          "kind": "seat",
+          "facing": -0.4
+        },
+        "position": [
+          -5,
+          0.5600000023841858,
+          1.7999999523162842
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "SEAT_Grove_outward_seat",
+        "extras": {
+          "name": "SEAT_Grove outward seat",
+          "kind": "seat",
+          "facing": 0.4
+        },
+        "position": [
+          23.5,
+          3.559999942779541,
+          -1
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "SEAT_Hearth",
+        "extras": {
+          "name": "SEAT_Hearth",
+          "kind": "seat",
+          "facing": 1.5707963267948966
+        },
+        "position": [
+          35.959999084472656,
+          4.599999904632568,
+          8.479999542236328
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "SEAT_Reading",
+        "extras": {
+          "name": "SEAT_Reading",
+          "kind": "seat",
+          "facing": 0
+        },
+        "position": [
+          15.75,
+          3.680000066757202,
+          -7.980000019073486
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "SEAT_Table_shared_bench",
+        "extras": {
+          "name": "SEAT_Table shared bench",
+          "kind": "seat",
+          "facing": 3.141592653589793
+        },
+        "position": [
+          -3.0999999046325684,
+          0.5600000023841858,
+          6.5
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "SEAT_Trailhead_rest",
+        "extras": {
+          "name": "SEAT_Trailhead rest",
+          "kind": "seat",
+          "facing": -0.2
+        },
+        "position": [
+          -8.100000381469727,
+          -0.4399999976158142,
+          22.299999237060547
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Starter_Architecture",
+        "extras": {
+          "name": "Starter_Architecture",
+          "asset_batch": "Starter_Architecture"
+        },
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_1",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_2",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_3",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_4",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_5",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_6",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_7",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_8",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_9",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_10",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_11",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_12",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_13",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_14",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_15",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_16",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_17",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_18",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_plank_19",
+        "extras": {},
+        "position": [
+          -9.8100004196167,
+          -0.09000000357627869,
+          0.970038652420044
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Starter_Architecture_Roof",
+        "extras": {
+          "name": "Starter_Architecture_Roof",
+          "asset_batch": "Starter_Architecture",
+          "configurable": "roof"
+        },
+        "position": [
+          -6.099999904632568,
+          2.0985000133514404,
+          -4.800000190734863
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_lantern_roof",
+        "extras": {},
+        "position": [
+          -6.099999904632568,
+          2.0985000133514404,
+          -4.800000190734863
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_lantern_roof_1",
+        "extras": {},
+        "position": [
+          -6.099999904632568,
+          2.0985000133514404,
+          -4.800000190734863
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_lantern_roof_2",
+        "extras": {},
+        "position": [
+          -6.099999904632568,
+          2.0985000133514404,
+          -4.800000190734863
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_lantern_roof_3",
+        "extras": {},
+        "position": [
+          -6.099999904632568,
+          2.0985000133514404,
+          -4.800000190734863
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_lantern_roof_4",
+        "extras": {},
+        "position": [
+          -6.099999904632568,
+          2.0985000133514404,
+          -4.800000190734863
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_lantern_roof_5",
+        "extras": {},
+        "position": [
+          -6.099999904632568,
+          2.0985000133514404,
+          -4.800000190734863
+        ]
+      },
+      {
+        "asset": "environment",
+        "name": "Gathering_lantern_roof_6",
+        "extras": {},
+        "position": [
+          -6.099999904632568,
+          2.0985000133514404,
+          -4.800000190734863
+        ]
+      }
+    ],
+    "warnings": [
+      "No exported or manifest lantern lights; using seven source-positioned viewer lights. Intensities are PBR approximations, not Blender energy equivalents."
+    ],
+    "invalidGeometry": [],
+    "invalidMaterials": [],
+    "view": "overview",
+    "lighting": "day",
+    "time": 0,
+    "roofNodes": [
+      "Ember_Hearth_Deck_Roof",
+      "Starter_Architecture_Roof",
+      "Gathering_lantern_roof",
+      "Gathering_lantern_roof_1",
+      "Gathering_lantern_roof_2",
+      "Gathering_lantern_roof_3",
+      "Gathering_lantern_roof_4",
+      "Gathering_lantern_roof_5",
+      "Gathering_lantern_roof_6"
+    ],
+    "camera": {
+      "position": [
+        57.99999999999999,
+        48,
+        75
+      ],
+      "target": [
+        12,
+        1.5,
+        4
+      ],
+      "fov": 26.748026554944673,
+      "aspect": 1.7606602475928472,
+      "projection": "perspective"
+    },
+    "lights": [
+      {
+        "name": "viewer-lantern-1",
+        "position": [
+          -6.1,
+          1.47,
+          -4.8
+        ],
+        "color": "#ffc980",
+        "intensity": 48,
+        "distance": 10,
+        "visible": false
+      },
+      {
+        "name": "viewer-lantern-2",
+        "position": [
+          3.9,
+          1.47,
+          -6.7
+        ],
+        "color": "#ffc980",
+        "intensity": 48,
+        "distance": 10,
+        "visible": false
+      },
+      {
+        "name": "viewer-lantern-3",
+        "position": [
+          -5.6,
+          1.47,
+          5.3
+        ],
+        "color": "#ffc980",
+        "intensity": 48,
+        "distance": 10,
+        "visible": false
+      },
+      {
+        "name": "viewer-lantern-4",
+        "position": [
+          6.9,
+          1.47,
+          0.2
+        ],
+        "color": "#ffc980",
+        "intensity": 48,
+        "distance": 10,
+        "visible": false
+      },
+      {
+        "name": "viewer-lantern-5",
+        "position": [
+          15.85,
+          4.45,
+          -3.96
+        ],
+        "color": "#ffc980",
+        "intensity": 24,
+        "distance": 7,
+        "visible": false
+      },
+      {
+        "name": "viewer-lantern-6",
+        "position": [
+          17.26,
+          3.86,
+          -7.7
+        ],
+        "color": "#ffc980",
+        "intensity": 14,
+        "distance": 5,
+        "visible": false
+      },
+      {
+        "name": "viewer-lantern-7",
+        "position": [
+          37.98,
+          5.78,
+          9.03
+        ],
+        "color": "#ffc980",
+        "intensity": 52,
+        "distance": 10,
+        "visible": false
+      }
+    ],
+    "draw": {
+      "calls": 218,
+      "triangles": 164222
+    }
+  },
+  "markers": [
+    {
+      "name": "LOCATION_Gathering",
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "actual": [
+        0,
+        0,
+        0
+      ],
+      "distance": 0
+    },
+    {
+      "name": "LOCATION_Grove",
+      "expected": [
+        20,
+        3,
+        -5
+      ],
+      "actual": [
+        20,
+        3,
+        -5
+      ],
+      "distance": 0
+    },
+    {
+      "name": "LOCATION_Trailhead",
+      "expected": [
+        -6,
+        -1,
+        22
+      ],
+      "actual": [
+        -6,
+        -1,
+        22
+      ],
+      "distance": 0
+    },
+    {
+      "name": "ATTACH_plot",
+      "expected": [
+        37,
+        4,
+        10
+      ],
+      "actual": [
+        37,
+        4,
+        10
+      ],
+      "distance": 0
+    },
+    {
+      "name": "DOOR_Grove",
+      "expected": [
+        17,
+        3,
+        -3.1
+      ],
+      "actual": [
+        17,
+        3,
+        -3.0999999046325684
+      ],
+      "distance": 9.536743172944284e-08
+    },
+    {
+      "name": "ATTACH_brook",
+      "expected": [
+        30,
+        4,
+        -23
+      ],
+      "actual": [
+        30,
+        4,
+        -23
+      ],
+      "distance": 0
+    },
+    {
+      "name": "ATTACH_crown",
+      "expected": [
+        12,
+        6,
+        -40
+      ],
+      "actual": [
+        12,
+        6,
+        -40
+      ],
+      "distance": 0
+    },
+    {
+      "name": "ATTACH_fern",
+      "expected": [
+        -18,
+        5,
+        -29
+      ],
+      "actual": [
+        -18,
+        5,
+        -29
+      ],
+      "distance": 0
+    },
+    {
+      "name": "ATTACH_dusk",
+      "expected": [
+        -39,
+        3,
+        -7
+      ],
+      "actual": [
+        -39,
+        3,
+        -7
+      ],
+      "distance": 0
+    },
+    {
+      "name": "ATTACH_meadow",
+      "expected": [
+        -27,
+        1,
+        17
+      ],
+      "actual": [
+        -27,
+        1,
+        17
+      ],
+      "distance": 0
+    },
+    {
+      "name": "ATTACH_sunrise",
+      "expected": [
+        12,
+        0,
+        25
+      ],
+      "actual": [
+        12,
+        0,
+        25
+      ],
+      "distance": 0
+    }
+  ],
+  "animations": [
+    {
+      "asset": "pip",
+      "clip": "Pip_Greeting",
+      "duration": 3,
+      "samples": 73,
+      "maximumMotion": 1.5316858160298756,
+      "maximumMotionTime": 1.5,
+      "maximumStep": 0.07848371566383117,
+      "endpointDelta": 0,
+      "requiredLoop": true,
+      "tolerance": 0.002,
+      "maximumMotionScreenshot": "pip_greeting-maximum-motion.png"
+    },
+    {
+      "asset": "pip",
+      "clip": "Pip_Idle",
+      "duration": 3,
+      "samples": 73,
+      "maximumMotion": 0.033658173912598115,
+      "maximumMotionTime": 2.25,
+      "maximumStep": 0.0028812588670006985,
+      "endpointDelta": 8.08266879692819e-18,
+      "requiredLoop": true,
+      "tolerance": 0.002,
+      "maximumMotionScreenshot": "pip_idle-maximum-motion.png"
+    },
+    {
+      "asset": "pip",
+      "clip": "Pip_Walk",
+      "duration": 1,
+      "samples": 25,
+      "maximumMotion": 0.9149077243352304,
+      "maximumMotionTime": 0.25,
+      "maximumStep": 0.24191958311443895,
+      "endpointDelta": 8.572528464404543e-18,
+      "requiredLoop": true,
+      "tolerance": 0.002,
+      "maximumMotionScreenshot": "pip_walk-maximum-motion.png"
+    },
+    {
+      "asset": "sol",
+      "clip": "Sol_Greeting",
+      "duration": 3,
+      "samples": 73,
+      "maximumMotion": 1.5316858160298756,
+      "maximumMotionTime": 1.5,
+      "maximumStep": 0.07848371566383117,
+      "endpointDelta": 0,
+      "requiredLoop": true,
+      "tolerance": 0.002,
+      "maximumMotionScreenshot": "sol_greeting-maximum-motion.png"
+    },
+    {
+      "asset": "sol",
+      "clip": "Sol_Idle",
+      "duration": 3,
+      "samples": 73,
+      "maximumMotion": 0.033658173912598115,
+      "maximumMotionTime": 2.25,
+      "maximumStep": 0.0028812588670006985,
+      "endpointDelta": 8.08266879692819e-18,
+      "requiredLoop": true,
+      "tolerance": 0.002,
+      "maximumMotionScreenshot": "sol_idle-maximum-motion.png"
+    },
+    {
+      "asset": "sol",
+      "clip": "Sol_Walk",
+      "duration": 1,
+      "samples": 25,
+      "maximumMotion": 0.9149077243352304,
+      "maximumMotionTime": 0.25,
+      "maximumStep": 0.24191958311443895,
+      "endpointDelta": 8.572528464404543e-18,
+      "requiredLoop": true,
+      "tolerance": 0.002,
+      "maximumMotionScreenshot": "sol_walk-maximum-motion.png"
+    }
+  ],
+  "ambient": {
+    "duration": 6,
+    "cameraDelta": 0,
+    "actorDelta": 8.326672684688674e-17
+  },
+  "turnarounds": {
+    "projection": "orthographic",
+    "yawDegrees": {
+      "front": 0,
+      "left": 90,
+      "back": 180,
+      "right": 270
+    }
+  },
+  "screenshots": [
+    "overview-day.png",
+    "walking-day.png",
+    "interior-day.png",
+    "cast-day.png",
+    "overview-night.png",
+    "walking-night.png",
+    "interior-night.png",
+    "cast-night.png",
+    "cast-turnaround-front.png",
+    "cast-turnaround-left.png",
+    "cast-turnaround-back.png",
+    "cast-turnaround-right.png",
+    "pip_greeting-maximum-motion.png",
+    "pip_idle-maximum-motion.png",
+    "pip_walk-maximum-motion.png",
+    "sol_greeting-maximum-motion.png",
+    "sol_idle-maximum-motion.png",
+    "sol_walk-maximum-motion.png",
+    "interior-roof-hidden.png"
+  ]
+}

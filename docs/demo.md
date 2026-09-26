@@ -11,6 +11,10 @@ The walkthrough below describes the revised local-first model. All milestone
 proofs are explicit self-confirmations of fictional sample games; there is no
 external playtime or achievement verification.
 
+The [offline Canopy art archive](canopy-art/README.md) is a separate September 12
+Blender/GLB approval slice. Its technical delivery is complete, but visual
+approval is pending and its assets are **not loaded by this demo**.
+
 ## Run locally
 
 ```bash

@@ -1,0 +1,280 @@
+{
+  "errors": [
+    "http://127.0.0.1:61379/canopy-v001/exports/pip.glb: net::ERR_ABORTED",
+    "http://127.0.0.1:61379/canopy-v001/exports/sol.glb: net::ERR_ABORTED",
+    "http://127.0.0.1:61379/canopy-v001/exports/environment.glb: net::ERR_ABORTED"
+  ],
+  "blocked": [],
+  "events": [
+    {
+      "type": "request",
+      "id": 1,
+      "url": "http://127.0.0.1:61379/web/?capture=1"
+    },
+    {
+      "type": "response",
+      "id": 1,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/?capture=1"
+    },
+    {
+      "type": "request",
+      "id": 2,
+      "url": "http://127.0.0.1:61379/web/style.css"
+    },
+    {
+      "type": "request",
+      "id": 3,
+      "url": "http://127.0.0.1:61379/web/bootstrap.js"
+    },
+    {
+      "type": "request",
+      "id": 4,
+      "url": "http://127.0.0.1:61379/web/viewer.js"
+    },
+    {
+      "type": "finished",
+      "id": 1,
+      "url": "http://127.0.0.1:61379/web/?capture=1"
+    },
+    {
+      "type": "response",
+      "id": 2,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/style.css"
+    },
+    {
+      "type": "finished",
+      "id": 2,
+      "url": "http://127.0.0.1:61379/web/style.css"
+    },
+    {
+      "type": "response",
+      "id": 3,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/bootstrap.js"
+    },
+    {
+      "type": "finished",
+      "id": 3,
+      "url": "http://127.0.0.1:61379/web/bootstrap.js"
+    },
+    {
+      "type": "response",
+      "id": 4,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/viewer.js"
+    },
+    {
+      "type": "finished",
+      "id": 4,
+      "url": "http://127.0.0.1:61379/web/viewer.js"
+    },
+    {
+      "type": "request",
+      "id": 5,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/build/three.module.js"
+    },
+    {
+      "type": "request",
+      "id": 6,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/loaders/GLTFLoader.js"
+    },
+    {
+      "type": "request",
+      "id": 7,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/controls/OrbitControls.js"
+    },
+    {
+      "type": "response",
+      "id": 7,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/controls/OrbitControls.js"
+    },
+    {
+      "type": "finished",
+      "id": 7,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/controls/OrbitControls.js"
+    },
+    {
+      "type": "response",
+      "id": 6,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/loaders/GLTFLoader.js"
+    },
+    {
+      "type": "finished",
+      "id": 6,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/loaders/GLTFLoader.js"
+    },
+    {
+      "type": "request",
+      "id": 8,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js"
+    },
+    {
+      "type": "response",
+      "id": 8,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js"
+    },
+    {
+      "type": "finished",
+      "id": 8,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js"
+    },
+    {
+      "type": "response",
+      "id": 5,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/build/three.module.js"
+    },
+    {
+      "type": "finished",
+      "id": 5,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/build/three.module.js"
+    },
+    {
+      "type": "request",
+      "id": 9,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/build/three.core.js"
+    },
+    {
+      "type": "response",
+      "id": 9,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/build/three.core.js"
+    },
+    {
+      "type": "finished",
+      "id": 9,
+      "url": "http://127.0.0.1:61379/web/node_modules/three/build/three.core.js"
+    },
+    {
+      "type": "request",
+      "id": 10,
+      "url": "http://127.0.0.1:61379/canopy-v001/manifest.json"
+    },
+    {
+      "type": "response",
+      "id": 10,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/canopy-v001/manifest.json"
+    },
+    {
+      "type": "finished",
+      "id": 10,
+      "url": "http://127.0.0.1:61379/canopy-v001/manifest.json"
+    },
+    {
+      "type": "request",
+      "id": 11,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/environment.glb"
+    },
+    {
+      "type": "request",
+      "id": 12,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/pip.glb"
+    },
+    {
+      "type": "request",
+      "id": 13,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/sol.glb"
+    },
+    {
+      "type": "request",
+      "id": 14,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/ember-small.glb"
+    },
+    {
+      "type": "request",
+      "id": 15,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/hearth-deck.glb"
+    },
+    {
+      "type": "request",
+      "id": 16,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/rain-postcard.glb"
+    },
+    {
+      "type": "response",
+      "id": 12,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/pip.glb"
+    },
+    {
+      "type": "response",
+      "id": 11,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/environment.glb"
+    },
+    {
+      "type": "response",
+      "id": 13,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/sol.glb"
+    },
+    {
+      "type": "response",
+      "id": 14,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/ember-small.glb"
+    },
+    {
+      "type": "finished",
+      "id": 14,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/ember-small.glb"
+    },
+    {
+      "type": "failed",
+      "id": 12,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/pip.glb",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "type": "failed",
+      "id": 13,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/sol.glb",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "type": "response",
+      "id": 15,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/hearth-deck.glb"
+    },
+    {
+      "type": "response",
+      "id": 16,
+      "status": 200,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/rain-postcard.glb"
+    },
+    {
+      "type": "finished",
+      "id": 15,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/hearth-deck.glb"
+    },
+    {
+      "type": "finished",
+      "id": 16,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/rain-postcard.glb"
+    },
+    {
+      "type": "failed",
+      "id": 11,
+      "url": "http://127.0.0.1:61379/canopy-v001/exports/environment.glb",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    }
+  ],
+  "triangles": 164222,
+  "draw": {
+    "calls": 218,
+    "triangles": 164222
+  }
+}

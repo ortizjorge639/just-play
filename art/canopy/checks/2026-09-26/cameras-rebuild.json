@@ -1,0 +1,162 @@
+{
+  "bytes": 8036,
+  "sha256": "a25d562700f234da19ee0605370edfde1f52ba34d7177e1a05fff76a82f5df11",
+  "cameras": [
+    {
+      "name": "Ambient_loop",
+      "position": [
+        44,
+        26,
+        42.900001525878906
+      ],
+      "direction": [
+        -0.5455629761060443,
+        -0.4091722065223579,
+        -0.7313953407781186
+      ],
+      "up": [
+        -0.2446462126176207,
+        0.9124571782631671,
+        -0.3279788538573076
+      ],
+      "fov": 28.900157167123844,
+      "upright": true,
+      "axisError": 4.446618906417399e-09
+    },
+    {
+      "name": "Gathering_walk",
+      "position": [
+        7,
+        2.299999952316284,
+        7
+      ],
+      "direction": [
+        -0.7432122704229672,
+        0.01486457510930187,
+        -0.6688905482211257
+      ],
+      "up": [
+        0.011048761014490205,
+        0.9998895160806909,
+        0.009943868058645259
+      ],
+      "fov": 49.017430179561565,
+      "upright": true,
+      "axisError": 1.3033408709922645e-09
+    },
+    {
+      "name": "Hearth_detail",
+      "position": [
+        42,
+        8.5,
+        17
+      ],
+      "direction": [
+        -0.4719295020816746,
+        -0.3209117152854553,
+        -0.82115663308378
+      ],
+      "up": [
+        -0.15990524344008972,
+        0.9471091096337455,
+        -0.2782348785692995
+      ],
+      "fov": 29.514637782364385,
+      "upright": true,
+      "axisError": 9.074325207913958e-09
+    },
+    {
+      "name": "Home_threshold",
+      "position": [
+        15.800000190734863,
+        5,
+        0.20000000298023224
+      ],
+      "direction": [
+        0.16762327967129007,
+        -0.12571749292475473,
+        -0.9778024074857634
+      ],
+      "up": [
+        0.021241680883479004,
+        0.9920660824146147,
+        -0.12390996374769762
+      ],
+      "fov": 40.65196465724706,
+      "upright": true,
+      "axisError": 3.8254363565748406e-10
+    },
+    {
+      "name": "Interior",
+      "position": [
+        17,
+        4.550000190734863,
+        -4.550000190734863
+      ],
+      "direction": [
+        0,
+        -0.14596099671284626,
+        -0.9892903453681292
+      ],
+      "up": [
+        0,
+        0.9892903453681292,
+        -0.14596099671284626
+      ],
+      "fov": 58.885973559841766,
+      "upright": true,
+      "axisError": 1.1102230246251565e-16
+    },
+    {
+      "name": "Overview",
+      "position": [
+        58,
+        48,
+        75
+      ],
+      "direction": [
+        -0.4765050291387109,
+        -0.48168418432092075,
+        -0.7354748831745415
+      ],
+      "up": [
+        -0.2619115586308356,
+        0.8763448774469518,
+        -0.40425485936857997
+      ],
+      "fov": 30.823493293582988,
+      "upright": true,
+      "axisError": 2.8671463536689146e-09
+    }
+  ],
+  "clip": {
+    "name": "Ambient loopAction",
+    "duration": 6,
+    "tracks": [
+      {
+        "name": "Ambient_loop.position",
+        "keys": 145,
+        "first": 0,
+        "last": 6,
+        "valid": true
+      },
+      {
+        "name": "Ambient_loop.quaternion",
+        "keys": 145,
+        "first": 0,
+        "last": 6,
+        "valid": true
+      }
+    ]
+  },
+  "samples": 145,
+  "maxMotion": 2.1999969482421875,
+  "maxTargetAngleRadians": 0.00022670696767509603,
+  "endpointMatrixDelta": 0,
+  "viewerAmbientVideosUseThisExport": false,
+  "viewerAmbientDescription": "Viewer-authored closed sweep around [58,48,75] looking at [12,1.5,4]; not this exported source Ambient_loop camera.",
+  "status": "passed",
+  "runtimeErrors": [],
+  "blockedRequests": [],
+  "browserVersion": "153.0.8010.12"
+}

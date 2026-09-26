@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "immutable_files_checked": 64,
+  "exports": 9,
+  "environment_triangles": 151022,
+  "static_meshes": 9,
+  "static_material_primitives": 82
+}

@@ -41,6 +41,11 @@ display as ambient art. It uses original procedural scenery, fictional sample
 games, explicit milestone self-confirmation, and browser-local saves.
 See the [presenter guide](docs/demo.md).
 
+The separate [Canopy art archive](docs/canopy-art/README.md) preserves the
+September 12 Blender approval slice, original brief, specifications, development
+tools, final GLBs, and evidence. Technical delivery is complete; **visual approval
+is pending**. These offline assets are not integrated into the demo or app.
+
 Follow the build → [@jojiguy639](https://x.com/jojiguy639)
 
 ---

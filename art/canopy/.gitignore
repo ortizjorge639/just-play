@@ -1,0 +1,6 @@
+/generated/
+/viewer/.browsers/
+/viewer/.runtime/
+/viewer/.npm-cache/
+__pycache__/
+*.pyc

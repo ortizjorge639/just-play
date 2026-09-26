@@ -1,0 +1,107 @@
+{
+  "files": {
+    "cameras.glb": {
+      "bytes": 8036,
+      "triangles": 0,
+      "meshes": 0,
+      "material_primitives": 0,
+      "materials": 0,
+      "nodes": 6,
+      "skins": 0,
+      "animations": [
+        "Ambient loopAction"
+      ],
+      "cameras": 6
+    },
+    "collision-proxies.glb": {
+      "bytes": 88016,
+      "triangles": 726,
+      "meshes": 94,
+      "material_primitives": 94,
+      "materials": 1,
+      "nodes": 94,
+      "skins": 0,
+      "animations": []
+    },
+    "ember-small.glb": {
+      "bytes": 25384,
+      "triangles": 344,
+      "meshes": 1,
+      "material_primitives": 4,
+      "materials": 4,
+      "nodes": 1,
+      "skins": 0,
+      "animations": []
+    },
+    "environment.glb": {
+      "bytes": 8923848,
+      "triangles": 120860,
+      "meshes": 4,
+      "material_primitives": 51,
+      "materials": 25,
+      "nodes": 35,
+      "skins": 0,
+      "animations": []
+    },
+    "hearth-deck.glb": {
+      "bytes": 1708680,
+      "triangles": 29190,
+      "meshes": 2,
+      "material_primitives": 16,
+      "materials": 15,
+      "nodes": 2,
+      "skins": 0,
+      "animations": []
+    },
+    "hearth-enrichment.glb": {
+      "bytes": 30388,
+      "triangles": 428,
+      "meshes": 1,
+      "material_primitives": 6,
+      "materials": 6,
+      "nodes": 1,
+      "skins": 0,
+      "animations": []
+    },
+    "pip.glb": {
+      "bytes": 298668,
+      "triangles": 7158,
+      "meshes": 72,
+      "material_primitives": 72,
+      "materials": 17,
+      "nodes": 90,
+      "skins": 1,
+      "animations": [
+        "Pip_Greeting",
+        "Pip_Idle",
+        "Pip_Walk"
+      ]
+    },
+    "rain-postcard.glb": {
+      "bytes": 15796,
+      "triangles": 200,
+      "meshes": 1,
+      "material_primitives": 5,
+      "materials": 5,
+      "nodes": 1,
+      "skins": 0,
+      "animations": []
+    },
+    "sol.glb": {
+      "bytes": 286368,
+      "triangles": 6470,
+      "meshes": 70,
+      "material_primitives": 70,
+      "materials": 17,
+      "nodes": 88,
+      "skins": 1,
+      "animations": [
+        "Sol_Greeting",
+        "Sol_Idle",
+        "Sol_Walk"
+      ]
+    }
+  },
+  "environment_contribution_triangles": 151022,
+  "baseline_budget": 180000
+}

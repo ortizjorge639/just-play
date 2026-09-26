@@ -1,0 +1,375 @@
+{
+  "blender": "5.2.1 LTS",
+  "target": "isolated factory startup",
+  "scene_settings_preserved_by_module": true,
+  "fps": 24,
+  "parent_range": [
+    1,
+    144
+  ],
+  "forward": "-Y",
+  "characters": {
+    "Pip": {
+      "meshes": 72,
+      "evaluated_triangles": 7158,
+      "height_m": 1.660858154296875,
+      "rest_sole_z": 0.0,
+      "bones": [
+        "pelvis",
+        "spine",
+        "neck",
+        "head",
+        "upper_arm.L",
+        "lower_arm.L",
+        "hand.L",
+        "upper_arm.R",
+        "lower_arm.R",
+        "hand.R",
+        "upper_leg.L",
+        "lower_leg.L",
+        "foot.L",
+        "upper_leg.R",
+        "lower_leg.R",
+        "foot.R"
+      ],
+      "actions": {
+        "Idle": {
+          "name": "Pip_Idle",
+          "slot": "OBPip_Rig",
+          "period_frames": 72,
+          "key_range": [
+            1.0,
+            73.0
+          ],
+          "endpoint_matrix_max_delta": 8.08266879692819e-18,
+          "repeat_matrix_max_delta": 8.08266879692819e-18,
+          "max_vertex_travel_m": 0.028268451053601273,
+          "fake_user": true
+        },
+        "Walk": {
+          "name": "Pip_Walk",
+          "slot": "OBPip_Rig",
+          "period_frames": 24,
+          "key_range": [
+            1.0,
+            25.0
+          ],
+          "endpoint_matrix_max_delta": 8.572528464404543e-18,
+          "repeat_matrix_max_delta": 8.572528464404543e-18,
+          "max_vertex_travel_m": 0.3093132982028474,
+          "fake_user": true
+        },
+        "Greeting": {
+          "name": "Pip_Greeting",
+          "slot": "OBPip_Rig",
+          "period_frames": 72,
+          "key_range": [
+            1.0,
+            73.0
+          ],
+          "endpoint_matrix_max_delta": 0.0,
+          "repeat_matrix_max_delta": 0.0,
+          "max_vertex_travel_m": 0.8501430299153746,
+          "fake_user": true
+        }
+      },
+      "extreme_pose_checks": {
+        "Idle": {
+          "all_frames_bone_matrices_finite": true,
+          "samples_geometry_finite": [
+            1,
+            19,
+            37,
+            55,
+            73
+          ],
+          "joint_separation_max_m": 0,
+          "sampled_min_vertex_z_m": -9.313208537697903e-10
+        },
+        "Walk": {
+          "all_frames_bone_matrices_finite": true,
+          "samples_geometry_finite": [
+            1,
+            7,
+            13,
+            19,
+            25
+          ],
+          "joint_separation_max_m": 0,
+          "sampled_min_vertex_z_m": -9.313208537697903e-10
+        },
+        "Greeting": {
+          "all_frames_bone_matrices_finite": true,
+          "samples_geometry_finite": [
+            1,
+            19,
+            37,
+            55,
+            73
+          ],
+          "joint_separation_max_m": 0,
+          "sampled_min_vertex_z_m": -9.313208537697903e-10
+        }
+      },
+      "nla_stash_tracks": [
+        {
+          "name": "Pip_Stash_Walk",
+          "muted": true
+        },
+        {
+          "name": "Pip_Stash_Greeting",
+          "muted": true
+        }
+      ]
+    },
+    "Sol": {
+      "meshes": 70,
+      "evaluated_triangles": 6470,
+      "height_m": 1.6679999828338623,
+      "rest_sole_z": 0.0,
+      "bones": [
+        "pelvis",
+        "spine",
+        "neck",
+        "head",
+        "upper_arm.L",
+        "lower_arm.L",
+        "hand.L",
+        "upper_arm.R",
+        "lower_arm.R",
+        "hand.R",
+        "upper_leg.L",
+        "lower_leg.L",
+        "foot.L",
+        "upper_leg.R",
+        "lower_leg.R",
+        "foot.R"
+      ],
+      "actions": {
+        "Idle": {
+          "name": "Sol_Idle",
+          "slot": "OBSol_Rig",
+          "period_frames": 72,
+          "key_range": [
+            1.0,
+            73.0
+          ],
+          "endpoint_matrix_max_delta": 8.08266879692819e-18,
+          "repeat_matrix_max_delta": 8.08266879692819e-18,
+          "max_vertex_travel_m": 0.0242206718929053,
+          "fake_user": true
+        },
+        "Walk": {
+          "name": "Sol_Walk",
+          "slot": "OBSol_Rig",
+          "period_frames": 24,
+          "key_range": [
+            1.0,
+            25.0
+          ],
+          "endpoint_matrix_max_delta": 8.572528464404543e-18,
+          "repeat_matrix_max_delta": 8.572528464404543e-18,
+          "max_vertex_travel_m": 0.35019219067752155,
+          "fake_user": true
+        },
+        "Greeting": {
+          "name": "Sol_Greeting",
+          "slot": "OBSol_Rig",
+          "period_frames": 72,
+          "key_range": [
+            1.0,
+            73.0
+          ],
+          "endpoint_matrix_max_delta": 0.0,
+          "repeat_matrix_max_delta": 0.0,
+          "max_vertex_travel_m": 0.8501430299153746,
+          "fake_user": true
+        }
+      },
+      "extreme_pose_checks": {
+        "Idle": {
+          "all_frames_bone_matrices_finite": true,
+          "samples_geometry_finite": [
+            1,
+            19,
+            37,
+            55,
+            73
+          ],
+          "joint_separation_max_m": 0,
+          "sampled_min_vertex_z_m": -9.313208537697903e-10
+        },
+        "Walk": {
+          "all_frames_bone_matrices_finite": true,
+          "samples_geometry_finite": [
+            1,
+            7,
+            13,
+            19,
+            25
+          ],
+          "joint_separation_max_m": 0,
+          "sampled_min_vertex_z_m": -9.313208537697903e-10
+        },
+        "Greeting": {
+          "all_frames_bone_matrices_finite": true,
+          "samples_geometry_finite": [
+            1,
+            19,
+            37,
+            55,
+            73
+          ],
+          "joint_separation_max_m": 0,
+          "sampled_min_vertex_z_m": -9.313208537697903e-10
+        }
+      },
+      "nla_stash_tracks": [
+        {
+          "name": "Sol_Stash_Walk",
+          "muted": true
+        },
+        {
+          "name": "Sol_Stash_Greeting",
+          "muted": true
+        }
+      ]
+    }
+  },
+  "renders": [
+    {
+      "clip": "Idle",
+      "frame": 1,
+      "path": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/01-idle.png"
+    },
+    {
+      "clip": "Walk",
+      "frame": 7,
+      "path": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/02-walk.png"
+    },
+    {
+      "clip": "Greeting",
+      "frame": 37,
+      "path": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/03-greeting.png"
+    },
+    {
+      "clip": "Idle",
+      "frame": 1,
+      "path": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/04-back.png"
+    }
+  ],
+  "warnings": [
+    "Rigid segmented skinning; no IK or facial controls.",
+    "In-place walk is a stylized cycle, not authored world-space foot locking.",
+    "Blender glTF round-trip is a proxy; no external engine consumer tested."
+  ],
+  "blend": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/canopy-characters.blend",
+  "status": "passed",
+  "contact_sheet": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/contact-sheet.png",
+  "glb": "/Users/joji/.copilot/chats/2026-09-12/blender-128-lines-build-304a9069/character-smoke/canopy-characters.glb",
+  "disk_verification": {
+    "scene": "Canopy_CharacterApproval",
+    "characters": {
+      "Pip": {
+        "rest_bounds": [
+          [
+            -0.9317193627357483,
+            -0.28303658962249756,
+            -9.313208537697903e-10
+          ],
+          [
+            -0.11055925488471985,
+            0.22055646777153015,
+            1.660858154296875
+          ]
+        ],
+        "meshes": 72,
+        "idle_repeats_through_parent_range": true
+      },
+      "Sol": {
+        "rest_bounds": [
+          [
+            0.11055925488471985,
+            -0.27250874042510986,
+            -9.313208537697903e-10
+          ],
+          [
+            0.9317193627357483,
+            0.2869528830051422,
+            1.6679999828338623
+          ]
+        ],
+        "meshes": 70,
+        "idle_repeats_through_parent_range": true
+      }
+    },
+    "passed": true
+  },
+  "gltf_verification": {
+    "animations": {
+      "Pip_Greeting": {
+        "duration_seconds": 3.0,
+        "first_key_seconds": 0,
+        "channels": 48,
+        "endpoint_accessor_max_delta": 0.0
+      },
+      "Pip_Idle": {
+        "duration_seconds": 3.0,
+        "first_key_seconds": 0,
+        "channels": 48,
+        "endpoint_accessor_max_delta": 4.041334398464095e-18
+      },
+      "Pip_Walk": {
+        "duration_seconds": 1.0,
+        "first_key_seconds": 0,
+        "channels": 48,
+        "endpoint_accessor_max_delta": 4.286264232202271e-18
+      },
+      "Sol_Greeting": {
+        "duration_seconds": 3.0,
+        "first_key_seconds": 0,
+        "channels": 48,
+        "endpoint_accessor_max_delta": 0.0
+      },
+      "Sol_Idle": {
+        "duration_seconds": 3.0,
+        "first_key_seconds": 0,
+        "channels": 48,
+        "endpoint_accessor_max_delta": 4.041334398464095e-18
+      },
+      "Sol_Walk": {
+        "duration_seconds": 1.0,
+        "first_key_seconds": 0,
+        "channels": 48,
+        "endpoint_accessor_max_delta": 4.286264232202271e-18
+      }
+    },
+    "skins": 2,
+    "meshes": 142,
+    "importer_helper_meshes": [
+      "Icosphere",
+      "Icosphere.001"
+    ],
+    "roundtrip": {
+      "Pip": {
+        "rest_bounds_max_delta_m": 1.7881393432617188e-07,
+        "meshes": 72,
+        "imported_action_matrix_changes": {
+          "Pip_Walk": 0.9033391550183296,
+          "Pip_Idle": 0.02998048928566277,
+          "Pip_Greeting": 1.672139286994934
+        }
+      },
+      "Sol": {
+        "rest_bounds_max_delta_m": 1.7881393432617188e-07,
+        "meshes": 70,
+        "imported_action_matrix_changes": {
+          "Sol_Walk": 0.903339147567749,
+          "Sol_Idle": 0.02998048928566277,
+          "Sol_Greeting": 1.672141432762146
+        }
+      }
+    },
+    "passed": true
+  }
+}

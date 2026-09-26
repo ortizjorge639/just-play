@@ -1,0 +1,128 @@
+I’d frame this as **an original, web-ready art project—not simply a prettier Blender render**. Your docs specify personable, Mii-like avatars, but don’t yet define their anatomy, faces, or costumes. The character direction below is my proposed interpretation, not an existing approved specification.
+
+Use this prompt, accompanied by screenshots of Canopy and the relevant project docs:
+
+---
+
+# Create “Canopy”: a living treehouse world for Just Play
+
+Act as a stylized environment artist, character designer, and real-time technical artist. Create an original Blender project for **Canopy**, a navigable settlement where someone’s gaming history becomes a home.
+
+**Emotional target:** “These are the adventures I spent time with. These are the people and places they left behind.”
+
+The result should feel inviting to explore and beautiful enough to leave running as an ambient art piece. It should feel inhabited, not like a collection of rewards arranged for inspection.
+
+## References and source of truth
+
+Use the current Just Play Canopy demo for its spatial relationships and product behavior. Use the studied Yukagecho experience at https://anime.yukagecho.workers.dev/ for lessons in atmosphere, intimate scale, layered destinations, and camera composition—not for copying assets, characters, buildings, or code.
+
+Read:
+- `PRODUCT.md`
+- The **September 10 revision** in `docs/treehouse-world-study.md`, which supersedes the earlier lodge-visitor model
+- `docs/demo.md`
+- `lib/demo/world.ts` for existing topology and attachment sites
+- `lib/demo/state.ts` for fictional games, identities, and contributions
+
+Preserve the established world’s intent. Do not mistake its current primitive geometry and placeholder avatars for the final quality ceiling.
+
+## Art direction
+
+Create a **warm, handcrafted woodland diorama at human scale**: sculptural trees, small timber homes, winding decks, suspended bridges, intimate gardens, and lantern-lit interiors.
+
+Use confident silhouettes and restrained detail. Buildings should have believable joinery, supported platforms, readable doors, generous windows, slightly irregular rooflines, and purposeful furnishings. Curves and softened edges should make the world approachable without making every object look inflated.
+
+Anchor the palette in pine green, moss, warm timber, weathered cream, muted clay, and amber light. Reserve stronger colors for resident identities and meaningful objects.
+
+Foliage should form composed clusters with varied silhouettes and pockets of light—not identical spheres or an opaque canopy hiding the settlement. Bark, wood, fabric, ceramic, and paper should feel distinct through shape, color, and roughness rather than photorealistic texture noise.
+
+Avoid glossy plastic, excessive bloom, flat unshaded primitives, visual clutter, and generic fantasy-village ornament. Fidelity should come from deliberate modeling, materials, lighting, and composition—not polygon density alone.
+
+## Design the settlement
+
+Build an interconnected place with:
+
+- **The gathering tree:** a recognizable central landmark, shared seating, warm light, and small game-inspired exhibits.
+- **The resident grove:** several distinct but related treehouses and one genuinely furnished interior with a reading corner, shelves, keepsakes, and a usable doorway.
+- **The trailhead:** a welcoming threshold with a discreet place for postcards from unfinished adventures. Nothing should resemble a graveyard, failure wall, or neglected district.
+- **The lookout:** a quiet composition from which the player can admire the settlement.
+- **Expandable branches:** authored attachment points for earned decks, gardens, and lofts, with coherent supports and connecting bridges.
+
+Make paths readable from the walking camera and the overview camera. Frame destinations through branches and architecture. Leave room for characters to pass, pause, sit, and look outward.
+
+Starter architecture must remain distinguishable from game-earned additions. An empty attachment site should feel like possibility, not missing content or an unfinished chore.
+
+## Character direction: familiar little people, not collectible mascots
+
+Interpret “Mii-like” as **approachable, expressive, modular people with recognizable personalities**. Design an original visual language; do not reproduce Nintendo faces, proportions, clothing, or assets.
+
+Proposed proportions: approximately **2.5–3 heads tall**, with substantial heads, compact bodies, rounded hands and shoes, and clean facial features readable at normal gameplay distance. Use eyes, brows, mouth shapes, hairstyles, posture, and accessories for personality.
+
+Characters must remain identifiable in silhouette and grayscale. Do not distinguish them only by shirt color. Give them varied complexions, hairstyles, and proportions within a compatible shared rig. Avoid realistic skin detail, oversized anime eyes, faceless capsules, or every character having the same expression.
+
+Create a reusable avatar foundation with interchangeable hair, facial features, clothing, and accessories. Include a neutral player-avatar configuration distinct from the six game residents. A configurable asset kit is required; an in-app character editor is not part of this Blender task.
+
+### Six original resident concepts
+
+| Resident / game | Proposed character design | Contribution relationship |
+|---|---|---|
+| **Pip / Mosslight Valley** | Moss-green gardener; rounded, tousled hair; roomy apron; seed-pocket satchel; quietly curious posture | Lantern seedling → lantern garden and pergola |
+| **Sol / The Last Ember** | Terracotta traveler; angular swept hair; short asymmetrical cape; sturdy boots; tiny ember pendant; patient, grounded stance | Ember reliquary → sheltered hearth deck |
+| **Wren / Paper Skies** | Sky-blue letter carrier; wind-swept hair; broad messenger bag; folded-paper clasp; light, attentive movement | Folded glider → letter-writing loft |
+| **Nori / Tidebound** | Seafoam wayfinder; knit cap; soft striped layers; chart tube; tideglass charm; unhurried, observant manner | Tideglass vessel → tide garden and chart table |
+| **Io / Little Orbit** | Lavender stargazer; rounded bob; distinctive circular spectacles; pocket notebook; orbital accessory; frequent upward glances | Pocket orrery → stargazing deck |
+| **Rue / After the Rain** | Butter-yellow raincoat with a petal-shaped hem; springy curls; rounded rain boots; small flower charm; gentle, open posture | Rainflower pot → rain garden patio |
+
+These motifs should connect character, keepsake, and architecture without turning the whole settlement into six incompatible theme parks.
+
+## Make the product rules visible in the assets
+
+Respect these rules exactly:
+
+- **Backlogged:** the avatar is not living inside the settlement.
+- **Invited:** the avatar is traveling outside the settlement, represented by the application’s journal/map. Do not populate the lodge with unarrived guests.
+- **Arrived:** meeting the player’s chosen stamp grants permanent residency—even when that stamp is a short playtime milestone.
+- **Deeper merit:** enrich the same resident’s contribution. Do not create duplicate residents or make lower-tier residents look less worthy of belonging.
+- **Dropped invitation:** leave a small, warm, game-specific postcard or keepsake. It has no decay state. Re-inviting retains it; arrival replaces it; the player may remove it.
+- **Earned construction:** prepare separate small-contribution and structural-addition assets. The application places earned structures at compatible branches without costs or timers.
+
+Provide separable asset variants for these states. Blender demonstrates their appearance; the web application remains responsible for proof, persistence, placement, and lifecycle logic.
+
+Higher tiers should add meaningful details—richer planting, lanterns, displays, or furnishing—not simply increase object scale or cover everything in gold.
+
+## Animation, atmosphere, and cameras
+
+Rig characters for reusable, in-place idle and walk loops, plus a few restrained actions such as sitting, greeting, reading, tending a plant, or looking through a telescope. Avoid synchronized movement and constant attention-seeking gestures.
+
+Provide golden-hour and lantern-night lighting studies. Include walking-scale, overview, interior, and ambient compositions. Design a short, seamless ambient camera loop that reveals relationships between places without clipping through roofs or foliage.
+
+The world should remain compelling with all interface elements absent. Ambient activity must not imply that watching earns progress or that residents need maintenance.
+
+## Editable Blender project and web-ready assets
+
+Create a new versioned project; do not overwrite unrelated open work.
+
+Organize editable collections for environment modules, foliage, interiors, characters, rigs, contribution variants, remnants, collision proxies, attachment markers, cameras, and lighting. Keep source assets editable while preparing efficient export variants.
+
+Deliver glTF/GLB-compatible materials and animations. Bake necessary procedural material detail into portable textures. Document any lighting, fog, or rendering effects that must be recreated in Three.js; do not assume a Blender render will automatically match a browser export.
+
+Use consistent real-world units and test the Blender-to-glTF coordinate conversion. Preserve the existing world topology and placement footprints when preparing replacement assets. Include simple collision proxies and named doorway, seating, camera, and attachment markers.
+
+Use the current demo’s **180,000-triangle environment/contribution budget** as an initial web baseline, with character costs reported separately. Preserve opportunities for instancing, shared materials, atlases, and lower-detail variants. Discuss necessary budget changes rather than silently exceeding them. Do not claim frame-rate performance without measuring it in the target browser and device.
+
+## Production sequence and approval gate
+
+**Begin with one representative slice:** the gathering tree, a connected grove home with a furnished interior, Pip and Sol, one small keepsake, one postcard, and Sol’s structural contribution.
+
+Present that slice in daylight and at night, plus a character lineup/turnaround. Explain the proposed avatar proportions and material language. **Pause for art-direction approval before producing the remaining characters and full settlement.**
+
+After approval, expand the kit and world. Work in bounded construction, preview, correction, and export passes rather than an open-ended polishing loop.
+
+## Final deliverables and evidence
+
+Deliver the versioned `.blend`, packed dependencies, organized GLB exports, character turnarounds, representative environment renders, an ambient animation preview, and a concise asset/integration manifest.
+
+Reopen the saved Blender file and check missing dependencies. Inspect animations across their full loops. Import exports into an isolated Three.js viewer to verify materials, scale, orientation, animation, and representative camera views. Keep production application replacement outside this task unless explicitly authorized.
+
+Clearly distinguish **verified in Blender**, **verified in the browser**, and **not yet integrated**. A beautiful still image alone is not completion.
+
+---

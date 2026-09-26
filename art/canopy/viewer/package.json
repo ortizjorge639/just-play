@@ -1,0 +1,24 @@
+{
+  "name": "canopy-local-approval-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone, loopback-only diagnostic viewer. Not production integration.",
+  "scripts": {
+    "serve": "node server.mjs",
+    "test": "node --test smoke.test.mjs",
+    "verify": "node verify.mjs",
+    "verify:cameras": "node verify-cameras.mjs",
+    "verify:optional": "node verify-optional.mjs",
+    "verify:all": "npm run verify && npm run verify:cameras && npm run verify:optional",
+    "record": "node record.mjs",
+    "record:characters": "node record-characters.mjs",
+    "browser:install": "mkdir -p .runtime && PLAYWRIGHT_BROWSERS_PATH=.browsers TMPDIR=\"$PWD/.runtime\" playwright install chromium"
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

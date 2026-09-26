@@ -1,0 +1,540 @@
+{
+  "status": "passed",
+  "scope": "Six approved local GLBs; no production integration or artistic approval",
+  "verification": "verification.json",
+  "screenshots": [
+    "overview-day.png",
+    "walking-day.png",
+    "interior-day.png",
+    "cast-day.png",
+    "overview-night.png",
+    "walking-night.png",
+    "interior-night.png",
+    "cast-night.png",
+    "cast-turnaround-front.png",
+    "cast-turnaround-left.png",
+    "cast-turnaround-back.png",
+    "cast-turnaround-right.png",
+    "pip_greeting-maximum-motion.png",
+    "pip_idle-maximum-motion.png",
+    "pip_walk-maximum-motion.png",
+    "sol_greeting-maximum-motion.png",
+    "sol_idle-maximum-motion.png",
+    "sol_walk-maximum-motion.png",
+    "interior-roof-hidden.png",
+    "cast-turnaround-front-grayscale.png"
+  ],
+  "video": "ambient.mp4",
+  "sequence": {
+    "frames": 144,
+    "fps": 24,
+    "duration": 6,
+    "width": 960,
+    "height": 640,
+    "lighting": "day",
+    "seam": {
+      "duration": 6,
+      "cameraDelta": 0,
+      "actorDelta": 0
+    },
+    "duplicateEndFrame": false,
+    "cameraSource": "Viewer-authored sweep; not exports/cameras.glb"
+  },
+  "videoProbe": {
+    "width": 960,
+    "height": 640,
+    "r_frame_rate": "24/1",
+    "duration": "6.000000",
+    "nb_read_frames": "144"
+  },
+  "browserErrorsInAcceptedRuns": [],
+  "networkUploads": 0,
+  "worldTriangles": 150594,
+  "characterTriangles": 13628,
+  "allLoadedTriangles": 164222,
+  "materials": 83,
+  "orientationMarkers": 11,
+  "animationSamples": 342,
+  "maximumLoopEndpointDelta": 8.572528464404543e-18,
+  "optionalScopeNote": "Source total151022 includes optional hearth-enrichment.glb428tri. The six-asset viewer intentionally excludes it, so its world total is150594. Collision proxies and camera-export GLB are also not loaded.",
+  "initialCaptureIssue": {
+    "status": "resolved",
+    "rejectedSequence": "ambient-attempt-1-unaccepted/",
+    "diagnostic": "network-diagnostic.json",
+    "symptom": "HTTP200 assets parsed successfully, but Three FileLoader progress-stream requests emitted net::ERR_ABORTED in Chromium.",
+    "change": "Use native Response.arrayBuffer(), validate full byte length and browser SHA256, then GLTFLoader.parseAsync. Request-failure checks remain strict.",
+    "acceptedRerun": "npm test3/3; npm run verify passed; npm run record passed; ffprobe144decoded frames960x64024fps6s."
+  },
+  "visualReview": {
+    "overview": "Trailhead and hearth fully framed in day/night and ambient samples.",
+    "interior": "Furnished reading nook visible through doorway; warm night lamp illumination.",
+    "cast": "True level orthographic front/left/back/right inspected; grayscale front and six maximum-motion screenshots inspected, along with walk/greeting preview frames.",
+    "caveats": [
+      "Walking camera follows supplied coordinates; Sol is partly cropped at right foreground.",
+      "Night character faces are dark away from lantern pools.",
+      "Browser PBR lights are approximations, not an exact Cycles appearance match."
+    ],
+    "nightCorrection": "Updated overview/interior/walking/cast night screenshots inspected. Lantern pools and room are brighter; distant character faces retain night contrast. No Cycles pixel-match claim."
+  },
+  "performance": "No runtime or target-device performance claim;24fps is the encoded sequence rate.",
+  "lightingRevision": {
+    "name": "below-fixture night correction",
+    "viewerSourceSha256": "5d345809e2cb4f1e79190e96c314a5cd1d9f2d42881d444605cf811fdb253996",
+    "fixtureOffsetMeters": -0.3,
+    "pointShadows": false,
+    "emission": "Visual-only paper emission; illumination uses explicit independent PBR point sources.",
+    "nightFill": {
+      "hemisphere": 1,
+      "key": 1.05
+    },
+    "lights": [
+      {
+        "name": "viewer-lantern-1",
+        "position": [
+          -6.1,
+          1.47,
+          -4.8
+        ],
+        "intensity": 48,
+        "color": "#ffc980",
+        "distance": 10
+      },
+      {
+        "name": "viewer-lantern-2",
+        "position": [
+          3.9,
+          1.47,
+          -6.7
+        ],
+        "intensity": 48,
+        "color": "#ffc980",
+        "distance": 10
+      },
+      {
+        "name": "viewer-lantern-3",
+        "position": [
+          -5.6,
+          1.47,
+          5.3
+        ],
+        "intensity": 48,
+        "color": "#ffc980",
+        "distance": 10
+      },
+      {
+        "name": "viewer-lantern-4",
+        "position": [
+          6.9,
+          1.47,
+          0.2
+        ],
+        "intensity": 48,
+        "color": "#ffc980",
+        "distance": 10
+      },
+      {
+        "name": "viewer-lantern-5",
+        "position": [
+          15.85,
+          4.45,
+          -3.96
+        ],
+        "intensity": 24,
+        "color": "#ffc980",
+        "distance": 7
+      },
+      {
+        "name": "viewer-lantern-6",
+        "position": [
+          17.26,
+          3.86,
+          -7.7
+        ],
+        "intensity": 14,
+        "color": "#ffc980",
+        "distance": 5
+      },
+      {
+        "name": "viewer-lantern-7",
+        "position": [
+          37.98,
+          5.78,
+          9.03
+        ],
+        "intensity": 52,
+        "color": "#ffc980",
+        "distance": 10
+      }
+    ],
+    "geometryUnchanged": true
+  },
+  "nightVideo": "ambient-night.mp4",
+  "nightSequence": {
+    "frames": 144,
+    "fps": 24,
+    "duration": 6,
+    "width": 960,
+    "height": 640,
+    "lighting": "night",
+    "viewerSourceSha256": "5d345809e2cb4f1e79190e96c314a5cd1d9f2d42881d444605cf811fdb253996",
+    "artifactHashes": {
+      "exports/ember-small.glb": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+      "exports/pip.glb": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+      "exports/sol.glb": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+      "exports/hearth-deck.glb": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+      "exports/rain-postcard.glb": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+      "exports/environment.glb": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819"
+    },
+    "runtimeErrors": [],
+    "blockedRequests": [],
+    "seam": {
+      "duration": 6,
+      "cameraDelta": 0,
+      "actorDelta": 0
+    },
+    "duplicateEndFrame": false,
+    "cameraSource": "Viewer-authored sweep; not exports/cameras.glb"
+  },
+  "nightVideoProbe": {
+    "width": 960,
+    "height": 640,
+    "r_frame_rate": "24/1",
+    "duration": "6.000000",
+    "nb_read_frames": "144"
+  },
+  "dayVideoNote": "Existing daylight video remains applicable: only night-light positions/intensities and night fill changed.",
+  "turnarounds": {
+    "projection": "orthographic",
+    "yawDegrees": {
+      "front": 0,
+      "left": 90,
+      "back": 180,
+      "right": 270
+    }
+  },
+  "characterPreview": {
+    "status": "rendered",
+    "video": "character-actions.mp4",
+    "sequence": {
+      "frames": 192,
+      "fps": 24,
+      "duration": 8,
+      "width": 960,
+      "height": 640,
+      "projection": "orthographic",
+      "segments": [
+        {
+          "action": "Idle",
+          "start": 0,
+          "duration": 3,
+          "cycles": 1
+        },
+        {
+          "action": "Walk",
+          "start": 3,
+          "duration": 2,
+          "cycles": 2
+        },
+        {
+          "action": "Greeting",
+          "start": 5,
+          "duration": 3,
+          "cycles": 1
+        }
+      ],
+      "interpolation": "Exact exported clips; no crossfades or animation retiming.",
+      "viewerSourceSha256": "737374267239e4dcefcf73aa0758a27d46f07cae796338bb136c3fe6498d5e64",
+      "artifactHashes": {
+        "exports/ember-small.glb": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+        "exports/pip.glb": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+        "exports/sol.glb": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+        "exports/rain-postcard.glb": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+        "exports/hearth-deck.glb": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+        "exports/environment.glb": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819"
+      },
+      "animations": [
+        {
+          "asset": "pip",
+          "clip": "Pip_Greeting",
+          "duration": 3,
+          "samples": 73,
+          "maximumMotion": 1.5316858160298756,
+          "maximumMotionTime": 1.5,
+          "maximumStep": 0.07848371566383117,
+          "endpointDelta": 0,
+          "requiredLoop": true,
+          "tolerance": 0.002
+        },
+        {
+          "asset": "pip",
+          "clip": "Pip_Idle",
+          "duration": 3,
+          "samples": 73,
+          "maximumMotion": 0.033658173912598115,
+          "maximumMotionTime": 2.25,
+          "maximumStep": 0.0028812588670006985,
+          "endpointDelta": 8.08266879692819e-18,
+          "requiredLoop": true,
+          "tolerance": 0.002
+        },
+        {
+          "asset": "pip",
+          "clip": "Pip_Walk",
+          "duration": 1,
+          "samples": 25,
+          "maximumMotion": 0.9149077243352304,
+          "maximumMotionTime": 0.25,
+          "maximumStep": 0.24191958311443895,
+          "endpointDelta": 8.572528464404543e-18,
+          "requiredLoop": true,
+          "tolerance": 0.002
+        },
+        {
+          "asset": "sol",
+          "clip": "Sol_Greeting",
+          "duration": 3,
+          "samples": 73,
+          "maximumMotion": 1.5316858160298756,
+          "maximumMotionTime": 1.5,
+          "maximumStep": 0.07848371566383117,
+          "endpointDelta": 0,
+          "requiredLoop": true,
+          "tolerance": 0.002
+        },
+        {
+          "asset": "sol",
+          "clip": "Sol_Idle",
+          "duration": 3,
+          "samples": 73,
+          "maximumMotion": 0.033658173912598115,
+          "maximumMotionTime": 2.25,
+          "maximumStep": 0.0028812588670006985,
+          "endpointDelta": 8.08266879692819e-18,
+          "requiredLoop": true,
+          "tolerance": 0.002
+        },
+        {
+          "asset": "sol",
+          "clip": "Sol_Walk",
+          "duration": 1,
+          "samples": 25,
+          "maximumMotion": 0.9149077243352304,
+          "maximumMotionTime": 0.25,
+          "maximumStep": 0.24191958311443895,
+          "endpointDelta": 8.572528464404543e-18,
+          "requiredLoop": true,
+          "tolerance": 0.002
+        }
+      ],
+      "runtimeErrors": [],
+      "blockedRequests": [],
+      "performance": "24fps is the deterministic output sampling rate, not a runtime performance measurement."
+    },
+    "videoProbe": {
+      "width": 960,
+      "height": 640,
+      "r_frame_rate": "24/1",
+      "duration": "8.000000",
+      "nb_read_frames": "192"
+    },
+    "pixelCheck": {
+      "frames": 192,
+      "uniqueIdleFrames": 40,
+      "uniqueWalkFrames": 15,
+      "uniqueGreetingFrames": 70,
+      "repeatedWalkFramePairs": 24,
+      "byteIdenticalWalkFramePairs": 24
+    }
+  },
+  "animationExtrema": [
+    {
+      "asset": "pip",
+      "clip": "Pip_Greeting",
+      "maximumMotionTime": 1.5,
+      "maximumMotionScreenshot": "pip_greeting-maximum-motion.png"
+    },
+    {
+      "asset": "pip",
+      "clip": "Pip_Idle",
+      "maximumMotionTime": 2.25,
+      "maximumMotionScreenshot": "pip_idle-maximum-motion.png"
+    },
+    {
+      "asset": "pip",
+      "clip": "Pip_Walk",
+      "maximumMotionTime": 0.25,
+      "maximumMotionScreenshot": "pip_walk-maximum-motion.png"
+    },
+    {
+      "asset": "sol",
+      "clip": "Sol_Greeting",
+      "maximumMotionTime": 1.5,
+      "maximumMotionScreenshot": "sol_greeting-maximum-motion.png"
+    },
+    {
+      "asset": "sol",
+      "clip": "Sol_Idle",
+      "maximumMotionTime": 2.25,
+      "maximumMotionScreenshot": "sol_idle-maximum-motion.png"
+    },
+    {
+      "asset": "sol",
+      "clip": "Sol_Walk",
+      "maximumMotionTime": 0.25,
+      "maximumMotionScreenshot": "sol_walk-maximum-motion.png"
+    }
+  ],
+  "sourceCommands": {
+    "verification": "cd web && npm run verify",
+    "characterCapture": "cd web && npm run record:characters",
+    "encodingAndGrayscale": "See web/README.md for exact local ffmpeg commands.",
+    "cameraValidation": "cd web && npm run verify:cameras"
+  },
+  "sourceCameraImport": {
+    "report": "camera-import-verification.json",
+    "status": "passed",
+    "bytes": 8036,
+    "sha256": "a25d562700f234da19ee0605370edfde1f52ba34d7177e1a05fff76a82f5df11",
+    "cameras": [
+      "Ambient_loop",
+      "Gathering_walk",
+      "Hearth_detail",
+      "Home_threshold",
+      "Interior",
+      "Overview"
+    ],
+    "clip": "Ambient loopAction",
+    "duration": 6,
+    "samples": 145,
+    "endpointMatrixDelta": 0,
+    "maxTargetAngleRadians": 0.00022670696767509603
+  },
+  "ambientCameraSource": "Viewer-authored closed sweep around [58,48,75] looking at [12,1.5,4]; not this exported source Ambient_loop camera.",
+  "finalAmbientRevision": {
+    "reason": "Independent resident phase; Sol is offset by0.85s, comparison clips unchanged.",
+    "residentPhaseSeconds": {
+      "Pip": 0,
+      "Sol": 0.85
+    },
+    "previews": {
+      "day": {
+        "video": "ambient-phased.mp4",
+        "sequence": {
+          "frames": 144,
+          "fps": 24,
+          "duration": 6,
+          "width": 960,
+          "height": 640,
+          "lighting": "day",
+          "cameraSource": "Viewer-authored sweep; not exports/cameras.glb",
+          "viewerSourceSha256": "4cc01ee027fdc58a06899a12879f6fd7aeee04af9fc00fdb59e75a4fbd5a5183",
+          "artifactHashes": {
+            "exports/ember-small.glb": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+            "exports/sol.glb": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+            "exports/pip.glb": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+            "exports/hearth-deck.glb": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+            "exports/rain-postcard.glb": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+            "exports/environment.glb": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819"
+          },
+          "runtimeErrors": [],
+          "blockedRequests": [],
+          "seam": {
+            "duration": 6,
+            "cameraDelta": 0,
+            "actorDelta": 8.326672684688674e-17
+          },
+          "duplicateEndFrame": false
+        },
+        "probe": {
+          "codec_name": "h264",
+          "width": 960,
+          "height": 640,
+          "r_frame_rate": "24/1",
+          "duration": "6.000000",
+          "nb_read_frames": "144"
+        }
+      },
+      "night": {
+        "video": "ambient-night-phased.mp4",
+        "sequence": {
+          "frames": 144,
+          "fps": 24,
+          "duration": 6,
+          "width": 960,
+          "height": 640,
+          "lighting": "night",
+          "cameraSource": "Viewer-authored sweep; not exports/cameras.glb",
+          "viewerSourceSha256": "4cc01ee027fdc58a06899a12879f6fd7aeee04af9fc00fdb59e75a4fbd5a5183",
+          "artifactHashes": {
+            "exports/ember-small.glb": "389632499f3f4cf1c46e21004072b7bfa02d4df3c170d8a326fd8d85765fbecc",
+            "exports/pip.glb": "d767580f07512e4b3cef2a3e25200bc8267fa51cf5dc6dd62a442f97ca7b01f1",
+            "exports/sol.glb": "dda714afbd973c41439990f3e7a0f8730053b40328851d297f9c228e35fa117f",
+            "exports/rain-postcard.glb": "9d5f54d41c4f162d1666cc0f5ad442e0057d8abafc9c66bb2b0f12c97a8fbbcb",
+            "exports/hearth-deck.glb": "64bdc8e0a4a987afdf24c326fcd6af2557177e0d7253d41d6eb32700a0858e9f",
+            "exports/environment.glb": "3897f7b47cfa8210097904590893dca36c2eb82a2a0de3658385425fded1b819"
+          },
+          "runtimeErrors": [],
+          "blockedRequests": [],
+          "seam": {
+            "duration": 6,
+            "cameraDelta": 0,
+            "actorDelta": 8.326672684688674e-17
+          },
+          "duplicateEndFrame": false
+        },
+        "probe": {
+          "codec_name": "h264",
+          "width": 960,
+          "height": 640,
+          "r_frame_rate": "24/1",
+          "duration": "6.000000",
+          "nb_read_frames": "144"
+        }
+      }
+    }
+  },
+  "optionalImports": {
+    "status": "passed",
+    "files": {
+      "hearth-enrichment.glb": {
+        "sha256": "feb4598b208ee58755cb35e989ada99525af46f52ab9e49f31134a85c2ac6e47",
+        "triangles": 428,
+        "meshes": 6,
+        "upwardBridgeRayHits": 0,
+        "bounds": {
+          "min": [
+            37.300000703092834,
+            4.247499704360962,
+            7.884999880236615
+          ],
+          "max": [
+            38.23963630316529,
+            5.529999732971191,
+            8.748461394705348
+          ]
+        }
+      },
+      "collision-proxies.glb": {
+        "sha256": "559c35bd82284b79c750557d46efc9b954f1402710046b7099ed10ca290df7d9",
+        "triangles": 726,
+        "meshes": 94,
+        "upwardBridgeRayHits": 85,
+        "bounds": {
+          "min": [
+            -12.000000905974815,
+            -1.2000000476837158,
+            -13.00000120796642
+          ],
+          "max": [
+            43.000000905974815,
+            5.6000001430511475,
+            28.000000905974815
+          ]
+        }
+      }
+    },
+    "collisionNavigationCertified": false
+  },
+  "finalBlend": "canopy-approval-v003.blend",
+  "visibleGeometryRevision": "Unchanged from lighting revisionv002 renders; v003 fixes hidden bridge collision-face orientation only."
+}
