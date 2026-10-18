@@ -56,7 +56,10 @@ notes come from the same `Session & { games: Game }` used by normal StandBy.
 **Session details** reveals the goal/notes and starter explanation without
 creating an experience or memory. Its keyboard-scrollable inspector occupies
 the scene area instead of shrinking between controls; game/time/actions remain
-outside it. Long context is checked for at least 100 px of usable text height
+outside it. The covered scene is inert while inspection is open, including
+recovery controls that appear after a context loss. Closing inspection returns
+focus to its toggle and makes scene recovery available again. Long context is
+checked for at least 100 px of usable text height
 at 844x390 landscape and 320x568 portrait, including keyboard scrolling.
 Pause/resume/finish still use the existing
 authoritative actions and stale/offline guards. Recording and clock visibility
@@ -108,7 +111,9 @@ sign-in, cross-device persistence proof, or physical-device acceptance.
 
 For screenshots, set `CANOPY_CAPTURE_DIR` to an existing local artifact directory.
 The viewport tests capture 390x844 portrait, 844x390 landscape, 768x1024 tablet,
-and 1440x1000 desktop. `CANOPY_RECORD=1` additionally records a short sanitized harness flow
+and 1440x1000 desktop CSS viewports. WebKit's desktop-Safari profile captures
+at 2x pixel density; the artifact manifest records each PNG's actual dimensions.
+`CANOPY_RECORD=1` additionally records a short sanitized harness flow
 with the existing Playwright video runner. It contains representative props,
 not private account data, and should be labeled as an isolated review recording.
 
@@ -141,4 +146,31 @@ Captures are actual headless browser renders of the production components in the
 isolated harness, with representative props. No live personal account was
 accessed. Device performance, live sign-in on the new preview hostname,
 cross-device account behavior, and personal artistic approval remain unproven.
-Any subsequent foundation correction needs its own synchronized rerun.
+
+## Synchronized foundation boundary
+
+This branch is synchronized onto the exact corrected foundation
+`03de6d38b69af674b6043cf7e8493a173d4fa773`, retaining all of the visual-layer
+initialization and readable-inspector fixes. The additional covered-recovery
+focus regression uses actual `WEBGL_lose_context` when available, checks
+forward/reverse Tab hit-testing, recovery after closing inspection, retry and
+Escape focus restoration across the three engines. The isolated harness and
+manually created high-density/recording contexts all honor `STANDBY_TEST_PORT`.
+
+The foundation's migration 020 is prepared, **not applied or approved**. On the
+currently deployed 018/019 schema, new session creation and beaten/abandon
+completion deliberately surface a schema-unavailable error before writes.
+Mocked component and isolated PGlite checks do not make full live dogfooding
+ready. This visual layer does not apply SQL or change shared auth/protection.
+
+The synchronized run passed all **57 nook/media** and **84 original StandBy**
+browser cases. The full combined result was **202/204**, not a clean suite:
+two unchanged foundation Firefox note cases failed at normal-screen end-menu
+opening and finalization retry. Their traces and exact failed assertions are
+retained for the foundation owner; this layer does not weaken those tests.
+The covered-recovery/quiet-warning/fresh-abandon cases additionally passed all
+27 repeated checks (three repetitions per engine); all nine recovery runs used
+actual `WEBGL_lose_context`, not a synthetic event. Isolated foundation checks
+passed 14 action tests, seven timing tests and 45 migration tests. Changed-file
+lint/build passed with only the documented ten baseline TypeScript errors.
+Full combined acceptance remains blocked on the foundation Firefox failures.

@@ -85,7 +85,9 @@ export function StandbySession({
         </header>
         <main className={nook ? "canopy-main" : "m-auto grid w-full max-w-6xl items-center gap-6 py-6 landscape:grid-cols-[2fr_3fr] landscape:py-3 sm:gap-12"}>
           {nook ? <div className="canopy-scene">
-            <CanopyNook artwork={session.games.header_image} />
+            <div inert={details && !confirmEnd}>
+              <CanopyNook artwork={session.games.header_image} />
+            </div>
             {details && !confirmEnd ? <div ref={focusDetails} id="canopy-session-details" className="canopy-details" tabIndex={0} role="region" aria-label="Session context">
               <p className="canopy-context-game">{session.games.name}</p>
               {goal || <p>No session goal set.</p>}
@@ -107,7 +109,10 @@ export function StandbySession({
               <p className={nook ? "canopy-clock" : "font-mono text-5xl tabular-nums sm:text-7xl [@media(max-height:500px)]:text-4xl"} aria-label={`${session.status} elapsed time`}>{elapsed}</p>
             ) : null}
             <p className="text-sm text-white/60">{session.status}{!nook || session.record_time === false || !preferences.show_clock ? ` · ${recordingLabel}` : ""}</p>
-            {nook && !confirmEnd ? <button className={`${control} canopy-details-toggle`} aria-expanded={details} aria-controls="canopy-session-details" onClick={() => setDetails(value => !value)}>{details ? "Hide session details" : "Session details"}</button> : null}
+            {nook && !confirmEnd ? <button className={`${control} canopy-details-toggle`} aria-expanded={details} aria-controls="canopy-session-details" onClick={event => {
+              if (details) event.currentTarget.focus({ preventScroll: true })
+              setDetails(value => !value)
+            }}>{details ? "Hide session details" : "Session details"}</button> : null}
             {!nook ? goal : null}
             {preferences.reminders && !reminderDismissed && session.status === "Playing" && session.record_time !== false && elapsedSeconds >= 3600 ? (
               <div role="status" className="text-sm text-amber-200">

@@ -95,6 +95,48 @@ test("StrictMode exit during pending parse cannot attach a late scene or block a
   await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
 })
 
+test("covered scene recovery cannot receive keyboard focus until inspection closes", async ({ page }, testInfo) => {
+  await enterNook(page)
+  const canvas = page.locator(".canopy-canvas canvas")
+  await expect(canvas).toHaveAttribute("data-render-state", "running")
+  await page.getByRole("button", { name: "Session details", exact: true }).click()
+  const details = page.getByRole("region", { name: "Session context" })
+  await expect(details).toBeFocused()
+  const realLoss = await canvas.evaluate(element => {
+    const context = (element as HTMLCanvasElement).getContext("webgl2")
+    const extension = context?.getExtension("WEBGL_lose_context")
+    if (!extension) return false
+    extension.loseContext()
+    return true
+  })
+  if (!realLoss) await canvas.evaluate(element => element.dispatchEvent(new Event("webglcontextlost", { cancelable: true })))
+  testInfo.annotations.push({ type: "context-loss-source", description: realLoss ? "Actual WEBGL_lose_context" : "Engine extension unavailable; standard context-loss event dispatched" })
+  await expect(page.locator(".canopy-load")).toContainText("game artwork is still here")
+  for (const direction of ["Shift+Tab", "Tab"]) {
+    await details.focus()
+    for (let i = 0; i < 8; i++) {
+      await page.keyboard.press(direction)
+      expect(await page.evaluate(() => {
+        const active = document.activeElement
+        if (!active || active.closest("[inert]")) return false
+        const bounds = active.getBoundingClientRect()
+        const hit = document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2)
+        return !!hit && active.contains(hit)
+      })).toBe(true)
+    }
+  }
+  await page.getByRole("button", { name: "Hide session details", exact: true }).click()
+  const retry = page.getByRole("button", { name: "Retry nook", exact: true })
+  await expect(retry).toBeVisible()
+  await expect(page.getByRole("button", { name: "Session details", exact: true })).toBeFocused()
+  await page.keyboard.press("Shift+Tab")
+  await expect(retry).toBeFocused()
+  await retry.click()
+  await expect(canvas).toHaveAttribute("data-render-state", "running")
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("button", { name: /Enter StandBy/ })).toBeFocused()
+})
+
 test("quiet hierarchy removes decorative copy without hiding relevant capability warnings", async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 })
   await page.addInitScript(() => {
@@ -109,11 +151,12 @@ test("quiet hierarchy removes decorative copy without hiding relevant capability
   await expect(dialog).not.toContainText("A little room in the trees.")
   await expect(dialog).not.toContainText("Settle in. Go play.")
   await expect(page.locator(".canopy-room-label")).toHaveCount(0)
-  await expect(dialog.getByRole("status")).toContainText("Keep-awake unavailable")
+  const warnings = dialog.getByRole("status").filter({ hasText: "Keep-awake unavailable" })
+  await expect(warnings).toContainText("Keep-awake unavailable")
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeInViewport()
   await page.getByRole("button", { name: "Fullscreen", exact: true }).click()
-  await expect(dialog.getByRole("status")).toContainText("Fullscreen is unavailable")
-  await expect(dialog.getByRole("status")).toContainText("Keep-awake unavailable")
+  await expect(warnings).toContainText("Fullscreen is unavailable")
+  await expect(warnings).toContainText("Keep-awake unavailable")
   await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
 })
 
@@ -294,9 +337,9 @@ test("long real context is inspectable without hiding phone session controls", a
   await expect(page.locator(".canopy-canvas canvas")).toHaveCount(0)
 })
 
-test("high-density resize enforces actual pixel/DPR budgets without reloading the scene", async ({ browser }) => {
+test("high-density resize enforces actual pixel/DPR budgets without reloading the scene", async ({ browser, baseURL }) => {
   const context = await browser.newContext({
-    baseURL: "http://127.0.0.1:4387",
+    baseURL,
     viewport: { width: 2560, height: 1440 },
     deviceScaleFactor: 3,
     reducedMotion: "reduce",
@@ -328,10 +371,10 @@ test("high-density resize enforces actual pixel/DPR budgets without reloading th
 
 test.describe("isolated review recording", () => {
   test.skip(!process.env.CANOPY_RECORD, "Opt-in sanitized product-review media")
-  test("real components with representative session props, not a signed-in account", async ({ browser }, testInfo) => {
+  test("real components with representative session props, not a signed-in account", async ({ browser, baseURL }, testInfo) => {
     test.setTimeout(90_000)
     const context = await browser.newContext({
-      baseURL: "http://127.0.0.1:4387",
+      baseURL,
       viewport: { width: 1280, height: 720 },
       recordVideo: { dir: testInfo.outputPath("video"), size: { width: 1280, height: 720 } },
     })
