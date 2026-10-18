@@ -1,0 +1,77 @@
+.canopy-standby {
+  background: #171f1c;
+  overflow: hidden;
+  gap: 12px;
+  color: #f3ead7;
+  overscroll-behavior: contain;
+}
+.canopy-standby > header { flex-shrink: 0; }
+.canopy-standby > header > p { color: #c2c9b9; letter-spacing: .2em; }
+.canopy-standby button { border-color: #e3d6b738; color: #f3ead7; touch-action: manipulation; }
+.canopy-standby button:hover:not(:disabled) { background: #e3d6b712; }
+.canopy-standby button:focus-visible { outline-color: #f6d9a4; }
+.canopy-main {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  flex: 1;
+  min-height: 0;
+  gap: 16px;
+}
+.canopy-viewport {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 22px;
+  background: #b4c3ac;
+}
+.canopy-canvas { position: absolute; inset: 0; }
+.canopy-canvas canvas { display: block; width: 100%; height: 100%; }
+.canopy-room-label { position: absolute; left: 24px; top: 22px; pointer-events: none; color: #364735; }
+.canopy-room-label span { font-size: 11px; font-weight: 700; letter-spacing: .24em; }
+.canopy-room-label p { margin-top: 3px; font-family: Georgia, serif; font-size: 23px; }
+.canopy-load { position: absolute; inset: 0; display: grid; place-content: center; padding: 24px; gap: 16px; text-align: center; z-index: 1; background: #17251bc9; color: #f3ead7; }
+.canopy-load button { min-height: 44px; border: 1px solid #e3d6b750; border-radius: 12px; padding: 10px 16px; }
+.canopy-load ~ .canopy-room-label { display: none; }
+.canopy-session-panel { display: flex; flex-direction: column; position: relative; min-height: 0; max-height: 49dvh; overflow-y: auto; padding: 0 4px 4px; }
+.canopy-session-panel > * { flex-shrink: 0; }
+.canopy-session-panel > * + * { margin-top: 10px; }
+.canopy-game { max-width: 100%; overflow-wrap: anywhere; text-wrap: balance; font-family: Georgia, serif; font-size: clamp(24px, 3vw, 38px); line-height: 1.12; font-weight: 400; padding-right: 125px; }
+.canopy-game { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.canopy-clock { position: absolute; right: 4px; top: 24px; margin-top: 0; font-family: var(--font-geist-mono), monospace; font-size: clamp(24px, 3vw, 32px); font-variant-numeric: tabular-nums; color: #ead8b7; }
+.canopy-eyebrow { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #c5cdbb; }
+.canopy-details-toggle { align-self: flex-start; font-size: 12px; padding: 0; border: none; min-height: 44px; text-decoration: underline; text-underline-offset: 4px; color: #c5cdbb !important; }
+.canopy-details { min-height: 0; flex-shrink: 1; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid #e3d6b724; padding: 12px 4px 4px; font-size: 13px; line-height: 1.6; }
+.canopy-details:focus-visible { outline: 2px solid #f6d9a4; outline-offset: -2px; }
+.canopy-details > * + * { margin-top: 12px; }
+.canopy-notes { white-space: pre-wrap; overflow-wrap: anywhere; color: #ddd7c8; }
+.canopy-notes span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #c5cdbb; margin-bottom: 4px; }
+.canopy-boundary { color: #b9c2b1; font-size: 12px; }
+.canopy-context-game { overflow-wrap: anywhere; color: #f3ead7; }
+.canopy-standby footer { flex-shrink: 0; font-size: 10px; color: #adb8a7; }
+@media (min-aspect-ratio: 6/5) {
+  .canopy-main { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) minmax(240px, 27%); gap: 24px; }
+  .canopy-session-panel { align-self: center; max-height: 100%; padding: 12px 0; }
+  .canopy-game { padding-right: 0; }
+  .canopy-clock { position: static; font-size: clamp(30px, 4vw, 54px); margin-top: 22px; }
+  .canopy-session-panel > div.flex { justify-content: flex-start; gap: 8px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .canopy-standby { gap: 6px; padding-top: 8px !important; padding-bottom: 8px !important; }
+  .canopy-main { gap: 16px; grid-template-columns: minmax(0, 1fr) minmax(250px, 35%); }
+  .canopy-room-label { top: 14px; left: 16px; }
+  .canopy-room-label p { font-size: 17px; }
+  .canopy-session-panel > * + * { margin-top: 6px; }
+  .canopy-clock { font-size: 30px; }
+  .canopy-standby footer p:first-child { display: none; }
+  .canopy-session-panel button { padding: 6px 10px; }
+  .canopy-game { font-size: 25px; }
+  .canopy-confirm { padding: 10px; font-size: 13px; }
+}
+@media (max-width: 420px) {
+  .canopy-standby > header > p { font-size: 9px; letter-spacing: .1em; }
+  .canopy-standby > header button { padding: 8px 10px; font-size: 12px; }
+  .canopy-main { gap: 12px; }
+  .canopy-room-label { top: 16px; left: 16px; }
+  .canopy-room-label p { font-size: 19px; }
+}
