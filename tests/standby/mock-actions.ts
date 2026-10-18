@@ -33,7 +33,6 @@ export const fixture: {
   rejectedLateNotes: number
   schema020: boolean
   finalDrafts: string[]
-  atomicFinishRequirements: boolean[]
   creationError: string | null
   completionError: string | null
   notesWrites: string[]
@@ -47,7 +46,7 @@ export const fixture: {
   creationError: null, completionError: null,
   notesErrorMode: "before-commit", deferredNotes: [], settleLateOnFinish: true,
   settleLateNotes: settleLateNotes, rejectedLateNotes: 0, schema020: true,
-  finalDrafts: [], atomicFinishRequirements: [],
+  finalDrafts: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -62,14 +61,11 @@ export async function updateSessionStatus(
   _id: string,
   status: SessionStatus,
   _expected?: unknown,
-  finalNotes?: { notes: string; requiresAtomicFinish: boolean },
+  finalNotes?: { notes: string },
 ) {
   if (!fixture.session) throw new Error("Session ended on another device")
-  if (status === "Finished" && finalNotes) {
-    fixture.atomicFinishRequirements.push(finalNotes.requiresAtomicFinish)
-    if (finalNotes.requiresAtomicFinish && !fixture.schema020) {
-      throw new Error("Atomic note finalization is unavailable. Database migration 020 is required; your draft remains editable.")
-    }
+  if (status === "Finished" && !fixture.schema020) {
+    throw new Error("Atomic note finalization is unavailable. Database migration 020 is required; your draft remains editable.")
   }
   fixture.writes.push(status)
   if (status === "Finished" && fixture.finalizationDelay) {
@@ -88,6 +84,7 @@ export async function updateSessionStatus(
   if (status === "Finished") {
     fixture.events.push({ kind: "finish", notes: updated.notes || "" })
     fixture.finishedNotes.push(updated.notes || "")
+    sessionStorage.setItem("standby-test-finished-notes", JSON.stringify(fixture.finishedNotes))
     fixture.session = null
   }
   return { session: updated, xpAwarded: { total: 5, bonuses: [] } }
@@ -120,6 +117,7 @@ export async function startSessionForGame() {
 }
 export async function markGameBeaten(gameId: string, expected?: ExpectedSession | null, finalNotes?: string) {
   fixture.gameEndWrites.push({ kind: "beaten", gameId, expected })
+  if (!fixture.schema020) throw new Error("Atomic note finalization is unavailable. Database migration 020 is required; your draft remains editable.")
   if (fixture.completionError) throw new Error(fixture.completionError)
   if (fixture.delay) await new Promise(resolve => setTimeout(resolve, fixture.delay))
   if (fixture.finalizationDelay) await new Promise(resolve => setTimeout(resolve, fixture.finalizationDelay))
@@ -127,6 +125,7 @@ export async function markGameBeaten(gameId: string, expected?: ExpectedSession 
 }
 export async function abandonGame(gameId: string, expected?: ExpectedSession | null, finalNotes?: string) {
   fixture.gameEndWrites.push({ kind: "abandoned", gameId, expected })
+  if (!fixture.schema020) throw new Error("Atomic note finalization is unavailable. Database migration 020 is required; your draft remains editable.")
   if (fixture.completionError) throw new Error(fixture.completionError)
   if (fixture.delay) await new Promise(resolve => setTimeout(resolve, fixture.delay))
   if (fixture.finalizationDelay) await new Promise(resolve => setTimeout(resolve, fixture.finalizationDelay))
@@ -151,8 +150,20 @@ function finishGame(kind: "beaten" | "abandoned", finalNotes?: string) {
       fixture.finalDrafts.push(finalNotes)
       fixture.session = { ...fixture.session, notes: finalNotes }
     }
+
     fixture.finishedNotes.push(fixture.session.notes || "")
+    sessionStorage.setItem("standby-test-finished-notes", JSON.stringify(fixture.finishedNotes))
     fixture.events.push({ kind, notes: fixture.session.notes || "" })
     fixture.session = null
   }
 }
+
+// These surfaces are bundled only for the real AppShell remount test, not exercised.
+function outsideHarness(): never { throw new Error("Action outside the StandBy harness contract") }
+export const signout = outsideHarness
+export const createSession = outsideHarness
+export const markTutorialComplete = outsideHarness
+export const getBoosterPack = outsideHarness
+export const getRecommendations = outsideHarness
+export const recordBoosterPackOpen = outsideHarness
+export const savePreferences = outsideHarness

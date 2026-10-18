@@ -16,6 +16,7 @@ async function main() {
     define: { "process.env.NODE_ENV": '"development"' },
     alias: {
       "@/app/actions": path.resolve("tests", "standby", "mock-actions.ts"),
+      "@/app/auth/actions": path.resolve("tests", "standby", "mock-actions.ts"),
       "next/image": path.resolve("tests", "standby", "mock-image.tsx"),
     },
   })

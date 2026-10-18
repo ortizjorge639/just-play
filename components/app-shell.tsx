@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react"
 import { getActiveSession } from "@/app/actions"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
+import { useSessionNotes } from "@/hooks/use-session-notes"
 import { AnimatePresence, motion } from "framer-motion"
 import { CardDeck } from "./card-deck"
 import { ActiveSession } from "./active-session"
@@ -47,6 +48,7 @@ export function AppShell({
     session: activeSession, setSession: setActiveSession, updateSession,
     syncError, refreshSession, beginMutation, endMutation,
   } = useSessionReconciliation(initialSession, getActiveSession)
+  const notesController = useSessionNotes(activeSession?.id ?? null, activeSession?.notes ?? "")
   const [needsRefresh, setNeedsRefresh] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -211,6 +213,7 @@ export function AppShell({
                 onRetry={refreshSession}
                 onMutationStart={beginMutation}
                 onMutationEnd={endMutation}
+                notesController={notesController}
               />
             ) : activeGame ? (
               <CurrentGame

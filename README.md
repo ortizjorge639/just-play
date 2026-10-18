@@ -113,7 +113,10 @@ the failed request cannot still execute. With migration 020, ending atomically
 saves the current final draft and finishes the session; an older request either
 executes before that boundary and is overwritten, or reaches an immutable finished
 session and is rejected. The client queue alone does not establish server execution
-order after a lost response. Leaving the screen or closing the browser is
+order after a lost response. Drafts, acknowledged values, pending writes and errors
+live together in the AppShell's in-memory notes queue, so Progress/back can remount
+the editor without treating optimistic text as saved or dropping its error. This
+does not persist drafts across browser reloads or sign-out. Leaving the screen or closing the browser is
 not an awaited save guarantee; navigation cleanup is only best effort, not
 offline synchronization or a promise to recover drafts after a remote finish.
 
@@ -163,15 +166,16 @@ atomic: they cannot carry a displayed snapshot across requests, and old manual
 XP writes retain their concurrency limitations. The 018 untracked-history XP
 barrier still applies. New-RPC guarantees do not retrofit those old callers.
 
-**Without 020**, this version's creation and beaten/abandon actions fail visibly
+**Without 020**, this version's creation and every finish/beaten/abandon action fail visibly
 before session/progress writes, with migration/schema-cache guidance and no
 old-RPC fallback. Reads, existing-session pause/resume, notes, preferences and
-presentation remain available with 018/019. Ordinary finish with only acknowledged
-local note writes can use the existing 018 transition if the new finish RPC is
-missing. After **any** uncertain note write, ordinary finish requires 020's atomic
-boundary and otherwise fails visibly, retaining the editable draft; a later
-successful autosave does not remove that requirement for the mounted session.
-Other RPC failures never trigger that compatibility fallback. A rebuilt
+presentation/StandBy exit remain available with 018/019. Ordinary finish always
+requires the 020 atomic final-draft RPC, even with a clean draft, after a tab remount,
+or when the caller omits final notes. A matching server read or a client uncertainty
+flag cannot prove that another context's older write will not execute before a
+separate legacy finish. Missing 020 retains the editable draft and active status;
+there is no new-caller legacy finish fallback. Existing main/018 callers are not
+globally disabled or rewritten. A rebuilt
 preview is therefore **not full-dogfood-ready** merely because it compiles.
 020 has not been applied by this code change; never rerun 018/019 as its upgrade.
 
@@ -190,6 +194,7 @@ and original RPC definitions/grants unchanged.
 pnpm exec tsx --test lib/session-time.test.ts
 node --test scripts/standby-actions.test.mjs
 npx --yes --package=@electric-sql/pglite@0.5.10 -- node --test scripts/standby-migration.test.mjs
+npx --yes --package=@electric-sql/pglite@0.5.10 -- node --test scripts/standby-interruption.test.mjs
 pnpm exec playwright install chromium firefox webkit
 pnpm test:standby
 ```
@@ -200,7 +205,9 @@ wake-lock capabilities. They cover keyboard/focus, portrait/landscape/tablet/des
 layouts, reduced motion, independent settings, reminders without auto-pause,
 pause/resume/finish, ordered acknowledgements, commit-then-lost-response recovery,
 late execution around the final-draft boundary and failure-blocked finalization,
-remote end, reconnect and errors. Set `STANDBY_TEST_PORT` to an unused port if a
+actual AppShell Progress/back remounts (including pending/failed save truth),
+remote end, reconnect and errors. Pointer tests wait for completed layout/sheet
+animations, not arbitrary delays or keyboard substitution. Set `STANDBY_TEST_PORT` to an unused port if a
 different harness is already running. They do not establish real
 two-device Supabase behavior, physical iOS/Android wake behavior, or that people
 actually scroll less or play more. Those are separate release checks and usability
@@ -213,6 +220,19 @@ transactional XP rollback, committed post-read replacement/absence races,
 new-code/018-019 missing-function safety and old-main/020 compatibility. Its serialized
 statements do not establish real multi-connection lock contention. Game-progress
 updates in the new completion RPC are in the same transaction as finalization.
+The interruption suite executes the actual action source against real isolated
+PostgreSQL rows through a scripted request/response adapter. Its negative control
+pins unsafe `09bda0541852efd88a03d2224d2897f308280741`: a clean matching read,
+external note commit, missing 020 and legacy fallback finish violate the required
+final-draft invariant. Corrected source rejects instead. With 020, it checks
+execution before/after finalization, stale rollback and a terminal commit whose
+response is lost: a fresh-context retry/reconciliation must preserve one finished
+record, its final notes and one XP award. JSON diagnostics identify source SHA/blob,
+oracle type, operation/attempt/context IDs and causal barrier sequence, not
+cross-device clock order. Server commit, ACK/error/unknown and caller outcome are
+distinct. Browser receipts are mocked-action observations, not database commits.
+No production telemetry is added. An available disposable two-connection
+PostgreSQL service is a separate release gate; serialized PGlite is not that proof.
 Legacy clients keep their original concurrency limitations. After an account has
 created an unrecorded session, ungated old-client XP writes are rejected, including
 delayed writes after that session ends, rather than leaking duration XP. Reload/

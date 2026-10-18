@@ -1,4 +1,26 @@
 import { test, expect, type Page } from "@playwright/test"
+import { execFileSync } from "node:child_process"
+
+const sourceSHA = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim()
+test.afterEach(async ({ page }, testInfo) => {
+  const observed = await page.evaluate(() => ({
+    session: window.standbyFixture?.session,
+    notesInvocations: window.standbyFixture?.notesWrites,
+    terminalNotes: window.standbyFixture?.finishedNotes,
+    reloadReceipt: sessionStorage.getItem("standby-test-finished-notes"),
+    events: window.standbyFixture?.events.map((event, index) => ({
+      barrierSequence: index + 1, ...event,
+    })),
+  }))
+  await testInfo.attach("mocked-ui-history.json", {
+    contentType: "application/json",
+    body: JSON.stringify({
+      sourceSHA, case: testInfo.title, contextId: testInfo.testId,
+      oracleType: "browser-components-with-mocked-actions-not-database",
+      status: testInfo.status, observed,
+    }),
+  })
+})
 
 const endings = [
   { name: "Done for Today", kind: "finish" },
@@ -134,9 +156,6 @@ for (const ending of endings) {
       await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual([""])
       expect(await page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(2)
       expect(await page.evaluate(() => window.standbyFixture.finalDrafts.map(raw => JSON.parse(raw)[0]))).toEqual([""])
-      if (ending.kind === "finish") {
-        expect(await page.evaluate(() => window.standbyFixture.atomicFinishRequirements)).toEqual([true])
-      }
       if (mode === "reject-then-commit-late") {
         const kinds = await page.evaluate(() => window.standbyFixture.events.map(event => event.kind))
         expect(kinds.indexOf("notes-late")).toBeGreaterThan(kinds.lastIndexOf("notes-saved"))
@@ -230,14 +249,24 @@ test("pause reconciliation does not replace an unsaved draft with stale server n
   await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual(["Draft before pause"])
 })
 
-test("018-only finish stays available with acknowledged writes", async ({ page }) => {
-  const editor = await openNotes(page, "/?empty-notes")
-  await page.evaluate(() => { window.standbyFixture.schema020 = false })
-  await editor.fill("Acknowledged ordinary note")
-  await finish(page, "Done for Today")
-  await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual(["Acknowledged ordinary note"])
-  expect(await page.evaluate(() => window.standbyFixture.atomicFinishRequirements)).toEqual([false])
-})
+for (const ending of endings) {
+  test(`018-only ${ending.kind} blocks even a clean acknowledged draft without terminal mutation or completed UI`, async ({ page }) => {
+    const editor = await openNotes(page, "/?empty-notes")
+    await page.evaluate(() => { window.standbyFixture.schema020 = false })
+    await editor.fill("Acknowledged ordinary note")
+    await page.clock.fastForward(1001)
+    await expect(page.getByRole("status")).toHaveText("Notes saved.")
+    const before = await page.evaluate(() => window.standbyFixture.session)
+    await finish(page, ending.name)
+    await expect(page.getByRole("alert")).toContainText("migration 020")
+    await expect(editor).toBeEnabled()
+    await expect(editor).toHaveValue("Acknowledged ordinary note")
+    expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
+    expect(await page.evaluate(() => window.standbyFixture.session)).toEqual(before)
+    expect(await page.evaluate(() => window.standbyFixture.writes)).toEqual([])
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+  })
+}
 
 test("018-only finish blocks uncertainty without losing the draft until the atomic boundary is available", async ({ page }) => {
   const editor = await openNotes(page, "/?empty-notes")
@@ -255,10 +284,108 @@ test("018-only finish blocks uncertainty without losing the draft until the atom
   await expect(page.getByRole("alert")).toContainText("Atomic note finalization is unavailable")
   await expect(editor).toBeEnabled()
   await expect(editor).toHaveValue("")
-  expect(await page.evaluate(() => window.standbyFixture.atomicFinishRequirements)).toEqual([true])
   expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
   expect(await page.evaluate(() => window.standbyFixture.writes)).toEqual([])
   await page.evaluate(() => { window.standbyFixture.schema020 = true })
   await finish(page, "Done for Today")
   await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual([""])
 })
+
+test("018-only StandBy finish is unavailable without ending or losing its normal-screen draft", async ({ page }) => {
+  const editor = await openNotes(page, "/?empty-notes")
+  await editor.fill("Keep the memory")
+  await page.clock.fastForward(1001)
+  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await page.evaluate(() => { window.standbyFixture.schema020 = false })
+  await page.getByRole("button", { name: /Enter StandBy/ }).click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByRole("button", { name: "End session", exact: true }).click()
+  await dialog.getByRole("button", { name: "Finish session", exact: true }).click()
+  await expect(dialog.getByRole("alert")).toContainText("migration 020")
+  expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
+  expect(await page.evaluate(() => window.standbyFixture.writes)).toEqual([])
+  await dialog.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+  await expect(editor).toHaveValue("Keep the memory")
+  await expect(editor).toBeEnabled()
+})
+
+for (const schema020 of [false, true]) {
+  test(`real AppShell Progress/back remount cannot authorize a non-atomic finish (020=${schema020})`, async ({ page }) => {
+    let editor = await openNotes(page, "/?empty-notes&app-shell")
+    await page.evaluate((installed) => {
+      window.standbyFixture.schema020 = installed
+      window.standbyFixture.notesErrorMode = "reject-then-commit-late"
+      window.standbyFixture.notesError = "Response lost"
+    }, schema020)
+    await editor.fill("Unknown previous context")
+    await page.clock.fastForward(1001)
+    await expect(page.getByRole("alert")).toContainText("Response lost")
+    await editor.fill("")
+    await page.evaluate(() => { window.standbyFixture.notesError = null })
+    await page.clock.fastForward(1001)
+    await expect(page.getByRole("status")).toContainText("Notes acknowledged")
+    await page.getByRole("button", { name: "Progress", exact: true }).click()
+    await expect(editor).toHaveCount(0)
+    await page.getByRole("button", { name: "Now Playing", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+    await page.getByRole("button", { name: "Notes", exact: false }).click()
+    editor = page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
+    await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
+    await expect(editor).toHaveValue("")
+    await expect(page.getByRole("status")).toContainText("Notes acknowledged")
+    if (!schema020) {
+      await finish(page, "Done for Today")
+      await expect(page.getByRole("alert")).toContainText("migration 020")
+      await expect(editor).toBeEnabled()
+      await expect(editor).toHaveValue("")
+      expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
+      expect(await page.evaluate(() => window.standbyFixture.writes)).toEqual([])
+      expect(await page.evaluate(() => window.standbyFixture.deferredNotes.length)).toBe(1)
+    } else {
+      // AppShell reloads on successful finish; the harness-only receipt survives it.
+      await page.getByRole("button", { name: "End Session", exact: true }).click()
+      const action = page.getByRole("button", { name: /Done for Today/ })
+      await expect(page.locator("div.rounded-t-3xl").filter({ has: action })).toHaveCSS("transform", "none")
+      await Promise.all([page.waitForNavigation({ waitUntil: "load" }), action.click()])
+      await expect.poll(() => page.evaluate(() => {
+        const receipt = sessionStorage.getItem("standby-test-finished-notes")
+        return receipt ? JSON.parse(receipt).map((raw: string) => JSON.parse(raw)[0]) : []
+      })).toEqual([""])
+    }
+
+  })
+}
+
+for (const interrupted of ["failed", "pending"] as const) {
+  test(`Progress/back retains a ${interrupted} note draft without inventing a save acknowledgement`, async ({ page }) => {
+    const editor = await openNotes(page, "/?empty-notes&app-shell")
+    await page.evaluate((mode) => {
+      if (mode === "failed") window.standbyFixture.notesError = "Offline note service"
+      else window.standbyFixture.holdNoteWrites = true
+    }, interrupted)
+    await editor.fill("Memory that has no ACK")
+    await page.clock.fastForward(1001)
+    await expect.poll(() => page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(1)
+    if (interrupted === "failed") await expect(page.getByRole("alert")).toContainText("Offline note service")
+    await page.getByRole("button", { name: "Progress", exact: true }).click()
+    await expect(editor).toHaveCount(0)
+    await page.getByRole("button", { name: "Now Playing", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+    await page.getByRole("button", { name: "Notes", exact: false }).click()
+    const remounted = page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
+    await expect(remounted).toHaveValue("Memory that has no ACK")
+    await expect(page.getByRole("status")).toHaveText(interrupted === "failed"
+      ? "Notes not saved. Your draft is still here." : "Saving notes...")
+    expect(await page.evaluate(() => window.standbyFixture.session?.notes)).toBe(JSON.stringify(Array(10).fill("")))
+    await page.clock.fastForward(20001)
+    await expect(remounted).toHaveValue("Memory that has no ACK")
+    await expect(page.getByRole("status")).toHaveText(interrupted === "failed"
+      ? "Notes not saved. Your draft is still here." : "Saving notes...")
+    if (interrupted === "failed") await expect(page.getByRole("alert")).toContainText("Offline note service")
+    else {
+      await page.evaluate(() => window.standbyFixture.releaseNextNote())
+      await expect(page.getByRole("status")).toHaveText("Notes saved.")
+      expect(await page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(1)
+    }
+  })
+}

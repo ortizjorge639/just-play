@@ -425,10 +425,9 @@ async function transitionSession(
   finishOptions?: SessionFinishOptions
 ) {
   if (finishOptions !== undefined && (
-    !finishOptions || typeof finishOptions.notes !== "string" ||
-    typeof finishOptions.requiresAtomicFinish !== "boolean" || newStatus !== "Finished"
+    !finishOptions || typeof finishOptions.notes !== "string" || newStatus !== "Finished"
   )) {
-    throw new Error("Final notes and requiresAtomicFinish are required only for a Finished transition.")
+    throw new Error("Final notes must be a string and are accepted only for a Finished transition.")
   }
   const validTransitions: Record<string, string[]> = {
     LockedIn: ["Playing", "Finished"],
@@ -475,20 +474,11 @@ async function transitionSession(
   const args = {
     p_session_id: sessionId, p_expected: snapshot, p_updates: updates,
   }
-  let result = finishOptions
+  const result = newStatus === "Finished"
     ? await supabase.rpc("finish_standby_session_with_notes", {
-      ...args, p_final_notes: finishOptions.notes,
+      ...args, p_final_notes: finishOptions?.notes ?? session.notes ?? "",
     }).returns<Session[]>().maybeSingle()
     : await supabase.rpc("transition_standby_session", args).returns<Session[]>().maybeSingle()
-
-  if (finishOptions && result.error && isMissingStandbyFunction(result.error) && !finishOptions.requiresAtomicFinish) {
-    // Only acknowledged local drafts may use018. This does not order unknown
-    // requests from other clients; uncertain writes require the020 boundary.
-    if ((session.notes ?? "") !== finishOptions.notes) {
-      throw new Error("Final notes are not acknowledged on the server. Atomic finish requires database migration 020.")
-    }
-    result = await supabase.rpc("transition_standby_session", args).returns<Session[]>().maybeSingle()
-  }
   const { data: updated, error } = result
   if (error) throw standbyMutationError(error)
   if (!updated) throw new Error("Session changed. Refresh before trying again.")

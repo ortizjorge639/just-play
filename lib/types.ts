@@ -41,8 +41,6 @@ export type SessionEndSnapshot = SessionMutationSnapshot
 
 export interface SessionFinishOptions {
   notes: string
-  // Stay true after any uncertain note write, even after a later overwrite ACKs.
-  requiresAtomicFinish: boolean
 }
 
 export interface Session {

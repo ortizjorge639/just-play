@@ -1,8 +1,10 @@
 import { createRoot } from "react-dom/client"
 import { useState } from "react"
 import { ActiveSession } from "@/components/active-session"
+import { AppShell } from "@/components/app-shell"
 import { CurrentGame } from "@/components/current-game"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
+import { useSessionNotes } from "@/hooks/use-session-notes"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/components/standby-preferences"
 import { fixture, game, getActiveSession, initialSession } from "./mock-actions"
 import type { StandbyPreferences } from "@/lib/types"
@@ -22,6 +24,7 @@ if (params.has("empty-notes") && fixture.session) {
 
 function Harness() {
   const { session, updateSession, syncError, refreshSession, beginMutation, endMutation } = useSessionReconciliation(fixture.session, getActiveSession)
+  const notesController = useSessionNotes(session?.id ?? null, session?.notes ?? "")
   const [preferences, setPreferences] = useState<StandbyPreferences>({
     ...DEFAULT_STANDBY_PREFERENCES,
     show_clock: !params.has("hidden"),
@@ -33,6 +36,7 @@ function Harness() {
     onSessionUpdated={(updates) => updateSession(previous => previous ? { ...previous, ...updates } : null)}
     standbyPreferences={preferences} onPreferencesSaved={setPreferences}
     syncError={syncError} onRetry={refreshSession} onMutationStart={beginMutation} onMutationEnd={endMutation}
+    notesController={notesController}
   /> : params.has("current-game") ? <CurrentGame
     gameProgress={{
       id: "test-progress", user_id: "test-user", game_id: game.id, status: "playing",
@@ -42,4 +46,13 @@ function Harness() {
     syncError={syncError} onRetry={refreshSession} onSessionStarted={() => void refreshSession()}
   /> : <p role="status">Session ended on another device.</p>
 }
-createRoot(document.getElementById("root")!).render(<Harness />)
+createRoot(document.getElementById("root")!).render(params.has("app-shell")
+  ? <AppShell user={{
+    id: "test-user", display_name: null, steam_id: null, preferences: {},
+    standby_preferences: DEFAULT_STANDBY_PREFERENCES, onboarding_complete: true,
+    tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
+    streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
+  }} recommendations={[]} activeSession={fixture.session} activeGame={null}
+    sessionHistory={[]} playerStats={null} isBoosterPack={false}
+    boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
+  : <Harness />)

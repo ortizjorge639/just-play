@@ -20,8 +20,8 @@
 // requests retain their original atomicity/CAS/profile read-modify-write limits.
 // Rollout: old clients with any untracked-session history must reload. The direct
 // profile-increment barrier remains after finish and during later tracked sessions.
-// Final notes and finish share one020 transaction.018 fallback is only for
-// acknowledged local drafts; it does not order unknown requests from other clients.
+// All new finishes require the020 final-draft transaction. Existing018 callers
+// remain compatible; their non-atomic note/finish sequence is not a safe fallback.
 import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
