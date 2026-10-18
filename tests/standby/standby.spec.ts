@@ -146,6 +146,37 @@ test("the current-game screen blocks unsafe actions while offline", async ({ pag
   await expect(page.getByRole("button", { name: "I Beat This Game!", exact: true })).toBeEnabled()
 })
 
+test("missing020 creation is visibly unavailable without a phantom session and supports retry", async ({ page }) => {
+  await page.goto("/?current-game")
+  await expect(page.getByRole("button", { name: "Start Today's Session", exact: true })).toBeEnabled()
+  await page.evaluate(() => {
+    window.standbyFixture.creationError = "StandBy creation/completion is unavailable. Database migration 020 and an up-to-date API schema cache are required. No session or progress changes were made."
+  })
+  await page.getByRole("button", { name: "Start Today's Session", exact: true }).click()
+  await expect(page.getByText(/Database migration 020 and an up-to-date API schema cache/)).toBeVisible()
+  expect(await page.evaluate(() => window.standbyFixture.session)).toBeNull()
+  await expect(page.getByRole("button", { name: /Enter StandBy/ })).toHaveCount(0)
+  await page.evaluate(() => { window.standbyFixture.creationError = null })
+  await page.getByRole("button", { name: "Start Today's Session", exact: true }).click()
+  await expect(page.getByRole("button", { name: /Enter StandBy/ })).toBeVisible()
+})
+
+for (const name of ["I Beat This Game!", "Abandon Game"]) {
+  test(`missing020 ${name} is visibly unavailable without claiming game completion`, async ({ page }) => {
+    await page.goto("/?current-game")
+    await expect(page.getByRole("button", { name: "Start Today's Session", exact: true })).toBeEnabled()
+    await page.evaluate(() => {
+      window.standbyFixture.completionError = "StandBy creation/completion is unavailable. Database migration 020 and an up-to-date API schema cache are required. No session or progress changes were made."
+    })
+    await page.getByRole("button", { name: "More options", exact: true }).click()
+    await page.getByRole("button", { name, exact: true }).click()
+    await expect(page.getByText(/Database migration 020 and an up-to-date API schema cache/)).toBeVisible()
+    expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
+    expect(await page.evaluate(() => window.standbyFixture.events)).toEqual([])
+    await expect(page.getByRole("button", { name: "Start Today's Session", exact: true })).toBeEnabled()
+  })
+}
+
 for (const choice of [
   { name: "I Beat This Game!", kind: "beaten" },
   { name: "Abandon Game", kind: "abandoned" },

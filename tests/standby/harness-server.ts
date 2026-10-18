@@ -29,7 +29,7 @@ async function main() {
     response.setHeader("Content-Type", request.url === "/bundle.js" ? "application/javascript"
       : request.url === "/style.css" ? "text/css" : "text/html")
     response.end(asset)
-  }).listen(4387, "127.0.0.1")
+  }).listen(Number(process.env.STANDBY_TEST_PORT || "4387"), "127.0.0.1")
 }
 
 void main().catch((error) => {

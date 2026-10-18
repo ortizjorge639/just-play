@@ -24,6 +24,8 @@ import { getSessionElapsedSeconds } from "@/lib/session-time"
 type NudgeStage = "none" | "first" | "second"
 const DEFAULT_ESTIMATED_MINUTES = 60
 
+class SessionNotesSaveError extends Error {}
+
 interface ActiveSessionProps {
   session: Session & { games: Game; progress: { total_sessions: number; total_time_minutes: number } | null }
   onFinished: () => void
@@ -46,11 +48,16 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`
 }
 
-export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPreferences, onPreferencesSaved, syncError, onRetry, onMutationStart, onMutationEnd }: ActiveSessionProps) {
+export function ActiveSession(props: ActiveSessionProps) {
+  return <ActiveSessionContent key={props.session.id} {...props} />
+}
+
+function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPreferences, onPreferencesSaved, syncError, onRetry, onMutationStart, onMutationEnd }: ActiveSessionProps) {
   const [status, setStatus] = useState<SessionStatus>(session.status)
   const [isPending, startTransition] = useTransition()
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [notesError, setNotesError] = useState<string | null>(null)
   const showTimer = standbyPreferences.show_clock
   const [standby, setStandby] = useState(false)
   const [notes, setNotes] = useState(session.notes || "")
@@ -63,26 +70,57 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
   const [autoPaused, setAutoPaused] = useState(false)
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const notesRef = useRef(notes)
-  const sessionIdRef = useRef(session.id)
-  const [prevSessionId, setPrevSessionId] = useState(session.id)
+  const savedNotesRef = useRef(notes)
+  const notesWriteRef = useRef<Promise<void> | null>(null)
+  const finalizingRef = useRef(false)
+  const mountedRef = useRef(true)
+  const [notesSaveState, setNotesSaveState] = useState<"saved" | "unsaved" | "saving" | "error">("saved")
   const [prevPropStatus, setPrevPropStatus] = useState(session.status)
 
-  // Keep refs in sync and flush pending notes on unmount
-  useEffect(() => {
-    notesRef.current = notes
-    sessionIdRef.current = session.id
-  })
+  const flushNotes = useCallback(() => {
+    if (notesTimeoutRef.current) {
+      clearTimeout(notesTimeoutRef.current)
+      notesTimeoutRef.current = null
+    }
+    if (notesWriteRef.current) return notesWriteRef.current
+    const write = (async () => {
+      try {
+        // Serialize older writes before the latest draft; never let an old save
+        // arrive after a newer one or after local finalization.
+        while (savedNotesRef.current !== notesRef.current) {
+          const draft = notesRef.current
+          if (mountedRef.current) setNotesSaveState("saving")
+          await updateSessionNotes(session.id, draft)
+          savedNotesRef.current = draft
+        }
+        if (mountedRef.current) {
+          setNotesSaveState("saved")
+          setNotesError(null)
+        }
+      } catch (cause) {
+        if (mountedRef.current) setNotesSaveState("error")
+        throw new SessionNotesSaveError(`Could not save session notes. Your draft is still here; retry before finishing. ${cause instanceof Error ? cause.message : ""}`)
+      }
+    })()
+    notesWriteRef.current = write
+    void write.then(
+      () => { notesWriteRef.current = null },
+      () => { notesWriteRef.current = null },
+    )
+    return write
+  }, [session.id])
 
   useEffect(() => {
+    mountedRef.current = true
     return () => {
-      if (notesTimeoutRef.current) {
-        clearTimeout(notesTimeoutRef.current)
-        void updateSessionNotes(sessionIdRef.current, notesRef.current).catch((cause) => {
-          console.error("Could not save pending session notes", cause)
-        })
-      }
+      mountedRef.current = false
+      // Navigation cleanup is best effort, not a durability guarantee. Every
+      // local finish path explicitly awaits this queue before ending a session.
+      void flushNotes().catch((cause) => {
+        console.error("Session note save did not complete before leaving", cause)
+      })
     }
-  }, [])
+  }, [flushNotes])
 
   const game = session.games
   const isPlaying = status === "Playing"
@@ -90,11 +128,9 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
   const isLockedIn = status === "LockedIn"
 
   // Sync state when the session prop itself changes (not local optimistic updates)
-  if (prevSessionId !== session.id || session.status !== prevPropStatus) {
-    setPrevSessionId(session.id)
+  if (session.status !== prevPropStatus) {
     setPrevPropStatus(session.status)
     setStatus(session.status)
-    setNotes(session.notes || "")
     setSessionGoal(session.session_goal || "")
   }
 
@@ -136,11 +172,13 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
 
   const transition = useCallback(
     (newStatus: SessionStatus) => {
-      if (syncError || isPending) return
+      if (syncError || isPending || finalizingRef.current) return
+      finalizingRef.current = newStatus === "Finished"
       onMutationStart()
       setError(null)
       startTransition(async () => {
         try {
+          if (newStatus === "Finished") await flushNotes()
           const result = await updateSessionStatus(session.id, newStatus, {
             status: session.status,
             started_at: session.started_at,
@@ -161,14 +199,16 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
             onFinished()
           }
         } catch (e) {
-          setError(e instanceof Error ? e.message : "Something went wrong")
+          if (e instanceof SessionNotesSaveError) setNotesError(e.message)
+          else setError(e instanceof Error ? e.message : "Something went wrong")
         } finally {
+          finalizingRef.current = false
           onMutationEnd()
           onRetry()
         }
       })
     },
-    [session, standby, syncError, isPending, onFinished, onSessionUpdated, showXPToast, onRetry, onMutationStart, onMutationEnd]
+    [session, standby, syncError, isPending, onFinished, onSessionUpdated, showXPToast, onRetry, onMutationStart, onMutationEnd, flushNotes]
   )
 
   const handleNudgeDismiss = useCallback(() => {
@@ -188,15 +228,17 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
 
   // Auto-save notes with debounce
   const handleNotesChange = (value: string) => {
+    if (finalizingRef.current || syncError) return
+    notesRef.current = value
     setNotes(value)
+    setNotesSaveState("unsaved")
     onSessionUpdated?.({ notes: value })
     if (notesTimeoutRef.current) {
       clearTimeout(notesTimeoutRef.current)
     }
     notesTimeoutRef.current = setTimeout(() => {
-      notesTimeoutRef.current = null
-      void updateSessionNotes(session.id, value).catch((cause) => {
-        setError(cause instanceof Error ? cause.message : "Could not save session notes.")
+      void flushNotes().catch((cause) => {
+        if (mountedRef.current) setNotesError(cause instanceof Error ? cause.message : "Could not save session notes.")
       })
     }, 1000)
   }
@@ -216,10 +258,14 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
   }, [session.id, onSessionUpdated, syncError])
 
   const handleMarkBeaten = async () => {
-    if (syncError || isPending) return
+    if (syncError || isPending || finalizingRef.current) return
+    finalizingRef.current = true
+    setShowEndOptions(false)
+    setError(null)
     onMutationStart()
     startTransition(async () => {
       try {
+        await flushNotes()
         await markGameBeaten(game.id, {
           id: session.id,
           status: session.status,
@@ -229,8 +275,10 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
         showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
         onFinished()
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong")
+        if (e instanceof SessionNotesSaveError) setNotesError(e.message)
+        else setError(e instanceof Error ? e.message : "Something went wrong")
       } finally {
+        finalizingRef.current = false
         onMutationEnd()
         onRetry()
       }
@@ -238,10 +286,14 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
   }
 
   const handleAbandon = async () => {
-    if (syncError || isPending) return
+    if (syncError || isPending || finalizingRef.current) return
+    finalizingRef.current = true
+    setShowEndOptions(false)
+    setError(null)
     onMutationStart()
     startTransition(async () => {
       try {
+        await flushNotes()
         await abandonGame(game.id, {
           id: session.id,
           status: session.status,
@@ -250,8 +302,10 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
         })
         onFinished()
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong")
+        if (e instanceof SessionNotesSaveError) setNotesError(e.message)
+        else setError(e instanceof Error ? e.message : "Something went wrong")
       } finally {
+        finalizingRef.current = false
         onMutationEnd()
         onRetry()
       }
@@ -447,25 +501,31 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
         )}
 
         {/* Notes & Goal — available in all active states */}
-        {!syncError && (isLockedIn || isPlaying || isPaused) && (
+        {(isLockedIn || isPlaying || isPaused) && (
+          <fieldset disabled={isPending || !!syncError} className="flex min-w-0 flex-col gap-2">
           <SessionNotepad
             goal={sessionGoal}
             notes={notes}
             onGoalSave={handleGoalSave}
             onNotesChange={handleNotesChange}
           />
+          <p role="status" className="text-xs text-muted-foreground">
+            {notesSaveState === "saved" ? "Notes saved." : notesSaveState === "saving" ? "Saving notes..." : notesSaveState === "error" ? "Notes not saved. Your draft is still here." : "Notes not saved yet."}
+          </p>
+          </fieldset>
         )}
 
         {/* Error */}
         <AnimatePresence>
-          {error && (
+          {(error || notesError) && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               className="rounded-lg bg-destructive/10 p-3 text-center text-sm text-destructive"
+              role="alert"
             >
-              {error}
+              {error || notesError}
             </motion.div>
           )}
         </AnimatePresence>
@@ -618,7 +678,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated, standbyPr
       preferences={standbyPreferences}
       pending={isPending}
       syncError={syncError}
-      error={error}
+      error={error || notesError}
       onRetry={onRetry}
       onTransition={transition}
       onExit={() => setStandby(false)}

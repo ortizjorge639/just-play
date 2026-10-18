@@ -335,6 +335,15 @@ export async function getRecommendations(preferences: UserPreferences) {
   return deck
 }
 
+function standbyMutationError(error: { code?: string; message: string }) {
+  if (error.code === "PGRST202" || error.code === "42883") {
+    return new Error(
+      "StandBy creation/completion is unavailable. Database migration 020 and an up-to-date API schema cache are required. No session or progress changes were made."
+    )
+  }
+  return new Error(error.message)
+}
+
 export async function createSession(gameId: string) {
   const supabase = await createClient()
   const {
@@ -370,46 +379,13 @@ export async function createSession(gameId: string) {
   })
   const startXP = xp.base + xp.newGameBonus + xp.comebackBonus
   const { data, error } = await supabase
-    .rpc("create_standby_session", { p_game_id: gameId, p_start_xp: startXP })
+    .rpc("create_standby_session_with_progress", { p_game_id: gameId, p_start_xp: startXP })
     .returns<Session[]>()
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) throw standbyMutationError(error)
 
-  // Also create/update game_progress to track this game is being played
-  if (!existingProgress) {
-    await supabase
-      .from("game_progress")
-      .insert({
-        user_id: user.id,
-        game_id: gameId,
-        status: "playing",
-        total_sessions: 1,
-        total_time_minutes: 0,
-      })
-  } else if (existingProgress.status !== "playing") {
-    // Resume a previously abandoned game
-    await supabase
-      .from("game_progress")
-      .update({ 
-        status: "playing",
-        total_sessions: existingProgress.total_sessions + 1
-      })
-      .eq("id", existingProgress.id)
-  } else {
-    // Increment session count
-    await supabase
-      .from("game_progress")
-      .update({ total_sessions: existingProgress.total_sessions + 1 })
-      .eq("id", existingProgress.id)
-  }
-
-  // Migration 018 commits the start award with the session insert.
-  const { error: dateError } = await supabase
-    .from("users")
-    .update({ last_session_date: new Date().toISOString().split("T")[0] })
-    .eq("id", user.id)
-  if (dateError) throw new Error(dateError.message)
+  // Migration 020 commits session, start XP and progress bookkeeping together.
 
   // Update streak
   await updateUserStreak(user.id)
@@ -562,11 +538,11 @@ export async function startSessionForGame(gameId: string) {
 
   // Create new session for existing game
   const { data, error } = await supabase
-    .rpc("create_standby_session", { p_game_id: gameId, p_start_xp: 0 })
+    .rpc("create_standby_session_with_progress", { p_game_id: gameId, p_start_xp: 0 })
     .returns<Session[]>()
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) throw standbyMutationError(error)
   revalidatePath("/")
   return data
 }
@@ -657,34 +633,21 @@ export async function updateSessionGoal(sessionId: string, goal: string) {
   if (!data) throw new Error("Active session not found. Finished session goals cannot be changed.")
 }
 
-async function finishActiveSessionForGame(
+async function completeGame(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
   gameId: string,
+  status: "beaten" | "abandoned",
   expected?: SessionMutationSnapshot | null
 ) {
-  const { data: session, error } = await supabase
-    .from("sessions")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("game_id", gameId)
-    .eq("active", true)
-    .maybeSingle()
-  if (error) throw new Error(`Failed to load active session: ${error.message}`)
-  // null asserts the caller displayed no active session; undefined is legacy behavior.
-  if (expected === null && session) {
-    throw new Error("Session changed. Refresh before trying again.")
-  }
-  if (expected && (!session || session.id !== expected.id)) {
-    throw new Error("Session changed. Refresh before trying again.")
-  }
-  if (session) {
-    await transitionSession(supabase, userId, session.id, "Finished", expected ?? {
-      status: session.status,
-      started_at: session.started_at,
-      paused_elapsed_seconds: session.paused_elapsed_seconds ?? 0,
-    })
-  }
+  // Preserve undefined's deliberate "latest" behavior; null asserts absence.
+  const { data, error } = await supabase.rpc("complete_standby_game", {
+    p_game_id: gameId,
+    p_status: status,
+    p_expected_session: expected === undefined ? { mode: "latest" } : expected,
+  }).maybeSingle()
+  if (error) throw standbyMutationError(error)
+  if (!data) throw new Error("Game progress changed. Refresh before trying again.")
+  revalidatePath("/")
 }
 
 export async function markGameBeaten(gameId: string, expectedSession?: SessionMutationSnapshot | null) {
@@ -694,30 +657,7 @@ export async function markGameBeaten(gameId: string, expectedSession?: SessionMu
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  await finishActiveSessionForGame(supabase, user.id, gameId, expectedSession)
-
-  // Update or create game progress
-  const { data: existing, error: progressError } = await supabase
-    .from("game_progress")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("game_id", gameId)
-    .maybeSingle()
-  if (progressError) throw new Error(progressError.message)
-  if (existing?.status === "beaten") {
-    revalidatePath("/")
-    return
-  }
-
-  const { data: updated, error } = await supabase.rpc("set_standby_game_progress", {
-    p_game_id: gameId, p_status: "beaten", p_expected_status: existing?.status ?? null,
-  }).maybeSingle()
-  if (error) throw new Error(error.message)
-  if (!updated) throw new Error("Game progress changed. Refresh before trying again.")
-
-  // Migration 018 awards beat-game XP only for the winning progress transition.
-
-  revalidatePath("/")
+  await completeGame(supabase, gameId, "beaten", expectedSession)
 }
 
 export async function abandonGame(gameId: string, expectedSession?: SessionMutationSnapshot | null) {
@@ -727,24 +667,7 @@ export async function abandonGame(gameId: string, expectedSession?: SessionMutat
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  await finishActiveSessionForGame(supabase, user.id, gameId, expectedSession)
-
-  // Mark as abandoned
-  const { data: existing, error: progressError } = await supabase
-    .from("game_progress")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("game_id", gameId)
-    .maybeSingle()
-  if (progressError) throw new Error(progressError.message)
-
-  const { data: updated, error } = await supabase.rpc("set_standby_game_progress", {
-    p_game_id: gameId, p_status: "abandoned", p_expected_status: existing?.status ?? null,
-  }).maybeSingle()
-  if (error) throw new Error(error.message)
-  if (!updated) throw new Error("Game progress changed. Refresh before trying again.")
-
-  revalidatePath("/")
+  await completeGame(supabase, gameId, "abandoned", expectedSession)
 }
 
 export async function getSessionHistory() {

@@ -72,14 +72,12 @@ export function SessionNotepad({
 
   const handlePageEdit = useCallback(
     (text: string) => {
-      setPages(prev => {
-        const updated = [...prev]
-        updated[currentPage] = text
-        onNotesChange(JSON.stringify(updated))
-        return updated
-      })
+      const updated = [...pages]
+      updated[currentPage] = text
+      setPages(updated)
+      onNotesChange(JSON.stringify(updated))
     },
-    [currentPage, onNotesChange]
+    [currentPage, pages, onNotesChange]
   )
 
   const handleGoalSubmit = useCallback(() => {
@@ -283,6 +281,7 @@ export function SessionNotepad({
                           transition={{ duration: 0.15, ease: "easeOut" }}
                         >
                           <textarea
+                            aria-label={`Session notes, page ${currentPage + 1}`}
                             value={pages[currentPage]}
                             onChange={e => handlePageEdit(e.target.value)}
                             placeholder="Write something..."

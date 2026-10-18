@@ -18,7 +18,7 @@ function fixture(responses, authenticated = true) {
   const supabase = {
     auth: { getUser: async () => ({ data: { user: authenticated ? { id: "user" } : null } }) },
     rpc(name, args) {
-      const table = name === "set_standby_game_progress" ? "game_progress" :
+      const table = ["set_standby_game_progress", "complete_standby_game"].includes(name) ? "game_progress" :
         name === "backfill_standby_profile_xp" ? "users" : "sessions"
       const query = this.from(table)
       Object.assign(calls.at(-1), { rpc: name, args })
@@ -108,12 +108,43 @@ test("both creation actions use the gated RPC; the database snapshots recording 
   assert.deepEqual(await start.actions.startSessionForGame("game"), created)
   const create = fixture([
     ok(null), ok(null), ok({ last_session_date: null }), ok(created),
-    ok(), ok(), ok([]),
+    ok([]),
   ])
   assert.deepEqual((await create.actions.createSession("game")).session, created)
   for (const [f, startXP] of [[start, 0], [create, 25]]) {
-    const inserted = f.calls.find((call) => call.rpc === "create_standby_session")
+    const inserted = f.calls.find((call) => call.rpc === "create_standby_session_with_progress")
     assert.deepEqual(inserted.args, { p_game_id: "game", p_start_xp: startXP })
+    assert.equal(f.calls.some((call) => call.table === "game_progress" && payload(call)), false)
+    assert.equal(f.calls.some((call) => call.table === "users" && payload(call)), false)
+    f.done()
+  }
+})
+
+test("new creation actions on018/019 report missing020 RPC before any writes, streak update or fallback", async () => {
+  for (const code of ["PGRST202", "42883"]) {
+    const missing = { data: null, error: { code,
+      message: "Could not find the function public.create_standby_session_with_progress in the schema cache" } }
+    for (const action of ["startSessionForGame", "createSession"]) {
+      const f = fixture(action === "createSession"
+        ? [ok(null), ok(null), ok({ last_session_date: null }), missing]
+        : [ok(null), missing])
+      await assert.rejects(f.actions[action]("game"), /unavailable.*migration 020.*schema cache/)
+      assert.deepEqual(f.calls.filter((call) => call.rpc).map((call) => call.rpc), ["create_standby_session_with_progress"])
+      assert.equal(f.calls.some((call) => call.methods.some(([method]) => ["insert", "update"].includes(method))), false)
+      assert.deepEqual(f.invalidations, [])
+      f.done()
+    }
+  }
+})
+
+test("new completion actions on018/019 fail actionably before mutation, without old-RPC fallback", async () => {
+  for (const action of ["markGameBeaten", "abandonGame"]) {
+    const f = fixture([{ data: null, error: { code: "PGRST202",
+      message: "Could not find the function public.complete_standby_game in the schema cache" } }])
+    await assert.rejects(f.actions[action]("game", null), /unavailable.*migration 020.*schema cache/)
+    assert.equal(f.calls.length, 1)
+    assert.equal(f.calls[0].rpc, "complete_standby_game")
+    assert.deepEqual(f.invalidations, [])
     f.done()
   }
 })
@@ -164,76 +195,41 @@ test("starting LockedIn resets the stored started_at instead of counting lock-in
   f.done()
 })
 
-test("beaten and abandon stop when the shared timing finalizer loses CAS", async () => {
-  for (const action of ["markGameBeaten", "abandonGame"]) {
-    const f = fixture([ok(session), ok(session), ok(null)])
-    await assert.rejects(f.actions[action]("game"), /Session changed/)
-    assert.equal(f.calls.every((call) => call.table === "sessions"), true)
-    assert.equal(payload(f.calls[2]).status, "Finished")
-    f.done()
-  }
-})
-
-test("beaten and abandon finalize paused/untracked timing before guarded progress updates", async () => {
+test("beaten/abandon send null, displayed snapshot or deliberate latest mode to one atomic RPC with no pre-read", async () => {
   for (const [action, status] of [["markGameBeaten", "beaten"], ["abandonGame", "abandoned"]]) {
-    for (const [recordTime, expectedMinutes] of [[true, 2], [false, 0]]) {
-      const paused = { ...session, status: "Paused", record_time: recordTime }
-      const finished = { ...paused, status: "Finished", active: false, duration_minutes: expectedMinutes }
-      const f = fixture([
-        ok(paused), ok(paused), ok(finished), ok({ id: "progress", status: "playing" }), ok({ id: "progress" }),
-      ])
-      await f.actions[action]("game")
-      assert.equal(payload(f.calls[2]).status, "Finished")
-      assert.equal(payload(f.calls[2]).duration_minutes, expectedMinutes)
-      assert.equal(payload(f.calls[2]).paused_elapsed_seconds, expectedMinutes * 60)
-      assert.equal(payload(f.calls[4]).status, status)
-      assert.equal(f.calls[4].rpc, "set_standby_game_progress")
-      assert.equal(f.calls[4].args.p_expected_status, "playing")
-      assert.equal(f.calls.some((call) => call.table === "users"), false)
-      f.done()
-    }
-  }
-})
-
-test("markGameBeaten on already-beaten progress does not repeat its mutation/award", async () => {
-  const f = fixture([ok(null), ok({ id: "progress", status: "beaten" })])
-  await f.actions.markGameBeaten("game")
-  assert.equal(f.calls.some((call) => payload(call)), false)
-  f.done()
-})
-
-test("beaten/abandon reject an expected old session instead of ending a replacement for the same game", async () => {
-  for (const action of ["markGameBeaten", "abandonGame"]) {
-    const expected = { ...session, id: "old-session" }
-    for (const active of [{ ...session, id: "new-session" }, null]) {
-      const f = fixture([ok(active)])
-      await assert.rejects(f.actions[action]("game", expected), /Session changed/)
+    const displayed = { id: session.id, status: session.status, started_at: session.started_at, paused_elapsed_seconds: 120 }
+    for (const expected of [null, displayed, undefined]) {
+      const f = fixture([ok({ id: "progress", status })])
+      await f.actions[action]("game", expected)
       assert.equal(f.calls.length, 1)
-      assert.equal(f.calls[0].rpc, undefined)
+      assert.equal(f.calls[0].rpc, "complete_standby_game")
+      assert.deepEqual(f.calls[0].args, {
+        p_game_id: "game", p_status: status,
+        p_expected_session: expected === undefined ? { mode: "latest" } : expected,
+      })
+      assert.deepEqual(f.invalidations, ["/"])
       f.done()
     }
-    const changed = fixture([ok(session), ok({ ...session, paused_elapsed_seconds: 999 })])
-    await assert.rejects(changed.actions[action]("game", session), /Session changed/)
-    assert.equal(changed.calls.length, 2)
-    changed.done()
   }
 })
 
-test("explicit null rejects newly active same-game sessions but permits progress when none remains active", async () => {
-  for (const [action, status] of [["markGameBeaten", "beaten"], ["abandonGame", "abandoned"]]) {
-    const remote = fixture([ok({ ...session, id: "remote-new-session" })])
-    await assert.rejects(remote.actions[action]("game", null), /Session changed/)
-    assert.equal(remote.calls.length, 1)
-    assert.equal(remote.calls[0].rpc, undefined)
-    remote.done()
-
-    const none = fixture([ok(null), ok({ id: "progress", status: "playing" }), ok({ id: "progress" })])
-    await none.actions[action]("game", null)
-    assert.equal(none.calls.filter((call) => call.table === "sessions").length, 1)
-    assert.equal(none.calls.some((call) => call.rpc === "transition_standby_session"), false)
-    assert.equal(none.calls[2].rpc, "set_standby_game_progress")
-    assert.equal(none.calls[2].args.p_status, status)
-    none.done()
+test("beaten/abandon propagate atomic stale, missing-row and deadlock failures without follow-up writes", async () => {
+  for (const action of ["markGameBeaten", "abandonGame"]) {
+    for (const response of [
+      { data: null, error: { message: "Session changed. Refresh before trying again." } },
+      { data: null, error: { message: "deadlock detected", code: "40P01" } },
+      ok(null),
+    ]) {
+      const f = fixture([response])
+      await assert.rejects(f.actions[action]("game", null), /Session changed|deadlock detected|Game progress changed/)
+      assert.equal(f.calls.length, 1)
+      assert.equal(f.calls[0].rpc, "complete_standby_game")
+      assert.deepEqual(f.invalidations, [])
+      f.done()
+    }
+    const unauthenticated = fixture([], false)
+    await assert.rejects(unauthenticated.actions[action]("game", null), /Not authenticated/)
+    assert.equal(unauthenticated.calls.length, 0)
   }
 })
 

@@ -103,27 +103,72 @@ offline, timeout or fetch errors. A remote end closes StandBy. This is bounded
 polling, not instant live synchronization; account preference persistence is not
 live preference synchronization. No mutations are queued offline.
 
+Session notes autosave in order. Local **Done for Today**, StandBy finish,
+**I Beat This Game!** and **Abandon Game** first await any older note write and the
+latest pre-finish draft. Editing is disabled while ending; a failed note save
+blocks finalization and keeps the draft and error visible for retry. Finished
+session notes remain immutable. Leaving the screen or closing the browser is
+not an awaited save guarantee; navigation cleanup is only best effort, not
+offline synchronization or a promise to recover drafts after a remote finish.
+
 ### Deployment and verification
 
-Apply `scripts/018_standby.sql` **before deploying this application version**, after
-the preceding numbered migrations. It adds account preferences and immutable
-session recording flags, authenticated mutation RPCs, and timing/XP invariants.
+Apply `scripts/018_standby.sql`, `scripts/019_restrict_standby_rpc_execute.sql` and
+`scripts/020_atomic_standby_game_completion.sql` in order after the preceding
+numbered migrations, with separate authorization for the target database.
+Migration 018 adds account preferences and immutable session recording flags,
+authenticated mutation RPCs, and timing/XP invariants.
 New atomic XP awards are transaction-locally gated to the new RPC path, so applying
 the migration does not add a second award to old clients' direct writes. Review
 and apply it through the normal Supabase migration process; the app does not
 automatically migrate a shared database. Deploy the migration and app together
-before permitting multi-device testing.
+before claiming the complete new flow is ready for multi-device testing.
 
 For a database that already received migration 018, apply
 `scripts/019_restrict_standby_rpc_execute.sql` separately after authorization;
 do not rerun the entire feature migration just to correct permissions. New
-installations should apply both migrations in order. The correction explicitly
+installations should apply all three migrations in order. The correction explicitly
 revokes the four RPCs' anonymous-role execution grants, which Supabase default
 privileges can grant separately from `PUBLIC`, while retaining authenticated
 execution and the RPCs' `auth.uid()` checks. Verify that `anon` does not inherit
 execution through another granted role; removing unrelated role memberships or
 permissions requires separate review. An unexpected execute grant alone does not
 demonstrate an anonymous mutation.
+
+Migration 020 adds `create_standby_session_with_progress(text,integer)` and
+`complete_standby_game(text,text,jsonb)`. Creation with start XP commits session,
+progress bookkeeping, date and XP together; the existing zero-start-XP path
+retains session-only behavior. Completion asserts the displayed session (or
+explicit absence), finalizes it, and changes game progress/XP in one transaction.
+An undefined action argument explicitly selects the latest same-game session.
+Account locks are shared with direct/legacy writers before row locks; writes
+require READ COMMITTED. Deadlocks/errors propagate without automatic replay.
+
+020 preserves the four existing RPC definitions/grants and safe main-style
+creation, bookkeeping and completion flows. It rejects a terminal progress
+write while a same-game session is active, rather than banning all old writes
+or requiring a global production cutover. Old multi-request flows still are not
+atomic: they cannot carry a displayed snapshot across requests, and old manual
+XP writes retain their concurrency limitations. The 018 untracked-history XP
+barrier still applies. New-RPC guarantees do not retrofit those old callers.
+
+**Without 020**, this version's creation and beaten/abandon actions fail visibly
+before session/progress writes, with migration/schema-cache guidance and no
+old-RPC fallback. Reads, existing-session pause/resume, ordinary session finish,
+notes, preferences and presentation remain available with 018/019. A rebuilt
+preview is therefore **not full-dogfood-ready** merely because it compiles.
+020 has not been applied by this code change; never rerun 018/019 as its upgrade.
+
+020 installs under a short `SHARE ROW EXCLUSIVE ... NOWAIT` table lock: ordinary
+readers remain allowed, while busy writers fail the migration rather than waiting
+with a partially acquired lock set. On failure, roll back and retry the whole
+migration after review; do not apply fragments. No production merge/deploy,
+all-environments maintenance or live schema application is implied. Review the
+catalog-only `approval020SQL` bundle in `scripts/standby-migration.test.mjs`
+before/after an authorized application: four new routines absent/present,
+six RPCs with authenticated execution and no effective anon/PUBLIC execution,
+six new enabled statement/row triggers, existing RLS/policies/unique indexes
+and original RPC definitions/grants unchanged.
 
 ```bash
 pnpm exec tsx --test lib/session-time.test.ts
@@ -137,18 +182,20 @@ Browser tests run the real companion/session components and reconciliation hook 
 an isolated local harness, with mocked Server Actions, artwork, fullscreen and
 wake-lock capabilities. They cover keyboard/focus, portrait/landscape/tablet/desktop
 layouts, reduced motion, independent settings, reminders without auto-pause,
-pause/resume/finish, remote end, reconnect and errors. They do not establish real
+pause/resume/finish, ordered note saves and failure-blocked finalization,
+remote end, reconnect and errors. Set `STANDBY_TEST_PORT` to an unused port if a
+different harness is already running. They do not establish real
 two-device Supabase behavior, physical iOS/Android wake behavior, or that people
 actually scroll less or play more. Those are separate release checks and usability
 outcomes, not claims inferred from passing technical tests.
 
 The Server Action suite uses mocked Supabase responses to verify request guards
 and authoritative results. The optional pinned PGlite command runs the actual
-migration against an isolated PostgreSQL engine, including RLS, recording,
-transactional XP rollback and stale-snapshot/finish regressions. Its serialized
+migrations against an isolated PostgreSQL engine, including RLS, recording,
+transactional XP rollback, committed post-read replacement/absence races,
+new-code/018-019 missing-function safety and old-main/020 compatibility. Its serialized
 statements do not establish real multi-connection lock contention. Game-progress
-updates after session finalization are separate guarded statements, not a single
-cross-entity transaction.
+updates in the new completion RPC are in the same transaction as finalization.
 Legacy clients keep their original concurrency limitations. After an account has
 created an unrecorded session, ungated old-client XP writes are rejected, including
 delayed writes after that session ends, rather than leaking duration XP. Reload/
