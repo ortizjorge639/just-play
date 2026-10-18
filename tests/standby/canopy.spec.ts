@@ -1,11 +1,99 @@
 import { test, expect, type Page } from "@playwright/test"
 import path from "node:path"
 
-async function enterNook(page: Page) {
-  await page.goto("/")
+async function enterNook(page: Page, url = "/") {
+  await page.goto(url)
   await page.getByRole("button", { name: /Enter StandBy/ }).click()
   await page.getByRole("button", { name: "Canopy nook", exact: true }).click()
 }
+
+for (const stage of ["hash", "parse"] as const) {
+  test(`context loss during pending ${stage} preserves fallback through settlement and retry in StrictMode`, async ({ page }) => {
+    await page.addInitScript(stage => {
+      if (stage === "parse") { window.canopyParseGate = { waiting: false }; return }
+      window.canopyHashGate = { waiting: false }
+      const original = crypto.subtle.digest.bind(crypto.subtle)
+      crypto.subtle.digest = async (algorithm, data) => {
+        const result = await original(algorithm, data)
+        const gate = window.canopyHashGate
+        if (gate) {
+          gate.waiting = true
+          await new Promise<void>(resolve => { gate.release = resolve })
+        }
+        return result
+      }
+    }, stage)
+    await enterNook(page, "/?strict")
+    await expect.poll(() => page.evaluate(stage => (stage === "hash" ? window.canopyHashGate : window.canopyParseGate)?.waiting, stage)).toBe(true)
+    await page.locator(".canopy-canvas canvas").evaluate(canvas => canvas.dispatchEvent(new Event("webglcontextlost", { cancelable: true })))
+    await expect(page.getByRole("alert")).toContainText("game artwork is still here")
+    await page.evaluate(stage => {
+      const gate = stage === "hash" ? window.canopyHashGate : window.canopyParseGate
+      gate?.release?.()
+      delete window.canopyHashGate
+      delete window.canopyParseGate
+    }, stage)
+    await page.waitForTimeout(200)
+    await expect(page.getByRole("alert")).toContainText("game artwork is still here")
+    await expect(page.getByRole("button", { name: "Retry nook", exact: true })).toBeVisible()
+    await expect(page.locator(".canopy-viewport > svg")).toHaveCount(1)
+    await expect(page.locator(".canopy-canvas canvas")).toHaveCount(0)
+    await page.getByRole("button", { name: "Retry nook", exact: true }).click()
+    await expect(page.locator(".canopy-canvas canvas")).toHaveAttribute("data-render-state", "running")
+    await expect(page.locator(".canopy-canvas canvas")).toHaveCount(1)
+    await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+  })
+}
+
+for (const [width, height] of [[844, 390], [320, 568]] as const) {
+  test(`long session details have readable text height at ${width}x${height}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height })
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await enterNook(page)
+    await page.evaluate(() => {
+      const session = window.standbyFixture.session!
+      session.games = { ...session.games, name: "The Legend of Zelda: Tears of the Kingdom - A very long library title" }
+      session.session_goal = "Explore the mountains. ".repeat(30)
+      session.notes = "A representative long note. ".repeat(80)
+      window.dispatchEvent(new Event("focus"))
+    })
+    await page.getByRole("button", { name: "Session details", exact: true }).click()
+    await expect(page.locator(".canopy-context-game")).toContainText("A very long library title")
+    const details = page.locator("#canopy-session-details")
+    const metrics = await details.evaluate(element => {
+      const style = getComputedStyle(element)
+      return { usableHeight: element.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom), scrollable: element.scrollHeight > element.clientHeight }
+    })
+    expect(metrics.usableHeight).toBeGreaterThanOrEqual(100)
+    expect(metrics.scrollable).toBe(true)
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeInViewport()
+    await expect(page.getByRole("button", { name: "Fullscreen", exact: true })).toBeInViewport()
+    await details.focus()
+    await page.keyboard.press("PageDown")
+    await expect.poll(() => details.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+    if (process.env.CANOPY_CAPTURE_DIR) await page.screenshot({ path: path.join(process.env.CANOPY_CAPTURE_DIR, `canopy-details-${width}x${height}-${testInfo.project.name}.png`) })
+    await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+  })
+}
+
+test("StrictMode exit during pending parse cannot attach a late scene or block a fresh entry", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.addInitScript(() => { window.canopyParseGate = { waiting: false } })
+  await enterNook(page, "/?strict")
+  await expect.poll(() => page.evaluate(() => window.canopyParseGate?.waiting)).toBe(true)
+  await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+  await page.evaluate(() => {
+    window.canopyParseGate?.release?.()
+    delete window.canopyParseGate
+  })
+  await page.waitForTimeout(200)
+  await expect(page.locator(".canopy-canvas canvas")).toHaveCount(0)
+  await page.getByRole("button", { name: /Enter StandBy/ }).click()
+  await page.getByRole("button", { name: "Canopy nook", exact: true }).click()
+  await expect(page.locator(".canopy-canvas canvas")).toHaveAttribute("data-render-state", "reduced-motion")
+  await expect(page.locator(".canopy-canvas canvas")).toHaveCount(1)
+  await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+})
 
 test("quiet hierarchy removes decorative copy without hiding relevant capability warnings", async ({ page }) => {
   await page.setViewportSize({ width: 844, height: 390 })
@@ -204,6 +292,38 @@ test("long real context is inspectable without hiding phone session controls", a
   await expect(page.getByRole("button", { name: "Finish session", exact: true })).toBeInViewport()
   await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
   await expect(page.locator(".canopy-canvas canvas")).toHaveCount(0)
+})
+
+test("high-density resize enforces actual pixel/DPR budgets without reloading the scene", async ({ browser }) => {
+  const context = await browser.newContext({
+    baseURL: "http://127.0.0.1:4387",
+    viewport: { width: 2560, height: 1440 },
+    deviceScaleFactor: 3,
+    reducedMotion: "reduce",
+  })
+  const page = await context.newPage()
+  const assets: string[] = []
+  page.on("request", request => { if (request.url().endsWith(".glb")) assets.push(request.url()) })
+  try {
+    await enterNook(page)
+    const canvas = page.locator(".canopy-canvas canvas")
+    await expect(canvas).toHaveAttribute("data-render-state", "reduced-motion")
+    const budget = () => canvas.evaluate(element => {
+      const canvas = element as HTMLCanvasElement
+      return { pixels: canvas.width * canvas.height, dpr: canvas.width / canvas.getBoundingClientRect().width }
+    })
+    expect((await budget()).pixels).toBeLessThanOrEqual(1_705_000)
+    await canvas.evaluate(element => element.setAttribute("data-instance", "high-density"))
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect.poll(async () => (await budget()).dpr).toBeGreaterThanOrEqual(1.49)
+    expect((await budget()).dpr).toBeLessThanOrEqual(1.5)
+    expect((await budget()).pixels).toBeLessThanOrEqual(1_705_000)
+    await expect(canvas).toHaveAttribute("data-instance", "high-density")
+    expect(assets).toHaveLength(1)
+    await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+  } finally {
+    await context.close()
+  }
 })
 
 test.describe("isolated review recording", () => {

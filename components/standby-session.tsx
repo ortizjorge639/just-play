@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import * as Dialog from "@radix-ui/react-dialog"
 import type { Game, Session, StandbyPreferences } from "@/lib/types"
@@ -31,6 +31,7 @@ export function StandbySession({
   const [reminderDismissed, setReminderDismissed] = useState(false)
   const [nook, setNook] = useState(false)
   const [details, setDetails] = useState(false)
+  const focusDetails = useCallback((element: HTMLDivElement | null) => { element?.focus({ preventScroll: true }) }, [])
   const wakeState = useStandbyWakeLock(preferences.keep_awake)
   useEffect(() => {
     if (!container) return
@@ -83,7 +84,16 @@ export function StandbySession({
           </div>
         </header>
         <main className={nook ? "canopy-main" : "m-auto grid w-full max-w-6xl items-center gap-6 py-6 landscape:grid-cols-[2fr_3fr] landscape:py-3 sm:gap-12"}>
-          {nook ? <CanopyNook artwork={session.games.header_image} /> : <div className="relative mx-auto aspect-[16/9] w-full max-w-md overflow-hidden rounded-2xl border border-white/10 shadow-2xl landscape:aspect-[3/4] landscape:max-h-[55dvh]">
+          {nook ? <div className="canopy-scene">
+            <CanopyNook artwork={session.games.header_image} />
+            {details && !confirmEnd ? <div ref={focusDetails} id="canopy-session-details" className="canopy-details" tabIndex={0} role="region" aria-label="Session context">
+              <p className="canopy-context-game">{session.games.name}</p>
+              {goal || <p>No session goal set.</p>}
+              <p className="canopy-notes"><span>Session notes</span>{session.notes || "No notes yet. You can write in your notepad after leaving StandBy."}</p>
+              <p className="canopy-boundary">R1 is your neutral starter companion, not an earned game resident. This room is a visual preview; no arrivals, rewards, or memories are created here.</p>
+              <p>{recordingLabel}. {wakeState}. Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press.</p>
+            </div> : null}
+          </div> : <div className="relative mx-auto aspect-[16/9] w-full max-w-md overflow-hidden rounded-2xl border border-white/10 shadow-2xl landscape:aspect-[3/4] landscape:max-h-[55dvh]">
             <Image src={session.games.header_image} alt="" fill sizes="(orientation: landscape) 40vw, 80vw" className="object-cover opacity-80" priority />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           </div>}
@@ -116,13 +126,6 @@ export function StandbySession({
               <p>Done for today? Your game stays available to continue later.</p>
               <button className={control} disabled={pending || !!syncError} onClick={() => onTransition("Finished")}>Finish session</button>{" "}
               <button className={control} onClick={() => setConfirmEnd(false)}>Keep playing</button>
-            </div> : null}
-            {nook && details && !confirmEnd ? <div id="canopy-session-details" className="canopy-details" tabIndex={0} role="region" aria-label="Session context">
-              <p className="canopy-context-game">{session.games.name}</p>
-              {goal || <p>No session goal set.</p>}
-              <p className="canopy-notes"><span>Session notes</span>{session.notes || "No notes yet. You can write in your notepad after leaving StandBy."}</p>
-              <p className="canopy-boundary">R1 is your neutral starter companion, not an earned game resident. This room is a visual preview; no arrivals, rewards, or memories are created here.</p>
-              <p>{recordingLabel}. {wakeState}. Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press.</p>
             </div> : null}
           </div>
         </main>

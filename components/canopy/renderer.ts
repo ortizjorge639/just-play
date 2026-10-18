@@ -36,6 +36,7 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
   let observer: ResizeObserver | undefined
   let frame = 0, disposed = false, lastFrame = 0
   let animationTime: number | null = null
+  let terminalFailure: unknown
   const motion = matchMedia("(prefers-reduced-motion: reduce)")
   const request = new AbortController()
   const dispose = () => {
@@ -56,10 +57,17 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
     renderer?.domElement.remove()
     scene.clear()
   }
+  function assertActive() {
+    if (disposed || signal.aborted) throw terminalFailure ?? new DOMException("Canopy initialization was cancelled.", "AbortError")
+  }
+  function fail(cause: unknown) {
+    terminalFailure = cause
+    dispose()
+    onError(cause)
+  }
   function contextLost(event: Event) {
     event.preventDefault()
-    dispose()
-    onError(new Error("WebGL context lost; switched to game artwork."))
+    fail(new Error("WebGL context lost; switched to game artwork."))
   }
   const camera = new OrthographicCamera(-5, 5, 4, -4, .1, 80)
   camera.position.set(8.7, 7.0, 11.8)
@@ -67,7 +75,7 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
   function render() {
     if (disposed || document.visibilityState === "hidden") return
     try { renderer?.render(scene, camera) }
-    catch (cause) { dispose(); onError(cause) }
+    catch (cause) { fail(cause) }
   }
   function tick(time: number) {
     if (disposed) return
@@ -91,7 +99,7 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
     if (!motion.matches) frame = requestAnimationFrame(tick)
   }
   try {
-    if (signal.aborted) return dispose
+    assertActive()
     renderer = new WebGLRenderer({ antialias: true, alpha: false, powerPreference: "low-power" })
     renderer.outputColorSpace = SRGBColorSpace
     renderer.toneMapping = ACESFilmicToneMapping
@@ -119,11 +127,15 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
     const response = await fetch(R1_URL, { signal: request.signal })
     if (!response.ok) throw new Error(`R1 could not load (HTTP ${response.status}).`)
     const bytes = await response.arrayBuffer()
+    assertActive()
     const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), value => value.toString(16).padStart(2, "0")).join("")
     if (bytes.byteLength !== manifest.asset.bytes || hash !== manifest.asset.sha256) throw new Error("R1 art verification failed.")
-    if (disposed) return dispose
+    assertActive()
     const gltf = await new GLTFLoader().parseAsync(bytes, "")
-    if (disposed) { disposeTree(gltf.scene); return dispose }
+    if (disposed || signal.aborted) {
+      disposeTree(gltf.scene)
+      assertActive()
+    }
     scene.add(gltf.scene)
     gltf.scene.position.set(1.56, .07, 1.15)
     gltf.scene.rotation.y = .4
@@ -156,7 +168,7 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
     document.addEventListener("visibilitychange", visibility)
     resize()
     visibility()
-    if (disposed) throw new Error("Canopy rendering stopped. Use artwork view or retry the nook.")
+    assertActive()
     return dispose
   } catch (cause) {
     dispose()

@@ -54,7 +54,11 @@ geometry, not the reference image's photoreal detail or approved final art.
 Title, status, elapsed clock, recording preference, goal, and optional existing
 notes come from the same `Session & { games: Game }` used by normal StandBy.
 **Session details** reveals the goal/notes and starter explanation without
-creating an experience or memory. Pause/resume/finish still use the existing
+creating an experience or memory. Its keyboard-scrollable inspector occupies
+the scene area instead of shrinking between controls; game/time/actions remain
+outside it. Long context is checked for at least 100 px of usable text height
+at 844x390 landscape and 320x568 portrait, including keyboard scrolling.
+Pause/resume/finish still use the existing
 authoritative actions and stale/offline guards. Recording and clock visibility
 remain independent. The nook does not change optional reminder, fullscreen,
 focus/Escape, wake-lock, or reconciliation ownership.
@@ -75,6 +79,10 @@ the WebGL context. Late parses are disposed rather than attached.
 WebGL creation, asset/hash/parse, rendering and context-loss failures show an
 explicit message over the existing game artwork with **Retry nook**. Normal
 session controls remain available. Artwork view is always an explicit exit.
+Failure is terminal for that initialization attempt: context loss during a
+pending hash or parse rejects initialization, and a late completion cannot
+overwrite the fallback with an empty "ready" view. StrictMode retry and exit
+during parsing are covered with the real GLB/parser behind test-only barriers.
 
 Ambient rendering is capped at 24 fps, DPR 1.5, approximately 1.7 million render
 pixels, and one 1024-square shadow map. Static planks, furniture and foliage are
@@ -110,14 +118,18 @@ from the user's still-unproven personal artistic approval.
 ## Visual-layer checkpoint
 
 On the original StandBy foundation `713ad29`, the final recorded run passed
-**120 browser cases** (40 each in Chromium, WebKit and Firefox): the 84 existing
-StandBy cases plus 36 nook/media cases. The latter include opt-in lazy loading,
+**138 browser cases** (46 each in Chromium, WebKit and Firefox): the 84 existing
+StandBy cases plus 54 nook/media cases. The latter include opt-in lazy loading,
 one GLB load across timer/session updates, real session/goal/notes binding,
 explicit failure/retry/context-loss fallback, remote finish, stale guards,
 recording independence, measured viewport/pixel bounds, long content, and actual
 WebGL draw-call counters remaining unchanged while reduced/hidden.
 The less-is-more refinement additionally checks decorative-copy removal and
 simultaneous relevant keep-awake/fullscreen warnings in a small landscape view.
+Independent review's initialization-race and collapsed-details failures were
+first reproduced against the refined source, then fixed with hash/parse,
+StrictMode, retry/unmount and measured readable-height regressions. High-density
+resize also verifies the actual render-pixel/DPR ceilings without reloading art.
 
 Changed-file ESLint and the production build passed. Independent `tsc --noEmit`
 reported only the ten known implicit-cookie-type errors in unchanged

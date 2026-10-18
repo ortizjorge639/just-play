@@ -21,6 +21,7 @@ async function main() {
       "@/app/actions": path.resolve("tests", "standby", "mock-actions.ts"),
       "@/app/auth/actions": path.resolve("tests", "standby", "mock-actions.ts"),
       "next/image": path.resolve("tests", "standby", "mock-image.tsx"),
+      "three/addons/loaders/GLTFLoader.js": path.resolve("tests", "standby", "gated-gltf-loader.ts"),
     },
   })
   const assets = new Map(result.outputFiles.map(file => [`/assets/${path.basename(file.path)}`, file.contents]))

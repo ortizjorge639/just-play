@@ -13,15 +13,17 @@ export const CanopyNook = memo(function CanopyNook({ artwork }: { artwork: strin
     if (!element) return
     const abort = new AbortController()
     let dispose: (() => void) | undefined
+    let failed = false
     const fail = (cause: unknown) => {
-      if (abort.signal.aborted) return
+      if (abort.signal.aborted || failed) return
+      failed = true
       console.error("Canopy nook unavailable", cause)
       setState("failed")
     }
     void import("./renderer")
       .then(({ mountNook }) => mountNook(element, abort.signal, fail))
       .then(cleanup => {
-        if (abort.signal.aborted) cleanup()
+        if (abort.signal.aborted || failed) cleanup()
         else { dispose = cleanup; setState("ready") }
       })
       .catch(fail)

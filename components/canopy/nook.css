@@ -21,7 +21,7 @@
   min-height: 0;
   gap: 16px;
 }
-.canopy-viewport {
+.canopy-scene {
   position: relative;
   min-height: 0;
   overflow: hidden;
@@ -29,6 +29,7 @@
   border-radius: 22px;
   background: #b4c3ac;
 }
+.canopy-viewport { position: absolute; inset: 0; }
 .canopy-canvas { position: absolute; inset: 0; }
 .canopy-canvas canvas { display: block; width: 100%; height: 100%; }
 .canopy-load { position: absolute; inset: 0; display: grid; place-content: center; padding: 24px; gap: 16px; text-align: center; z-index: 1; background: #17251bc9; color: #f3ead7; }
@@ -40,13 +41,13 @@
 .canopy-game { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .canopy-clock { position: absolute; right: 4px; top: 0; margin-top: 0; font-family: var(--font-geist-mono), monospace; font-size: clamp(24px, 3vw, 32px); font-variant-numeric: tabular-nums; color: #ead8b7; }
 .canopy-details-toggle { align-self: flex-start; font-size: 12px; padding: 0; border: none; min-height: 44px; text-decoration: underline; text-underline-offset: 4px; color: #c5cdbb !important; }
-.canopy-details { min-height: 0; flex-shrink: 1; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid #e3d6b724; padding: 12px 4px 4px; font-size: 13px; line-height: 1.6; }
+.canopy-details { position: absolute; inset: 0; z-index: 2; overflow-y: auto; overscroll-behavior: contain; background: #17221bf5; padding: 20px; font-size: 14px; line-height: 1.6; }
 .canopy-details:focus-visible { outline: 2px solid #f6d9a4; outline-offset: -2px; }
 .canopy-details > * + * { margin-top: 12px; }
 .canopy-notes { white-space: pre-wrap; overflow-wrap: anywhere; color: #ddd7c8; }
 .canopy-notes span { display: block; font-weight: 600; color: #f3ead7; margin-bottom: 4px; }
 .canopy-boundary { color: #b9c2b1; font-size: 12px; }
-.canopy-context-game { overflow-wrap: anywhere; color: #f3ead7; }
+.canopy-context-game { overflow-wrap: anywhere; color: #f3ead7; font-family: Georgia, serif; font-size: 24px; line-height: 1.2; }
 .canopy-standby footer { flex-shrink: 0; font-size: 13px; color: #ead8b7; }
 @media (min-aspect-ratio: 6/5) {
   .canopy-main { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) minmax(240px, 27%); gap: 24px; }

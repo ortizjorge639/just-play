@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client"
-import { useState } from "react"
+import { StrictMode, useState } from "react"
 import { ActiveSession } from "@/components/active-session"
 import { AppShell } from "@/components/app-shell"
 import { CurrentGame } from "@/components/current-game"
@@ -46,7 +46,7 @@ function Harness() {
     syncError={syncError} onRetry={refreshSession} onSessionStarted={() => void refreshSession()}
   /> : <p role="status">Session ended on another device.</p>
 }
-createRoot(document.getElementById("root")!).render(params.has("app-shell")
+const app = params.has("app-shell")
   ? <AppShell user={{
     id: "test-user", display_name: null, steam_id: null, preferences: {},
     standby_preferences: DEFAULT_STANDBY_PREFERENCES, onboarding_complete: true,
@@ -55,4 +55,5 @@ createRoot(document.getElementById("root")!).render(params.has("app-shell")
   }} recommendations={[]} activeSession={fixture.session} activeGame={null}
     sessionHistory={[]} playerStats={null} isBoosterPack={false}
     boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
-  : <Harness />)
+  : <Harness />
+createRoot(document.getElementById("root")!).render(params.has("strict") ? <StrictMode>{app}</StrictMode> : app)
