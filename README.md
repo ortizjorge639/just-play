@@ -41,6 +41,34 @@ pnpm dev
 
 Requires a `.env.local` with Supabase and IGDB credentials.
 
+### Password recovery
+
+Request recovery from the app origin and browser where you will finish it. Reset
+links return to that initiating origin, not a potentially stale canonical
+`NEXT_PUBLIC_SITE_URL`. Public origins must use HTTPS and exactly match the
+configured site origin or Vercel's server-provided `VERCEL_BRANCH_URL`,
+`VERCEL_URL` or `VERCEL_PROJECT_PRODUCTION_URL`; only local development permits
+loopback origins. Missing or mismatched origin/host configuration fails explicitly
+before sending email. This is not a wildcard trust rule for other Vercel apps.
+
+Supabase must allow the exact initiating origin's `/auth/callback` and
+`/auth/callback?next=/auth/update-password` URLs (literal slashes in `next`).
+Trusting a deployment host in application code does not add it to Supabase's
+redirect allowlist. Use the approved branch preview URL, not an unlisted unique
+deployment URL. Callback destinations are limited to home and password recovery.
+Normal signup redirect configuration is unchanged.
+
+After a new deployment or redirect configuration change, request a **fresh**
+email. Open its newest link in the **same browser** that requested it, not another
+device or an email app's embedded browser: PKCE requires that browser's verifier
+cookie. Callback failures provide fresh-link guidance without exposing codes or
+provider diagnostics. These checks never change a password automatically.
+
+`node --test scripts/auth-recovery.test.mjs` exercises the actual recovery action,
+callback and guidance pages with mocked Next/Supabase boundaries. It sends no
+emails and does not prove successful personal recovery, cookie handling on real
+devices, or deployment-access readiness.
+
 ---
 
 ## StandBy companion
