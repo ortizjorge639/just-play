@@ -11,6 +11,13 @@ tree, and layered planting. These are original procedural Three.js geometry and
 materials in `components/canopy/room.ts`. The recovered private mood reference is
 not included, published, traced into a background, or loaded by the app.
 
+The user's less-is-more direction governs the hierarchy: no decorative scene
+labels, motivational subtitles or metadata pills. The room leads; real game,
+optional elapsed time and session actions follow. Goal/notes and routine display
+help are deliberately inspectable. Actual error, fullscreen and keep-awake
+warnings remain visible when relevant, at readable size, not permanent tiny
+corner essays.
+
 ## R1 provenance and material contract
 
 - Original Just Play R1 source commit:
@@ -103,12 +110,14 @@ from the user's still-unproven personal artistic approval.
 ## Visual-layer checkpoint
 
 On the original StandBy foundation `713ad29`, the final recorded run passed
-**117 browser cases** (39 each in Chromium, WebKit and Firefox): the 84 existing
-StandBy cases plus 33 nook/media cases. The latter include opt-in lazy loading,
+**120 browser cases** (40 each in Chromium, WebKit and Firefox): the 84 existing
+StandBy cases plus 36 nook/media cases. The latter include opt-in lazy loading,
 one GLB load across timer/session updates, real session/goal/notes binding,
 explicit failure/retry/context-loss fallback, remote finish, stale guards,
 recording independence, measured viewport/pixel bounds, long content, and actual
 WebGL draw-call counters remaining unchanged while reduced/hidden.
+The less-is-more refinement additionally checks decorative-copy removal and
+simultaneous relevant keep-awake/fullscreen warnings in a small landscape view.
 
 Changed-file ESLint and the production build passed. Independent `tsc --noEmit`
 reported only the ten known implicit-cookie-type errors in unchanged

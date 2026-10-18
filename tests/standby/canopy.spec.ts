@@ -7,6 +7,28 @@ async function enterNook(page: Page) {
   await page.getByRole("button", { name: "Canopy nook", exact: true }).click()
 }
 
+test("quiet hierarchy removes decorative copy without hiding relevant capability warnings", async ({ page }) => {
+  await page.setViewportSize({ width: 844, height: 390 })
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "wakeLock", { configurable: true, value: undefined })
+    Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: false })
+  })
+  await page.goto("/?awake")
+  await page.getByRole("button", { name: /Enter StandBy/ }).click()
+  await page.getByRole("button", { name: "Canopy nook", exact: true }).click()
+  await expect(page.locator(".canopy-canvas canvas")).toHaveAttribute("data-render-state", "running")
+  const dialog = page.getByRole("dialog")
+  await expect(dialog).not.toContainText("A little room in the trees.")
+  await expect(dialog).not.toContainText("Settle in. Go play.")
+  await expect(page.locator(".canopy-room-label")).toHaveCount(0)
+  await expect(dialog.getByRole("status")).toContainText("Keep-awake unavailable")
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeInViewport()
+  await page.getByRole("button", { name: "Fullscreen", exact: true }).click()
+  await expect(dialog.getByRole("status")).toContainText("Fullscreen is unavailable")
+  await expect(dialog.getByRole("status")).toContainText("Keep-awake unavailable")
+  await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+})
+
 test("nook is opt-in, lazy, and bound to the existing authoritative session", async ({ page }) => {
   const requests: string[] = []
   page.on("request", request => requests.push(request.url()))

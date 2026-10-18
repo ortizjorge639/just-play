@@ -64,6 +64,8 @@ export function StandbySession({
     onExit()
   }
   const goal = session.session_goal ? <p className="break-words border-l-2 border-white/20 pl-4 text-base text-white/80">{session.session_goal}</p> : null
+  const recordingLabel = session.record_time === false ? "Time recording off" : preferences.show_clock ? "Time recording on" : "Clock hidden; time recording on"
+  const nookWakeMessage = preferences.keep_awake && !wakeState.startsWith("Keep-awake active") ? wakeState : null
   return (
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-[70] bg-black" />
@@ -74,7 +76,7 @@ export function StandbySession({
         style={{ padding: "max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))" }}
       >
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/60">Just Play / StandBy</p>
+          <p className={nook ? "canopy-brand" : "text-xs uppercase tracking-[0.3em] text-white/60"}>{nook ? "Canopy" : "Just Play / StandBy"}</p>
           <div className="flex gap-2">
             <button className={control} aria-pressed={nook} onClick={() => setNook(value => !value)}>{nook ? "Artwork view" : "Canopy nook"}</button>
             <button className={control} onClick={exit}>Exit StandBy</button>
@@ -86,7 +88,7 @@ export function StandbySession({
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           </div>}
           <div className={nook ? "canopy-session-panel" : "space-y-5 text-center landscape:text-left [@media(max-height:500px)]:space-y-2"}>
-            <p className={`text-sm text-white/60 [@media(max-height:500px)]:hidden${nook ? " canopy-eyebrow" : ""}`}>{session.status === "Paused" ? "Taking a breath" : nook ? "Settle in. Go play." : "Your game is waiting for you"}</p>
+            {!nook ? <p className="text-sm text-white/60 [@media(max-height:500px)]:hidden">{session.status === "Paused" ? "Taking a breath" : "Your game is waiting for you"}</p> : null}
             <Dialog.Title title={nook ? session.games.name : undefined} className={nook ? "canopy-game" : "break-words text-3xl font-semibold leading-tight sm:text-5xl [@media(max-height:500px)]:text-2xl"}>{session.games.name}</Dialog.Title>
             <Dialog.Description className={nook ? "sr-only" : "text-white/60"}>
               {nook ? "Your real play session, in a quiet Canopy nook. The room does not award residents or progress." : "Make memories. Not another scroll."}
@@ -94,7 +96,7 @@ export function StandbySession({
             {preferences.show_clock && session.record_time !== false ? (
               <p className={nook ? "canopy-clock" : "font-mono text-5xl tabular-nums sm:text-7xl [@media(max-height:500px)]:text-4xl"} aria-label={`${session.status} elapsed time`}>{elapsed}</p>
             ) : null}
-            <p className="text-sm text-white/60">{session.status} · {session.record_time === false ? "Time recording off" : preferences.show_clock ? "Time recording on" : "Clock hidden; time recording on"}</p>
+            <p className="text-sm text-white/60">{session.status}{!nook || session.record_time === false || !preferences.show_clock ? ` · ${recordingLabel}` : ""}</p>
             {nook && !confirmEnd ? <button className={`${control} canopy-details-toggle`} aria-expanded={details} aria-controls="canopy-session-details" onClick={() => setDetails(value => !value)}>{details ? "Hide session details" : "Session details"}</button> : null}
             {!nook ? goal : null}
             {preferences.reminders && !reminderDismissed && session.status === "Playing" && session.record_time !== false && elapsedSeconds >= 3600 ? (
@@ -120,13 +122,17 @@ export function StandbySession({
               {goal || <p>No session goal set.</p>}
               <p className="canopy-notes"><span>Session notes</span>{session.notes || "No notes yet. You can write in your notepad after leaving StandBy."}</p>
               <p className="canopy-boundary">R1 is your neutral starter companion, not an earned game resident. This room is a visual preview; no arrivals, rewards, or memories are created here.</p>
+              <p>{recordingLabel}. {wakeState}. Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press.</p>
             </div> : null}
           </div>
         </main>
-        <footer className="space-y-1 text-center text-xs text-white/50" role="status">
+        {nook ? displayMessage || nookWakeMessage ? <footer role="status">
+          {nookWakeMessage ? <p>{nookWakeMessage}</p> : null}
+          {displayMessage ? <p>{displayMessage}</p> : null}
+        </footer> : null : <footer className="space-y-1 text-center text-xs text-white/50" role="status">
           <p>{wakeState}</p>
           <p>{displayMessage || "Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press."}</p>
-        </footer>
+        </footer>}
       </Dialog.Content>
     </Dialog.Portal>
   )

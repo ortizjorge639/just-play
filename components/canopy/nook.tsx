@@ -38,7 +38,6 @@ export const CanopyNook = memo(function CanopyNook({ artwork }: { artwork: strin
         </div>
       </> : null}
       <div ref={host} className="canopy-canvas" hidden={state === "failed"} role="img" aria-label="A warm timber treehouse nook with a moss-green sofa, books, tea, plants, and the neutral R1 starter companion. Not an earned resident." />
-      <div className="canopy-room-label" aria-hidden="true"><span>CANOPY</span><p>A little room in the trees.</p></div>
     </div>
   )
 })
