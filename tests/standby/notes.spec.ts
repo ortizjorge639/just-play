@@ -519,11 +519,15 @@ for (const held of ["pre-commit", "committed-ACK"] as const) {
       await editor.fill("Old session unacknowledged draft")
       await expect.poll(queuedCount).toBe(1)
       await expect(page.getByRole("status")).toHaveText("Saving notes...")
+      const oldEditor = await editor.elementHandle()
+      if (!oldEditor) throw new Error("Expected the original note editor before replacement")
       const readsBefore = await page.evaluate(() => window.standbyFixture.readSnapshots.length)
-      const replacement = await page.evaluate(() => ({
+      const replacementGoal = `Replacement ${testInfo.project.name} ${observation} ${held}`
+      const replacement = await page.evaluate(goal => ({
         ...window.standbyFixture.session!, id: "replacement-session",
+        session_goal: goal,
         notes: JSON.stringify(["Replacement memory", ...Array(9).fill("")]),
-      }))
+      }), replacementGoal)
       if (observation === "Retry") {
         await page.evaluate(() => {
           window.standbyFixture.error = "Read service unavailable"
@@ -550,9 +554,21 @@ for (const held of ["pre-commit", "committed-ACK"] as const) {
           window.dispatchEvent(new Event("online"))
         }, replacement)
       }
+      // A read invocation can still expose the old session's enabled controls.
+      await expect(page.getByText(replacementGoal, { exact: true })).toBeVisible()
+      await expect.poll(() => oldEditor.evaluate(element => element.isConnected)).toBe(false)
+      await expect(editor).toHaveCount(0)
       await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
       const notes = page.getByRole("button", { name: "Notes", exact: false })
-      if (await editor.count() === 0) await notes.click()
+      await expect.poll(() => notes.evaluate(element => {
+        for (let ancestor: Element | null = element; ancestor && ancestor !== document.body; ancestor = ancestor.parentElement) {
+          const style = getComputedStyle(ancestor)
+          if (style.transform !== "none" || Number(style.opacity) < 0.999) return false
+        }
+        return true
+      })).toBe(true)
+      await notes.click()
+      await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
       await expect(editor).toHaveValue("Replacement memory")
       await expect(page.getByRole("status")).toHaveText("Notes saved.")
       // The replacement has been observed before the unrelated response settles.
@@ -577,8 +593,9 @@ for (const held of ["pre-commit", "committed-ACK"] as const) {
         contentType: "application/json",
         body: JSON.stringify({
           sourceSHA, sourceCommitted, oracleType: "actual-AppShell/mocked-actions-NOT-database",
-          held, observation, readsBefore, readsWhileHeld,
+          held, observation, replacementGoal, readsBefore, readsWhileHeld,
           causalOrder: ["note-invoked", held, "remote-end-or-replacement", "authoritative-read",
+            "replacement-goal-visible", "old-editor-detached", "settled-pointer-notes-expanded",
             "replacement-visible-before-response-release", "old-response-settles", "fresh-read-retains-replacement"],
         }),
       })
