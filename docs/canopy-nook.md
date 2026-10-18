@@ -52,7 +52,12 @@ geometry, not the reference image's photoreal detail or approved final art.
 ## Existing session contract
 
 Title, status, elapsed clock, recording preference, goal, and optional existing
-notes come from the same `Session & { games: Game }` used by normal StandBy.
+notes belong to the same real session used by normal StandBy. Read-only note
+inspection uses the AppShell-owned controller's current draft, not an optimistic
+overwrite of the authoritative session row. An outstanding, failed or uncertain
+acknowledgement is stated inside the deliberately opened inspector; it is not
+presented as saved. The same queue/error state survives Progress/back, while a
+clean authoritative refresh can update both the normal notepad and inspection.
 **Session details** reveals the goal/notes and starter explanation without
 creating an experience or memory. Its keyboard-scrollable inspector occupies
 the scene area instead of shrinking between controls; game/time/actions remain
@@ -147,9 +152,9 @@ isolated harness, with representative props. No live personal account was
 accessed. Device performance, live sign-in on the new preview hostname,
 cross-device account behavior, and personal artistic approval remain unproven.
 
-## Synchronized foundation boundary
+## Prior 03 foundation checkpoint (qualified)
 
-This branch is synchronized onto the exact corrected foundation
+The prior owning-layer checkpoint was synchronized onto foundation
 `03de6d38b69af674b6043cf7e8493a173d4fa773`, retaining all of the visual-layer
 initialization and readable-inspector fixes. The additional covered-recovery
 focus regression uses actual `WEBGL_lose_context` when available, checks
@@ -173,4 +178,55 @@ The covered-recovery/quiet-warning/fresh-abandon cases additionally passed all
 actual `WEBGL_lose_context`, not a synthetic event. Isolated foundation checks
 passed 14 action tests, seven timing tests and 45 migration tests. Changed-file
 lint/build passed with only the documented ten baseline TypeScript errors.
-Full combined acceptance remains blocked on the foundation Firefox failures.
+At that checkpoint, combined acceptance remained blocked on those failures.
+The original 03 logs and both Firefox traces are retained unchanged; a later
+green run is not a causal diagnosis of either earlier failure.
+
+## Latest foundation synchronization
+
+This subsequent synchronization uses independently accepted foundation
+`b19bf481099f8593aca53e7f703eaad2e3dd5a9f`, preserving all four visual-layer
+commits, including inert covered content and explicit inspector-toggle focus
+restoration. The isolated harness retains both the actual AppShell route and
+StrictMode coverage. No scene, art, progression or schema implementation was
+added by this synchronization.
+
+The revised, still-unapplied 020 adds an atomic final-draft ordinary finish
+boundary and passes optional final notes to game completion. The foundation
+owns note drafts, ACK/error state and queue lifetime in AppShell, including
+across tab remounts. It adopts authoritative same-session notes only across clean
+read/write boundaries; stale reads cannot overwrite a newer acknowledged draft.
+Background note responses do not block lifecycle reconciliation. The explicit
+terminal-flush mutation guard is unchanged; there is no new terminal cancellation
+or timeout protocol.
+
+Every new ordinary finish requires the 020 atomic final-draft RPC, even for a
+clean draft or omitted final-notes argument. There is **no 018 fallback** in new
+callers. With only 018/019 deployed, creation and all finish/beaten/abandon actions
+fail visibly before terminal writes, retaining the active session/draft.
+Read, pause/resume, notes, preferences and StandBy exit still work; old018/main
+callers and routine definitions are not globally cut over. The client queue or
+a matching read is not proof of server execution order after a lost response.
+See the foundation's deployment contract in README.
+
+The pinned SQL object is 13,642 bytes with SHA-256
+`e87bdbf448d0d3039281e6c6cb7d2b77fa12a075791df40ca5d23ac7824c5bbf`.
+Windows checkout CRLF normalization changes on-disk bytes, not the verified Git
+object. This is provenance only, not approval or application of SQL. Shared
+schema, auth/protection, production merge and manual deployment are untouched.
+Full live dogfooding remains unavailable without the separately approved schema
+and live-account/device evidence.
+
+The final combined runner must execute on the committed integration source.
+It includes the foundation's actual-pointer note tests, waiting for completed
+Notes height/sheet transforms instead of substituting keyboard activation.
+Canopy regressions additionally cover actual-AppShell clean note adoption,
+pre-commit/committed-ACK response holds, visible failure, tab return and final
+draft payload, alongside all existing visual/resource/focus cases. Their
+source-pinned mock-action histories are not database commits.
+
+Exact totals, commands, fingerprints and reused evidence paths belong in the
+head-bound owning-session receipt and PR notes. Unchanged action/SQL/timing
+receipts are reused only after canonical byte-identity checks, not recounted as
+fresh runs. The prior c963 keyboard-helper run and the 03 failures remain
+separately preserved; neither is final-source pointer acceptance.

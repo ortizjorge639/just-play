@@ -11,9 +11,10 @@ import "./canopy/nook.css"
 const control = "min-h-11 rounded-xl border border-white/20 px-4 py-2 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:opacity-40"
 
 export function StandbySession({
-  session, elapsed, elapsedSeconds, preferences, pending, syncError, error, onRetry, onTransition, onExit,
+  session, notesStatus, elapsed, elapsedSeconds, preferences, pending, syncError, error, onRetry, onTransition, onExit,
 }: {
   session: Session & { games: Game }
+  notesStatus: string | null
   elapsed: string
   elapsedSeconds: number
   preferences: StandbyPreferences
@@ -92,6 +93,7 @@ export function StandbySession({
               <p className="canopy-context-game">{session.games.name}</p>
               {goal || <p>No session goal set.</p>}
               <p className="canopy-notes"><span>Session notes</span>{session.notes || "No notes yet. You can write in your notepad after leaving StandBy."}</p>
+              {notesStatus ? <p role="status">{notesStatus}</p> : null}
               <p className="canopy-boundary">R1 is your neutral starter companion, not an earned game resident. This room is a visual preview; no arrivals, rewards, or memories are created here.</p>
               <p>{recordingLabel}. {wakeState}. Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press.</p>
             </div> : null}

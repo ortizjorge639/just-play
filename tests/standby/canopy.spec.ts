@@ -1,5 +1,28 @@
 import { test, expect, type Page } from "@playwright/test"
+import { execFileSync } from "node:child_process"
 import path from "node:path"
+
+const sourceSHA = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim()
+const sourceCommitted = execFileSync("git", [
+  "diff", "--name-only", "HEAD", "--", "components", "hooks", "tests/standby",
+], { encoding: "utf8" }).trim() === ""
+test.afterEach(async ({ page }, testInfo) => {
+  await testInfo.attach("canopy-ui-history.json", {
+    contentType: "application/json",
+    body: JSON.stringify({
+      sourceSHA, sourceCommitted, case: testInfo.title,
+      oracleType: "actual-components/mocked-actions-NOT-database",
+      observed: await page.evaluate(() => window.standbyFixture ? ({
+        session: window.standbyFixture?.session,
+        notesInvocations: window.standbyFixture?.notesWrites,
+        readSnapshots: window.standbyFixture?.readSnapshots,
+        terminalNotes: window.standbyFixture?.finishedNotes,
+        events: window.standbyFixture?.events,
+        reloadReceipt: sessionStorage.getItem("standby-test-finished-notes"),
+      }) : null),
+    }),
+  })
+})
 
 async function enterNook(page: Page, url = "/") {
   await page.goto(url)
@@ -189,6 +212,105 @@ test("nook is opt-in, lazy, and bound to the existing authoritative session", as
   await expect(canvas).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "A Short Hike" })).toBeVisible()
 })
+
+test("real AppShell nook adopts clean authoritative notes and finishes that draft without rebuilding art", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  const assets: string[] = []
+  page.on("request", request => { if (request.url().endsWith(".glb")) assets.push(request.url()) })
+  await enterNook(page, "/?empty-notes&app-shell")
+  const canvas = page.locator(".canopy-canvas canvas")
+  await expect(canvas).toHaveAttribute("data-render-state", "reduced-motion")
+  await canvas.evaluate(element => element.setAttribute("data-instance", "clean-note-scene"))
+  await page.getByRole("button", { name: "Session details", exact: true }).click()
+  await page.evaluate(() => {
+    window.standbyFixture.session = {
+      ...window.standbyFixture.session!,
+      notes: JSON.stringify(["Authoritative trail note", ...Array(9).fill("")]),
+    }
+    window.dispatchEvent(new Event("online"))
+  })
+  await expect(page.locator(".canopy-notes")).toContainText("Authoritative trail note")
+  await expect(page.locator("#canopy-session-details").getByRole("status")).toHaveCount(0)
+  await expect(canvas).toHaveAttribute("data-instance", "clean-note-scene")
+  expect(assets).toHaveLength(1)
+  expect(await page.evaluate(() => window.standbyFixture.notesWrites)).toEqual([])
+  await page.getByRole("button", { name: "End session", exact: true }).click()
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "load" }),
+    page.getByRole("button", { name: "Finish session", exact: true }).click(),
+  ])
+  await expect.poll(() => page.evaluate(() => {
+    const receipt = sessionStorage.getItem("standby-test-finished-notes")
+    return receipt ? JSON.parse(receipt).map((raw: string) => JSON.parse(raw)[0]) : []
+  })).toEqual(["Authoritative trail note"])
+})
+
+for (const held of ["pre-commit", "committed-ACK"] as const) {
+  test(`real AppShell nook preserves a ${held} draft and failed acknowledgement across inspection and tab return`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/?empty-notes&app-shell")
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+    await page.getByRole("button", { name: "Notes", exact: false }).click()
+    const editor = page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
+    await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
+    await page.evaluate(mode => {
+      window.standbyFixture.holdNoteWrites = mode === "pre-commit"
+      window.standbyFixture.holdNoteAcks = mode === "committed-ACK"
+    }, held)
+    await editor.fill("Current intended trail note")
+    await expect.poll(() => page.evaluate(mode => mode === "pre-commit"
+      ? window.standbyFixture.noteReleases.length : window.standbyFixture.noteAckReleases.length, held)).toBe(1)
+    await page.getByRole("button", { name: /Enter StandBy/ }).click()
+    await page.getByRole("button", { name: "Canopy nook", exact: true }).click()
+    await page.getByRole("button", { name: "Session details", exact: true }).click()
+    const details = page.locator("#canopy-session-details")
+    await expect(details.locator(".canopy-notes")).toContainText("Current intended trail note")
+    await expect(details.getByRole("status")).toHaveText("Saving notes...")
+    const readsBefore = await page.evaluate(() => window.standbyFixture.readCompletions)
+    await page.evaluate(() => {
+      window.standbyFixture.session = { ...window.standbyFixture.session!, notes: "Another context's older note" }
+      window.dispatchEvent(new Event("online"))
+    })
+    await expect.poll(() => page.evaluate(() => window.standbyFixture.readCompletions)).toBeGreaterThan(readsBefore)
+    await expect(details.locator(".canopy-notes")).toContainText("Current intended trail note")
+    await page.evaluate(mode => {
+      if (mode === "pre-commit") {
+        window.standbyFixture.notesError = "Note acknowledgement lost"
+        window.standbyFixture.releaseNextNote()
+      } else {
+        window.standbyFixture.noteAckError = "Note acknowledgement lost"
+        window.standbyFixture.releaseNextNoteAck()
+      }
+    }, held)
+    await expect(page.getByRole("dialog").getByRole("alert")).toContainText("Note acknowledgement lost")
+    await expect(details.getByRole("status")).toHaveText("Notes not saved. Your draft is still here.")
+    await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+    await page.getByRole("button", { name: "Progress", exact: true }).click()
+    await expect(editor).toHaveCount(0)
+    await page.getByRole("button", { name: "Now Playing", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+    await page.getByRole("button", { name: /Enter StandBy/ }).click()
+    await page.getByRole("button", { name: "Canopy nook", exact: true }).click()
+    await page.getByRole("button", { name: "Session details", exact: true }).click()
+    await expect(details.locator(".canopy-notes")).toContainText("Current intended trail note")
+    await expect(details.getByRole("status")).toHaveText("Notes not saved. Your draft is still here.")
+    await page.evaluate(() => {
+      window.standbyFixture.holdNoteWrites = false
+      window.standbyFixture.holdNoteAcks = false
+      window.standbyFixture.notesError = null
+      window.standbyFixture.noteAckError = null
+    })
+    await page.getByRole("button", { name: "End session", exact: true }).click()
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "load" }),
+      page.getByRole("button", { name: "Finish session", exact: true }).click(),
+    ])
+    await expect.poll(() => page.evaluate(() => {
+      const receipt = sessionStorage.getItem("standby-test-finished-notes")
+      return receipt ? JSON.parse(receipt).map((raw: string) => JSON.parse(raw)[0]) : []
+    })).toEqual(["Current intended trail note"])
+  })
+}
 
 test("asset failure visibly falls back and retry releases the failed scene", async ({ page }) => {
   await page.route("**/canopy/*.glb", route => route.fulfill({ status: 503, body: "Unavailable" }))

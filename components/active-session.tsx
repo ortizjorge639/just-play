@@ -57,6 +57,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const { draft: notes, error: notesError, saveState: notesSaveState, flush: flushNotes, getDraft } = notesController
+  const notesMessage = notesSaveState === "saved" ? "Notes saved." : notesSaveState === "acknowledged" ? "Notes acknowledged. The final draft will be saved again when finishing." : notesSaveState === "saving" ? "Saving notes..." : notesSaveState === "error" ? "Notes not saved. Your draft is still here." : "Notes not saved yet."
   const showTimer = standbyPreferences.show_clock
   const [standby, setStandby] = useState(false)
   const [sessionGoal, setSessionGoal] = useState(session.session_goal || "")
@@ -445,7 +446,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
             onNotesChange={handleNotesChange}
           />
           <p role="status" className="text-xs text-muted-foreground">
-            {notesSaveState === "saved" ? "Notes saved." : notesSaveState === "acknowledged" ? "Notes acknowledged. The final draft will be saved again when finishing." : notesSaveState === "saving" ? "Saving notes..." : notesSaveState === "error" ? "Notes not saved. Your draft is still here." : "Notes not saved yet."}
+            {notesMessage}
           </p>
           </fieldset>
         )}
@@ -607,7 +608,8 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
       </AnimatePresence>
     </div>
     {standby && (isPlaying || isPaused) ? <StandbySession
-      session={{ ...session, status }}
+      session={{ ...session, status, notes }}
+      notesStatus={notesSaveState === "saved" ? null : notesMessage}
       elapsed={formatTime(elapsed)}
       elapsedSeconds={elapsed}
       preferences={standbyPreferences}
