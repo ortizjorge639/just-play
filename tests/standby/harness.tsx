@@ -23,8 +23,8 @@ if (params.has("empty-notes") && fixture.session) {
 }
 
 function Harness() {
-  const { session, updateSession, syncError, refreshSession, beginMutation, endMutation } = useSessionReconciliation(fixture.session, getActiveSession)
-  const notesController = useSessionNotes(session?.id ?? null, session?.notes ?? "")
+  const { session, sessionReadRevision, updateSession, syncError, refreshSession, beginMutation, endMutation } = useSessionReconciliation(fixture.session, getActiveSession)
+  const notesController = useSessionNotes(session?.id ?? null, session?.notes ?? "", sessionReadRevision, beginMutation, endMutation)
   const [preferences, setPreferences] = useState<StandbyPreferences>({
     ...DEFAULT_STANDBY_PREFERENCES,
     show_clock: !params.has("hidden"),

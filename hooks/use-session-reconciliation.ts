@@ -7,13 +7,14 @@ export function useSessionReconciliation<T>(
   load: () => Promise<T | null>,
 ) {
   const [session, setSession] = useState(initialSession)
+  const [sessionReadRevision, setSessionReadRevision] = useState(0)
   const [syncError, setSyncError] = useState<string | null>("Checking session state before enabling controls...")
   const revision = useRef(0)
   const mutations = useRef(0)
-  const invalidate = useCallback(() => { ++revision.current }, [])
+  const invalidate = useCallback(() => ++revision.current, [])
   const beginMutation = useCallback(() => {
     ++mutations.current
-    invalidate()
+    return invalidate()
   }, [invalidate])
   const endMutation = useCallback(() => {
     mutations.current = Math.max(0, mutations.current - 1)
@@ -35,6 +36,7 @@ export function useSessionReconciliation<T>(
       ])
       if (request !== revision.current) return
       setSession(next)
+      setSessionReadRevision(request)
       setSyncError(null)
     } catch (cause) {
       if (request !== revision.current) return
@@ -75,5 +77,5 @@ export function useSessionReconciliation<T>(
     invalidate()
     setSession(update)
   }, [invalidate])
-  return { session, setSession, updateSession, syncError, refreshSession, beginMutation, endMutation }
+  return { session, sessionReadRevision, setSession, updateSession, syncError, refreshSession, beginMutation, endMutation }
 }

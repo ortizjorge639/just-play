@@ -17,6 +17,10 @@ export const fixture: {
   session: FixtureSession | null
   error: string | null
   delay: number
+  holdReads: boolean
+  readReleases: (() => void)[]
+  readSnapshots: (string | null)[]
+  releaseNextRead: () => void
   writes: SessionStatus[]
   savedPreferences: StandbyPreferences | null
   gameEndWrites: { kind: "beaten" | "abandoned"; gameId: string; expected?: ExpectedSession | null }[]
@@ -40,6 +44,8 @@ export const fixture: {
   events: { kind: "notes-start" | "notes-saved" | "notes-late" | "finish" | "beaten" | "abandoned"; notes: string }[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
+  holdReads: false, readReleases: [], readSnapshots: [],
+  releaseNextRead: () => { fixture.readReleases.shift()?.() },
   notesDelay: 0, finalizationDelay: 0, notesError: null, notesWrites: [], finishedNotes: [], events: [],
   holdNoteWrites: false, noteReleases: [],
   releaseNextNote: () => { fixture.noteReleases.shift()?.() },
@@ -53,6 +59,8 @@ type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_el
 
 export async function getActiveSession() {
   const snapshot = fixture.session ? { ...fixture.session } : null
+  fixture.readSnapshots.push(snapshot?.notes ?? null)
+  if (fixture.holdReads) await new Promise<void>(resolve => fixture.readReleases.push(resolve))
   if (fixture.delay) await new Promise(resolve => setTimeout(resolve, fixture.delay))
   if (fixture.error) throw new Error(fixture.error)
   return snapshot

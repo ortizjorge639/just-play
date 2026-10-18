@@ -115,7 +115,12 @@ executes before that boundary and is overwritten, or reaches an immutable finish
 session and is rejected. The client queue alone does not establish server execution
 order after a lost response. Drafts, acknowledged values, pending writes and errors
 live together in the AppShell's in-memory notes queue, so Progress/back can remount
-the editor without treating optimistic text as saved or dropping its error. This
+the editor without treating optimistic text as saved or dropping its error. A clean
+queue adopts same-session notes from authoritative refreshes, including in an open
+editor; dirty, pending, failed or uncertain drafts are not replaced. Note writes
+invalidate earlier reads, and the queue checks the accepted read revision against
+its write barrier so a late pre-write read cannot roll back a newer acknowledgement.
+After a clean acknowledgement, a later authoritative read can still be adopted. This
 does not persist drafts across browser reloads or sign-out. Leaving the screen or closing the browser is
 not an awaited save guarantee; navigation cleanup is only best effort, not
 offline synchronization or a promise to recover drafts after a remote finish.
@@ -206,6 +211,8 @@ layouts, reduced motion, independent settings, reminders without auto-pause,
 pause/resume/finish, ordered acknowledgements, commit-then-lost-response recovery,
 late execution around the final-draft boundary and failure-blocked finalization,
 actual AppShell Progress/back remounts (including pending/failed save truth),
+clean remote-note adoption on the real 20-second interval, pre-write reads arriving
+after a newer acknowledgement, and dirty/uncertain draft protection,
 remote end, reconnect and errors. Pointer tests wait for completed layout/sheet
 animations, not arbitrary delays or keyboard substitution. Set `STANDBY_TEST_PORT` to an unused port if a
 different harness is already running. They do not establish real

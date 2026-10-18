@@ -45,10 +45,10 @@ export function AppShell({
     initialSession || activeGame ? "session" : "deck"
   )
   const {
-    session: activeSession, setSession: setActiveSession, updateSession,
+    session: activeSession, sessionReadRevision, setSession: setActiveSession, updateSession,
     syncError, refreshSession, beginMutation, endMutation,
   } = useSessionReconciliation(initialSession, getActiveSession)
-  const notesController = useSessionNotes(activeSession?.id ?? null, activeSession?.notes ?? "")
+  const notesController = useSessionNotes(activeSession?.id ?? null, activeSession?.notes ?? "", sessionReadRevision, beginMutation, endMutation)
   const [needsRefresh, setNeedsRefresh] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showSettings, setShowSettings] = useState(false)

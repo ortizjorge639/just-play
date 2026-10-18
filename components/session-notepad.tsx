@@ -43,7 +43,7 @@ export function SessionNotepad({
   const [goalOpen, setGoalOpen] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
-  const [pages, setPages] = useState(() => parsePages(notes))
+  const pages = parsePages(notes)
   const [editingGoal, setEditingGoal] = useState(false)
   const [goalDraft, setGoalDraft] = useState(goal)
   const [direction, setDirection] = useState(0)
@@ -74,7 +74,6 @@ export function SessionNotepad({
     (text: string) => {
       const updated = [...pages]
       updated[currentPage] = text
-      setPages(updated)
       onNotesChange(JSON.stringify(updated))
     },
     [currentPage, pages, onNotesChange]

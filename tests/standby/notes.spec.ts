@@ -2,10 +2,14 @@ import { test, expect, type Page } from "@playwright/test"
 import { execFileSync } from "node:child_process"
 
 const sourceSHA = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim()
+const sourceCommitted = execFileSync("git", [
+  "diff", "--name-only", "HEAD", "--", "components", "hooks", "tests/standby",
+], { encoding: "utf8" }).trim() === ""
 test.afterEach(async ({ page }, testInfo) => {
   const observed = await page.evaluate(() => ({
     session: window.standbyFixture?.session,
     notesInvocations: window.standbyFixture?.notesWrites,
+    readSnapshots: window.standbyFixture?.readSnapshots,
     terminalNotes: window.standbyFixture?.finishedNotes,
     reloadReceipt: sessionStorage.getItem("standby-test-finished-notes"),
     events: window.standbyFixture?.events.map((event, index) => ({
@@ -15,7 +19,7 @@ test.afterEach(async ({ page }, testInfo) => {
   await testInfo.attach("mocked-ui-history.json", {
     contentType: "application/json",
     body: JSON.stringify({
-      sourceSHA, case: testInfo.title, contextId: testInfo.testId,
+      sourceSHA, sourceCommitted, case: testInfo.title, contextId: testInfo.testId,
       oracleType: "browser-components-with-mocked-actions-not-database",
       status: testInfo.status, observed,
     }),
@@ -28,8 +32,8 @@ const endings = [
   { name: "Abandon Game", kind: "abandoned" },
 ] as const
 
-async function openNotes(page: Page, url = "/") {
-  await page.clock.install()
+async function openNotes(page: Page, url = "/", virtualClock = true) {
+  if (virtualClock) await page.clock.install()
   await page.goto(url)
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
   await page.getByRole("button", { name: "Notes", exact: false }).click()
@@ -389,3 +393,111 @@ for (const interrupted of ["failed", "pending"] as const) {
     }
   })
 }
+
+test("clean same-session reconciliation adopts remote notes before and after Progress/back and finishes that draft", async ({ page }) => {
+  test.setTimeout(45000)
+  const editor = await openNotes(page, "/?empty-notes&app-shell", false)
+  await expect(editor).toHaveValue("")
+  await page.evaluate(() => {
+    window.standbyFixture.session = {
+      ...window.standbyFixture.session!,
+      notes: JSON.stringify(["Remote legitimate memory", ...Array(9).fill("")]),
+    }
+  })
+  // Exercise the actual 20-second interval without installing a virtual clock.
+  await expect(editor).toHaveValue("Remote legitimate memory", { timeout: 25000 })
+  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  expect(await page.evaluate(() => window.standbyFixture.notesWrites)).toEqual([])
+  await page.getByRole("button", { name: "Progress", exact: true }).click()
+  await expect(editor).toHaveCount(0)
+  await page.getByRole("button", { name: "Now Playing", exact: true }).click()
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+  await page.getByRole("button", { name: "Notes", exact: false }).click()
+  await expect(editor).toHaveValue("Remote legitimate memory")
+  await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
+  await page.getByRole("button", { name: "End Session", exact: true }).click()
+  const action = page.getByRole("button", { name: /Done for Today/ })
+  await expect(page.locator("div.rounded-t-3xl").filter({ has: action })).toHaveCSS("transform", "none")
+  await Promise.all([page.waitForNavigation({ waitUntil: "load" }), action.click()])
+  await expect.poll(() => page.evaluate(() => {
+    const receipt = sessionStorage.getItem("standby-test-finished-notes")
+    return receipt ? JSON.parse(receipt).map((raw: string) => JSON.parse(raw)[0]) : []
+  })).toEqual(["Remote legitimate memory"])
+})
+
+test("a pre-write poll resolved after the newer ACK cannot roll back notes; a later clean read can be adopted", async ({ page }) => {
+  test.setTimeout(65000)
+  const editor = await openNotes(page, "/?empty-notes&app-shell", false)
+  await page.evaluate(() => {
+    window.standbyFixture.holdReads = true
+    window.standbyFixture.holdNoteWrites = true
+  })
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.readReleases.length), { timeout: 25000 }).toBe(1)
+  await editor.fill("New local ACK")
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(1)
+  await page.evaluate(() => window.standbyFixture.releaseNextNote())
+  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await page.evaluate(() => window.standbyFixture.releaseNextRead())
+  await expect(editor).toHaveValue("New local ACK")
+  await page.getByRole("button", { name: "Progress", exact: true }).click()
+  await expect(editor).toHaveCount(0)
+  await page.getByRole("button", { name: "Now Playing", exact: true }).click()
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+  await page.getByRole("button", { name: "Notes", exact: false }).click()
+  await expect(editor).toHaveValue("New local ACK")
+  await page.evaluate(() => {
+    window.standbyFixture.holdReads = false
+    window.standbyFixture.session = {
+      ...window.standbyFixture.session!,
+      notes: JSON.stringify(["Later remote ACK", ...Array(9).fill("")]),
+    }
+  })
+  await expect(editor).toHaveValue("Later remote ACK", { timeout: 25000 })
+  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+})
+
+test("a dirty draft is not replaced by an authoritative refresh before its debounce", async ({ page }) => {
+  const editor = await openNotes(page, "/?empty-notes&app-shell")
+  await editor.fill("Local draft")
+  await page.evaluate(() => {
+    window.standbyFixture.session = {
+      ...window.standbyFixture.session!,
+      notes: JSON.stringify(["Remote draft", ...Array(9).fill("")]),
+    }
+    window.dispatchEvent(new Event("online"))
+  })
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+  await expect(editor).toHaveValue("Local draft")
+  await expect(page.getByRole("status")).toHaveText("Notes not saved yet.")
+  expect(await page.evaluate(() => window.standbyFixture.notesWrites)).toEqual([])
+})
+
+test("an uncertain draft stays protected after an overwrite ACK and later remote reconciliation", async ({ page }) => {
+  test.setTimeout(45000)
+  const editor = await openNotes(page, "/?empty-notes&app-shell", false)
+  await page.evaluate(() => {
+    window.standbyFixture.notesErrorMode = "reject-then-commit-late"
+    window.standbyFixture.notesError = "Response lost"
+  })
+  await editor.fill("Unknown write")
+  await expect(page.getByRole("alert")).toContainText("Response lost")
+  await editor.fill("Current intended draft")
+  await page.evaluate(() => { window.standbyFixture.notesError = null })
+  await expect(page.getByRole("status")).toContainText("Notes acknowledged")
+  await page.evaluate(() => {
+    window.standbyFixture.settleLateNotes()
+  })
+  await expect.poll(() => page.evaluate(() => {
+    const notes = window.standbyFixture.readSnapshots.at(-1)
+    return notes ? JSON.parse(notes)[0] : null
+  }), { timeout: 25000 }).toBe("Unknown write")
+  await expect(editor).toHaveValue("Current intended draft")
+  await expect(page.getByRole("status")).toContainText("Notes acknowledged")
+  await page.getByRole("button", { name: "Progress", exact: true }).click()
+  await expect(editor).toHaveCount(0)
+  await page.getByRole("button", { name: "Now Playing", exact: true }).click()
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+  await page.getByRole("button", { name: "Notes", exact: false }).click()
+  await expect(editor).toHaveValue("Current intended draft")
+  await expect(page.getByRole("status")).toContainText("Notes acknowledged")
+})
