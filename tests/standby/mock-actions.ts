@@ -20,6 +20,7 @@ export const fixture: {
   holdReads: boolean
   readReleases: (() => void)[]
   readSnapshots: (string | null)[]
+  readCompletions: number
   releaseNextRead: () => void
   writes: SessionStatus[]
   savedPreferences: StandbyPreferences | null
@@ -28,6 +29,10 @@ export const fixture: {
   holdNoteWrites: boolean
   noteReleases: (() => void)[]
   releaseNextNote: () => void
+  holdNoteAcks: boolean
+  noteAckReleases: (() => void)[]
+  releaseNextNoteAck: () => void
+  noteAckError: string | null
   finalizationDelay: number
   notesError: string | null
   notesErrorMode: "before-commit" | "commit-then-reject" | "reject-then-commit-late"
@@ -41,14 +46,16 @@ export const fixture: {
   completionError: string | null
   notesWrites: string[]
   finishedNotes: string[]
-  events: { kind: "notes-start" | "notes-saved" | "notes-late" | "finish" | "beaten" | "abandoned"; notes: string }[]
+  events: { kind: "notes-start" | "notes-saved" | "notes-late" | "notes-ack-held" | "notes-ack-released" | "finish" | "beaten" | "abandoned"; notes: string }[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
-  holdReads: false, readReleases: [], readSnapshots: [],
+  holdReads: false, readReleases: [], readSnapshots: [], readCompletions: 0,
   releaseNextRead: () => { fixture.readReleases.shift()?.() },
   notesDelay: 0, finalizationDelay: 0, notesError: null, notesWrites: [], finishedNotes: [], events: [],
   holdNoteWrites: false, noteReleases: [],
   releaseNextNote: () => { fixture.noteReleases.shift()?.() },
+  holdNoteAcks: false, noteAckReleases: [], noteAckError: null,
+  releaseNextNoteAck: () => { fixture.noteAckReleases.shift()?.() },
   creationError: null, completionError: null,
   notesErrorMode: "before-commit", deferredNotes: [], settleLateOnFinish: true,
   settleLateNotes: settleLateNotes, rejectedLateNotes: 0, schema020: true,
@@ -63,6 +70,7 @@ export async function getActiveSession() {
   if (fixture.holdReads) await new Promise<void>(resolve => fixture.readReleases.push(resolve))
   if (fixture.delay) await new Promise(resolve => setTimeout(resolve, fixture.delay))
   if (fixture.error) throw new Error(fixture.error)
+  fixture.readCompletions++
   return snapshot
 }
 export async function updateSessionStatus(
@@ -112,6 +120,12 @@ export async function updateSessionNotes(id: string, notes: string) {
     throw new Error(fixture.notesError)
   }
   storeNotes(id, notes)
+  if (fixture.holdNoteAcks) {
+    fixture.events.push({ kind: "notes-ack-held", notes })
+    await new Promise<void>(resolve => fixture.noteAckReleases.push(resolve))
+    fixture.events.push({ kind: "notes-ack-released", notes })
+    if (fixture.noteAckError) throw new Error(fixture.noteAckError)
+  }
 }
 function storeNotes(id: string, notes: string) {
   if (!fixture.session?.active || fixture.session.id !== id) throw new Error("Only active session notes can be edited.")

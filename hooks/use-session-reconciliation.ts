@@ -77,5 +77,8 @@ export function useSessionReconciliation<T>(
     invalidate()
     setSession(update)
   }, [invalidate])
-  return { session, sessionReadRevision, setSession, updateSession, syncError, refreshSession, beginMutation, endMutation }
+  return {
+    session, sessionReadRevision, setSession, updateSession, syncError, refreshSession,
+    invalidateSessionRead: invalidate, beginMutation, endMutation,
+  }
 }

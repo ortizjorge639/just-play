@@ -118,8 +118,13 @@ live together in the AppShell's in-memory notes queue, so Progress/back can remo
 the editor without treating optimistic text as saved or dropping its error. A clean
 queue adopts same-session notes from authoritative refreshes, including in an open
 editor; dirty, pending, failed or uncertain drafts are not replaced. Note writes
-invalidate earlier reads, and the queue checks the accepted read revision against
-its write barrier so a late pre-write read cannot roll back a newer acknowledgement.
+invalidate earlier reads at invocation and response settlement, and the queue checks
+the accepted read revision against its write barrier so reads begun before or during
+a write cannot roll back a newer acknowledgement. Notes do not hold the lifecycle
+mutation guard: periodic, reconnect and explicit Retry reads can still observe a
+remote end or replacement while a note response is indefinitely outstanding. Such
+reads do not acknowledge that pending draft. Ordinary lifecycle actions retain
+their existing mutation guard.
 After a clean acknowledgement, a later authoritative read can still be adopted. This
 does not persist drafts across browser reloads or sign-out. Leaving the screen or closing the browser is
 not an awaited save guarantee; navigation cleanup is only best effort, not
@@ -213,6 +218,8 @@ late execution around the final-draft boundary and failure-blocked finalization,
 actual AppShell Progress/back remounts (including pending/failed save truth),
 clean remote-note adoption on the real 20-second interval, pre-write reads arriving
 after a newer acknowledgement, and dirty/uncertain draft protection,
+held pre-commit/committed-ACK note responses during periodic/reconnect/Retry reads,
+replacement isolation after late old ACK/error, and multiple queued note writes,
 remote end, reconnect and errors. Pointer tests wait for completed layout/sheet
 animations, not arbitrary delays or keyboard substitution. Set `STANDBY_TEST_PORT` to an unused port if a
 different harness is already running. They do not establish real

@@ -10,6 +10,7 @@ test.afterEach(async ({ page }, testInfo) => {
     session: window.standbyFixture?.session,
     notesInvocations: window.standbyFixture?.notesWrites,
     readSnapshots: window.standbyFixture?.readSnapshots,
+    readCompletions: window.standbyFixture?.readCompletions,
     terminalNotes: window.standbyFixture?.finishedNotes,
     reloadReceipt: sessionStorage.getItem("standby-test-finished-notes"),
     events: window.standbyFixture?.events.map((event, index) => ({
@@ -437,7 +438,9 @@ test("a pre-write poll resolved after the newer ACK cannot roll back notes; a la
   await expect.poll(() => page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(1)
   await page.evaluate(() => window.standbyFixture.releaseNextNote())
   await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  const completedReads = await page.evaluate(() => window.standbyFixture.readCompletions)
   await page.evaluate(() => window.standbyFixture.releaseNextRead())
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.readCompletions)).toBeGreaterThan(completedReads)
   await expect(editor).toHaveValue("New local ACK")
   await page.getByRole("button", { name: "Progress", exact: true }).click()
   await expect(editor).toHaveCount(0)
@@ -500,4 +503,143 @@ test("an uncertain draft stays protected after an overwrite ACK and later remote
   await page.getByRole("button", { name: "Notes", exact: false }).click()
   await expect(editor).toHaveValue("Current intended draft")
   await expect(page.getByRole("status")).toContainText("Notes acknowledged")
+})
+
+for (const held of ["pre-commit", "committed-ACK"] as const) {
+  for (const observation of ["periodic", "reconnect", "Retry"] as const) {
+    test(`${observation} read reconciles a remote end/replacement while a ${held} note response stays held`, async ({ page }, testInfo) => {
+      test.setTimeout(40000)
+      const editor = await openNotes(page, "/?empty-notes&app-shell", false)
+      const queuedCount = () => page.evaluate((mode) => mode === "pre-commit"
+        ? window.standbyFixture.noteReleases.length : window.standbyFixture.noteAckReleases.length, held)
+      await page.evaluate(mode => {
+        window.standbyFixture.holdNoteWrites = mode === "pre-commit"
+        window.standbyFixture.holdNoteAcks = mode === "committed-ACK"
+      }, held)
+      await editor.fill("Old session unacknowledged draft")
+      await expect.poll(queuedCount).toBe(1)
+      await expect(page.getByRole("status")).toHaveText("Saving notes...")
+      const readsBefore = await page.evaluate(() => window.standbyFixture.readSnapshots.length)
+      const replacement = await page.evaluate(() => ({
+        ...window.standbyFixture.session!, id: "replacement-session",
+        notes: JSON.stringify(["Replacement memory", ...Array(9).fill("")]),
+      }))
+      if (observation === "Retry") {
+        await page.evaluate(() => {
+          window.standbyFixture.error = "Read service unavailable"
+          window.dispatchEvent(new Event("online"))
+        })
+        await expect(page.getByText(/Could not verify session/)).toBeVisible()
+      }
+      await page.evaluate(({ replace, replacement }) => {
+        window.standbyFixture.error = null
+        window.standbyFixture.session = replace ? replacement : null
+      }, { replace: observation !== "periodic", replacement })
+      if (observation === "reconnect") await page.evaluate(() => window.dispatchEvent(new Event("online")))
+      if (observation === "Retry") await page.getByRole("button", { name: "Retry", exact: true }).click()
+      await expect.poll(() => page.evaluate(() => window.standbyFixture.readSnapshots.length), {
+        timeout: observation === "periodic" ? 25000 : 5000,
+      }).toBeGreaterThan(readsBefore)
+      if (observation === "periodic") {
+        await expect(page.getByText("No active session", { exact: true })).toBeVisible()
+        await expect(editor).toHaveCount(0)
+        await expect(page.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0)
+        // Install the next identity while the old response is STILL outstanding.
+        await page.evaluate(replacement => {
+          window.standbyFixture.session = replacement
+          window.dispatchEvent(new Event("online"))
+        }, replacement)
+      }
+      await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+      const notes = page.getByRole("button", { name: "Notes", exact: false })
+      if (await editor.count() === 0) await notes.click()
+      await expect(editor).toHaveValue("Replacement memory")
+      await expect(page.getByRole("status")).toHaveText("Notes saved.")
+      // The replacement has been observed before the unrelated response settles.
+      expect(await queuedCount()).toBe(1)
+      const readsWhileHeld = await page.evaluate(() => window.standbyFixture.readSnapshots.length)
+      await page.evaluate(({ mode, error }) => {
+        if (mode === "pre-commit") window.standbyFixture.releaseNextNote()
+        else {
+          window.standbyFixture.noteAckError = error
+          window.standbyFixture.releaseNextNoteAck()
+        }
+      }, { mode: held, error: observation === "Retry" ? null : "Old committed response lost" })
+      await expect.poll(queuedCount).toBe(0)
+      // A fresh read after the old error must remain live and keep the new queue.
+      await page.evaluate(() => window.dispatchEvent(new Event("online")))
+      await expect.poll(() => page.evaluate(() => window.standbyFixture.readSnapshots.length)).toBeGreaterThan(readsWhileHeld)
+      await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+      await expect(editor).toHaveValue("Replacement memory")
+      await expect(page.getByRole("status")).toHaveText("Notes saved.")
+      await expect(page.getByRole("alert")).toHaveCount(0)
+      await testInfo.attach("liveness-history.json", {
+        contentType: "application/json",
+        body: JSON.stringify({
+          sourceSHA, sourceCommitted, oracleType: "actual-AppShell/mocked-actions-NOT-database",
+          held, observation, readsBefore, readsWhileHeld,
+          causalOrder: ["note-invoked", held, "remote-end-or-replacement", "authoritative-read",
+            "replacement-visible-before-response-release", "old-response-settles", "fresh-read-retains-replacement"],
+        }),
+      })
+    })
+  }
+}
+
+test("a read begun during a held write cannot replace its newer ACK; a later clean read still adopts", async ({ page }) => {
+  const editor = await openNotes(page, "/?empty-notes&app-shell", false)
+  await page.evaluate(() => { window.standbyFixture.holdNoteWrites = true })
+  await editor.fill("New acknowledged draft")
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.noteReleases.length)).toBe(1)
+  await page.evaluate(() => {
+    window.standbyFixture.holdReads = true
+    window.dispatchEvent(new Event("online"))
+  })
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.readReleases.length)).toBe(1)
+  await page.evaluate(() => window.standbyFixture.releaseNextNote())
+  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  const completedReads = await page.evaluate(() => window.standbyFixture.readCompletions)
+  await page.evaluate(() => window.standbyFixture.releaseNextRead())
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.readCompletions)).toBeGreaterThan(completedReads)
+  await expect(editor).toHaveValue("New acknowledged draft")
+  await page.evaluate(() => {
+    window.standbyFixture.holdReads = false
+    window.standbyFixture.session = {
+      ...window.standbyFixture.session!,
+      notes: JSON.stringify(["Later authoritative draft", ...Array(9).fill("")]),
+    }
+    window.dispatchEvent(new Event("online"))
+  })
+  await expect(editor).toHaveValue("Later authoritative draft")
+  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+})
+
+test("multiple queued note writes never suppress reads or consume lifecycle mutation guards", async ({ page }) => {
+  const editor = await openNotes(page, "/?empty-notes&app-shell", false)
+  await page.evaluate(() => { window.standbyFixture.holdNoteWrites = true })
+  await editor.fill("First queued draft")
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.noteReleases.length)).toBe(1)
+  await editor.fill("Second queued draft")
+  await page.evaluate(() => window.standbyFixture.releaseNextNote())
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(2)
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.noteReleases.length)).toBe(1)
+  const readsBefore = await page.evaluate(() => window.standbyFixture.readSnapshots.length)
+  await page.evaluate(() => window.dispatchEvent(new Event("online")))
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.readSnapshots.length)).toBeGreaterThan(readsBefore)
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
+  await expect(editor).toHaveValue("Second queued draft")
+  await expect(page.getByRole("status")).toHaveText("Saving notes...")
+  await page.evaluate(() => window.standbyFixture.releaseNextNote())
+  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await page.evaluate(() => {
+    window.standbyFixture.session = {
+      ...window.standbyFixture.session!,
+      notes: JSON.stringify(["Fresh after both writes", ...Array(9).fill("")]),
+    }
+    window.dispatchEvent(new Event("online"))
+  })
+  await expect(editor).toHaveValue("Fresh after both writes")
+  expect(await page.evaluate(() => window.standbyFixture.notesWrites.map(raw => JSON.parse(raw)[0]))).toEqual([
+    "First queued draft", "Second queued draft",
+  ])
 })

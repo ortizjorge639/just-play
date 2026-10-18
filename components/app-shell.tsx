@@ -46,9 +46,9 @@ export function AppShell({
   )
   const {
     session: activeSession, sessionReadRevision, setSession: setActiveSession, updateSession,
-    syncError, refreshSession, beginMutation, endMutation,
+    syncError, refreshSession, invalidateSessionRead, beginMutation, endMutation,
   } = useSessionReconciliation(initialSession, getActiveSession)
-  const notesController = useSessionNotes(activeSession?.id ?? null, activeSession?.notes ?? "", sessionReadRevision, beginMutation, endMutation)
+  const notesController = useSessionNotes(activeSession?.id ?? null, activeSession?.notes ?? "", sessionReadRevision, invalidateSessionRead)
   const [needsRefresh, setNeedsRefresh] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showSettings, setShowSettings] = useState(false)

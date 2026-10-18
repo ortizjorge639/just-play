@@ -13,8 +13,7 @@ interface Snapshot { draft: string; saveState: SaveState; error: string | null }
 function createNotesQueue(
   sessionId: string | null,
   initialNotes: string,
-  beginMutation: () => number,
-  endMutation: () => void,
+  invalidateSessionRead: () => number,
 ) {
   let snapshot: Snapshot = { draft: initialNotes, saveState: "saved", error: null }
   let saved: string | null = initialNotes
@@ -39,11 +38,14 @@ function createNotesQueue(
           publish({ saveState: "saving" })
           // Reject reads started before this write, including a result already
           // accepted by reconciliation but not yet observed by this queue.
-          minimumReadRevision = beginMutation()
+          minimumReadRevision = invalidateSessionRead()
           try { await updateSessionNotes(sessionId, draft) }
-          finally { endMutation() }
+          // Lifecycle reads must remain live while a response is outstanding.
+          // Also reject reads begun during the write but delivered after its ACK.
+          finally { minimumReadRevision = invalidateSessionRead() }
           saved = draft
         }
+        if (timeout) { clearTimeout(timeout); timeout = null }
         publish({ saveState: uncertain ? "acknowledged" : "saved", error: null })
       } catch (cause) {
         saved = null
@@ -85,11 +87,10 @@ export function useSessionNotes(
   sessionId: string | null,
   serverNotes: string,
   serverReadRevision: number,
-  beginMutation: () => number,
-  endMutation: () => void,
+  invalidateSessionRead: () => number,
 ) {
-  const [queue, setQueue] = useState(() => createNotesQueue(sessionId, serverNotes, beginMutation, endMutation))
-  if (queue.sessionId !== sessionId) setQueue(createNotesQueue(sessionId, serverNotes, beginMutation, endMutation))
+  const [queue, setQueue] = useState(() => createNotesQueue(sessionId, serverNotes, invalidateSessionRead))
+  if (queue.sessionId !== sessionId) setQueue(createNotesQueue(sessionId, serverNotes, invalidateSessionRead))
   const snapshot = useSyncExternalStore(queue.subscribe, queue.getSnapshot, queue.getSnapshot)
   useLayoutEffect(() => {
     queue.adoptServerNotes(serverNotes, serverReadRevision)
