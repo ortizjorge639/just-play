@@ -37,10 +37,53 @@ function resolvePGlite() {
 }
 const { PGlite } = loadPackage(resolvePGlite())
 const migration = (name) => readFileSync(new URL(name, import.meta.url), "utf8")
+const rpcSignatures = [
+  "public.create_standby_session(text,integer)",
+  "public.transition_standby_session(uuid,jsonb,jsonb)",
+  "public.set_standby_game_progress(text,text,text)",
+  "public.backfill_standby_profile_xp(integer,date)",
+]
+const roleMembershipSQL = `
+  with recursive inherited(role_id,path) as (
+    select oid,array[oid] from pg_roles where rolname='anon'
+    union all
+    select m.roleid,i.path || m.roleid
+    from inherited i join pg_auth_members m on m.member=i.role_id
+    where not m.roleid=any(i.path)
+  )
+  select pg_has_role('anon','authenticated','MEMBER') as anon_member_of_authenticated,
+    array(
+      select distinct r.rolname::text
+      from inherited i join pg_roles r on r.oid=i.role_id
+      where cardinality(i.path)>1 order by r.rolname::text
+    ) as anon_parent_roles,
+    case when pg_has_role('anon','authenticated','MEMBER')
+      then 'FAIL: anon reaches authenticated; review memberships separately'
+      else 'No authenticated membership; still require effective anon RPC EXECUTE=false'
+    end as membership_check
+`
 
 test("StandBy migration, RLS and transactional XP contracts", async (t) => {
   const db = new PGlite()
   const one = async (sql, args = []) => (await db.query(sql, args)).rows[0]
+  const rpcPrivileges = async () => Promise.all(rpcSignatures.map((signature) => one(`
+    select $1::text as signature,
+      has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+      has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+      exists (
+        select 1 from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
+        where a.grantee=0 and a.privilege_type='EXECUTE'
+      ) as public_execute
+    from pg_proc p where p.oid=to_regprocedure($1)
+  `, [signature])))
+  const assertRestrictedRPCs = async () => {
+    for (const row of await rpcPrivileges()) {
+      assert.ok(row, "RPC must exist")
+      assert.equal(row.authenticated_execute, true, `${row.signature}: authenticated EXECUTE retained`)
+      assert.equal(row.anon_execute, false, `${row.signature}: effective anon EXECUTE must be denied; review inherited role grants if this fails`)
+      assert.equal(row.public_execute, false, `${row.signature}: PUBLIC EXECUTE must be denied`)
+    }
+  }
   let sequence = 0
   const fixture = async () => {
     const user = `00000000-0000-0000-0000-${String(++sequence).padStart(12, "0")}`
@@ -84,6 +127,7 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
         $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
       create function auth.role() returns text language sql as $$ select 'authenticated'::text $$;
       create role authenticated;
+      create role anon;
     `)
     for (const name of [
       "001_create_tables.sql", "002_rls_policies.sql", "008_add_game_progress.sql",
@@ -97,12 +141,55 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
       "insert into public.sessions(user_id,game_id,status,active,paused_elapsed_seconds) values($1,'legacy','Finished',false,null) returning *",
       [legacyUser],
     )
+    // Supabase-like defaults give anon an explicit grant, independent of PUBLIC.
+    await db.exec("alter default privileges in schema public grant execute on functions to anon")
     await db.exec(migration("018_standby.sql"))
     await db.exec(`
       grant usage on schema public,auth to authenticated;
       grant select,insert,update on public.users,public.sessions,public.game_progress to authenticated;
       grant select on public.games to authenticated;
     `)
+
+    await t.test("018 removes explicit Supabase-style anon defaults and PUBLIC RPC access but preserves authenticated", async () => {
+      await assertRestrictedRPCs()
+      assert.equal((await one(roleMembershipSQL)).anon_member_of_authenticated, false)
+      await db.exec("set role anon")
+      try {
+        for (const sql of [
+          "select * from public.create_standby_session('legacy',0)",
+          "select * from public.transition_standby_session('00000000-0000-0000-0000-000000000001','{}','{}')",
+          "select * from public.set_standby_game_progress('legacy','beaten',null)",
+          "select public.backfill_standby_profile_xp(25,null)",
+        ]) await assert.rejects(db.query(sql), /permission denied/)
+      } finally {
+        await db.exec("reset role")
+      }
+    })
+
+    await t.test("019 corrects already-applied explicit anon grants without disturbing authenticated RPC grants", async () => {
+      for (const signature of rpcSignatures) {
+        await db.exec(`grant execute on function ${signature} to anon`)
+      }
+      for (const row of await rpcPrivileges()) assert.equal(row.anon_execute, true)
+      await db.exec(migration("019_restrict_standby_rpc_execute.sql"))
+      await assertRestrictedRPCs()
+    })
+
+    await t.test("inherited authenticated membership is detected, not silently fixed by explicit anon revokes", async () => {
+      await db.exec("grant authenticated to anon")
+      try {
+        await db.exec(migration("019_restrict_standby_rpc_execute.sql"))
+        const membership = await one(roleMembershipSQL)
+        assert.equal(membership.anon_member_of_authenticated, true)
+        assert.ok(membership.anon_parent_roles.includes("authenticated"))
+        assert.match(membership.membership_check, /^FAIL:/)
+        await assert.rejects(assertRestrictedRPCs(), /effective anon EXECUTE must be denied; review inherited role grants/)
+      } finally {
+        // Undo only the known membership introduced by this isolated test.
+        await db.exec("revoke authenticated from anon")
+      }
+      await assertRestrictedRPCs()
+    })
 
     await t.test("legacy recording defaults true; select * returns dedicated preferences without changing discovery", async () => {
       const oldSession = await one("select * from public.sessions where id=$1", [legacy.id])

@@ -86,6 +86,17 @@ and apply it through the normal Supabase migration process; the app does not
 automatically migrate a shared database. Deploy the migration and app together
 before permitting multi-device testing.
 
+For a database that already received migration 018, apply
+`scripts/019_restrict_standby_rpc_execute.sql` separately after authorization;
+do not rerun the entire feature migration just to correct permissions. New
+installations should apply both migrations in order. The correction explicitly
+revokes the four RPCs' anonymous-role execution grants, which Supabase default
+privileges can grant separately from `PUBLIC`, while retaining authenticated
+execution and the RPCs' `auth.uid()` checks. Verify that `anon` does not inherit
+execution through another granted role; removing unrelated role memberships or
+permissions requires separate review. An unexpected execute grant alone does not
+demonstrate an anonymous mutation.
+
 ```bash
 pnpm exec tsx --test lib/session-time.test.ts
 node --test scripts/standby-actions.test.mjs
