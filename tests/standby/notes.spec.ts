@@ -11,14 +11,19 @@ async function openNotes(page: Page, url = "/") {
   await page.goto(url)
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
   await page.getByRole("button", { name: "Notes", exact: false }).click()
-  return page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
+  const editor = page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
+  // Expansion moves End Session even after a transient frame-stability check.
+  await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
+  return editor
 }
 
 async function finish(page: Page, name: string) {
   await page.getByRole("button", { name: "End Session", exact: true }).click()
   const action = page.getByRole("button", { name, exact: false })
+  // Exercise real pointer input only after entry, and never retry on an exiting sheet.
+  await expect(page.locator("div.rounded-t-3xl").filter({ has: action })).toHaveCSS("transform", "none")
   await expect(action).toBeEnabled()
-  await action.press("Enter")
+  await action.click()
   await expect(page.getByRole("button", { name, exact: false })).toBeHidden()
 }
 
