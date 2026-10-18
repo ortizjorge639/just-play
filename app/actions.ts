@@ -2,7 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Game, PlayerStats } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, StandbyPreferences, Game, PlayerStats } from "@/lib/types"
+import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
+import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
 import { calculateStreak } from "@/lib/streak"
 
@@ -60,6 +62,46 @@ export async function savePreferences(preferences: UserPreferences) {
     .eq("id", user.id)
 
   if (error) throw new Error(error.message)
+  revalidatePath("/")
+}
+
+export async function getStandbyPreferences(): Promise<StandbyPreferences> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+  const { data, error } = await supabase
+    .from("users")
+    .select("standby_preferences")
+    .eq("id", user.id)
+    .single()
+  if (error) throw new Error(`Failed to load StandBy preferences: ${error.message}`)
+  if (!data) throw new Error("User profile not found")
+  return { ...DEFAULT_STANDBY_PREFERENCES, ...data.standby_preferences }
+}
+
+/** Account defaults only; an existing session's record_time never changes. */
+export async function saveStandbyPreferences(preferences: StandbyPreferences): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+  if (!preferences || typeof preferences !== "object" || Array.isArray(preferences)) {
+    throw new Error("StandBy preferences must be a full object of boolean settings")
+  }
+  const settings: StandbyPreferences = { ...DEFAULT_STANDBY_PREFERENCES }
+  for (const key of Object.keys(settings) as (keyof StandbyPreferences)[]) {
+    if (typeof preferences[key] !== "boolean") {
+      throw new Error(`StandBy preference ${key} must be a boolean`)
+    }
+    settings[key] = preferences[key]
+  }
+  const { data, error } = await supabase
+    .from("users")
+    .update({ standby_preferences: settings })
+    .eq("id", user.id)
+    .select("id")
+    .single()
+  if (error) throw new Error(`Failed to save StandBy preferences: ${error.message}`)
+  if (!data) throw new Error("User profile not found")
   revalidatePath("/")
 }
 
@@ -301,40 +343,40 @@ export async function createSession(gameId: string) {
   if (!user) throw new Error("Not authenticated")
 
   // Check for existing active session
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("sessions")
     .select("id")
     .eq("user_id", user.id)
     .eq("active", true)
     .maybeSingle()
 
+  if (existingError) throw new Error(existingError.message)
   if (existing) {
     throw new Error("You already have an active session. Finish it first.")
   }
 
+  const [{ data: existingProgress, error: progressError }, { data: profile, error: profileError }] = await Promise.all([
+    supabase.from("game_progress").select("*").eq("user_id", user.id).eq("game_id", gameId).maybeSingle(),
+    supabase.from("users").select("last_session_date").eq("id", user.id).single(),
+  ])
+  if (progressError) throw new Error(progressError.message)
+  if (profileError) throw new Error(profileError.message)
+  const isNewGame = !existingProgress
+  const xp = calculateSessionXP({
+    durationMinutes: 0,
+    isNewGame,
+    isGameBeaten: false,
+    isComeback: isComeback(profile?.last_session_date ?? null),
+  })
+  const startXP = xp.base + xp.newGameBonus + xp.comebackBonus
   const { data, error } = await supabase
-    .from("sessions")
-    .insert({
-      user_id: user.id,
-      game_id: gameId,
-      status: "LockedIn" as SessionStatus,
-      active: true,
-    })
-    .select("*")
+    .rpc("create_standby_session", { p_game_id: gameId, p_start_xp: startXP })
+    .returns<Session[]>()
     .single()
 
   if (error) throw new Error(error.message)
 
   // Also create/update game_progress to track this game is being played
-  const { data: existingProgress } = await supabase
-    .from("game_progress")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("game_id", gameId)
-    .maybeSingle()
-
-  const isNewGame = !existingProgress
-
   if (!existingProgress) {
     await supabase
       .from("game_progress")
@@ -362,37 +404,12 @@ export async function createSession(gameId: string) {
       .eq("id", existingProgress.id)
   }
 
-  // Award XP for starting a session
-  const { data: profile } = await supabase
+  // Migration 018 commits the start award with the session insert.
+  const { error: dateError } = await supabase
     .from("users")
-    .select("total_xp, last_session_date")
+    .update({ last_session_date: new Date().toISOString().split("T")[0] })
     .eq("id", user.id)
-    .single()
-
-  const comeback = isComeback(profile?.last_session_date ?? null)
-  const xp = calculateSessionXP({
-    durationMinutes: 0,
-    isNewGame,
-    isGameBeaten: false,
-    isComeback: comeback,
-  })
-
-  const startXP = xp.base + xp.newGameBonus + xp.comebackBonus
-  if (startXP > 0 && profile) {
-    const newTotalXP = profile.total_xp + startXP
-    const { level } = levelFromXP(newTotalXP)
-    const today = new Date().toISOString().split("T")[0]
-
-    await supabase
-      .from("users")
-      .update({ total_xp: newTotalXP, level, last_session_date: today })
-      .eq("id", user.id)
-
-    await supabase
-      .from("sessions")
-      .update({ xp_awarded: startXP })
-      .eq("id", data.id)
-  }
+  if (dateError) throw new Error(dateError.message)
 
   // Update streak
   await updateUserStreak(user.id)
@@ -406,7 +423,8 @@ export async function createSession(gameId: string) {
 
 export async function updateSessionStatus(
   sessionId: string,
-  newStatus: SessionStatus
+  newStatus: SessionStatus,
+  expected?: SessionTimingSnapshot
 ) {
   const supabase = await createClient()
   const {
@@ -414,7 +432,16 @@ export async function updateSessionStatus(
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  // Validate state transitions (with pause/resume support)
+  return transitionSession(supabase, user.id, sessionId, newStatus, expected)
+}
+
+async function transitionSession(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  sessionId: string,
+  newStatus: SessionStatus,
+  expected?: SessionTimingSnapshot
+) {
   const validTransitions: Record<string, string[]> = {
     LockedIn: ["Playing", "Finished"],
     Playing: ["Paused", "Finished"],
@@ -422,104 +449,66 @@ export async function updateSessionStatus(
     Finished: [],
   }
 
-  const { data: session } = await supabase
+  const { data: session, error: readError } = await supabase
     .from("sessions")
     .select("*")
     .eq("id", sessionId)
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single()
 
+  if (readError) throw new Error(`Failed to load session: ${readError.message}`)
   if (!session) throw new Error("Session not found")
-
-  // If already at this status, just return silently (idempotent)
-  if (session.status === newStatus) {
-    return
+  if (expected && (
+    expected.status !== session.status ||
+    expected.started_at !== session.started_at ||
+    expected.paused_elapsed_seconds !== (session.paused_elapsed_seconds ?? 0)
+  )) {
+    throw new Error("Session changed. Refresh before trying again.")
   }
 
-  if (!validTransitions[session.status]?.includes(newStatus)) {
+  if (!session.active || !validTransitions[session.status]?.includes(newStatus)) {
     throw new Error(
       `Cannot transition from ${session.status} to ${newStatus}`
     )
   }
 
-  const updates: Record<string, unknown> = { status: newStatus }
+  const updates = getSessionTransitionTiming(session, newStatus)
+  // Migration 018 awards duration XP atomically with the guarded transition.
 
-  // Handle pause - save elapsed time so we can resume correctly
-  if (newStatus === "Paused" && session.status === "Playing") {
-    const start = new Date(session.started_at)
-    const elapsed = Math.round((Date.now() - start.getTime()) / 1000)
-    updates.paused_elapsed_seconds = (session.paused_elapsed_seconds || 0) + elapsed
+  // Include every timing/state field, not just status: a pause/resume round trip
+  // must invalidate an in-flight finish based on the previous playing segment.
+  const snapshot: Record<string, unknown> = {}
+  for (const key of [
+    "status", "active", "started_at", "ended_at", "paused_elapsed_seconds",
+    "duration_minutes", "record_time", "xp_awarded",
+  ]) {
+    snapshot[key] = session[key] ?? null
   }
-
-  // Handle resume - reset started_at to now (elapsed is saved in paused_elapsed_seconds)
-  if (newStatus === "Playing" && session.status === "Paused") {
-    updates.started_at = new Date().toISOString()
-  }
-
-  if (newStatus === "Finished") {
-    updates.active = false
-    updates.ended_at = new Date().toISOString()
-    // Calculate total duration including paused time
-    const start = new Date(session.started_at)
-    const currentElapsed = Math.round((Date.now() - start.getTime()) / 1000)
-    const totalSeconds = (session.paused_elapsed_seconds || 0) + 
-      (session.status === "Paused" ? 0 : currentElapsed)
-    const durationMinutes = Math.round(totalSeconds / 60)
-    updates.duration_minutes = durationMinutes
-
-    // Award duration-based XP on finish
-    const durationXP = calculateSessionXP({
-      durationMinutes,
-      isNewGame: false,
-      isGameBeaten: false,
-      isComeback: false,
-    })
-    const finishXP = durationXP.durationBonus + durationXP.longSessionBonus
-    const finishBonuses = durationXP.bonuses.filter(b => b.includes("duration") || b.includes("Long"))
-    if (finishXP > 0) {
-      const { data: profile } = await supabase
-        .from("users")
-        .select("total_xp")
-        .eq("id", user.id)
-        .single()
-      if (profile) {
-        const newTotalXP = profile.total_xp + finishXP
-        const { level } = levelFromXP(newTotalXP)
-        await supabase
-          .from("users")
-          .update({ total_xp: newTotalXP, level })
-          .eq("id", user.id)
-      }
-      // Add finish XP to what was already awarded at start
-      updates.xp_awarded = (session.xp_awarded || 0) + finishXP
-    }
-  }
-
-  const { error } = await supabase
-    .from("sessions")
-    .update(updates)
-    .eq("id", sessionId)
-    .eq("user_id", user.id)
+  const { data: updated, error } = await supabase.rpc("transition_standby_session", {
+    p_session_id: sessionId, p_expected: snapshot, p_updates: updates,
+  }).returns<Session[]>().maybeSingle()
 
   if (error) throw new Error(error.message)
+  if (!updated) throw new Error("Session changed. Refresh before trying again.")
   revalidatePath("/")
 
   if (newStatus === "Finished") {
     const durationXPCalc = calculateSessionXP({
-      durationMinutes: (updates.duration_minutes as number) || 0,
+      durationMinutes: updated.record_time === false ? 0 : updated.duration_minutes || 0,
       isNewGame: false,
       isGameBeaten: false,
       isComeback: false,
     })
-    const finishXPTotal = durationXPCalc.durationBonus + durationXPCalc.longSessionBonus
+    const finishXPTotal = Math.max(0, (updated.xp_awarded || 0) - (session.xp_awarded || 0))
     return {
+      session: updated as Session,
       xpAwarded: {
         total: finishXPTotal,
         bonuses: durationXPCalc.bonuses.filter(b => b.includes("duration") || b.includes("Long")),
       },
     }
   }
-  return { xpAwarded: null }
+  return { session: updated as Session, xpAwarded: null }
 }
 
 export async function getActiveGame() {
@@ -559,27 +548,22 @@ export async function startSessionForGame(gameId: string) {
   if (!user) throw new Error("Not authenticated")
 
   // Check for existing active session
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from("sessions")
     .select("id")
     .eq("user_id", user.id)
     .eq("active", true)
     .maybeSingle()
 
+  if (existingError) throw new Error(existingError.message)
   if (existing) {
     throw new Error("You already have an active session.")
   }
 
   // Create new session for existing game
   const { data, error } = await supabase
-    .from("sessions")
-    .insert({
-      user_id: user.id,
-      game_id: gameId,
-      status: "LockedIn" as SessionStatus,
-      active: true,
-    })
-    .select("*")
+    .rpc("create_standby_session", { p_game_id: gameId, p_start_xp: 0 })
+    .returns<Session[]>()
     .single()
 
   if (error) throw new Error(error.message)
@@ -592,7 +576,7 @@ export async function getActiveSession() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return null
+  if (!user) throw new Error("Not authenticated")
 
   // First get the active session
   const { data: session, error: sessionError } = await supabase
@@ -602,7 +586,8 @@ export async function getActiveSession() {
     .eq("active", true)
     .maybeSingle()
 
-  if (sessionError || !session) return null
+  if (sessionError) throw new Error(`Failed to load active session: ${sessionError.message}`)
+  if (!session) return null
 
   // Fetch game data and game progress in parallel
   const [gameResult, progressResult] = await Promise.all([
@@ -619,7 +604,9 @@ export async function getActiveSession() {
       .maybeSingle(),
   ])
 
-  if (gameResult.error || !gameResult.data) return null
+  if (gameResult.error) throw new Error(`Failed to load active session game: ${gameResult.error.message}`)
+  if (!gameResult.data) throw new Error("Active session game not found")
+  if (progressResult.error) throw new Error(`Failed to load active session progress: ${progressResult.error.message}`)
 
   return {
     ...session,
@@ -635,13 +622,18 @@ export async function updateSessionNotes(sessionId: string, notes: string) {
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("sessions")
     .update({ notes })
     .eq("id", sessionId)
     .eq("user_id", user.id)
+    .eq("active", true)
+    .neq("status", "Finished")
+    .select("id")
+    .maybeSingle()
 
   if (error) throw new Error(error.message)
+  if (!data) throw new Error("Active session not found. Finished session notes cannot be changed.")
 }
 
 export async function updateSessionGoal(sessionId: string, goal: string) {
@@ -651,130 +643,106 @@ export async function updateSessionGoal(sessionId: string, goal: string) {
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("sessions")
     .update({ session_goal: goal })
     .eq("id", sessionId)
     .eq("user_id", user.id)
+    .eq("active", true)
+    .neq("status", "Finished")
+    .select("id")
+    .maybeSingle()
 
   if (error) throw new Error(error.message)
+  if (!data) throw new Error("Active session not found. Finished session goals cannot be changed.")
 }
 
-export async function markGameBeaten(gameId: string) {
+async function finishActiveSessionForGame(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  gameId: string,
+  expected?: SessionMutationSnapshot | null
+) {
+  const { data: session, error } = await supabase
+    .from("sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("game_id", gameId)
+    .eq("active", true)
+    .maybeSingle()
+  if (error) throw new Error(`Failed to load active session: ${error.message}`)
+  // null asserts the caller displayed no active session; undefined is legacy behavior.
+  if (expected === null && session) {
+    throw new Error("Session changed. Refresh before trying again.")
+  }
+  if (expected && (!session || session.id !== expected.id)) {
+    throw new Error("Session changed. Refresh before trying again.")
+  }
+  if (session) {
+    await transitionSession(supabase, userId, session.id, "Finished", expected ?? {
+      status: session.status,
+      started_at: session.started_at,
+      paused_elapsed_seconds: session.paused_elapsed_seconds ?? 0,
+    })
+  }
+}
+
+export async function markGameBeaten(gameId: string, expectedSession?: SessionMutationSnapshot | null) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  // First end any active session for this game
-  await supabase
-    .from("sessions")
-    .update({ 
-      active: false, 
-      status: "Finished",
-      ended_at: new Date().toISOString()
-    })
-    .eq("user_id", user.id)
-    .eq("game_id", gameId)
-    .eq("active", true)
+  await finishActiveSessionForGame(supabase, user.id, gameId, expectedSession)
 
   // Update or create game progress
-  const { data: existing } = await supabase
+  const { data: existing, error: progressError } = await supabase
     .from("game_progress")
     .select("*")
     .eq("user_id", user.id)
     .eq("game_id", gameId)
     .maybeSingle()
-
-  if (existing) {
-    await supabase
-      .from("game_progress")
-      .update({ 
-        status: "beaten",
-        completed_at: new Date().toISOString()
-      })
-      .eq("id", existing.id)
-  } else {
-    await supabase
-      .from("game_progress")
-      .insert({
-        user_id: user.id,
-        game_id: gameId,
-        status: "beaten",
-        total_sessions: 1,
-        total_time_minutes: 0,
-        completed_at: new Date().toISOString()
-      })
+  if (progressError) throw new Error(progressError.message)
+  if (existing?.status === "beaten") {
+    revalidatePath("/")
+    return
   }
 
-  // Award beat-game XP bonus
-  const { data: profile } = await supabase
-    .from("users")
-    .select("total_xp")
-    .eq("id", user.id)
-    .single()
-  if (profile) {
-    const xp = calculateSessionXP({
-      durationMinutes: 0,
-      isNewGame: false,
-      isGameBeaten: true,
-      isComeback: false,
-    })
-    const newTotalXP = profile.total_xp + xp.beatGameBonus
-    const { level } = levelFromXP(newTotalXP)
-    await supabase
-      .from("users")
-      .update({ total_xp: newTotalXP, level })
-      .eq("id", user.id)
-  }
+  const { data: updated, error } = await supabase.rpc("set_standby_game_progress", {
+    p_game_id: gameId, p_status: "beaten", p_expected_status: existing?.status ?? null,
+  }).maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!updated) throw new Error("Game progress changed. Refresh before trying again.")
+
+  // Migration 018 awards beat-game XP only for the winning progress transition.
 
   revalidatePath("/")
 }
 
-export async function abandonGame(gameId: string) {
+export async function abandonGame(gameId: string, expectedSession?: SessionMutationSnapshot | null) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  // End any active session
-  await supabase
-    .from("sessions")
-    .update({ 
-      active: false, 
-      status: "Finished",
-      ended_at: new Date().toISOString()
-    })
-    .eq("user_id", user.id)
-    .eq("game_id", gameId)
-    .eq("active", true)
+  await finishActiveSessionForGame(supabase, user.id, gameId, expectedSession)
 
   // Mark as abandoned
-  const { data: existing } = await supabase
+  const { data: existing, error: progressError } = await supabase
     .from("game_progress")
     .select("*")
     .eq("user_id", user.id)
     .eq("game_id", gameId)
     .maybeSingle()
+  if (progressError) throw new Error(progressError.message)
 
-  if (existing) {
-    await supabase
-      .from("game_progress")
-      .update({ status: "abandoned" })
-      .eq("id", existing.id)
-  } else {
-    await supabase
-      .from("game_progress")
-      .insert({
-        user_id: user.id,
-        game_id: gameId,
-        status: "abandoned",
-        total_sessions: 0,
-        total_time_minutes: 0
-      })
-  }
+  const { data: updated, error } = await supabase.rpc("set_standby_game_progress", {
+    p_game_id: gameId, p_status: "abandoned", p_expected_status: existing?.status ?? null,
+  }).maybeSingle()
+  if (error) throw new Error(error.message)
+  if (!updated) throw new Error("Game progress changed. Refresh before trying again.")
 
   revalidatePath("/")
 }
@@ -953,7 +921,7 @@ export async function backfillXP() {
   // Get all finished sessions that haven't been awarded XP
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, duration_minutes, game_id, started_at, xp_awarded")
+    .select("id, duration_minutes, game_id, started_at, xp_awarded, record_time")
     .eq("user_id", user.id)
     .eq("active", false)
     .order("started_at", { ascending: true })
@@ -974,7 +942,7 @@ export async function backfillXP() {
     seenGames.add(session.game_id)
 
     const xp = calculateSessionXP({
-      durationMinutes: session.duration_minutes || 0,
+      durationMinutes: session.record_time === false ? 0 : session.duration_minutes || 0,
       isNewGame,
       isGameBeaten: false,
       isComeback: false,
@@ -1000,16 +968,15 @@ export async function backfillXP() {
     totalXP += beatenGames.length * 50
   }
 
-  const { level } = levelFromXP(totalXP)
   const lastSession = sessions[sessions.length - 1]
   const lastDate = lastSession?.started_at
     ? new Date(lastSession.started_at).toISOString().split("T")[0]
     : null
 
-  await supabase
-    .from("users")
-    .update({ total_xp: totalXP, level, last_session_date: lastDate })
-    .eq("id", user.id)
+  const { error: backfillError } = await supabase.rpc("backfill_standby_profile_xp", {
+    p_total_xp: totalXP, p_last_session_date: lastDate,
+  })
+  if (backfillError) throw new Error(backfillError.message)
 
   // Also update streak
   await updateUserStreak(user.id)
