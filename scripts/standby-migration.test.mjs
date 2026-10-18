@@ -20,6 +20,8 @@
 // requests retain their original atomicity/CAS/profile read-modify-write limits.
 // Rollout: old clients with any untracked-session history must reload. The direct
 // profile-increment barrier remains after finish and during later tracked sessions.
+// Final notes and finish share one020 transaction.018 fallback is only for
+// acknowledged local drafts; it does not order unknown requests from other clients.
 import assert from "node:assert/strict"
 import { existsSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
@@ -69,6 +71,7 @@ const roleMembershipSQL = `
 // Run this identical catalog-only bundle before/after an authorized020 upgrade.
 // Before: all new020 routines are absent; after: all present, invoker, volatile,
 // search_path=public. RPCs must retain authenticated EXECUTE, deny anon/PUBLIC.
+// Twelve routines (seven018 + five020), including seven RPCs, exist after020.
 // Postflight expects 10 enabled non-internal triggers (four018 + six020).
 const approval020SQL = `
   begin transaction read only;
@@ -78,6 +81,7 @@ const approval020SQL = `
     to_regprocedure('pg_catalog.pg_advisory_xact_lock(bigint)') as account_lock,
     to_regprocedure('pg_catalog.pg_advisory_xact_lock(integer,integer)') as maintenance_lock,
     to_regprocedure('pg_catalog.pg_advisory_xact_lock_shared(integer,integer)') as shared_fence,
+    to_regprocedure('public.complete_standby_game(text,text,jsonb)') as unexpected_old_completion_signature,
     pg_has_role('anon','authenticated','MEMBER') as unsafe_anon_membership;
   with expected(signature,new020,rpc) as (values
     ('public.enforce_standby_session()',false,false),
@@ -88,7 +92,8 @@ const approval020SQL = `
     ('public.set_standby_game_progress(text,text,text)',false,true),
     ('public.backfill_standby_profile_xp(integer,date)',false,true),
     ('public.create_standby_session_with_progress(text,integer)',true,true),
-    ('public.complete_standby_game(text,text,jsonb)',true,true),
+    ('public.complete_standby_game(text,text,jsonb,text)',true,true),
+    ('public.finish_standby_session_with_notes(uuid,jsonb,jsonb,text)',true,true),
     ('public.lock_standby_account_statement()',true,false),
     ('public.enforce_standby_account_owner()',true,false)
   )
@@ -523,6 +528,7 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
         ["select * from public.create_standby_session_with_progress($1,0)", [f.game]],
         ["select * from public.complete_standby_game($1,'beaten',null::jsonb)", [f.game]],
         ["select * from public.complete_standby_game($1,'abandoned',null::jsonb)", [f.game]],
+        ["select * from public.finish_standby_session_with_notes($1::uuid,'{}'::jsonb,'{\"status\":\"Finished\"}'::jsonb,'')", [f.user]],
       ]) {
         await assert.rejects(db.query(sql, args), (error) => error.code === "42883")
         assert.deepEqual(await f.profile(), before)
@@ -530,6 +536,12 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
         assert.equal((await db.query("select * from public.game_progress where user_id=$1", [f.user])).rows.length, 0)
       }
       const existing = await f.insert()
+      await assert.rejects(db.query(
+        "select * from public.finish_standby_session_with_notes($1,$2::jsonb,$3::jsonb,'')",
+        [existing.id, JSON.stringify(existing), JSON.stringify({ status: "Finished", duration_minutes: 0 })],
+      ), (error) => error.code === "42883")
+      assert.deepEqual(await one("select * from public.sessions where id=$1", [existing.id]), existing)
+      assert.equal((await f.profile()).total_xp, 10)
       assert.equal((await finish(existing, 5)).rows[0].status, "Finished")
       assert.equal((await f.profile()).total_xp, 11)
     })
@@ -538,37 +550,50 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
     await db.exec("reset role")
     const before020 = await one(`select count(*) as sessions,sum(xp_awarded) as ledger,
       (select sum(total_xp) from public.users) as profile_xp from public.sessions`)
+    const baselineSignatures = [...rpcSignatures,
+      "public.enforce_standby_session()", "public.award_standby_xp()", "public.protect_untracked_profile_xp()"]
     const originalRPCs = await db.query(
       "select oid::regprocedure::text as signature,pg_get_functiondef(oid) as definition,proacl::text as acl from pg_proc where oid=any($1::regprocedure[]) order by 1",
-      [rpcSignatures],
+      [baselineSignatures],
     )
     await db.exec(migration("019_restrict_standby_rpc_execute.sql"))
     const preflight = await db.exec(approval020SQL)
     assert.equal(preflight.flatMap((r) => r.rows ?? []).filter((r) => r.new020 && r.present).length, 0)
     await db.exec(migration("020_atomic_standby_game_completion.sql"))
     const postflight = await db.exec(approval020SQL)
-    assert.equal(postflight.flatMap((r) => r.rows ?? []).filter((r) => r.new020 && r.present).length, 4)
+    assert.equal(postflight.flatMap((r) => r.rows ?? []).filter((r) => r.new020 && r.present).length, 5)
     creationRPC = "create_standby_session_with_progress"
-    const complete = (game, status, expected) => db.query(
-      "select * from public.complete_standby_game($1,$2,$3::jsonb)",
-      [game, status, expected === null ? null : JSON.stringify(expected)],
+    const complete = (game, status, expected, notes) => db.query(
+      notes === undefined ? "select * from public.complete_standby_game($1,$2,$3::jsonb)"
+        : "select * from public.complete_standby_game($1,$2,$3::jsonb,$4)",
+      [game, status, expected === null ? null : JSON.stringify(expected), ...(notes === undefined ? [] : [notes])],
+    )
+    const finishWithNotes = (snapshot, notes, minutes = 60) => db.query(
+      "select * from public.finish_standby_session_with_notes($1,$2::jsonb,$3::jsonb,$4)",
+      [snapshot.id, JSON.stringify(snapshot), JSON.stringify({
+        status: "Finished", ended_at: new Date().toISOString(),
+        duration_minutes: minutes, paused_elapsed_seconds: minutes * 60,
+      }), notes],
     )
     const displayed = (s) => ({
       id: s.id, status: s.status, started_at: s.started_at,
       paused_elapsed_seconds: s.paused_elapsed_seconds,
     })
 
-    await t.test("020 upgrades populated018+019 without changing history or existing RPC bodies/ACLs", async () => {
+    await t.test("020 upgrades populated018+019 without changing history or seven018 function bodies/ACLs", async () => {
       assert.deepEqual(await one(`select count(*) as sessions,sum(xp_awarded) as ledger,
         (select sum(total_xp) from public.users) as profile_xp from public.sessions`), before020)
       assert.deepEqual((await db.query(
         "select oid::regprocedure::text as signature,pg_get_functiondef(oid) as definition,proacl::text as acl from pg_proc where oid=any($1::regprocedure[]) order by 1",
-        [rpcSignatures],
+        [baselineSignatures],
       )).rows, originalRPCs.rows)
-      rpcSignatures.push("public.complete_standby_game(text,text,jsonb)", "public.create_standby_session_with_progress(text,integer)")
+      assert.equal(originalRPCs.rows.length, 7)
+      assert.equal((await one("select to_regprocedure('public.complete_standby_game(text,text,jsonb)') as old_signature")).old_signature, null)
+      rpcSignatures.push("public.complete_standby_game(text,text,jsonb,text)", "public.create_standby_session_with_progress(text,integer)",
+        "public.finish_standby_session_with_notes(uuid,jsonb,jsonb,text)")
       await assertRestrictedRPCs()
       const metadata = await one(`select prosecdef,proconfig from pg_proc
-        where oid='public.complete_standby_game(text,text,jsonb)'::regprocedure`)
+        where oid='public.complete_standby_game(text,text,jsonb,text)'::regprocedure`)
       assert.equal(metadata.prosecdef, false)
       assert.ok(metadata.proconfig.includes("search_path=public"))
       const locks = await db.query(`select c.relname,t.tgtype,t.tgenabled,pg_get_triggerdef(t.oid) as definition
@@ -581,6 +606,86 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
         assert.match(row.definition, /FOR EACH STATEMENT/)
         assert.match(row.definition, /lock_standby_account_statement/)
       }
+    })
+
+    await t.test("020 final draft wins a committed lost-response write or late older execution after a newer ACK", async () => {
+      for (const order of ["committed-response-lost", "late-after-overwrite-ack"]) {
+        for (const recording of [true, false]) {
+          for (const notes of ["", "final draft"]) {
+            const f = await fixture()
+            await f.recording(recording)
+            const s = await f.insert()
+            await db.query("update public.sessions set notes='' where id=$1", [s.id])
+            const snapshot = await one("select * from public.sessions where id=$1", [s.id])
+            if (order === "late-after-overwrite-ack") {
+              // The newer overwrite has ACKed while the older request has not
+              // yet executed SQL. Its unknown execution arrives next.
+              await db.query("update public.sessions set notes=$2 where id=$1", [s.id, notes])
+            }
+            await db.query("update public.sessions set notes='text to remove' where id=$1", [s.id])
+            const ended = (await finishWithNotes(snapshot, notes)).rows[0]
+            assert.equal(ended.notes, notes)
+            assert.equal(ended.status, "Finished")
+            assert.equal(ended.duration_minutes, recording ? 60 : 0)
+            assert.equal(ended.paused_elapsed_seconds, recording ? 3600 : 0)
+            assert.equal((await f.profile()).total_xp, recording ? 32 : 10)
+            await assert.rejects(db.query("update public.sessions set notes='late older request' where id=$1", [s.id]), /immutable/)
+            assert.equal((await db.query("update public.sessions set notes='late' where id=$1 and active=true returning *", [s.id])).rows.length, 0)
+            assert.equal((await one("select notes from public.sessions where id=$1", [s.id])).notes, notes)
+          }
+        }
+      }
+    })
+
+    await t.test("020 stale finalization rolls back its draft update and leaves session/profile unchanged", async () => {
+      const f = await fixture()
+      const s = await f.insert()
+      await db.query("update public.sessions set status='Paused',paused_elapsed_seconds=120,notes='remote draft' where id=$1", [s.id])
+      const before = await one("select * from public.sessions where id=$1", [s.id])
+      await assert.rejects(finishWithNotes(s, "stale final draft"), /Session changed/)
+      assert.deepEqual(await one("select * from public.sessions where id=$1", [s.id]), before)
+      assert.equal((await f.profile()).total_xp, 10)
+      assert.equal((await finishWithNotes(before, "", 5)).rows[0].notes, "")
+      assert.equal((await f.profile()).total_xp, 11)
+    })
+
+    await t.test("020 XP failure rolls back the final draft as well as session finish and duration award", async () => {
+      const f = await fixture()
+      const s = await f.insert()
+      await db.query("update public.sessions set notes='acknowledged' where id=$1", [s.id])
+      const before = await one("select * from public.sessions where id=$1", [s.id])
+      await db.exec("reset role; revoke update on public.users from authenticated; set role authenticated")
+      try {
+        await assert.rejects(finishWithNotes(before, ""), /permission denied/)
+        assert.deepEqual(await one("select * from public.sessions where id=$1", [s.id]), before)
+        assert.equal((await f.profile()).total_xp, 10)
+      } finally {
+        await db.exec("reset role; grant update on public.users to authenticated; set role authenticated")
+      }
+      assert.equal((await finishWithNotes(before, "")).rows[0].notes, "")
+      assert.equal((await f.profile()).total_xp, 32)
+    })
+
+    await t.test("020 final notes require nonnull text and Finished status without weakening018 transitions", async () => {
+      const f = await fixture()
+      const s = await f.insert()
+      await assert.rejects(finishWithNotes(s, null), /Final notes.*Finished/)
+      await assert.rejects(db.query(
+        "select * from public.finish_standby_session_with_notes($1,$2::jsonb,'{\"status\":\"Paused\"}'::jsonb,'')",
+        [s.id, JSON.stringify(s)],
+      ), /Final notes.*Finished/)
+      assert.deepEqual(await one("select * from public.sessions where id=$1", [s.id]), s)
+      assert.equal((await f.profile()).total_xp, 10)
+    })
+
+    await t.test("020 final drafts sharing a snapshot have one finish winner and one duration award", async () => {
+      const f = await fixture()
+      const s = await f.insert()
+      const results = await Promise.allSettled([finishWithNotes(s, "first draft"), finishWithNotes(s, "second draft")])
+      assert.equal(results.filter((r) => r.status === "fulfilled").length, 1)
+      const winner = results.find((r) => r.status === "fulfilled").value.rows[0]
+      assert.equal((await one("select notes from public.sessions where id=$1", [s.id])).notes, winner.notes)
+      assert.equal((await f.profile()).total_xp, 32)
     })
 
     await t.test("020 main b0 create/bookkeeping/profile and finish/progress/profile sequences remain usable", async () => {
@@ -773,38 +878,75 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
       }
     })
 
-    await t.test("020 displayed completion commits duration, progress and XP together, including opt-out", async () => {
+    await t.test("020 both game endings atomically commit final drafts, duration, progress and XP including opt-out", async () => {
       for (const status of ["beaten", "abandoned"]) {
         for (const recording of [true, false]) {
-          const f = await fixture()
-          await f.recording(recording)
-          const s = await f.insert()
-          await db.query("update public.sessions set status='Paused',paused_elapsed_seconds=3600 where id=$1", [s.id])
-          const paused = await one("select * from public.sessions where id=$1", [s.id])
-          const result = await complete(f.game, status, displayed(paused))
-          assert.equal(result.rows[0].status, status)
-          const ended = await one("select * from public.sessions where id=$1", [s.id])
-          assert.equal(ended.status, "Finished")
-          assert.equal(ended.active, false)
-          assert.equal(ended.duration_minutes, recording ? 60 : 0)
-          assert.equal(ended.paused_elapsed_seconds, recording ? 3600 : 0)
-          assert.equal(ended.xp_awarded, recording ? 32 : 10)
-          assert.equal((await f.profile()).total_xp, (recording ? 32 : 10) + (status === "beaten" ? 50 : 0))
-          await assert.rejects(complete(f.game, status, displayed(paused)), /Session changed/)
-          await assert.rejects(db.query("update public.sessions set notes='late flush' where id=$1", [s.id]), /immutable/)
-          assert.notEqual((await one("select current_setting('just_play.atomic_xp',true) as flag")).flag, "standby_v1")
+          for (const notes of ["", "final draft"]) {
+            const f = await fixture()
+            await f.recording(recording)
+            const s = await f.insert()
+            await db.query("update public.sessions set status='Paused',paused_elapsed_seconds=3600 where id=$1", [s.id])
+            const paused = await one("select * from public.sessions where id=$1", [s.id])
+            await db.query("update public.sessions set notes='late older draft' where id=$1", [s.id])
+            const result = await complete(f.game, status, displayed(paused), notes)
+            assert.equal(result.rows[0].status, status)
+            const ended = await one("select * from public.sessions where id=$1", [s.id])
+            assert.equal(ended.status, "Finished")
+            assert.equal(ended.active, false)
+            assert.equal(ended.duration_minutes, recording ? 60 : 0)
+            assert.equal(ended.paused_elapsed_seconds, recording ? 3600 : 0)
+            assert.equal(ended.xp_awarded, recording ? 32 : 10)
+            assert.equal(ended.notes, notes)
+            assert.equal((await f.profile()).total_xp, (recording ? 32 : 10) + (status === "beaten" ? 50 : 0))
+            await assert.rejects(complete(f.game, status, displayed(paused), "stale final draft"), /Session changed/)
+            await assert.rejects(db.query("update public.sessions set notes='late flush' where id=$1", [s.id]), /immutable/)
+            assert.notEqual((await one("select current_setting('just_play.atomic_xp',true) as flag")).flag, "standby_v1")
+            assert.equal((await one("select notes from public.sessions where id=$1", [s.id])).notes, notes)
+          }
         }
       }
+    })
+
+    await t.test("020 omitted or null final notes preserve stored notes and no-session callers cannot rewrite finished notes", async () => {
+      for (const notes of [undefined, null]) {
+        for (const stored of ["stored draft", null]) {
+          const f = await fixture()
+          const s = await f.insert()
+          await db.query("update public.sessions set notes=$2 where id=$1", [s.id, stored])
+          await complete(f.game, "beaten", displayed(s), notes)
+          assert.equal((await one("select notes from public.sessions where id=$1", [s.id])).notes, stored)
+          await complete(f.game, "abandoned", null, "must not replace historical notes")
+          assert.equal((await one("select notes from public.sessions where id=$1", [s.id])).notes, stored)
+          assert.equal((await f.profile()).total_xp, 60)
+        }
+      }
+    })
+
+    await t.test("020 beaten/abandon final drafts sharing a displayed snapshot cannot both finalize or award", async () => {
+      const f = await fixture()
+      const s = await f.insert()
+      await db.query("update public.sessions set status='Paused',paused_elapsed_seconds=3600 where id=$1", [s.id])
+      const paused = await one("select * from public.sessions where id=$1", [s.id])
+      const results = await Promise.allSettled([
+        complete(f.game, "beaten", displayed(paused), "beaten draft"),
+        complete(f.game, "abandoned", displayed(paused), "abandoned draft"),
+      ])
+      assert.equal(results.filter((r) => r.status === "fulfilled").length, 1)
+      const winner = results.find((r) => r.status === "fulfilled").value.rows[0]
+      const ended = await one("select * from public.sessions where id=$1", [s.id])
+      assert.equal(ended.notes, `${winner.status} draft`)
+      assert.equal((await f.profile()).total_xp, 32 + (winner.status === "beaten" ? 50 : 0))
     })
 
     await t.test("020 LockedIn completion never counts waiting; undefined/latest deliberately targets current session", async () => {
       const f = await fixture()
       const locked = await f.insert("LockedIn")
       await db.query("update public.sessions set started_at=started_at-interval '2 hours' where id=$1", [locked.id])
-      await complete(f.game, "beaten", { mode: "latest" })
+      await complete(f.game, "beaten", { mode: "latest" }, "")
       const ended = await one("select * from public.sessions where id=$1", [locked.id])
       assert.equal(ended.duration_minutes, 0)
       assert.equal(ended.paused_elapsed_seconds, 0)
+      assert.equal(ended.notes, "")
       assert.equal(ended.xp_awarded, 10)
       assert.equal((await f.profile()).total_xp, 60)
       await complete(f.game, "beaten", { mode: "latest" })
@@ -814,19 +956,20 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
     await t.test("020 progress failure rolls back already-calculated session finish and duration XP", async () => {
       const f = await fixture()
       const s = await f.insert()
-      await db.query("update public.sessions set status='Paused',paused_elapsed_seconds=3600 where id=$1", [s.id])
+      await db.query("update public.sessions set status='Paused',paused_elapsed_seconds=3600,notes='before' where id=$1", [s.id])
       const paused = await one("select * from public.sessions where id=$1", [s.id])
       await db.exec("reset role; revoke update on public.game_progress from authenticated; set role authenticated")
       try {
-        await assert.rejects(complete(f.game, "beaten", displayed(paused)), /permission denied/)
+        await assert.rejects(complete(f.game, "beaten", displayed(paused), "final draft"), /permission denied/)
         assert.deepEqual(await one("select * from public.sessions where id=$1", [s.id]), paused)
         assert.equal((await f.profile()).total_xp, 10)
         assert.equal((await one("select status from public.game_progress where user_id=$1 and game_id=$2", [f.user, f.game])).status, "playing")
       } finally {
         await db.exec("reset role; grant update on public.game_progress to authenticated; set role authenticated")
       }
-      await complete(f.game, "beaten", displayed(paused))
+      await complete(f.game, "beaten", displayed(paused), "final draft")
       assert.equal((await f.profile()).total_xp, 82)
+      assert.equal((await one("select notes from public.sessions where id=$1", [s.id])).notes, "final draft")
     })
 
     await t.test("020 creation bookkeeping failure rolls back inserted session and its start XP", async () => {
@@ -911,6 +1054,7 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
       const f = await fixture()
       for (const mutation of [
         () => complete(f.game, "beaten", null),
+        () => finishWithNotes({ id: f.user }, ""),
         () => f.insert(),
         () => db.query("select * from public.create_standby_session($1,0)", [f.game]),
         () => db.query("insert into public.sessions(user_id,game_id,status) values($1,$2,'Playing')", [f.user, f.game]),
@@ -957,13 +1101,16 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
       await assert.rejects(db.query("update public.users set total_xp=32 where id=$1", [owner.user]), /Untracked session history/)
       const other = await fixture()
       await assert.rejects(complete(owner.game, "beaten", displayed(s)), /Session changed/)
+      await assert.rejects(finishWithNotes(s, "other account"), /Session changed/)
       await assert.rejects(complete(other.game, "beaten", {}), /Full displayed session snapshot/)
       await db.query("select set_config('request.jwt.claim.sub','',false)")
       await assert.rejects(complete(other.game, "beaten", null), /Not authenticated/)
+      await assert.rejects(finishWithNotes(s, ""), /Not authenticated/)
       await assert.rejects(db.query("select * from public.create_standby_session_with_progress($1,0)", [other.game]), /Not authenticated/)
       await db.exec("reset role; set role anon")
       try {
         await assert.rejects(complete(other.game, "beaten", null), /permission denied/)
+        await assert.rejects(finishWithNotes(s, ""), /permission denied/)
         await assert.rejects(db.query("select * from public.create_standby_session_with_progress($1,0)", [other.game]), /permission denied/)
       } finally {
         await db.exec("reset role")

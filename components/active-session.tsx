@@ -70,11 +70,12 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
   const [autoPaused, setAutoPaused] = useState(false)
   const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const notesRef = useRef(notes)
-  const savedNotesRef = useRef(notes)
+  const savedNotesRef = useRef<string | null>(notes)
+  const uncertainNotesWriteRef = useRef(false)
   const notesWriteRef = useRef<Promise<void> | null>(null)
   const finalizingRef = useRef(false)
   const mountedRef = useRef(true)
-  const [notesSaveState, setNotesSaveState] = useState<"saved" | "unsaved" | "saving" | "error">("saved")
+  const [notesSaveState, setNotesSaveState] = useState<"saved" | "acknowledged" | "unsaved" | "saving" | "error">("saved")
   const [prevPropStatus, setPrevPropStatus] = useState(session.status)
 
   const flushNotes = useCallback(() => {
@@ -85,8 +86,8 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
     if (notesWriteRef.current) return notesWriteRef.current
     const write = (async () => {
       try {
-        // Serialize older writes before the latest draft; never let an old save
-        // arrive after a newer one or after local finalization.
+        // Order acknowledged responses. A failed response leaves execution
+        // uncertain; finalization must then use an atomic final-draft boundary.
         while (savedNotesRef.current !== notesRef.current) {
           const draft = notesRef.current
           if (mountedRef.current) setNotesSaveState("saving")
@@ -94,10 +95,12 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
           savedNotesRef.current = draft
         }
         if (mountedRef.current) {
-          setNotesSaveState("saved")
+          setNotesSaveState(uncertainNotesWriteRef.current ? "acknowledged" : "saved")
           setNotesError(null)
         }
       } catch (cause) {
+        savedNotesRef.current = null
+        uncertainNotesWriteRef.current = true
         if (mountedRef.current) setNotesSaveState("error")
         throw new SessionNotesSaveError(`Could not save session notes. Your draft is still here; retry before finishing. ${cause instanceof Error ? cause.message : ""}`)
       }
@@ -183,7 +186,10 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
             status: session.status,
             started_at: session.started_at,
             paused_elapsed_seconds: session.paused_elapsed_seconds || 0,
-          })
+          }, newStatus === "Finished" ? {
+            notes: notesRef.current,
+            requiresAtomicFinish: uncertainNotesWriteRef.current,
+          } : undefined)
           setStatus(result.session.status)
           if (newStatus === "Playing") {
             setAutoPaused(false)
@@ -271,7 +277,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
           status: session.status,
           started_at: session.started_at,
           paused_elapsed_seconds: session.paused_elapsed_seconds || 0,
-        })
+        }, notesRef.current)
         showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
         onFinished()
       } catch (e) {
@@ -299,7 +305,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
           status: session.status,
           started_at: session.started_at,
           paused_elapsed_seconds: session.paused_elapsed_seconds || 0,
-        })
+        }, notesRef.current)
         onFinished()
       } catch (e) {
         if (e instanceof SessionNotesSaveError) setNotesError(e.message)
@@ -510,7 +516,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
             onNotesChange={handleNotesChange}
           />
           <p role="status" className="text-xs text-muted-foreground">
-            {notesSaveState === "saved" ? "Notes saved." : notesSaveState === "saving" ? "Saving notes..." : notesSaveState === "error" ? "Notes not saved. Your draft is still here." : "Notes not saved yet."}
+            {notesSaveState === "saved" ? "Notes saved." : notesSaveState === "acknowledged" ? "Notes acknowledged. The final draft will be saved again when finishing." : notesSaveState === "saving" ? "Saving notes..." : notesSaveState === "error" ? "Notes not saved. Your draft is still here." : "Notes not saved yet."}
           </p>
           </fieldset>
         )}

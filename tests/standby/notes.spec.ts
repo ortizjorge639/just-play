@@ -6,9 +6,9 @@ const endings = [
   { name: "Abandon Game", kind: "abandoned" },
 ] as const
 
-async function openNotes(page: Page) {
+async function openNotes(page: Page, url = "/") {
   await page.clock.install()
-  await page.goto("/")
+  await page.goto(url)
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
   await page.getByRole("button", { name: "Notes", exact: false }).click()
   return page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
@@ -16,7 +16,10 @@ async function openNotes(page: Page) {
 
 async function finish(page: Page, name: string) {
   await page.getByRole("button", { name: "End Session", exact: true }).click()
-  await page.getByRole("button", { name, exact: false }).click()
+  const action = page.getByRole("button", { name, exact: false })
+  await expect(action).toBeEnabled()
+  await action.press("Enter")
+  await expect(page.getByRole("button", { name, exact: false })).toBeHidden()
 }
 
 for (const ending of endings) {
@@ -34,7 +37,7 @@ for (const ending of endings) {
 
   test(`${ending.kind} drains an older in-flight save followed by the latest draft in order`, async ({ page }) => {
     const editor = await openNotes(page)
-    await page.evaluate(() => { window.standbyFixture.notesDelay = 3000 })
+    await page.evaluate(() => { window.standbyFixture.holdNoteWrites = true })
     await editor.fill("Old draft")
     await page.clock.fastForward(1001)
     await expect.poll(() => page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(1)
@@ -44,10 +47,10 @@ for (const ending of endings) {
     expect(await page.evaluate(() => window.standbyFixture.gameEndWrites)).toEqual([])
     expect(await page.evaluate(() => window.standbyFixture.writes)).toEqual([])
     expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
-    await page.clock.fastForward(3001)
+    await page.evaluate(() => { window.standbyFixture.releaseNextNote() })
     await expect.poll(() => page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(2)
     expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
-    await page.clock.fastForward(3001)
+    await page.evaluate(() => { window.standbyFixture.releaseNextNote() })
     await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual(["Latest legitimate draft"])
     expect(await page.evaluate(() => window.standbyFixture.events.map(event => event.kind))).toEqual([
       "notes-start", "notes-saved", "notes-start", "notes-saved", ending.kind,
@@ -106,6 +109,81 @@ for (const ending of endings) {
     await page.clock.fastForward(3001)
     await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual(["Last accepted draft"])
   })
+
+  for (const mode of ["commit-then-reject", "reject-then-commit-late"] as const) {
+    test(`${ending.kind} overwrites a reverted draft after ${mode}, including execution after the newer ACK`, async ({ page }) => {
+      const editor = await openNotes(page, "/?empty-notes")
+      await page.evaluate((value) => {
+        window.standbyFixture.notesErrorMode = value
+        window.standbyFixture.notesError = "Response lost"
+      }, mode)
+      await editor.fill("Text to remove")
+      await page.clock.fastForward(1001)
+      await expect(page.getByRole("alert")).toContainText("Response lost")
+      if (mode === "commit-then-reject") {
+        expect(await page.evaluate(() => JSON.parse(window.standbyFixture.session!.notes!)[0])).toBe("Text to remove")
+      }
+      await editor.fill("")
+      await page.evaluate(() => { window.standbyFixture.notesError = null })
+      await finish(page, ending.name)
+      await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual([""])
+      expect(await page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(2)
+      expect(await page.evaluate(() => window.standbyFixture.finalDrafts.map(raw => JSON.parse(raw)[0]))).toEqual([""])
+      if (ending.kind === "finish") {
+        expect(await page.evaluate(() => window.standbyFixture.atomicFinishRequirements)).toEqual([true])
+      }
+      if (mode === "reject-then-commit-late") {
+        const kinds = await page.evaluate(() => window.standbyFixture.events.map(event => event.kind))
+        expect(kinds.indexOf("notes-late")).toBeGreaterThan(kinds.lastIndexOf("notes-saved"))
+        expect(kinds.at(-1)).toBe(ending.kind)
+      }
+    })
+  }
+
+  test(`${ending.kind} retains the reverted draft and blocks end when its forced overwrite also loses the response`, async ({ page }) => {
+    const editor = await openNotes(page, "/?empty-notes")
+    await page.evaluate(() => {
+      window.standbyFixture.notesErrorMode = "commit-then-reject"
+      window.standbyFixture.notesError = "Response lost after commit"
+    })
+    await editor.fill("Text to remove")
+    await page.clock.fastForward(1001)
+    await expect(page.getByRole("alert")).toContainText("Response lost after commit")
+    await editor.fill("")
+    await finish(page, ending.name)
+    await expect(page.getByRole("alert")).toContainText("Your draft is still here")
+    await expect(editor).toBeEnabled()
+    await expect(editor).toHaveValue("")
+    const attempts = await page.evaluate(() => window.standbyFixture.notesWrites.length)
+    expect(attempts).toBeGreaterThanOrEqual(2)
+    expect(await page.evaluate(() => JSON.parse(window.standbyFixture.notesWrites.at(-1)!)[0])).toBe("")
+    expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
+    expect(await page.evaluate(() => window.standbyFixture.writes)).toEqual([])
+    expect(await page.evaluate(() => window.standbyFixture.gameEndWrites)).toEqual([])
+    await page.evaluate(() => { window.standbyFixture.notesError = null })
+    await finish(page, ending.name)
+    await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual([""])
+    expect(await page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(attempts + 1)
+  })
+
+  test(`${ending.kind} rejects uncertain execution arriving after the atomic finish`, async ({ page }) => {
+    const editor = await openNotes(page, "/?empty-notes")
+    await page.evaluate(() => {
+      window.standbyFixture.notesErrorMode = "reject-then-commit-late"
+      window.standbyFixture.notesError = "Response lost"
+      window.standbyFixture.settleLateOnFinish = false
+    })
+    await editor.fill("Late old text")
+    await page.clock.fastForward(1001)
+    await expect(page.getByRole("alert")).toContainText("Response lost")
+    await editor.fill("")
+    await page.evaluate(() => { window.standbyFixture.notesError = null })
+    await finish(page, ending.name)
+    await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual([""])
+    await page.evaluate(() => { window.standbyFixture.settleLateNotes() })
+    expect(await page.evaluate(() => window.standbyFixture.rejectedLateNotes)).toBe(1)
+    expect(await page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual([""])
+  })
 }
 
 test("StandBy finish drains a note drafted on the normal session screen", async ({ page }) => {
@@ -145,4 +223,37 @@ test("pause reconciliation does not replace an unsaved draft with stale server n
   await expect(editor).toHaveValue("Draft before pause")
   await finish(page, "Done for Today")
   await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual(["Draft before pause"])
+})
+
+test("018-only finish stays available with acknowledged writes", async ({ page }) => {
+  const editor = await openNotes(page, "/?empty-notes")
+  await page.evaluate(() => { window.standbyFixture.schema020 = false })
+  await editor.fill("Acknowledged ordinary note")
+  await finish(page, "Done for Today")
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual(["Acknowledged ordinary note"])
+  expect(await page.evaluate(() => window.standbyFixture.atomicFinishRequirements)).toEqual([false])
+})
+
+test("018-only finish blocks uncertainty without losing the draft until the atomic boundary is available", async ({ page }) => {
+  const editor = await openNotes(page, "/?empty-notes")
+  await page.evaluate(() => {
+    window.standbyFixture.schema020 = false
+    window.standbyFixture.notesErrorMode = "reject-then-commit-late"
+    window.standbyFixture.notesError = "Response lost"
+  })
+  await editor.fill("Unknown old write")
+  await page.clock.fastForward(1001)
+  await expect(page.getByRole("alert")).toContainText("Response lost")
+  await editor.fill("")
+  await page.evaluate(() => { window.standbyFixture.notesError = null })
+  await finish(page, "Done for Today")
+  await expect(page.getByRole("alert")).toContainText("Atomic note finalization is unavailable")
+  await expect(editor).toBeEnabled()
+  await expect(editor).toHaveValue("")
+  expect(await page.evaluate(() => window.standbyFixture.atomicFinishRequirements)).toEqual([true])
+  expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
+  expect(await page.evaluate(() => window.standbyFixture.writes)).toEqual([])
+  await page.evaluate(() => { window.standbyFixture.schema020 = true })
+  await finish(page, "Done for Today")
+  await expect.poll(() => page.evaluate(() => window.standbyFixture.finishedNotes.map(raw => JSON.parse(raw)[0]))).toEqual([""])
 })

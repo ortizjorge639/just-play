@@ -103,11 +103,17 @@ offline, timeout or fetch errors. A remote end closes StandBy. This is bounded
 polling, not instant live synchronization; account preference persistence is not
 live preference synchronization. No mutations are queued offline.
 
-Session notes autosave in order. Local **Done for Today**, StandBy finish,
+Session notes autosave with acknowledged responses ordered. Local **Done for Today**, StandBy finish,
 **I Beat This Game!** and **Abandon Game** first await any older note write and the
 latest pre-finish draft. Editing is disabled while ending; a failed note save
-blocks finalization and keeps the draft and error visible for retry. Finished
-session notes remain immutable. Leaving the screen or closing the browser is
+blocks finalization and keeps the draft and error visible for retry. Every failed
+response makes the write uncertain: even reverting to the previous saved value
+requires an acknowledged overwrite. A later acknowledgement does not prove that
+the failed request cannot still execute. With migration 020, ending atomically
+saves the current final draft and finishes the session; an older request either
+executes before that boundary and is overwritten, or reaches an immutable finished
+session and is rejected. The client queue alone does not establish server execution
+order after a lost response. Leaving the screen or closing the browser is
 not an awaited save guarantee; navigation cleanup is only best effort, not
 offline synchronization or a promise to recover drafts after a remote finish.
 
@@ -135,12 +141,17 @@ execution through another granted role; removing unrelated role memberships or
 permissions requires separate review. An unexpected execute grant alone does not
 demonstrate an anonymous mutation.
 
-Migration 020 adds `create_standby_session_with_progress(text,integer)` and
-`complete_standby_game(text,text,jsonb)`. Creation with start XP commits session,
+Migration 020 adds `create_standby_session_with_progress(text,integer)`,
+`complete_standby_game(text,text,jsonb,text)` and
+`finish_standby_session_with_notes(uuid,jsonb,jsonb,text)`. Creation with start XP commits session,
 progress bookkeeping, date and XP together; the existing zero-start-XP path
 retains session-only behavior. Completion asserts the displayed session (or
 explicit absence), finalizes it, and changes game progress/XP in one transaction.
-An undefined action argument explicitly selects the latest same-game session.
+An undefined session-selection argument explicitly selects the latest same-game
+session. Completion's optional final-notes argument preserves notes when omitted
+or null; an explicit empty string clears them. The dedicated finish RPC writes
+the final draft and invokes the existing 018 transition in one transaction; a
+stale snapshot rolls back both notes and lifecycle/XP changes.
 Account locks are shared with direct/legacy writers before row locks; writes
 require READ COMMITTED. Deadlocks/errors propagate without automatic replay.
 
@@ -154,8 +165,13 @@ barrier still applies. New-RPC guarantees do not retrofit those old callers.
 
 **Without 020**, this version's creation and beaten/abandon actions fail visibly
 before session/progress writes, with migration/schema-cache guidance and no
-old-RPC fallback. Reads, existing-session pause/resume, ordinary session finish,
-notes, preferences and presentation remain available with 018/019. A rebuilt
+old-RPC fallback. Reads, existing-session pause/resume, notes, preferences and
+presentation remain available with 018/019. Ordinary finish with only acknowledged
+local note writes can use the existing 018 transition if the new finish RPC is
+missing. After **any** uncertain note write, ordinary finish requires 020's atomic
+boundary and otherwise fails visibly, retaining the editable draft; a later
+successful autosave does not remove that requirement for the mounted session.
+Other RPC failures never trigger that compatibility fallback. A rebuilt
 preview is therefore **not full-dogfood-ready** merely because it compiles.
 020 has not been applied by this code change; never rerun 018/019 as its upgrade.
 
@@ -165,8 +181,8 @@ with a partially acquired lock set. On failure, roll back and retry the whole
 migration after review; do not apply fragments. No production merge/deploy,
 all-environments maintenance or live schema application is implied. Review the
 catalog-only `approval020SQL` bundle in `scripts/standby-migration.test.mjs`
-before/after an authorized application: four new routines absent/present,
-six RPCs with authenticated execution and no effective anon/PUBLIC execution,
+before/after an authorized application: five new routines absent/present,
+seven RPCs with authenticated execution and no effective anon/PUBLIC execution,
 six new enabled statement/row triggers, existing RLS/policies/unique indexes
 and original RPC definitions/grants unchanged.
 
@@ -182,7 +198,8 @@ Browser tests run the real companion/session components and reconciliation hook 
 an isolated local harness, with mocked Server Actions, artwork, fullscreen and
 wake-lock capabilities. They cover keyboard/focus, portrait/landscape/tablet/desktop
 layouts, reduced motion, independent settings, reminders without auto-pause,
-pause/resume/finish, ordered note saves and failure-blocked finalization,
+pause/resume/finish, ordered acknowledgements, commit-then-lost-response recovery,
+late execution around the final-draft boundary and failure-blocked finalization,
 remote end, reconnect and errors. Set `STANDBY_TEST_PORT` to an unused port if a
 different harness is already running. They do not establish real
 two-device Supabase behavior, physical iOS/Android wake behavior, or that people

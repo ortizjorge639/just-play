@@ -16,6 +16,9 @@ if (params.has("untracked")) fixture.session = { ...initialSession, record_time:
 if (params.has("locked")) fixture.session = { ...initialSession, status: "LockedIn" }
 if (params.has("long")) fixture.session = { ...initialSession, started_at: new Date(Date.now() - 3700 * 1000).toISOString() }
 if (params.has("current-game")) fixture.session = null
+if (params.has("empty-notes") && fixture.session) {
+  fixture.session = { ...fixture.session, notes: JSON.stringify(Array(10).fill("")) }
+}
 
 function Harness() {
   const { session, updateSession, syncError, refreshSession, beginMutation, endMutation } = useSessionReconciliation(fixture.session, getActiveSession)

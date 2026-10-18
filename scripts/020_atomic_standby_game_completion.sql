@@ -141,15 +141,52 @@ BEGIN
 END;
 $$;
 
--- NULL/JSON null: caller displayed no active same-game session.
+-- The final draft and full018 finish CAS commit together. A stale transition
+-- raises rather than returning no rows, rolling back the draft and any XP.
+-- Later note requests cannot change the finished row under018 immutability.
+CREATE FUNCTION public.finish_standby_session_with_notes(
+  p_session_id uuid,
+  p_expected jsonb,
+  p_updates jsonb,
+  p_final_notes text
+)
+RETURNS SETOF public.sessions
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  owner uuid := auth.uid();
+  finished public.sessions%ROWTYPE;
+BEGIN
+  IF owner IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
+  IF current_setting('transaction_isolation') <> 'read committed' THEN
+    RAISE EXCEPTION 'StandBy writes require READ COMMITTED. Retry in a new transaction.';
+  END IF;
+  IF p_final_notes IS NULL OR p_updates->>'status' IS DISTINCT FROM 'Finished' THEN
+    RAISE EXCEPTION 'Final notes and a Finished transition are required';
+  END IF;
+  PERFORM pg_advisory_xact_lock_shared(2147418112, 0);
+  PERFORM pg_advisory_xact_lock(hashtextextended('just_play.standby:' || owner::text, 0));
+  UPDATE public.sessions SET notes = p_final_notes
+    WHERE id = p_session_id AND user_id = owner AND active = true;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Session changed. Refresh before trying again.'; END IF;
+  SELECT * INTO finished FROM public.transition_standby_session(p_session_id, p_expected, p_updates);
+  IF NOT FOUND THEN RAISE EXCEPTION 'Session changed. Refresh before trying again.'; END IF;
+  RETURN NEXT finished;
+END;
+$$;
+
+-- p_expected_session NULL/JSON null: caller displayed no active same-game session.
 -- Exact {id,status,started_at,paused_elapsed_seconds}: displayed session.
 -- {"mode":"latest"}: intentional undefined-JS legacy/programmatic semantics.
+-- p_final_notes NULL/omitted preserves notes; even '' replaces them atomically.
 -- Session assertion, timing finalization, progress and XP are one transaction,
 -- serialized against every same-account writer before the first state read.
 CREATE FUNCTION public.complete_standby_game(
   p_game_id text,
   p_status text,
-  p_expected_session jsonb
+  p_expected_session jsonb,
+  p_final_notes text DEFAULT NULL
 )
 RETURNS SETOF public.game_progress
 LANGUAGE plpgsql
@@ -164,6 +201,7 @@ DECLARE
   has_session boolean;
   elapsed integer := 0;
   ended timestamptz;
+  timing jsonb;
 BEGIN
   IF owner IS NULL THEN RAISE EXCEPTION 'Not authenticated'; END IF;
   IF current_setting('transaction_isolation') <> 'read committed' THEN
@@ -206,12 +244,16 @@ BEGIN
         elapsed := elapsed + greatest(0, floor(extract(epoch FROM (ended - active_session.started_at)))::integer);
       END IF;
     END IF;
-    SELECT * INTO finished_session FROM public.transition_standby_session(
-      active_session.id, to_jsonb(active_session),
-      jsonb_build_object('status', 'Finished', 'ended_at', ended,
-        'duration_minutes', round(elapsed::numeric / 60)::integer,
-        'paused_elapsed_seconds', elapsed)
-    );
+    timing := jsonb_build_object('status', 'Finished', 'ended_at', ended,
+      'duration_minutes', round(elapsed::numeric / 60)::integer,
+      'paused_elapsed_seconds', elapsed);
+    IF p_final_notes IS NOT NULL THEN
+      SELECT * INTO finished_session FROM public.finish_standby_session_with_notes(
+        active_session.id, to_jsonb(active_session), timing, p_final_notes);
+    ELSE
+      SELECT * INTO finished_session FROM public.transition_standby_session(
+        active_session.id, to_jsonb(active_session), timing);
+    END IF;
     IF NOT FOUND THEN RAISE EXCEPTION 'Session changed. Refresh before trying again.'; END IF;
   END IF;
 
@@ -237,9 +279,11 @@ $$;
 
 REVOKE ALL ON FUNCTION public.lock_standby_account_statement() FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.enforce_standby_account_owner() FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.complete_standby_game(text, text, jsonb) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.finish_standby_session_with_notes(uuid, jsonb, jsonb, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.complete_standby_game(text, text, jsonb, text) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.create_standby_session_with_progress(text, integer) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.complete_standby_game(text, text, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.finish_standby_session_with_notes(uuid, jsonb, jsonb, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.complete_standby_game(text, text, jsonb, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_standby_session_with_progress(text, integer) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';

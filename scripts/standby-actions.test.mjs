@@ -141,9 +141,10 @@ test("new completion actions on018/019 fail actionably before mutation, without 
   for (const action of ["markGameBeaten", "abandonGame"]) {
     const f = fixture([{ data: null, error: { code: "PGRST202",
       message: "Could not find the function public.complete_standby_game in the schema cache" } }])
-    await assert.rejects(f.actions[action]("game", null), /unavailable.*migration 020.*schema cache/)
+    await assert.rejects(f.actions[action]("game", null, ""), /unavailable.*migration 020.*schema cache/)
     assert.equal(f.calls.length, 1)
     assert.equal(f.calls[0].rpc, "complete_standby_game")
+    assert.equal(f.calls[0].args.p_final_notes, "")
     assert.deepEqual(f.invalidations, [])
     f.done()
   }
@@ -179,11 +180,92 @@ test("no-record finish sends zero timing and returns no duration XP", async () =
   const finished = { ...untracked, status: "Finished", active: false, duration_minutes: 0, paused_elapsed_seconds: 0 }
   const f = fixture([ok(untracked), ok(finished)])
   const result = await f.actions.updateSessionStatus("session", "Finished", untracked)
+  assert.equal(f.calls[1].rpc, "transition_standby_session")
   assert.equal(payload(f.calls[1]).duration_minutes, 0)
   assert.equal(payload(f.calls[1]).paused_elapsed_seconds, 0)
   assert.deepEqual(result.xpAwarded, { total: 0, bonuses: [] })
   assert.deepEqual(result.session, finished)
   f.done()
+})
+
+test("ordinary finish sends the final draft including empty text to the atomic notes boundary", async () => {
+  for (const notes of ["", "final draft"]) {
+    const before = { ...session, notes: "older committed text" }
+    const finished = { ...before, notes, status: "Finished", active: false, duration_minutes: 5, xp_awarded: 11 }
+    const f = fixture([ok(before), ok(finished)])
+    const result = await f.actions.updateSessionStatus("session", "Finished", before, { notes, requiresAtomicFinish: true })
+    assert.equal(f.calls[1].rpc, "finish_standby_session_with_notes")
+    assert.equal(f.calls[1].args.p_final_notes, notes)
+    assert.equal(f.calls[1].args.p_updates.status, "Finished")
+    assert.equal(f.calls[1].args.p_expected.xp_awarded, 10)
+    assert.deepEqual(result.session, finished)
+    assert.deepEqual(result.xpAwarded, { total: 1, bonuses: [] })
+    assert.equal(f.calls.length, 2)
+    f.done()
+  }
+})
+
+test("missing020 rejects uncertain finishes before lifecycle writes and never falls back", async () => {
+  for (const code of ["PGRST202", "42883"]) {
+    const f = fixture([ok(session), { data: null, error: { code, message: "Function missing from schema cache" } }])
+    await assert.rejects(f.actions.updateSessionStatus("session", "Finished", session,
+      { notes: "", requiresAtomicFinish: true }), /unavailable.*migration 020/)
+    assert.deepEqual(f.calls.filter((call) => call.rpc).map((call) => call.rpc), ["finish_standby_session_with_notes"])
+    assert.deepEqual(f.invalidations, [])
+    f.done()
+  }
+})
+
+test("acknowledged ordinary finish may fall back on missing020 only, preserving the identical018 CAS", async () => {
+  for (const code of ["PGRST202", "42883"]) {
+    const before = { ...session, notes: "acknowledged" }
+    const finished = { ...before, status: "Finished", active: false, duration_minutes: 5, xp_awarded: 11 }
+    const f = fixture([ok(before), { data: null, error: { code, message: "Function missing" } }, ok(finished)])
+    const result = await f.actions.updateSessionStatus("session", "Finished", before,
+      { notes: before.notes, requiresAtomicFinish: false })
+    const [atomic, legacy] = f.calls.filter((call) => call.rpc)
+    assert.equal(atomic.rpc, "finish_standby_session_with_notes")
+    assert.equal(legacy.rpc, "transition_standby_session")
+    assert.deepEqual(legacy.args, {
+      p_session_id: atomic.args.p_session_id, p_expected: atomic.args.p_expected, p_updates: atomic.args.p_updates,
+    })
+    assert.deepEqual(result.session, finished)
+    assert.deepEqual(f.invalidations, ["/"])
+    f.done()
+  }
+})
+
+test("ordinary finish never falls back after a stale, permission, network or deadlock result", async () => {
+  for (const response of [
+    ok(null),
+    ...["42501", "08006", "40P01"].map((code) => ({ data: null, error: { code, message: `Database failure ${code}` } })),
+  ]) {
+    const f = fixture([ok(session), response])
+    await assert.rejects(f.actions.updateSessionStatus("session", "Finished", session,
+      { notes: "", requiresAtomicFinish: false }), /Session changed|Database failure/)
+    assert.equal(f.calls.length, 2)
+    assert.deepEqual(f.invalidations, [])
+    f.done()
+  }
+})
+
+test("018 fallback refuses an unacknowledged draft, and finish options require valid finish-only fields", async () => {
+  const f = fixture([ok({ ...session, notes: "different" }), {
+    data: null, error: { code: "PGRST202", message: "Function missing" },
+  }])
+  await assert.rejects(f.actions.updateSessionStatus("session", "Finished", session,
+    { notes: "", requiresAtomicFinish: false }), /not acknowledged.*migration 020/)
+  assert.equal(f.calls.length, 2)
+  f.done()
+  for (const [status, options] of [
+    ["Paused", { notes: "", requiresAtomicFinish: true }],
+    ["Finished", { notes: null, requiresAtomicFinish: true }],
+    ["Finished", { notes: "" }],
+  ]) {
+    const invalid = fixture([])
+    await assert.rejects(invalid.actions.updateSessionStatus("session", status, session, options), /Final notes/)
+    assert.equal(invalid.calls.length, 0)
+  }
 })
 
 test("starting LockedIn resets the stored started_at instead of counting lock-in waiting", async () => {
@@ -199,16 +281,19 @@ test("beaten/abandon send null, displayed snapshot or deliberate latest mode to 
   for (const [action, status] of [["markGameBeaten", "beaten"], ["abandonGame", "abandoned"]]) {
     const displayed = { id: session.id, status: session.status, started_at: session.started_at, paused_elapsed_seconds: 120 }
     for (const expected of [null, displayed, undefined]) {
-      const f = fixture([ok({ id: "progress", status })])
-      await f.actions[action]("game", expected)
-      assert.equal(f.calls.length, 1)
-      assert.equal(f.calls[0].rpc, "complete_standby_game")
-      assert.deepEqual(f.calls[0].args, {
-        p_game_id: "game", p_status: status,
-        p_expected_session: expected === undefined ? { mode: "latest" } : expected,
-      })
-      assert.deepEqual(f.invalidations, ["/"])
-      f.done()
+      for (const finalNotes of ["", "final draft", undefined]) {
+        const f = fixture([ok({ id: "progress", status })])
+        await f.actions[action]("game", expected, finalNotes)
+        assert.equal(f.calls.length, 1)
+        assert.equal(f.calls[0].rpc, "complete_standby_game")
+        assert.deepEqual(f.calls[0].args, {
+          p_game_id: "game", p_status: status,
+          p_expected_session: expected === undefined ? { mode: "latest" } : expected,
+          p_final_notes: finalNotes ?? null,
+        })
+        assert.deepEqual(f.invalidations, ["/"])
+        f.done()
+      }
     }
   }
 })

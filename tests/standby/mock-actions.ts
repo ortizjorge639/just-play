@@ -21,17 +21,33 @@ export const fixture: {
   savedPreferences: StandbyPreferences | null
   gameEndWrites: { kind: "beaten" | "abandoned"; gameId: string; expected?: ExpectedSession | null }[]
   notesDelay: number
+  holdNoteWrites: boolean
+  noteReleases: (() => void)[]
+  releaseNextNote: () => void
   finalizationDelay: number
   notesError: string | null
+  notesErrorMode: "before-commit" | "commit-then-reject" | "reject-then-commit-late"
+  deferredNotes: { id: string; notes: string }[]
+  settleLateOnFinish: boolean
+  settleLateNotes: () => void
+  rejectedLateNotes: number
+  schema020: boolean
+  finalDrafts: string[]
+  atomicFinishRequirements: boolean[]
   creationError: string | null
   completionError: string | null
   notesWrites: string[]
   finishedNotes: string[]
-  events: { kind: "notes-start" | "notes-saved" | "finish" | "beaten" | "abandoned"; notes: string }[]
+  events: { kind: "notes-start" | "notes-saved" | "notes-late" | "finish" | "beaten" | "abandoned"; notes: string }[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
   notesDelay: 0, finalizationDelay: 0, notesError: null, notesWrites: [], finishedNotes: [], events: [],
+  holdNoteWrites: false, noteReleases: [],
+  releaseNextNote: () => { fixture.noteReleases.shift()?.() },
   creationError: null, completionError: null,
+  notesErrorMode: "before-commit", deferredNotes: [], settleLateOnFinish: true,
+  settleLateNotes: settleLateNotes, rejectedLateNotes: 0, schema020: true,
+  finalDrafts: [], atomicFinishRequirements: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -42,12 +58,30 @@ export async function getActiveSession() {
   if (fixture.error) throw new Error(fixture.error)
   return snapshot
 }
-export async function updateSessionStatus(_id: string, status: SessionStatus) {
+export async function updateSessionStatus(
+  _id: string,
+  status: SessionStatus,
+  _expected?: unknown,
+  finalNotes?: { notes: string; requiresAtomicFinish: boolean },
+) {
   if (!fixture.session) throw new Error("Session ended on another device")
+  if (status === "Finished" && finalNotes) {
+    fixture.atomicFinishRequirements.push(finalNotes.requiresAtomicFinish)
+    if (finalNotes.requiresAtomicFinish && !fixture.schema020) {
+      throw new Error("Atomic note finalization is unavailable. Database migration 020 is required; your draft remains editable.")
+    }
+  }
   fixture.writes.push(status)
   if (status === "Finished" && fixture.finalizationDelay) {
     await new Promise(resolve => setTimeout(resolve, fixture.finalizationDelay))
     if (!fixture.session) throw new Error("Session ended on another device")
+  }
+  if (status === "Finished" && fixture.schema020) {
+    if (fixture.settleLateOnFinish) settleLateNotes()
+    if (finalNotes) {
+      fixture.finalDrafts.push(finalNotes.notes)
+      fixture.session = { ...fixture.session, notes: finalNotes.notes }
+    }
   }
   const updated = { ...fixture.session, status, started_at: new Date().toISOString(), active: status !== "Finished" }
   fixture.session = updated
@@ -65,8 +99,16 @@ export async function saveStandbyPreferences(preferences: StandbyPreferences) {
 export async function updateSessionNotes(id: string, notes: string) {
   fixture.notesWrites.push(notes)
   fixture.events.push({ kind: "notes-start", notes })
+  if (fixture.holdNoteWrites) await new Promise<void>(resolve => fixture.noteReleases.push(resolve))
   if (fixture.notesDelay) await new Promise(resolve => setTimeout(resolve, fixture.notesDelay))
-  if (fixture.notesError) throw new Error(fixture.notesError)
+  if (fixture.notesError) {
+    if (fixture.notesErrorMode === "commit-then-reject") storeNotes(id, notes)
+    if (fixture.notesErrorMode === "reject-then-commit-late") fixture.deferredNotes.push({ id, notes })
+    throw new Error(fixture.notesError)
+  }
+  storeNotes(id, notes)
+}
+function storeNotes(id: string, notes: string) {
   if (!fixture.session?.active || fixture.session.id !== id) throw new Error("Only active session notes can be edited.")
   fixture.session = { ...fixture.session, notes }
   fixture.events.push({ kind: "notes-saved", notes })
@@ -76,23 +118,39 @@ export async function startSessionForGame() {
   if (fixture.creationError) throw new Error(fixture.creationError)
   fixture.session = { ...initialSession, status: "Playing" }
 }
-export async function markGameBeaten(gameId: string, expected?: ExpectedSession | null) {
+export async function markGameBeaten(gameId: string, expected?: ExpectedSession | null, finalNotes?: string) {
   fixture.gameEndWrites.push({ kind: "beaten", gameId, expected })
   if (fixture.completionError) throw new Error(fixture.completionError)
   if (fixture.delay) await new Promise(resolve => setTimeout(resolve, fixture.delay))
   if (fixture.finalizationDelay) await new Promise(resolve => setTimeout(resolve, fixture.finalizationDelay))
-  finishGame("beaten")
+  finishGame("beaten", finalNotes)
 }
-export async function abandonGame(gameId: string, expected?: ExpectedSession | null) {
+export async function abandonGame(gameId: string, expected?: ExpectedSession | null, finalNotes?: string) {
   fixture.gameEndWrites.push({ kind: "abandoned", gameId, expected })
   if (fixture.completionError) throw new Error(fixture.completionError)
   if (fixture.delay) await new Promise(resolve => setTimeout(resolve, fixture.delay))
   if (fixture.finalizationDelay) await new Promise(resolve => setTimeout(resolve, fixture.finalizationDelay))
-  finishGame("abandoned")
+  finishGame("abandoned", finalNotes)
 }
 
-function finishGame(kind: "beaten" | "abandoned") {
+function settleLateNotes() {
+  for (const write of fixture.deferredNotes.splice(0)) {
+    if (!fixture.session?.active || fixture.session.id !== write.id) {
+      fixture.rejectedLateNotes++
+    } else {
+      fixture.session = { ...fixture.session, notes: write.notes }
+      fixture.events.push({ kind: "notes-late", notes: write.notes })
+    }
+  }
+}
+
+function finishGame(kind: "beaten" | "abandoned", finalNotes?: string) {
   if (fixture.session) {
+    if (fixture.settleLateOnFinish) settleLateNotes()
+    if (finalNotes !== undefined) {
+      fixture.finalDrafts.push(finalNotes)
+      fixture.session = { ...fixture.session, notes: finalNotes }
+    }
     fixture.finishedNotes.push(fixture.session.notes || "")
     fixture.events.push({ kind, notes: fixture.session.notes || "" })
     fixture.session = null

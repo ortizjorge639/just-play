@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, StandbyPreferences, Game, PlayerStats } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
@@ -335,10 +335,14 @@ export async function getRecommendations(preferences: UserPreferences) {
   return deck
 }
 
+function isMissingStandbyFunction(error: { code?: string }) {
+  return error.code === "PGRST202" || error.code === "42883"
+}
+
 function standbyMutationError(error: { code?: string; message: string }) {
-  if (error.code === "PGRST202" || error.code === "42883") {
+  if (isMissingStandbyFunction(error)) {
     return new Error(
-      "StandBy creation/completion is unavailable. Database migration 020 and an up-to-date API schema cache are required. No session or progress changes were made."
+      "StandBy atomic writes are unavailable. Database migration 020 and an up-to-date API schema cache are required. No session or progress changes were made."
     )
   }
   return new Error(error.message)
@@ -400,7 +404,8 @@ export async function createSession(gameId: string) {
 export async function updateSessionStatus(
   sessionId: string,
   newStatus: SessionStatus,
-  expected?: SessionTimingSnapshot
+  expected?: SessionTimingSnapshot,
+  finishOptions?: SessionFinishOptions
 ) {
   const supabase = await createClient()
   const {
@@ -408,7 +413,7 @@ export async function updateSessionStatus(
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  return transitionSession(supabase, user.id, sessionId, newStatus, expected)
+  return transitionSession(supabase, user.id, sessionId, newStatus, expected, finishOptions)
 }
 
 async function transitionSession(
@@ -416,8 +421,15 @@ async function transitionSession(
   userId: string,
   sessionId: string,
   newStatus: SessionStatus,
-  expected?: SessionTimingSnapshot
+  expected?: SessionTimingSnapshot,
+  finishOptions?: SessionFinishOptions
 ) {
+  if (finishOptions !== undefined && (
+    !finishOptions || typeof finishOptions.notes !== "string" ||
+    typeof finishOptions.requiresAtomicFinish !== "boolean" || newStatus !== "Finished"
+  )) {
+    throw new Error("Final notes and requiresAtomicFinish are required only for a Finished transition.")
+  }
   const validTransitions: Record<string, string[]> = {
     LockedIn: ["Playing", "Finished"],
     Playing: ["Paused", "Finished"],
@@ -460,11 +472,25 @@ async function transitionSession(
   ]) {
     snapshot[key] = session[key] ?? null
   }
-  const { data: updated, error } = await supabase.rpc("transition_standby_session", {
+  const args = {
     p_session_id: sessionId, p_expected: snapshot, p_updates: updates,
-  }).returns<Session[]>().maybeSingle()
+  }
+  let result = finishOptions
+    ? await supabase.rpc("finish_standby_session_with_notes", {
+      ...args, p_final_notes: finishOptions.notes,
+    }).returns<Session[]>().maybeSingle()
+    : await supabase.rpc("transition_standby_session", args).returns<Session[]>().maybeSingle()
 
-  if (error) throw new Error(error.message)
+  if (finishOptions && result.error && isMissingStandbyFunction(result.error) && !finishOptions.requiresAtomicFinish) {
+    // Only acknowledged local drafts may use018. This does not order unknown
+    // requests from other clients; uncertain writes require the020 boundary.
+    if ((session.notes ?? "") !== finishOptions.notes) {
+      throw new Error("Final notes are not acknowledged on the server. Atomic finish requires database migration 020.")
+    }
+    result = await supabase.rpc("transition_standby_session", args).returns<Session[]>().maybeSingle()
+  }
+  const { data: updated, error } = result
+  if (error) throw standbyMutationError(error)
   if (!updated) throw new Error("Session changed. Refresh before trying again.")
   revalidatePath("/")
 
@@ -637,37 +663,42 @@ async function completeGame(
   supabase: Awaited<ReturnType<typeof createClient>>,
   gameId: string,
   status: "beaten" | "abandoned",
-  expected?: SessionMutationSnapshot | null
+  expected?: SessionMutationSnapshot | null,
+  finalNotes?: string
 ) {
+  if (finalNotes !== undefined && typeof finalNotes !== "string") {
+    throw new Error("Final notes must be a string.")
+  }
   // Preserve undefined's deliberate "latest" behavior; null asserts absence.
   const { data, error } = await supabase.rpc("complete_standby_game", {
     p_game_id: gameId,
     p_status: status,
     p_expected_session: expected === undefined ? { mode: "latest" } : expected,
+    p_final_notes: finalNotes ?? null,
   }).maybeSingle()
   if (error) throw standbyMutationError(error)
   if (!data) throw new Error("Game progress changed. Refresh before trying again.")
   revalidatePath("/")
 }
 
-export async function markGameBeaten(gameId: string, expectedSession?: SessionMutationSnapshot | null) {
+export async function markGameBeaten(gameId: string, expectedSession?: SessionMutationSnapshot | null, finalNotes?: string) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  await completeGame(supabase, gameId, "beaten", expectedSession)
+  await completeGame(supabase, gameId, "beaten", expectedSession, finalNotes)
 }
 
-export async function abandonGame(gameId: string, expectedSession?: SessionMutationSnapshot | null) {
+export async function abandonGame(gameId: string, expectedSession?: SessionMutationSnapshot | null, finalNotes?: string) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Not authenticated")
 
-  await completeGame(supabase, gameId, "abandoned", expectedSession)
+  await completeGame(supabase, gameId, "abandoned", expectedSession, finalNotes)
 }
 
 export async function getSessionHistory() {
