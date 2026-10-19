@@ -6,11 +6,10 @@ import { existsSync, readFileSync } from "node:fs"
 import { createHash } from "node:crypto"
 import { createRequire } from "node:module"
 import { execFileSync, spawnSync } from "node:child_process"
-import { compileFunction } from "node:vm"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { test } from "node:test"
-import ts from "typescript"
+import { loadActions } from "./standby-action-fixture.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const require = createRequire(import.meta.url)
@@ -78,24 +77,7 @@ function actionsFor(db, user, source, history, beforeRPC = async () => {}, loseT
       return query
     },
   }
-  const modules = new Map()
-  function load(filename) {
-    if (modules.has(filename)) return modules.get(filename)
-    const loaded = { exports: {} }
-    modules.set(filename, loaded.exports)
-    const output = ts.transpileModule(filename === path.join(root, "app", "actions.ts") ? source : readFileSync(filename, "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-    }).outputText
-    compileFunction(output, ["require", "module", "exports"], { filename })((specifier) => {
-      if (specifier === "@/lib/supabase/server") return { createClient: async () => client }
-      if (specifier === "next/cache") return { revalidatePath: url => invalidations.push(url) }
-      if (specifier.startsWith("@/")) return load(path.join(root, `${specifier.slice(2)}.ts`))
-      if (specifier.startsWith(".")) return load(path.resolve(path.dirname(filename), `${specifier}.ts`))
-      throw new Error(`Unexpected dependency ${specifier}`)
-    }, loaded, loaded.exports)
-    return loaded.exports
-  }
-  return { actions: load(path.join(root, "app", "actions.ts")), invalidations }
+  return { actions: loadActions(client, source, invalidations), invalidations }
 }
 
 test("interruption histories use independent SQL rows, not mocked mutation success", async t => {

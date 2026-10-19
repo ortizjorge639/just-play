@@ -256,6 +256,7 @@ and original RPC definitions/grants unchanged.
 ```bash
 pnpm exec tsx --test lib/session-time.test.ts
 node --test scripts/standby-actions.test.mjs
+node --test scripts/standby-postgres.test.mjs
 npx --yes --package=@electric-sql/pglite@0.5.10 -- node --test scripts/standby-migration.test.mjs
 npx --yes --package=@electric-sql/pglite@0.5.10 -- node --test scripts/standby-interruption.test.mjs
 pnpm exec playwright install chromium firefox webkit
@@ -305,6 +306,15 @@ created an unrecorded session, ungated old-client XP writes are rejected, includ
 delayed writes after that session ends, rather than leaking duration XP. Reload/
 update old clients before using recording opt-out. The new RPC path's atomicity
 does not make all overlapping legacy manual-write sequences idempotent.
+
+The optional `standby-postgres.test.mjs` command requires Docker and an available
+`postgres:17` image. It creates and removes only its own network-disabled
+container, with synthetic auth fixtures and no published ports. It observes real
+two-connection lock barriers and fresh saved rows; it never uses a configured
+Supabase URL. Its scripted action transport and synthetic Auth catalog are not
+full Supabase or physical-device acceptance. See the
+[bounded overnight receipt](docs/standby-overnight-results.md) for exact evidence,
+retained failures and pending owner/release gates.
 
 ---
 
