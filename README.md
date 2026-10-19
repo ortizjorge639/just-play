@@ -1,16 +1,42 @@
 # Just Play
 
-> *You don't track games. You collect proof that you showed up.*
+> *Choose a game. Stay with it. Build a gaming life, brick by brick.*
 
-Just Play is a game tracker built around a simple idea: every game you finish becomes a permanent part of your world. Not a spreadsheet. Not a list. A treehouse full of characters that grew from every hour you put in.
+Just Play helps gamers choose what to play, stay present with it instead of
+scrolling, and build a meaningful repertoire of games played and completed.
+Its longer-term Canopy home gives that journey a lasting, personal expression.
+The game is the main experience; the companion should never compete with it.
 
 ---
 
-## What it does
+## Product direction
 
-- **Backlog** — your queue. Add games, keep the pile honest.
-- **In Progress** — one game at a time. Track sessions, set goals, stay in it.
-- **Completed** — every finished game becomes a character in your treehouse. They live there.
+- **Backlog** — choose deliberately and understand what is waiting.
+- **In Progress** — focus on the chosen game, with optional recording, goals,
+  and a quiet phone or second-monitor companion.
+- **Completed** — build a repertoire, brick by brick. Future account-backed
+  Canopy residents and memories recognize meaningful play under the player's
+  chosen stamp; they are not automatically created by today's session tracker.
+
+Simple artwork and metaphorical Canopy are both valid viewers. Optional
+completion-pace and net unfinished-backlog trends should support reflection,
+not quotas or rushing. Finishing a session, completing a game, and earning a
+Canopy arrival remain distinct.
+
+These are product-direction statements, not a shipped-feature checklist.
+See [PRODUCT.md](PRODUCT.md) for current boundaries and approved world rules.
+
+## Start here: agent handoff
+
+**Branch: `standby-canopy-handoff`.** This branch combines the accepted
+StandBy/Canopy runtime with the agreed specifications and a
+[bounded work plan](docs/standby-canopy-handoff.md). No agent, feature work,
+merge, live account operation, or manual deployment was started by packaging it.
+The two existing implementation PRs remain separate and unmerged.
+
+The plan identifies workstreams, dependencies, required permissions, expected
+outcomes, evidence, and stop conditions. It is not approval to execute every
+listed task. The separate fictional demo/art experiments are not imported.
 
 ---
 
@@ -20,6 +46,7 @@ Just Play is a game tracker built around a simple idea: every game you finish be
 - [Supabase](https://supabase.com/) — auth + database
 - [shadcn/ui](https://ui.shadcn.com/) + Tailwind CSS v4
 - [Framer Motion](https://www.framer.com/motion/) — animations
+- Three.js — the optional, lazy-loaded Canopy nook
 - [IGDB](https://www.igdb.com/api) — game metadata
 
 ---
@@ -27,6 +54,18 @@ Just Play is a game tracker built around a simple idea: every game you finish be
 ## Status
 
 **v2 in progress** — full redesign. Building in public.
+
+The StandBy foundation is [PR #2](https://github.com/ortizjorge639/just-play/pull/2)
+at `b19bf48`; Canopy is [PR #3](https://github.com/ortizjorge639/just-play/pull/3)
+at `d19672d`, which already includes the foundation. Both remain unmerged at
+this handoff. Runtime and SQL in this branch are unchanged from `d19672d`;
+only documentation is added or updated. Historical evidence remains pinned
+to the source actually exercised, not relabeled as a new run on this branch.
+
+R1 currently provides neutral Idle scenery in one fixed furnished room,
+not dialogue, gameplay awareness, earned residency, or a persistent home.
+Healthy backlog-flow metrics, companion relationships, account-backed world
+growth/memories, and community remain future work.
 
 Follow the build → [@jojiguy639](https://x.com/jojiguy639)
 
@@ -132,7 +171,19 @@ offline synchronization or a promise to recover drafts after a remote finish.
 
 ### Deployment and verification
 
-Apply `scripts/018_standby.sql`, `scripts/019_restrict_standby_rpc_execute.sql` and
+**Current shared-database checkpoint, October 19, 2026 UTC:** the separately
+authorized canonical migration 020 was applied once and independently
+catalog-verified. It is 13,642 canonical Git bytes, SHA-256
+`e87bdbf448d0d3039281e6c6cb7d2b77fa12a075791df40ca5d23ac7824c5bbf`.
+The check confirmed 12 exact routines, seven restricted RPCs and ten enabled
+triggers, preserving the original definitions/permissions, RLS/policies and
+indexes. This was not a real-account mutation or cross-device test.
+**Do not rerun 018, 019 or 020 on that shared project.** A different database
+requires a fresh catalog assessment and separate authorization.
+See the [handoff evidence and remaining gates](docs/standby-canopy-handoff.md).
+
+**For a new, separately authorized database:**
+apply `scripts/018_standby.sql`, `scripts/019_restrict_standby_rpc_execute.sql` and
 `scripts/020_atomic_standby_game_completion.sql` in order after the preceding
 numbered migrations, with separate authorization for the target database.
 Migration 018 adds account preferences and immutable session recording flags,
@@ -187,7 +238,9 @@ separate legacy finish. Missing 020 retains the editable draft and active status
 there is no new-caller legacy finish fallback. Existing main/018 callers are not
 globally disabled or rewritten. A rebuilt
 preview is therefore **not full-dogfood-ready** merely because it compiles.
-020 has not been applied by this code change; never rerun 018/019 as its upgrade.
+The shared-project application was a later, separately authorized operation,
+not an automatic effect of this code. Use the current checkpoint above;
+never rerun 018/019 as its upgrade.
 
 020 installs under a short `SHARE ROW EXCLUSIVE ... NOWAIT` table lock: ordinary
 readers remain allowed, while busy writers fail the migration rather than waiting

@@ -18,6 +18,34 @@ help are deliberately inspectable. Actual error, fullscreen and keep-awake
 warnings remain visible when relevant, at readable size, not permanent tiny
 corner essays.
 
+## Current handoff checkpoint
+
+This documentation-only handoff starts from accepted combined source
+`d19672df239ba020fae728fa3245ebd8d3162812`, including foundation
+`b19bf481099f8593aca53e7f703eaad2e3dd5a9f`. Runtime, tests, assets and SQL
+are unchanged. The controlling assignment and permission boundaries are in
+[the handoff plan](standby-canopy-handoff.md); the product direction is in
+[PRODUCT.md](../PRODUCT.md).
+
+One fresh unchanged-source browser matrix passed 312/312, 104 per engine,
+with one worker, zero retries/skips/flaky results and original assertions,
+clocks and deadlines. These are real-component/mocked-action histories, not
+live database or physical-device certification. Earlier failed/interrupted
+runs remain historical evidence, not retroactively green.
+
+The separately authorized canonical migration 020 was applied once to the
+shared project and independently catalog-verified on October 19, 2026 UTC.
+It is no longer an unapplied prerequisite there. Do not rerun 018/019/020;
+real-account transport, actual concurrent connections, physical devices,
+recovery and usefulness remain separate gates. No new SQL, account operation,
+PR merge, manual deployment or feature execution is authorized by this branch.
+
+The checkpoint sections farther below are historical. Their then-unapplied
+migration statements and old test totals do not describe current readiness.
+The original 6a art source is retained in the local overview/art workspace,
+not included or published by this branch. Its paths below establish provenance,
+not a promise that a fresh clone can download that original source archive.
+
 ## R1 provenance and material contract
 
 - Original Just Play R1 source commit:
@@ -182,7 +210,7 @@ At that checkpoint, combined acceptance remained blocked on those failures.
 The original 03 logs and both Firefox traces are retained unchanged; a later
 green run is not a causal diagnosis of either earlier failure.
 
-## Latest foundation synchronization
+## Historical b19 foundation synchronization
 
 This subsequent synchronization uses independently accepted foundation
 `b19bf481099f8593aca53e7f703eaad2e3dd5a9f`, preserving all four visual-layer
