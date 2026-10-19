@@ -127,6 +127,58 @@ was attempted. Direct checks and independent read-only review are separate.
 Raw logs, failed traces, acceptance matrix, findings, command statuses and final
 commit receipt are outside Git in `/home/azureuser/just-play-overnight-operation`.
 
+## Independent-review follow-up
+
+The independent `REVIEW.md` found no demonstrated product or blocking test
+defect. Its feasible evidence gap was command-status provenance: an empty lint
+log alone cannot establish success. No runtime, adapter, SQL or assertion was
+changed to address a problem that was not demonstrated. In particular, the
+adapter's ignored projection and simplified single-row behavior remain explicit
+limits, not PostgREST fidelity evidence.
+
+On October 19, 03:38-03:44 UTC, fresh commands exercised unchanged source
+`d0afafd00bb18d816e77a89fb8c1a9f041a4c720`. Each execution log in the table contains the
+source HEAD, command, UTC timestamps and explicit numeric exit status. Logs
+below are relative to `/home/azureuser/just-play-overnight-operation/` and use
+the prefix `review-followup-20261019-`.
+
+| Command | Actual result | Log suffix |
+| --- | --- | --- |
+| `node --test scripts/standby-actions.test.mjs scripts/auth-recovery.test.mjs` | exit 0; 47 passed | `actions-auth.log` |
+| `node_modules/.bin/tsx --test lib/session-time.test.ts` | exit 0; 7 passed | `time.log` |
+| Pinned PGlite command from the checks table | exit 0; 58 passed; serialized only | `pglite.log` |
+| `node --test scripts/standby-postgres.test.mjs` | exit 0; 27 child cases plus parent, no skips/retries | `db.log` |
+| Targeted Chromium command recorded in external RESULTS.md | exit 0; 10 passed, one worker, no retries | `browser.log` |
+| ESLint on the three test modules from the checks table | exit 0; no diagnostics | `eslint-specific.log` |
+| `npm run lint` | exit 1; existing 5 errors / 3 warnings | `lint.log` |
+| `node_modules/.bin/tsc --noEmit` | exit 2; existing 10 cookie-type errors | `types.log` |
+| Dummy loopback-only build from external RESULTS.md | exit 0; type validation still skipped | `build.log` |
+
+Fresh lint/type diagnostic lines match their baseline receipts exactly; their
+nonzero exits remain failures, not approvals.
+
+The database log includes harness/loader/action/migration hashes, actual lock
+barriers, final rows, removal of its own UUID container and a subsequent
+exit-0 Docker inspection with no labeled containers listed. The browser log
+includes test/harness hashes; its output directory is
+`review-followup-20261019-browser-artifacts/` outside Git. Historical failures
+and all earlier receipts remain intact; these are new observations, not
+retroactive certification of historical command exits.
+
+`review-followup-20261019-gates-scope.log` records fresh home/status and
+unchanged runtime-scope inspection. no-mistakes still resolves the original
+checkout and reports only the unrelated failed run
+`01KWWEW11ZGWRDQCMRFFY0ZP2S`, not an active current-branch run. Status also emits
+`error: daemon shutting down` despite command exit 0; that diagnostic is
+retained, not treated as pipeline success. No run, response, abort, gate
+approval, configuration change or service restart was attempted. Safe pipeline
+confinement remains unestablished; no-mistakes remains not run/not passed.
+
+This closes only the feasible provenance gap. Full A, physical B, personal C,
+Supabase-fidelity D and release E remain blocked as described above. The
+owner must supply the existing permissions or explicitly narrow acceptance;
+this follow-up grants neither.
+
 ## Owner decisions and dependency-ordered release
 
 Read-only GitHub metadata on October 19 confirmed #2 OPEN at
