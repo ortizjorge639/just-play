@@ -61,7 +61,7 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
       setError(e instanceof Error ? e.message : "Failed to open pack")
       setPhase("idle")
     }
-  }, [status.packsRemaining, onPackOpened])
+  }, [status.packsRemaining, hasPreferences, preferences, onPackOpened])
 
   const isDisabled = status.packsRemaining <= 0
 

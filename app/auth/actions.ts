@@ -125,19 +125,3 @@ export async function signout() {
   await supabase.auth.signOut()
   return redirect("/auth/login")
 }
-
-export async function adminBypass() {
-  const supabase = await createClient()
-
-  // Use the pre-configured test user (email already confirmed in database)
-  const { error } = await supabase.auth.signInWithPassword({
-    email: "test@justplay.dev",
-    password: "testpassword123",
-  })
-
-  if (error) {
-    return redirect("/auth/login?error=" + encodeURIComponent(error.message))
-  }
-
-  return redirect("/")
-}

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { login, adminBypass } from "../actions"
+import { login } from "../actions"
 
 export default async function LoginPage(props: {
   searchParams: Promise<{ error?: string }>
@@ -69,21 +69,6 @@ export default async function LoginPage(props: {
             className="h-12 w-full rounded-lg bg-primary text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/80"
           >
             Sign In
-          </button>
-        </form>
-
-        <div className="relative flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground">OR</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <form action={adminBypass}>
-          <button
-            type="submit"
-            className="h-12 w-full rounded-lg border border-border bg-secondary text-base font-medium text-foreground transition-colors hover:bg-muted active:bg-muted/80"
-          >
-            Quick Play (Test Mode)
           </button>
         </form>
 

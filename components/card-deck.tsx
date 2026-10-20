@@ -78,7 +78,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
         setLockedGame(null)
       }
     })
-  }, [lockedGame, onSessionCreated])
+  }, [lockedGame, onSessionCreated, showXPToast])
 
   const cancelLockIn = useCallback(() => {
     setLockedGame(null)
