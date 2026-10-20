@@ -27,12 +27,17 @@ Target was 95%. It is not reached.
 | Catalog insert policy | Migration 013 still lets any signed-in user insert games directly. Replace it with a server-only insert. Owner applies. |
 | Account recovery (C) | Run it on the approved origin, or record the precise blocker. |
 
-## Still blocking (code, not yet done)
+## Done since the last audit (not yet re-audited)
 
-1. Game session count and playtime totals are not maintained correctly. Derive them from session rows.
-2. Read failures for the current game, history and stats show as empty data. Show a retry state.
-3. Recommendation cards need keyboard Choose/Skip/Details controls.
-4. First run is a slideshow, and discovery returns up to 10 games with repeat packs. The spec wants an action-based start and 1-3 picks.
+- Active-session totals are derived from finished session rows, not the stored counters. The stored counters and migration 020 are unchanged.
+- Failed reads of the current game, history and stats raise an error, and `app/error.tsx` shows a retry screen instead of an empty app.
+- Recommendation cards take keyboard input: Enter or Up to play, Down to skip, I for details.
+
+## Still blocking (code)
+
+1. The Game screen still reads the stored progress counters, which stay wrong until migration 020 is corrected.
+2. Quick filter save failures are not handled.
+3. First run is a slideshow, and discovery returns up to 10 games with repeat packs. The spec wants an action-based start and 1-3 picks.
 
 ## Not in the narrowed release
 

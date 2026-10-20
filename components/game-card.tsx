@@ -90,6 +90,22 @@ export function GameCard({
     }
   }, [])
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === "ArrowUp") {
+        e.preventDefault()
+        onLockIn(game)
+      } else if (e.key === "ArrowDown" || e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault()
+        onReject(game)
+      } else if (e.key === "i" || e.key === "I") {
+        e.preventDefault()
+        setShowDetail(true)
+      }
+    },
+    [game, onLockIn, onReject]
+  )
+
   const getHintColor = () => {
     if (dragDirection === "up") return "rgba(59, 165, 93, 0.3)"
     if (dragDirection === "down") return "rgba(237, 66, 69, 0.15)"
@@ -128,8 +144,12 @@ export function GameCard({
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
+          tabIndex={isTop ? 0 : -1}
+          role="group"
+          aria-label={`${game.name}. Enter or Up arrow to play it, Down arrow to skip, I for details.`}
+          onKeyDown={isTop ? handleKeyDown : undefined}
           whileDrag={{ cursor: "grabbing" }}
-          className="relative w-full max-w-[320px] cursor-grab select-none touch-none"
+          className="relative w-full max-w-[320px] cursor-grab select-none touch-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary rounded-2xl"
           style={{ aspectRatio: "3/4" }}
         >
           {/* Card body */}

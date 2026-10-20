@@ -519,7 +519,8 @@ export async function getActiveGame() {
     .eq("status", "playing")
     .maybeSingle()
 
-  if (progressError || !progress) return null
+  if (progressError) throw new Error(`Failed to load current game: ${progressError.message}`)
+  if (!progress) return null
 
   // Get the game data
   const { data: game, error: gameError } = await supabase
@@ -528,7 +529,8 @@ export async function getActiveGame() {
     .eq("id", progress.game_id)
     .single()
 
-  if (gameError || !game) return null
+  if (gameError) throw new Error(`Failed to load current game details: ${gameError.message}`)
+  if (!game) return null
 
   return { ...progress, game }
 }
@@ -590,11 +592,12 @@ export async function getActiveSession() {
       .eq("id", session.game_id)
       .single(),
     supabase
-      .from("game_progress")
-      .select("total_sessions, total_time_minutes")
+      .from("sessions")
+      .select("duration_minutes")
       .eq("user_id", user.id)
       .eq("game_id", session.game_id)
-      .maybeSingle(),
+      .eq("active", false)
+      .eq("status", "Finished"),
   ])
 
   if (gameResult.error) throw new Error(`Failed to load active session game: ${gameResult.error.message}`)
@@ -604,7 +607,12 @@ export async function getActiveSession() {
   return {
     ...session,
     games: gameResult.data,
-    progress: progressResult.data ?? null,
+    progress: progressResult.data && progressResult.data.length > 0
+      ? {
+          total_sessions: progressResult.data.length,
+          total_time_minutes: progressResult.data.reduce((sum, r) => sum + Math.max(0, r.duration_minutes ?? 0), 0),
+        }
+      : null,
   }
 }
 
@@ -708,7 +716,8 @@ export async function getSessionHistory() {
     .order("ended_at", { ascending: false })
     .limit(50)
 
-  if (sessionsError || !sessions || sessions.length === 0) return []
+  if (sessionsError) throw new Error(`Failed to load session history: ${sessionsError.message}`)
+  if (!sessions || sessions.length === 0) return []
 
   // Get unique game IDs
   const gameIds = [...new Set(sessions.map(s => s.game_id))]
@@ -719,7 +728,8 @@ export async function getSessionHistory() {
     .select("*")
     .in("id", gameIds)
 
-  if (gamesError || !games) return []
+  if (gamesError) throw new Error(`Failed to load history games: ${gamesError.message}`)
+  if (!games) return []
 
   // Create a map for quick lookup
   const gameMap = new Map(games.map(g => [g.id, g]))
@@ -816,7 +826,7 @@ export async function getPlayerStats(): Promise<PlayerStats | null> {
   } = await supabase.auth.getUser()
   if (!user) return null
 
-  const [{ data: profile }, { data: sessions }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: sessions, error: statsSessionsError }] = await Promise.all([
     supabase
       .from("users")
       .select("total_xp, level, streak_count, best_streak, last_session_date")
@@ -829,6 +839,8 @@ export async function getPlayerStats(): Promise<PlayerStats | null> {
       .order("started_at", { ascending: false }),
   ])
 
+  if (profileError) throw new Error(`Failed to load stats: ${profileError.message}`)
+  if (statsSessionsError) throw new Error(`Failed to load stats: ${statsSessionsError.message}`)
   if (!profile) return null
 
   const levelInfo = levelFromXP(profile.total_xp)
