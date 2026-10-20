@@ -178,7 +178,7 @@ test("quiet hierarchy removes decorative copy without hiding relevant capability
   await expect(warnings).toContainText("Keep-awake unavailable")
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeInViewport()
   await page.getByRole("button", { name: "Fullscreen", exact: true }).click()
-  await expect(warnings).toContainText("Fullscreen is unavailable")
+  await expect(dialog.getByRole("status").filter({ hasText: "Fullscreen is unavailable" })).toBeInViewport()
   await expect(warnings).toContainText("Keep-awake unavailable")
   await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
 })

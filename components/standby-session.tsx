@@ -129,6 +129,7 @@ export function StandbySession({
               <button className={control} disabled={pending || !!syncError} onClick={() => setConfirmEnd(true)}>End session</button>
               <button className={control} onClick={() => void toggleFullscreen()}>{fullscreen ? "Exit fullscreen" : "Fullscreen"}</button>
             </div> : null}
+            {displayMessage ? <p role="status" className="text-sm text-white/70">{displayMessage}</p> : null}
             {confirmEnd ? <div className="canopy-confirm space-y-2 rounded-xl border border-white/20 p-4">
               <p>Done for today? Your game stays available to continue later.</p>
               <button className={control} disabled={pending || !!syncError} onClick={() => onTransition("Finished")}>Finish session</button>{" "}
@@ -136,12 +137,11 @@ export function StandbySession({
             </div> : null}
           </div>
         </main>
-        {nook ? displayMessage || nookWakeMessage ? <footer role="status">
-          {nookWakeMessage ? <p>{nookWakeMessage}</p> : null}
-          {displayMessage ? <p>{displayMessage}</p> : null}
+        {nook ? nookWakeMessage ? <footer role="status">
+          <p>{nookWakeMessage}</p>
         </footer> : null : <footer className="space-y-1 text-center text-xs text-white/50" role="status">
           <p>{wakeState}</p>
-          <p>{displayMessage || "Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press."}</p>
+          <p>{"Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press."}</p>
         </footer>}
       </Dialog.Content>
     </Dialog.Portal>
