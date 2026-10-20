@@ -54,7 +54,7 @@ export function StandbySession({
         await container.requestFullscreen()
         if (!container.isConnected && document.fullscreenElement === container) await document.exitFullscreen()
       }
-      else setDisplayMessage("Fullscreen is unavailable here. Full-window StandBy still works.")
+      else setDisplayMessage("Fullscreen is unavailable here. Full-window StandBy still works. On iPhone/iPad Safari, Add to Home Screen for a full-screen view.")
     } catch {
       setDisplayMessage("Fullscreen was not allowed. Full-window StandBy still works.")
     }

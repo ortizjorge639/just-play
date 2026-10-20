@@ -213,3 +213,22 @@ The read-only main lookup returned
 6. Authorized deployer verifies the resulting deployment/source and approved
    account-backed save/recovery behavior before calling it released. Until then
    this branch remains a local review handoff, not release consent.
+
+## Owner dogfooding record - October 19, 2026
+
+Owner-run on the PR #3 preview (Canopy source `d19672d`), desktop and phone.
+Observations are the owner's, not independently reproduced.
+
+| Item | Result |
+| --- | --- |
+| A: saved-record trust | passed (sessions/saved records) |
+| B: phone + desktop | passed with notes |
+| C: account recovery | deferred by owner; not attempted |
+| D: simultaneous DB changes | local PostgreSQL suite accepted as sufficient by owner; Supabase-fidelity run not pursued |
+| E: release | not started; review #2 then #3, with separate release authorization |
+
+B notes: iOS Safari fullscreen did not visibly react (the Fullscreen API is
+unsupported there); the unavailable message now suggests Add to Home Screen.
+In landscape, Safari's top bar overlaps the Canopy view (minor). No screen sleep
+was noticed. Backlog: home-screen/PWA setup with clear in-app communication.
+Release claims must state that account recovery (C) was not verified end to end.
