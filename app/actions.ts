@@ -526,17 +526,36 @@ export async function getActiveGame() {
   if (progressError) throw new Error(`Failed to load current game: ${progressError.message}`)
   if (!progress) return null
 
-  // Get the game data
-  const { data: game, error: gameError } = await supabase
-    .from("games")
-    .select("*")
-    .eq("id", progress.game_id)
-    .single()
+  // Get the game data and finished sessions in parallel
+  const [gameResult, sessionsResult] = await Promise.all([
+    supabase
+      .from("games")
+      .select("*")
+      .eq("id", progress.game_id)
+      .single(),
+    supabase
+      .from("sessions")
+      .select("duration_minutes")
+      .eq("user_id", user.id)
+      .eq("game_id", progress.game_id)
+      .eq("active", false)
+      .eq("status", "Finished"),
+  ])
 
-  if (gameError) throw new Error(`Failed to load current game details: ${gameError.message}`)
-  if (!game) return null
+  if (gameResult.error) throw new Error(`Failed to load current game details: ${gameResult.error.message}`)
+  if (!gameResult.data) return null
+  if (sessionsResult.error) throw new Error(`Failed to load current game sessions: ${sessionsResult.error.message}`)
 
-  return { ...progress, game }
+  // Derive total_sessions and total_time_minutes from finished sessions
+  const total_sessions = sessionsResult.data?.length ?? 0
+  const total_time_minutes = sessionsResult.data?.reduce((sum, r) => sum + Math.max(0, r.duration_minutes ?? 0), 0) ?? 0
+
+  return { 
+    ...progress, 
+    game: gameResult.data,
+    total_sessions,
+    total_time_minutes,
+  }
 }
 
 export async function startSessionForGame(gameId: string) {
