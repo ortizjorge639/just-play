@@ -57,6 +57,7 @@ function fixture(responses, authenticated = true) {
     })
     const resolve = (specifier) => {
       if (specifier === "@/lib/supabase/server") return { createClient: async () => supabase }
+      if (specifier === "@/lib/supabase/admin") return { createAdminClient: () => supabase }
       if (specifier === "next/cache") return { revalidatePath: (url) => invalidations.push(url) }
       if (specifier.startsWith("@/")) return load(path.join(root, `${specifier.slice(2)}.ts`))
       if (specifier.startsWith(".")) return load(path.resolve(path.dirname(filename), `${specifier}.ts`))

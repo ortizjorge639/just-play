@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
@@ -122,6 +123,9 @@ export async function markTutorialComplete() {
   revalidatePath("/")
 }
 
+// A pack is a short list, so choosing never turns into scrolling
+const DECK_SIZE = 3
+
 export async function getBoosterPack() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -140,15 +144,15 @@ export async function getBoosterPack() {
   // Filter out already-seen games
   let available = games.filter((g) => !seenIds.has(g.id))
 
-  // If fewer than 10 unseen featured games remain, reset the cycle
-  if (available.length < 10) {
+  // If fewer than a full pack of unseen featured games remain, reset the cycle
+  if (available.length < DECK_SIZE) {
     available = games
     seenIds.clear()
   }
 
-  // Shuffle and take up to 10
+  // Shuffle and take one pack
   const shuffled = available.sort(() => Math.random() - 0.5)
-  const deck = shuffled.slice(0, 10)
+  const deck = shuffled.slice(0, DECK_SIZE)
 
   // Track newly shown games
   const newSeenIds = [...Array.from(seenIds), ...deck.map((g) => g.id)]
@@ -318,13 +322,13 @@ export async function getRecommendations(preferences: UserPreferences) {
   // Filter out already-seen games
   let unseen = scored.filter((g) => !seenIds.has(g.id))
 
-  // If fewer than 10 unseen remain, reset the cycle
-  if (unseen.length < 10) {
+  // If fewer than a full pack of unseen games remain, reset the cycle
+  if (unseen.length < DECK_SIZE) {
     unseen = scored
     seenIds.clear()
   }
 
-  const deck = unseen.slice(0, 10)
+  const deck = unseen.slice(0, DECK_SIZE)
 
   // Track newly shown games
   const newSeenIds = [...Array.from(seenIds), ...deck.map((g) => g.id)]
@@ -766,7 +770,9 @@ export async function addSearchedGame(gameData: { igdbId: number }): Promise<Gam
   const canonical = await getIGDBGameById(gameData.igdbId)
   if (!canonical) throw new Error("Game not found")
 
-  const { data: game, error } = await supabase
+  // With the service key set, writes bypass RLS so the open insert policy can be dropped (migration 021)
+  const writer = process.env.SUPABASE_SERVICE_ROLE_KEY ? createAdminClient() : supabase
+  const { data: game, error } = await writer
     .from("games")
     .insert({
       id: gameId,
