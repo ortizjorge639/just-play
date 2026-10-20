@@ -76,11 +76,9 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="rounded-lg bg-destructive/20 p-4 flex flex-col gap-2"
+            className="rounded-lg bg-destructive/20 p-4"
           >
-            <p className="text-sm text-destructive font-medium">Couldn't save your preferences</p>
-            <p className="text-sm text-destructive/90">{error}</p>
-            <p className="text-xs text-destructive/80">Try again or contact support if the problem persists.</p>
+            <p className="text-sm text-destructive">Couldn't save your filters. Check your connection and try again.</p>
           </motion.div>
         )}
 
