@@ -10,9 +10,11 @@ import type { GameProgress, Game } from "@/lib/types"
 interface CurrentGameProps {
   gameProgress: GameProgress & { game: Game }
   onSessionStarted: () => void
+  syncError: string | null
+  onRetry: () => void
 }
 
-export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps) {
+export function CurrentGame({ gameProgress, onSessionStarted, syncError, onRetry }: CurrentGameProps) {
   const [isPending, startTransition] = useTransition()
   const [showOptions, setShowOptions] = useState(false)
   const [flipped, setFlipped] = useState(false)
@@ -22,6 +24,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
   const game = gameProgress.game
 
   const handleStartSession = () => {
+    if (syncError || isPending) return
     setError(null)
     startTransition(async () => {
       try {
@@ -29,29 +32,34 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
         onSessionStarted()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")
+        onRetry()
       }
     })
   }
 
   const handleMarkBeaten = () => {
+    if (syncError || isPending) return
     startTransition(async () => {
       try {
-        await markGameBeaten(game.id)
+        await markGameBeaten(game.id, null)
         showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
         window.location.reload()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")
+        onRetry()
       }
     })
   }
 
   const handleAbandon = () => {
+    if (syncError || isPending) return
     startTransition(async () => {
       try {
-        await abandonGame(game.id)
+        await abandonGame(game.id, null)
         window.location.reload()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")
+        onRetry()
       }
     })
   }
@@ -62,6 +70,9 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
 
   return (
     <div className="flex flex-1 flex-col items-center px-6 py-4">
+      {syncError ? <div role="alert" className="mb-4 rounded-lg border border-amber-400/40 p-3 text-sm">
+        {syncError} <button className="min-h-11 underline" onClick={onRetry}>Retry</button>
+      </div> : null}
       {/* Flippable card */}
       <div
         className="relative w-full max-w-[320px] cursor-pointer mb-6"
@@ -243,7 +254,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
       <div className="w-full max-w-[320px] flex flex-col gap-3">
         <button
           onClick={handleStartSession}
-          disabled={isPending}
+          disabled={isPending || !!syncError}
           className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
         >
           {isPending ? "Starting..." : "Start Today's Session"}
@@ -284,7 +295,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
               <div className="flex flex-col gap-3">
                 <button
                   onClick={handleMarkBeaten}
-                  disabled={isPending}
+                  disabled={isPending || !!syncError}
                   className="h-14 w-full rounded-xl text-base font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                   style={{ backgroundColor: "#3BA55D" }}
                 >
@@ -293,7 +304,7 @@ export function CurrentGame({ gameProgress, onSessionStarted }: CurrentGameProps
 
                 <button
                   onClick={handleAbandon}
-                  disabled={isPending}
+                  disabled={isPending || !!syncError}
                   className="h-14 w-full rounded-xl bg-destructive text-base font-semibold text-destructive-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                 >
                   Abandon Game

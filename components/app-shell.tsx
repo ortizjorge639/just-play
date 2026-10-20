@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { getActiveSession } from "@/app/actions"
+import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
+import { useSessionNotes } from "@/hooks/use-session-notes"
 import { AnimatePresence, motion } from "framer-motion"
 import { CardDeck } from "./card-deck"
 import { ActiveSession } from "./active-session"
@@ -12,6 +15,7 @@ import { QuickFilters } from "./quick-filters"
 import { Settings } from "./settings"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
+import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
 import type { UserProfile, Game, Session, GameProgress, PlayerStats } from "@/lib/types"
 
 type Tab = "deck" | "session" | "progress"
@@ -40,11 +44,19 @@ export function AppShell({
   const [activeTab, setActiveTab] = useState<Tab>(
     initialSession || activeGame ? "session" : "deck"
   )
-  const [activeSession, setActiveSession] = useState(initialSession)
+  const {
+    session: activeSession, sessionReadRevision, setSession: setActiveSession, updateSession,
+    syncError, refreshSession, invalidateSessionRead, beginMutation, endMutation,
+  } = useSessionReconciliation(initialSession, getActiveSession)
+  const notesController = useSessionNotes(activeSession?.id ?? null, activeSession?.notes ?? "", sessionReadRevision, invalidateSessionRead)
   const [needsRefresh, setNeedsRefresh] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [filterTipDismissed, setFilterTipDismissed] = useState(user.tutorial_complete)
+  const [standbyPreferences, setStandbyPreferences] = useState({
+    ...DEFAULT_STANDBY_PREFERENCES, ...user.standby_preferences,
+  })
+  const visibleTab = activeTab === "deck" && activeSession ? "session" : activeTab
 
   // Check if there's pending XP from a recent session finish (survives page reload via sessionStorage)
   const [xpPending] = useState(() => {
@@ -65,8 +77,8 @@ export function AppShell({
   }, [])
 
   const handleSessionUpdated = useCallback((updates: Partial<Session>) => {
-    setActiveSession(prev => prev ? { ...prev, ...updates } : prev)
-  }, [])
+    updateSession(prev => prev ? { ...prev, ...updates } : prev)
+  }, [updateSession])
 
   const handleSessionFinished = useCallback(() => {
     setActiveSession(null)
@@ -74,7 +86,7 @@ export function AppShell({
     setNeedsRefresh(true)
     // Full reload to get updated history
     window.location.reload()
-  }, [])
+  }, [setActiveSession])
 
   const handleTabChange = useCallback((tab: Tab) => {
     if (needsRefresh) {
@@ -98,7 +110,7 @@ export function AppShell({
           <h1 className="text-lg font-bold text-foreground">Just Play</h1>
         </div>
         <div className="flex items-center gap-2">
-          {activeTab === "deck" && !activeSession && (
+          {visibleTab === "deck" && !activeSession && (
             filterTipDismissed ? (
               <button
                 onClick={() => setShowFilters(true)}
@@ -123,7 +135,7 @@ export function AppShell({
               </FilterTip>
             )
           )}
-          {activeTab === "progress" && (
+          {visibleTab === "progress" && (
             <button
               onClick={() => setShowSettings(true)}
               className="flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px] min-w-[44px]"
@@ -161,7 +173,7 @@ export function AppShell({
 
       {/* Content area */}
       <AnimatePresence mode="wait">
-        {activeTab === "deck" && !activeSession && (
+        {visibleTab === "deck" && !activeSession && (
           <motion.div
             key="deck"
             initial={{ opacity: 0, x: -20 }}
@@ -180,7 +192,7 @@ export function AppShell({
           </motion.div>
         )}
 
-        {activeTab === "session" && (
+        {visibleTab === "session" && (
           <motion.div
             key="session"
             initial={{ opacity: 0, x: 20 }}
@@ -191,14 +203,24 @@ export function AppShell({
           >
             {activeSession ? (
               <ActiveSession
+                key={activeSession.id}
                 session={activeSession}
                 onFinished={handleSessionFinished}
                 onSessionUpdated={handleSessionUpdated}
+                standbyPreferences={standbyPreferences}
+                onPreferencesSaved={setStandbyPreferences}
+                syncError={syncError}
+                onRetry={refreshSession}
+                onMutationStart={beginMutation}
+                onMutationEnd={endMutation}
+                notesController={notesController}
               />
             ) : activeGame ? (
               <CurrentGame
                 gameProgress={activeGame}
                 onSessionStarted={handleSessionCreated}
+                syncError={syncError}
+                onRetry={refreshSession}
               />
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
@@ -232,7 +254,7 @@ export function AppShell({
           </motion.div>
         )}
 
-        {activeTab === "progress" && (
+        {visibleTab === "progress" && (
           <motion.div
             key="progress"
             initial={{ opacity: 0, x: 20 }}
@@ -251,7 +273,7 @@ export function AppShell({
       </AnimatePresence>
 
       <BottomNav
-        active={activeTab}
+        active={visibleTab}
         onChange={handleTabChange}
         hasActiveSession={!!activeSession || !!activeGame}
         xpPending={xpPending}
@@ -276,6 +298,8 @@ export function AppShell({
         {showSettings && (
           <Settings
             displayName={user.display_name}
+            standbyPreferences={standbyPreferences}
+            onPreferencesSaved={setStandbyPreferences}
             onClose={() => setShowSettings(false)}
             onEditPreferences={() => {
               setShowSettings(false)

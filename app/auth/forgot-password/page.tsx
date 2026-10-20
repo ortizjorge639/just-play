@@ -17,6 +17,7 @@ export default async function ForgotPasswordPage(props: {
           </h1>
           <p className="text-muted-foreground text-base">
             Enter your email and we&apos;ll send you a reset link.
+            {" "}Request and open the link in the same browser.
           </p>
         </div>
 
@@ -33,6 +34,12 @@ export default async function ForgotPasswordPage(props: {
               Check your inbox (and spam folder) — the link opens a page where
               you can choose a new password.
             </div>
+            <p className="text-sm text-muted-foreground">
+              Open only the newest link in this same browser, not your email
+              app&apos;s built-in browser. To reset on your phone, request a fresh
+              link from that phone&apos;s browser first. Older links or links opened
+              in a different browser may not be verified.
+            </p>
             <Link
               href="/auth/forgot-password"
               className="text-center text-sm font-medium text-primary hover:underline"

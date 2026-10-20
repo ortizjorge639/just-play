@@ -1,0 +1,59 @@
+import { createRoot } from "react-dom/client"
+import { StrictMode, useState } from "react"
+import { ActiveSession } from "@/components/active-session"
+import { AppShell } from "@/components/app-shell"
+import { CurrentGame } from "@/components/current-game"
+import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
+import { useSessionNotes } from "@/hooks/use-session-notes"
+import { DEFAULT_STANDBY_PREFERENCES } from "@/components/standby-preferences"
+import { fixture, game, getActiveSession, initialSession } from "./mock-actions"
+import type { StandbyPreferences } from "@/lib/types"
+
+declare global {
+  interface Window { standbyFixture: typeof fixture }
+}
+window.standbyFixture = fixture
+const params = new URLSearchParams(window.location.search)
+if (params.has("untracked")) fixture.session = { ...initialSession, record_time: false }
+if (params.has("locked")) fixture.session = { ...initialSession, status: "LockedIn" }
+if (params.has("long")) fixture.session = { ...initialSession, started_at: new Date(Date.now() - 3700 * 1000).toISOString() }
+if (params.has("current-game")) fixture.session = null
+if (params.has("empty-notes") && fixture.session) {
+  fixture.session = { ...fixture.session, notes: JSON.stringify(Array(10).fill("")) }
+}
+
+function Harness() {
+  const { session, sessionReadRevision, updateSession, syncError, refreshSession, invalidateSessionRead, beginMutation, endMutation } = useSessionReconciliation(fixture.session, getActiveSession)
+  const notesController = useSessionNotes(session?.id ?? null, session?.notes ?? "", sessionReadRevision, invalidateSessionRead)
+  const [preferences, setPreferences] = useState<StandbyPreferences>({
+    ...DEFAULT_STANDBY_PREFERENCES,
+    show_clock: !params.has("hidden"),
+    reminders: params.has("reminders"),
+    keep_awake: params.has("awake"),
+  })
+  return session ? <ActiveSession session={session}
+    onFinished={() => { fixture.session = null; void refreshSession() }}
+    onSessionUpdated={(updates) => updateSession(previous => previous ? { ...previous, ...updates } : null)}
+    standbyPreferences={preferences} onPreferencesSaved={setPreferences}
+    syncError={syncError} onRetry={refreshSession} onMutationStart={beginMutation} onMutationEnd={endMutation}
+    notesController={notesController}
+  /> : params.has("current-game") ? <CurrentGame
+    gameProgress={{
+      id: "test-progress", user_id: "test-user", game_id: game.id, status: "playing",
+      total_sessions: 1, total_time_minutes: 20, started_at: initialSession.created_at,
+      completed_at: null, created_at: initialSession.created_at, game,
+    }}
+    syncError={syncError} onRetry={refreshSession} onSessionStarted={() => void refreshSession()}
+  /> : <p role="status">Session ended on another device.</p>
+}
+const app = params.has("app-shell")
+  ? <AppShell user={{
+    id: "test-user", display_name: null, steam_id: null, preferences: {},
+    standby_preferences: DEFAULT_STANDBY_PREFERENCES, onboarding_complete: true,
+    tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
+    streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
+  }} recommendations={[]} activeSession={fixture.session} activeGame={null}
+    sessionHistory={[]} playerStats={null} isBoosterPack={false}
+    boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
+  : <Harness />
+createRoot(document.getElementById("root")!).render(params.has("strict") ? <StrictMode>{app}</StrictMode> : app)

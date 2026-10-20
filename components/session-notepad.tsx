@@ -43,7 +43,7 @@ export function SessionNotepad({
   const [goalOpen, setGoalOpen] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
-  const [pages, setPages] = useState(() => parsePages(notes))
+  const pages = parsePages(notes)
   const [editingGoal, setEditingGoal] = useState(false)
   const [goalDraft, setGoalDraft] = useState(goal)
   const [direction, setDirection] = useState(0)
@@ -72,14 +72,11 @@ export function SessionNotepad({
 
   const handlePageEdit = useCallback(
     (text: string) => {
-      setPages(prev => {
-        const updated = [...prev]
-        updated[currentPage] = text
-        onNotesChange(JSON.stringify(updated))
-        return updated
-      })
+      const updated = [...pages]
+      updated[currentPage] = text
+      onNotesChange(JSON.stringify(updated))
     },
-    [currentPage, onNotesChange]
+    [currentPage, pages, onNotesChange]
   )
 
   const handleGoalSubmit = useCallback(() => {
@@ -283,6 +280,7 @@ export function SessionNotepad({
                           transition={{ duration: 0.15, ease: "easeOut" }}
                         >
                           <textarea
+                            aria-label={`Session notes, page ${currentPage + 1}`}
                             value={pages[currentPage]}
                             onChange={e => handlePageEdit(e.target.value)}
                             placeholder="Write something..."

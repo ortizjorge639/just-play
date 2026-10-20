@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
+import { AuthRedirectError, recoveryRedirectTo } from "@/lib/auth-redirects"
 
 export async function login(formData: FormData) {
   const supabase = await createClient()
@@ -49,25 +51,30 @@ export async function signup(formData: FormData) {
   return redirect("/auth/sign-up-success")
 }
 
-function siteUrl() {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : "http://localhost:3000")
-  )
-}
-
 export async function requestPasswordReset(formData: FormData) {
-  const supabase = await createClient()
-  const email = (formData.get("email") as string)?.trim()
+  const emailValue = formData.get("email")
+  const email = typeof emailValue === "string" ? emailValue.trim() : ""
 
   if (!email) {
     return redirect("/auth/forgot-password?error=" + encodeURIComponent("Enter your email address"))
   }
 
+  const requestHeaders = await headers()
+  let redirectTo: string
+  try {
+    redirectTo = recoveryRedirectTo(
+      requestHeaders.get("origin"),
+      requestHeaders.get("x-forwarded-host") || requestHeaders.get("host"),
+    )
+  } catch (error) {
+    if (!(error instanceof AuthRedirectError)) throw error
+    return redirect("/auth/forgot-password?error=" + encodeURIComponent(
+      "Could not verify this app's recovery address. Open the current app in your browser and request a fresh link.",
+    ))
+  }
+  const supabase = await createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl()}/auth/callback?next=/auth/update-password`,
+    redirectTo,
   })
 
   if (error) {
@@ -117,20 +124,4 @@ export async function signout() {
   const supabase = await createClient()
   await supabase.auth.signOut()
   return redirect("/auth/login")
-}
-
-export async function adminBypass() {
-  const supabase = await createClient()
-
-  // Use the pre-configured test user (email already confirmed in database)
-  const { error } = await supabase.auth.signInWithPassword({
-    email: "test@justplay.dev",
-    password: "testpassword123",
-  })
-
-  if (error) {
-    return redirect("/auth/login?error=" + encodeURIComponent(error.message))
-  }
-
-  return redirect("/")
 }

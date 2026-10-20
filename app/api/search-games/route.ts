@@ -22,6 +22,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(results)
   } catch (error) {
     console.error("[search-games] IGDB search error:", error)
+    if (error instanceof Error && error.message.startsWith("Missing IGDB")) {
+      return NextResponse.json(
+        { error: "Game search isn't set up on this deployment." },
+        { status: 503 }
+      )
+    }
     return NextResponse.json(
       { error: "Search failed. Please try again." },
       { status: 500 }

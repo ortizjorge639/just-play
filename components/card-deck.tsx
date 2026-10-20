@@ -78,7 +78,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
         setLockedGame(null)
       }
     })
-  }, [lockedGame, onSessionCreated])
+  }, [lockedGame, onSessionCreated, showXPToast])
 
   const cancelLockIn = useCallback(() => {
     setLockedGame(null)
@@ -116,7 +116,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                 <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30" />
                 <div className="text-center flex flex-col gap-2">
                   <h3 className="text-lg font-bold text-foreground">Lock in {lockedGame.name}?</h3>
-                  <p className="text-sm text-muted-foreground">{"This becomes your active session. You'll see it on your dashboard."}</p>
+                  <p className="text-sm text-muted-foreground">{"This becomes your current game."}</p>
                 </div>
                 <div className="flex flex-col gap-3">
                   <button onClick={confirmLockIn} disabled={isPending} className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]">
@@ -224,7 +224,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                     Lock in {lockedGame.name}?
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {"This becomes your active session. You'll see it on your dashboard."}
+                    {"This becomes your current game."}
                   </p>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -365,7 +365,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                   Lock in {lockedGame.name}?
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {"This becomes your active session. You'll see it on your dashboard."}
+                  {"This becomes your current game."}
                 </p>
               </div>
               <div className="flex flex-col gap-3">

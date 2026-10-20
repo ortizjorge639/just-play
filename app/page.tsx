@@ -43,22 +43,18 @@ export default async function HomePage({
   let sessionHistory: Awaited<ReturnType<typeof getSessionHistory>> = []
   let playerStats: PlayerStats | null = null
 
-  try {
-    const results = await Promise.all([
-      getUser(),
-      getActiveSession(),
-      getActiveGame(),
-      getSessionHistory(),
-      getPlayerStats(),
-    ])
-    profile = results[0]
-    activeSession = results[1]
-    activeGame = results[2]
-    sessionHistory = results[3]
-    playerStats = results[4]
-  } catch (error) {
-    console.error("[v0] Error fetching user data:", error)
-  }
+  const results = await Promise.all([
+    getUser(),
+    getActiveSession(),
+    getActiveGame(),
+    getSessionHistory(),
+    getPlayerStats(),
+  ])
+  profile = results[0]
+  activeSession = results[1]
+  activeGame = results[2]
+  sessionHistory = results[3]
+  playerStats = results[4]
 
   if (!profile) {
     redirect("/auth/login")

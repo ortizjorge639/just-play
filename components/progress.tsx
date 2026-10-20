@@ -30,12 +30,10 @@ const WEEKDAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"]
 function useCountUp(target: number, from: number, duration = 1200, enabled = true) {
   const [value, setValue] = useState(enabled ? from : target)
   const rafRef = useRef<number>(0)
+  const skip = !enabled || from === target
 
   useEffect(() => {
-    if (!enabled || from === target) {
-      setValue(target)
-      return
-    }
+    if (skip) return
 
     const start = performance.now()
     const diff = target - from
@@ -61,9 +59,9 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
       clearTimeout(timeout)
       cancelAnimationFrame(rafRef.current)
     }
-  }, [target, from, duration, enabled])
+  }, [target, from, duration, skip])
 
-  return value
+  return skip ? target : value
 }
 
 export function Progress({ sessions, displayName, playerStats }: ProgressProps) {
@@ -80,6 +78,8 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
       const data: PendingXP = JSON.parse(raw)
       // Only animate if XP was earned recently (within 10s)
       if (Date.now() - data.timestamp < 10000) {
+        // sessionStorage only exists on the client, so it can only be read after mount
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPending(data)
       }
       sessionStorage.removeItem("pendingXP")
@@ -208,7 +208,9 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
               <span className="text-base font-bold text-foreground">
                 {playerStats.streak > 0
                   ? `${playerStats.streak} day streak`
-                  : "Start a streak!"}
+                  : playerStats.weeklyDays.some(Boolean)
+                    ? "Played this week"
+                    : "No sessions this week"}
               </span>
               {playerStats.bestStreak > 0 && (
                 <span className="text-xs text-muted-foreground ml-1">

@@ -5,15 +5,21 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { 
   updateSessionStatus, 
-  updateSessionNotes, 
   updateSessionGoal,
   markGameBeaten,
-  abandonGame
+  abandonGame,
+  saveStandbyPreferences,
 } from "@/app/actions"
 import type { Session, Game, SessionStatus } from "@/lib/types"
 import { SessionNotepad } from "./session-notepad"
 import { useXPToast } from "./xp-toast"
 import { StillPlayingModal } from "./still-playing-modal"
+import * as Dialog from "@radix-ui/react-dialog"
+import { StandbySession } from "./standby-session"
+import { StandbyPreferencesForm } from "./standby-preferences"
+import type { StandbyPreferences } from "@/lib/types"
+import { getSessionElapsedSeconds } from "@/lib/session-time"
+import { SessionNotesSaveError, type SessionNotesController } from "@/hooks/use-session-notes"
 
 type NudgeStage = "none" | "first" | "second"
 const DEFAULT_ESTIMATED_MINUTES = 60
@@ -22,6 +28,13 @@ interface ActiveSessionProps {
   session: Session & { games: Game; progress: { total_sessions: number; total_time_minutes: number } | null }
   onFinished: () => void
   onSessionUpdated?: (updates: Partial<Session>) => void
+  standbyPreferences: StandbyPreferences
+  onPreferencesSaved: (preferences: StandbyPreferences) => void
+  syncError: string | null
+  onRetry: () => void
+  onMutationStart: () => void
+  onMutationEnd: () => void
+  notesController: SessionNotesController
 }
 
 function formatTime(seconds: number): string {
@@ -34,13 +47,19 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`
 }
 
-export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveSessionProps) {
+export function ActiveSession(props: ActiveSessionProps) {
+  return <ActiveSessionContent key={props.session.id} {...props} />
+}
+
+function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPreferences, onPreferencesSaved, syncError, onRetry, onMutationStart, onMutationEnd, notesController }: ActiveSessionProps) {
   const [status, setStatus] = useState<SessionStatus>(session.status)
   const [isPending, startTransition] = useTransition()
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  const [showTimer, setShowTimer] = useState(true)
-  const [notes, setNotes] = useState(session.notes || "")
+  const { draft: notes, error: notesError, saveState: notesSaveState, flush: flushNotes, getDraft } = notesController
+  const notesMessage = notesSaveState === "saved" ? "Notes saved." : notesSaveState === "acknowledged" ? "Notes acknowledged. The final draft will be saved again when finishing." : notesSaveState === "saving" ? "Saving notes..." : notesSaveState === "error" ? "Notes not saved. Your draft is still here." : "Notes not saved yet."
+  const showTimer = standbyPreferences.show_clock
+  const [standby, setStandby] = useState(false)
   const [sessionGoal, setSessionGoal] = useState(session.session_goal || "")
   const showXPToast = useXPToast()
   const [showEndOptions, setShowEndOptions] = useState(false)
@@ -48,26 +67,8 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   const [nudgeStage, setNudgeStage] = useState<NudgeStage>("none")
   const [showNudge, setShowNudge] = useState(false)
   const [autoPaused, setAutoPaused] = useState(false)
-  const notesTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const notesRef = useRef(notes)
-  const sessionIdRef = useRef(session.id)
-  const [prevSessionId, setPrevSessionId] = useState(session.id)
+  const finalizingRef = useRef(false)
   const [prevPropStatus, setPrevPropStatus] = useState(session.status)
-
-  // Keep refs in sync and flush pending notes on unmount
-  useEffect(() => {
-    notesRef.current = notes
-    sessionIdRef.current = session.id
-  })
-
-  useEffect(() => {
-    return () => {
-      if (notesTimeoutRef.current) {
-        clearTimeout(notesTimeoutRef.current)
-        updateSessionNotes(sessionIdRef.current, notesRef.current)
-      }
-    }
-  }, [])
 
   const game = session.games
   const isPlaying = status === "Playing"
@@ -75,11 +76,9 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   const isLockedIn = status === "LockedIn"
 
   // Sync state when the session prop itself changes (not local optimistic updates)
-  if (prevSessionId !== session.id || session.status !== prevPropStatus) {
-    setPrevSessionId(session.id)
+  if (session.status !== prevPropStatus) {
     setPrevPropStatus(session.status)
     setStatus(session.status)
-    setNotes(session.notes || "")
     setSessionGoal(session.session_goal || "")
   }
 
@@ -90,25 +89,26 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
   }
 
   useEffect(() => {
-    if (status !== "Playing") return
+    if (status !== "Playing" || session.record_time === false) return
     
-    // If playing, calculate from started_at + paused time
-    const startTime = new Date(session.started_at).getTime()
-    const pausedTime = session.paused_elapsed_seconds || 0
     const estimatedSeconds = (game.time_to_beat_minutes ?? game.estimated_session_length ?? DEFAULT_ESTIMATED_MINUTES) * 60
     const firstThreshold = Math.floor(estimatedSeconds * 1.5)
     const secondThreshold = Math.floor(estimatedSeconds * 2.5)
     
     const tick = () => {
-      const currentElapsed = Math.floor((Date.now() - startTime) / 1000)
-      const totalElapsed = pausedTime + currentElapsed
+      const totalElapsed = getSessionElapsedSeconds({
+        status,
+        started_at: session.started_at,
+        paused_elapsed_seconds: session.paused_elapsed_seconds,
+        record_time: session.record_time,
+      })
       setElapsed(totalElapsed)
 
       // Nudge checks — only fire once per stage
-      if (nudgeStage === "none" && totalElapsed >= firstThreshold) {
+      if (!standby && nudgeStage === "none" && totalElapsed >= firstThreshold) {
         setNudgeStage("first")
         setShowNudge(true)
-      } else if (nudgeStage === "first" && totalElapsed >= secondThreshold) {
+      } else if (!standby && nudgeStage === "first" && totalElapsed >= secondThreshold) {
         setNudgeStage("second")
         setShowNudge(true)
       }
@@ -116,41 +116,48 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
     tick()
     const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
-  }, [session.started_at, session.paused_elapsed_seconds, status, nudgeStage, game.estimated_session_length])
+  }, [session.started_at, session.paused_elapsed_seconds, session.record_time, status, nudgeStage, game.estimated_session_length, game.time_to_beat_minutes, standby])
 
   const transition = useCallback(
     (newStatus: SessionStatus) => {
+      if (syncError || isPending || finalizingRef.current) return
+      finalizingRef.current = newStatus === "Finished"
+      onMutationStart()
       setError(null)
       startTransition(async () => {
         try {
-          const result = await updateSessionStatus(session.id, newStatus)
-          setStatus(newStatus)
-
-          // Sync parent state so prop stays consistent with local status
-          const updates: Partial<Session> = { status: newStatus }
-          if (newStatus === "Paused") {
-            const start = new Date(session.started_at).getTime()
-            const currentElapsed = Math.floor((Date.now() - start) / 1000)
-            updates.paused_elapsed_seconds = (session.paused_elapsed_seconds || 0) + currentElapsed
-          }
-          if (newStatus === "Playing" && status === "Paused") {
-            updates.started_at = new Date().toISOString()
+          if (newStatus === "Finished") await flushNotes()
+          const result = await updateSessionStatus(session.id, newStatus, {
+            status: session.status,
+            started_at: session.started_at,
+            paused_elapsed_seconds: session.paused_elapsed_seconds || 0,
+          }, newStatus === "Finished" ? {
+            notes: getDraft(),
+          } : undefined)
+          setStatus(result.session.status)
+          if (newStatus === "Playing") {
             setAutoPaused(false)
-            setShimmer(true)
-            setTimeout(() => setShimmer(false), 1200)
+            if (!standby) {
+              setShimmer(true)
+              setTimeout(() => setShimmer(false), 1200)
+            }
           }
-          onSessionUpdated?.(updates)
+          onSessionUpdated?.(result.session)
 
           if (newStatus === "Finished") {
-            if (result?.xpAwarded) showXPToast(result.xpAwarded)
+            if (!standby && result?.xpAwarded) showXPToast(result.xpAwarded)
             onFinished()
           }
         } catch (e) {
-          setError(e instanceof Error ? e.message : "Something went wrong")
+          if (!(e instanceof SessionNotesSaveError)) setError(e instanceof Error ? e.message : "Something went wrong")
+        } finally {
+          finalizingRef.current = false
+          onMutationEnd()
+          onRetry()
         }
       })
     },
-    [session.id, session.started_at, session.paused_elapsed_seconds, status, onFinished, onSessionUpdated, showXPToast]
+    [session, standby, syncError, isPending, onFinished, onSessionUpdated, showXPToast, onRetry, onMutationStart, onMutationEnd, flushNotes, getDraft]
   )
 
   const handleNudgeDismiss = useCallback(() => {
@@ -170,46 +177,79 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
 
   // Auto-save notes with debounce
   const handleNotesChange = (value: string) => {
-    setNotes(value)
-    onSessionUpdated?.({ notes: value })
-    if (notesTimeoutRef.current) {
-      clearTimeout(notesTimeoutRef.current)
-    }
-    notesTimeoutRef.current = setTimeout(() => {
-      updateSessionNotes(session.id, value)
-    }, 1000)
+    if (finalizingRef.current || syncError) return
+    notesController.change(value)
   }
 
   const handleGoalSave = useCallback(async (goal: string) => {
-    setSessionGoal(goal)
-    await updateSessionGoal(session.id, goal)
-    onSessionUpdated?.({ session_goal: goal })
-  }, [session.id, onSessionUpdated])
+    if (syncError) {
+      setError("Reconnect before saving a goal.")
+      return
+    }
+    try {
+      await updateSessionGoal(session.id, goal)
+      setSessionGoal(goal)
+      onSessionUpdated?.({ session_goal: goal })
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save session goal.")
+    }
+  }, [session.id, onSessionUpdated, syncError])
 
   const handleMarkBeaten = async () => {
+    if (syncError || isPending || finalizingRef.current) return
+    finalizingRef.current = true
+    setShowEndOptions(false)
+    setError(null)
+    onMutationStart()
     startTransition(async () => {
       try {
-        await markGameBeaten(game.id)
+        await flushNotes()
+        await markGameBeaten(game.id, {
+          id: session.id,
+          status: session.status,
+          started_at: session.started_at,
+          paused_elapsed_seconds: session.paused_elapsed_seconds || 0,
+        }, getDraft())
         showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
         onFinished()
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong")
+        if (!(e instanceof SessionNotesSaveError)) setError(e instanceof Error ? e.message : "Something went wrong")
+      } finally {
+        finalizingRef.current = false
+        onMutationEnd()
+        onRetry()
       }
     })
   }
 
   const handleAbandon = async () => {
+    if (syncError || isPending || finalizingRef.current) return
+    finalizingRef.current = true
+    setShowEndOptions(false)
+    setError(null)
+    onMutationStart()
     startTransition(async () => {
       try {
-        await abandonGame(game.id)
+        await flushNotes()
+        await abandonGame(game.id, {
+          id: session.id,
+          status: session.status,
+          started_at: session.started_at,
+          paused_elapsed_seconds: session.paused_elapsed_seconds || 0,
+        }, getDraft())
         onFinished()
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong")
+        if (!(e instanceof SessionNotesSaveError)) setError(e instanceof Error ? e.message : "Something went wrong")
+      } finally {
+        finalizingRef.current = false
+        onMutationEnd()
+        onRetry()
       }
     })
   }
 
   return (
+    <Dialog.Root open={standby} onOpenChange={setStandby}>
     <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr] min-h-dvh md:min-h-0 md:h-[calc(100dvh-8rem)]">
       {/* Cover art — full-width banner on mobile, tall left column on desktop */}
       <div className="relative h-[28vh] md:h-full overflow-hidden md:rounded-xl">
@@ -272,6 +312,20 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
 
       {/* Session content — scrollable column on mobile, right panel on desktop */}
       <div className="flex flex-col gap-4 px-6 pt-4 pb-6 overflow-y-auto">
+        {syncError ? <div role="alert" className="rounded-lg border border-amber-400/40 p-3 text-sm">
+          {syncError} <button onClick={onRetry} className="min-h-11 underline">Retry</button>
+        </div> : null}
+        {!isLockedIn ? <Dialog.Trigger asChild>
+          <button className="min-h-14 rounded-xl border border-primary/40 bg-primary/10 p-4 text-left" onClick={() => setShowNudge(false)}>
+            <span className="block font-semibold">Enter StandBy</span>
+            <span className="text-sm text-muted-foreground">Set this screen beside your game. Just play.</span>
+          </button>
+        </Dialog.Trigger> : null}
+        <details className="rounded-xl border border-border p-4">
+          <summary className="min-h-11 cursor-pointer text-sm">Time &amp; StandBy preferences</summary>
+          <StandbyPreferencesForm value={standbyPreferences} onSaved={onPreferencesSaved} />
+          <p className="mt-2 text-xs text-muted-foreground">This session: time recording {session.record_time === false ? "off" : "on"}. Recording changes apply to the next session.</p>
+        </details>
         {/* Auto-paused indicator */}
         <AnimatePresence>
           {autoPaused && isPaused && (
@@ -292,11 +346,22 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
         {/* Timer */}
         <div className="glass-card p-5 relative">
           <button
-            onClick={() => setShowTimer(!showTimer)}
+            onClick={() => {
+              const next = { ...standbyPreferences, show_clock: !showTimer }
+              startTransition(async () => {
+                try {
+                  await saveStandbyPreferences(next)
+                  onPreferencesSaved(next)
+                } catch (cause) {
+                  setError(cause instanceof Error ? cause.message : "Could not save clock preference.")
+                }
+              })
+            }}
+            disabled={isPending}
             className="absolute top-3 right-3 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label={showTimer ? "Hide timer" : "Show timer"}
           >
-            {showTimer ? (
+            {showTimer && session.record_time !== false ? (
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
               </svg>
@@ -332,7 +397,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
                   exit={{ opacity: 0 }}
                   className="text-4xl font-bold text-muted-foreground"
                 >
-                  --:--
+                  {session.record_time === false ? "Untracked" : "Clock hidden"}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -373,30 +438,36 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
 
         {/* Notes & Goal — available in all active states */}
         {(isLockedIn || isPlaying || isPaused) && (
+          <fieldset disabled={isPending || !!syncError} className="flex min-w-0 flex-col gap-2">
           <SessionNotepad
             goal={sessionGoal}
             notes={notes}
             onGoalSave={handleGoalSave}
             onNotesChange={handleNotesChange}
           />
+          <p role="status" className="text-xs text-muted-foreground">
+            {notesMessage}
+          </p>
+          </fieldset>
         )}
 
         {/* Error */}
         <AnimatePresence>
-          {error && (
+          {(error || notesError) && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               className="rounded-lg bg-destructive/10 p-3 text-center text-sm text-destructive"
+              role="alert"
             >
-              {error}
+              {error || notesError}
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-3 pt-8">
+        <fieldset disabled={isPending || !!syncError} className="flex flex-col gap-3 pt-8">
           {isLockedIn && (
             <button
               onClick={() => transition("Playing")}
@@ -454,12 +525,12 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
               </button>
             </>
           )}
-        </div>
+        </fieldset>
       </div>
 
       {/* Still Playing? nudge modal */}
       <AnimatePresence>
-        {showNudge && (
+        {showNudge && isPlaying && !standby && !syncError && (
           <StillPlayingModal
             elapsed={elapsed}
             onStillPlaying={handleNudgeDismiss}
@@ -491,7 +562,7 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
               <h3 className="text-xl font-bold text-foreground mb-1">End Session</h3>
               <p className="text-sm text-muted-foreground mb-6">How did it go?</p>
 
-              <div className="flex flex-col gap-3">
+              <fieldset disabled={isPending || !!syncError} className="flex flex-col gap-3">
                 <button
                   onClick={() => { transition("Finished"); setShowEndOptions(false) }}
                   disabled={isPending}
@@ -530,11 +601,25 @@ export function ActiveSession({ session, onFinished, onSessionUpdated }: ActiveS
                 >
                   Cancel
                 </button>
-              </div>
+              </fieldset>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+    {standby && (isPlaying || isPaused) ? <StandbySession
+      session={{ ...session, status, notes }}
+      notesStatus={notesSaveState === "saved" ? null : notesMessage}
+      elapsed={formatTime(elapsed)}
+      elapsedSeconds={elapsed}
+      preferences={standbyPreferences}
+      pending={isPending}
+      syncError={syncError}
+      error={error || notesError}
+      onRetry={onRetry}
+      onTransition={transition}
+      onExit={() => setStandby(false)}
+    /> : null}
+    </Dialog.Root>
   )
 }

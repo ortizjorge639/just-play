@@ -1,0 +1,75 @@
+{
+  "revision": "robot-motion-v001",
+  "source": "robot-motion.blend",
+  "sample_rate_hz": 60,
+  "source_sha256": "dc38265f3c9840acc25352fbc75a8b25ad0ac1e945c591a8b0d602d05a95f0fd",
+  "asset": {
+    "file": "robot-motion.glb",
+    "bytes": 2223624,
+    "sha256": "4f33b6329be78670cf53cdcba7b52ea6cb3c1425541ac8d1176b3826400a8234",
+    "triangles": 29512,
+    "primitives": 5
+  },
+  "clips": {
+    "Idle": {
+      "duration": 3,
+      "loop": true,
+      "note": "Breathing, attention shifts, stepped blinking."
+    },
+    "Look": {
+      "duration": 3,
+      "loop": true,
+      "note": "Eyes lead; head and shoulders follow with a curious tilt."
+    },
+    "Walk": {
+      "duration": 0.8,
+      "loop": true,
+      "speed": 0.45,
+      "stance": 0.58,
+      "note": "Short planted strides and relaxed arm counter-swing."
+    },
+    "Run": {
+      "duration": 0.5,
+      "loop": true,
+      "speed": 1.35,
+      "stance": 0.34,
+      "note": "Quicker cadence, airborne swing, soft knees and forward intent."
+    },
+    "Jump": {
+      "duration": 1.1,
+      "loop": false,
+      "flight_start": 0.1,
+      "flight_end": 0.7,
+      "height": 0.45,
+      "note": "Quick anticipation, symmetric arm swing, modest tuck, gravity-led flight and soft landing. No raised-fist pose."
+    },
+    "Land": {
+      "duration": 0.5,
+      "loop": false,
+      "note": "Feet hold while knees, torso and head absorb and settle."
+    },
+    "Greeting": {
+      "duration": 2.6,
+      "loop": false,
+      "note": "Curious wind-up, springy rise, three broad waves, happy face and a soft settling nod."
+    },
+    "Emotes": {
+      "duration": 4,
+      "loop": true,
+      "note": "Warm, curious, surprised, focused, happy and sleepy face states."
+    }
+  },
+  "bones": 25,
+  "face_bones": [
+    "FaceEyeR",
+    "FaceEyeL",
+    "FaceBrowR",
+    "FaceBrowL",
+    "FacePixel0",
+    "FacePixel1",
+    "FacePixel2",
+    "FacePixel3",
+    "FacePixel4"
+  ],
+  "boundary": "Motion review and flat-ground play only; no world/save/progress changes. Generic jump, not a copied signature pose."
+}

@@ -2,24 +2,30 @@
 
 import { motion } from "framer-motion"
 import { signout } from "@/app/auth/actions"
+import type { StandbyPreferences } from "@/lib/types"
+import { StandbyPreferencesForm } from "./standby-preferences"
 
 interface SettingsProps {
   displayName: string | null
   onClose: () => void
   onEditPreferences: () => void
+  standbyPreferences: StandbyPreferences
+  onPreferencesSaved: (preferences: StandbyPreferences) => void
 }
 
 export function Settings({ 
   displayName, 
   onClose, 
-  onEditPreferences 
+  onEditPreferences,
+  standbyPreferences,
+  onPreferencesSaved,
 }: SettingsProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background"
+      className="fixed inset-0 z-50 overflow-y-auto bg-background pb-16"
     >
       {/* Header */}
       <header className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
@@ -66,6 +72,9 @@ export function Settings({
       </div>
 
       {/* Settings list */}
+      <div className="border-b border-border px-6 py-6">
+        <StandbyPreferencesForm value={standbyPreferences} onSaved={onPreferencesSaved} />
+      </div>
       <div className="px-6 py-4">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           Preferences
@@ -129,7 +138,7 @@ export function Settings({
       </div>
 
       {/* App version */}
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+      <div className="mt-8 flex justify-center">
         <span className="text-xs text-muted-foreground">Just Play v1.1.5</span>
       </div>
     </motion.div>

@@ -13,6 +13,36 @@ export interface Game {
 
 export type SessionStatus = "LockedIn" | "Playing" | "Paused" | "Finished"
 
+export interface StandbyPreferences {
+  record_time: boolean
+  show_clock: boolean
+  reminders: boolean
+  keep_awake: boolean
+}
+
+export const DEFAULT_STANDBY_PREFERENCES: StandbyPreferences = {
+  record_time: true,
+  show_clock: true,
+  reminders: false,
+  keep_awake: false,
+}
+
+export interface SessionTimingSnapshot {
+  status: SessionStatus
+  started_at: string
+  paused_elapsed_seconds: number
+}
+
+export interface SessionMutationSnapshot extends SessionTimingSnapshot {
+  id: string
+}
+
+export type SessionEndSnapshot = SessionMutationSnapshot
+
+export interface SessionFinishOptions {
+  notes: string
+}
+
 export interface Session {
   id: string
   user_id: string
@@ -20,6 +50,8 @@ export interface Session {
   started_at: string
   ended_at: string | null
   duration_minutes: number
+  paused_elapsed_seconds: number
+  record_time: boolean
   status: SessionStatus
   active: boolean
   notes: string | null
@@ -48,6 +80,7 @@ export interface UserProfile {
   display_name: string | null
   steam_id: string | null
   preferences: UserPreferences
+  standby_preferences: StandbyPreferences
   onboarding_complete: boolean
   tutorial_complete: boolean
   streak_enabled: boolean

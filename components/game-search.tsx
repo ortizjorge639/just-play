@@ -41,15 +41,18 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
 
     try {
       const res = await fetch(`/api/search-games?q=${encodeURIComponent(q)}`)
-      if (!res.ok) throw new Error("Search failed")
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(res.status === 503 && body?.error ? body.error : "Search failed")
+      }
       const data = await res.json()
       if (Array.isArray(data)) {
         setResults(data)
       } else {
         setResults([])
       }
-    } catch {
-      setError("Search failed. Try again.")
+    } catch (e) {
+      setError(e instanceof Error && e.message !== "Search failed" ? e.message : "Search failed. Try again.")
       setResults([])
     } finally {
       setIsLoading(false)
@@ -76,7 +79,7 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
       setIsLoading(true)
       try {
         const { addSearchedGame } = await import("@/app/actions")
-        const game = await addSearchedGame(result)
+        const game = await addSearchedGame({ igdbId: result.igdbId })
         // Close search and notify parent
         setIsOpen(false)
         setQuery("")
@@ -86,7 +89,7 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : ""
         if (msg.includes("SERVICE_ROLE")) {
-          setError("Server config needed. Ask admin to add SUPABASE_SERVICE_ROLE_KEY.")
+          setError("Couldn't add this game. Try again later.")
         } else {
           setError("Failed to add game. Try again.")
         }
