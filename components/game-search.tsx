@@ -41,15 +41,18 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
 
     try {
       const res = await fetch(`/api/search-games?q=${encodeURIComponent(q)}`)
-      if (!res.ok) throw new Error("Search failed")
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(res.status === 503 && body?.error ? body.error : "Search failed")
+      }
       const data = await res.json()
       if (Array.isArray(data)) {
         setResults(data)
       } else {
         setResults([])
       }
-    } catch {
-      setError("Search failed. Try again.")
+    } catch (e) {
+      setError(e instanceof Error && e.message !== "Search failed" ? e.message : "Search failed. Try again.")
       setResults([])
     } finally {
       setIsLoading(false)
