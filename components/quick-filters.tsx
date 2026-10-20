@@ -33,11 +33,18 @@ interface QuickFiltersProps {
 export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFiltersProps) {
   const [preferences, setPreferences] = useState<UserPreferences>(currentPreferences)
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
 
   function handleApply() {
+    setError(null)
     startTransition(async () => {
-      await savePreferences(preferences)
-      onApply()
+      try {
+        await savePreferences(preferences)
+        onApply()
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "Something went wrong while saving your preferences"
+        setError(message)
+      }
     })
   }
 
@@ -63,6 +70,19 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
           <h3 className="text-lg font-bold text-foreground">Update Filters</h3>
           <p className="text-sm text-muted-foreground">Tweak your preferences for new picks</p>
         </div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="rounded-lg bg-destructive/20 p-4 flex flex-col gap-2"
+          >
+            <p className="text-sm text-destructive font-medium">Couldn't save your preferences</p>
+            <p className="text-sm text-destructive/90">{error}</p>
+            <p className="text-xs text-destructive/80">Try again or contact support if the problem persists.</p>
+          </motion.div>
+        )}
 
         {/* Mood */}
         <div className="flex flex-col gap-2">
@@ -133,6 +153,14 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
           >
             {isPending ? "Applying..." : "Apply & Refresh"}
           </button>
+          {error && (
+            <button
+              onClick={() => setError(null)}
+              className="h-12 w-full rounded-xl bg-muted text-base font-medium text-foreground transition-colors hover:bg-muted/80 min-h-[44px]"
+            >
+              Dismiss
+            </button>
+          )}
           <button
             onClick={onCancel}
             className="h-12 w-full rounded-xl bg-secondary text-base font-medium text-foreground transition-colors hover:bg-muted min-h-[44px]"
