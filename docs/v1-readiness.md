@@ -5,7 +5,7 @@ Auditor confidence, not a test count: **full spec 35%, narrowed release 70%**.
 Narrowed release = session tracker plus neutral StandBy/Canopy preview, no residents.
 Target was 95%. It is not reached.
 
-## Done on this branch
+## Done in the v1 hardening work
 
 - Removed the hardcoded test login and its public button.
 - Type errors fixed; the build checks types again.
@@ -20,11 +20,9 @@ Target was 95%. It is not reached.
 
 | Gate | Needed |
 | --- | --- |
-| Environments | Owner-confirmed separate preview and production databases. |
-| Test account | Retire the old test user and any old deployment that still has the login. |
-| Anonymous sign-ins | Decide the policy, then enforce it in Supabase and the app. |
-| Catalog insert policy | Code now writes games with the service role key when it is set. Set `SUPABASE_SERVICE_ROLE_KEY` in Vercel, then apply `scripts/021_close_games_insert_policy.sql`. Until then the old policy stays and search-add still works. |
-| Account recovery (C) | Run it on the approved origin, or record the precise blocker. |
+| Environments | One Supabase project serves preview and production (accepted for v1). A separate preview project is optional later. |
+| Anonymous sign-ins | Allowed for people who want to stay anonymous. Enforcement in Supabase and the app is not written down yet. |
+| Account recovery (C) | Deferred by the owner. Run it on the approved origin, or record the precise blocker. |
 
 ## Done since the last audit (not yet re-audited)
 
@@ -34,6 +32,9 @@ Target was 95%. It is not reached.
 
 ## Closed since
 
+- PR #4 merged to main. Game search works in production (IGDB variables set in Vercel).
+- Test account `test@justplay.dev` deleted from Supabase Auth.
+- `SUPABASE_SERVICE_ROLE_KEY` is set in Vercel, and `scripts/021_close_games_insert_policy.sql` is applied. Search-add still works with the open insert policy gone.
 - Next.js upgraded to 16.4.2, which patches GHSA-p3m5-59mp-jv5r. Lint rules from the newer config were satisfied.
 - A pack holds 3 games. The deck no longer scrolls through 10.
 - One Supabase project serves preview and production. That works. Preview writes land in live data, so use test accounts and clear them, or add a second project later.
