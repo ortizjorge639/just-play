@@ -232,3 +232,11 @@ unsupported there); the unavailable message now suggests Add to Home Screen.
 In landscape, Safari's top bar overlaps the Canopy view (minor). No screen sleep
 was noticed. Backlog: home-screen/PWA setup with clear in-app communication.
 Release claims must state that account recovery (C) was not verified end to end.
+
+### PR #2 regression pass
+
+Owner-run on the PR #2 preview (foundation source `b19bf481099f8593aca53e7f703eaad2e3dd5a9f`,
+Artwork viewer only; no Canopy expected). Entry, notes, pause/resume, recording
+opt-out, lost-response reconciliation, phone + desktop, fullscreen/wake and
+unattended play: **all steps passed** per the owner. Owner observation, not
+independently reproduced; C remains deferred.
