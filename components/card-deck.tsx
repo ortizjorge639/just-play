@@ -16,15 +16,16 @@ interface CardDeckProps {
   onSessionCreated: () => void
   isBoosterPack?: boolean
   boosterPackStatus?: { packsOpenedToday: number; packsRemaining: number }
+  onboardingComplete?: boolean
 }
 
-export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, boosterPackStatus }: CardDeckProps) {
+export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, boosterPackStatus, onboardingComplete = true }: CardDeckProps) {
   const [deck, setDeck] = useState<Game[]>(games)
   const [rejectedStack, setRejectedStack] = useState<Game[]>([])
   const [lockedGame, setLockedGame] = useState<Game | null>(null)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
+  const [showFilters, setShowFilters] = useState(!onboardingComplete)
   const [packOpened, setPackOpened] = useState(false)
   const [showBoosterPack, setShowBoosterPack] = useState(false)
   const showXPToast = useXPToast()
@@ -84,8 +85,8 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     setLockedGame(null)
   }, [])
 
-  // Show booster pack overlay for new users or when explicitly triggered
-  if ((isBoosterPack && !packOpened && deck.length === 0) || showBoosterPack) {
+  // Show booster pack overlay only after onboarding is complete and when explicitly triggered
+  if (onboardingComplete && ((isBoosterPack && !packOpened && deck.length === 0) || showBoosterPack)) {
     return (
       <>
         <BoosterPack

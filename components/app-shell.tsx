@@ -188,6 +188,7 @@ export function AppShell({
               onSessionCreated={handleSessionCreated}
               isBoosterPack={isBoosterPack}
               boosterPackStatus={boosterPackStatus}
+              onboardingComplete={user.onboarding_complete}
             />
           </motion.div>
         )}
