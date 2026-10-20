@@ -208,7 +208,7 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
               <span className="text-base font-bold text-foreground">
                 {playerStats.streak > 0
                   ? `${playerStats.streak} day streak`
-                  : "Start a streak!"}
+                  : "No sessions this week"}
               </span>
               {playerStats.bestStreak > 0 && (
                 <span className="text-xs text-muted-foreground ml-1">

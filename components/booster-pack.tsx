@@ -106,8 +106,8 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
               <h2 className="text-xl font-bold text-foreground mb-2">Booster Pack</h2>
               <p className="text-sm text-muted-foreground max-w-xs">
                 {isDisabled
-                  ? "You've opened all your packs for today. Come back tomorrow for more!"
-                  : "Open a pack to discover curated games. Swipe to find your next play!"}
+                  ? "No packs left today. You can still search for a game."
+                  : "Open your picks and choose a game."}
               </p>
             </div>
 
@@ -205,6 +205,8 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
                   className="aspect-[3/4] rounded-lg overflow-hidden border border-border/50 bg-secondary"
                 >
                   {game.header_image && (
+                    // next.config sets images.unoptimized, so next/image adds nothing here
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={game.header_image}
                       alt={game.name}

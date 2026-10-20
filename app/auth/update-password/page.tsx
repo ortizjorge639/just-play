@@ -14,8 +14,7 @@ export default async function UpdatePasswordPage(props: {
             Choose a New Password
           </h1>
           <p className="text-muted-foreground text-base">
-            You&apos;re signed in via your reset link — set a new password to
-            finish.
+            Enter your new password.
           </p>
         </div>
 

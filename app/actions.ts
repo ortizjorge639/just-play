@@ -7,6 +7,7 @@ import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
 import { calculateStreak } from "@/lib/streak"
+import { getIGDBGameById } from "@/lib/igdb"
 
 export async function getUser() {
   const supabase = await createClient()
@@ -732,15 +733,7 @@ export async function getSessionHistory() {
 
 // ── Game Search ───────────────────────────────────────────────────────
 
-export async function addSearchedGame(gameData: {
-  igdbId: number
-  name: string
-  coverUrl: string | null
-  genres: string[]
-  estimatedSessionLength: number
-  timeToBeatMinutes?: number | null
-  description: string
-}): Promise<Game> {
+export async function addSearchedGame(gameData: { igdbId: number }): Promise<Game> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -758,23 +751,32 @@ export async function addSearchedGame(gameData: {
 
   if (existing) return existing as Game
 
-  // Insert new game (RLS INSERT policy allows authenticated users)
+  // Metadata comes from IGDB, never from the caller, so one user can't write
+  // arbitrary titles or image URLs into the shared catalog.
+  const canonical = await getIGDBGameById(gameData.igdbId)
+  if (!canonical) throw new Error("Game not found")
+
   const { data: game, error } = await supabase
     .from("games")
     .insert({
       id: gameId,
-      name: gameData.name,
-      genres: gameData.genres.length > 0 ? gameData.genres : ["indie"],
-      estimated_session_length: gameData.estimatedSessionLength,
-      time_to_beat_minutes: gameData.timeToBeatMinutes ?? null,
-      header_image: gameData.coverUrl || "",
-      description: gameData.description,
+      name: canonical.name,
+      genres: canonical.genres.length > 0 ? canonical.genres : ["indie"],
+      estimated_session_length: canonical.estimatedSessionLength,
+      time_to_beat_minutes: canonical.timeToBeatMinutes,
+      header_image: canonical.coverUrl || "",
+      description: canonical.description,
       source: "igdb",
     })
     .select("*")
     .single()
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    // Another request may have inserted the same game first
+    const { data: raced } = await supabase.from("games").select("*").eq("id", gameId).maybeSingle()
+    if (raced) return raced as Game
+    throw new Error(error.message)
+  }
   revalidatePath("/")
   return game as Game
 }

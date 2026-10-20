@@ -286,3 +286,34 @@ export async function searchIGDBGames(
     description: (game.summary || "").slice(0, 500),
   }))
 }
+
+export async function getIGDBGameById(
+  igdbId: number
+): Promise<IGDBSearchResult | null> {
+  if (!Number.isSafeInteger(igdbId) || igdbId <= 0) return null
+  const clientId = process.env.IGDB_CLIENT_ID?.trim()
+  if (!clientId) throw new Error("Missing IGDB_CLIENT_ID")
+
+  const accessToken = await getCachedIGDBToken()
+  const [game] = await queryIGDB<IGDBGame>(
+    "games",
+    `fields name, cover.image_id, genres.id, genres.name, themes.id, themes.name,
+      keywords.id, keywords.name, summary, category;
+    where id = ${igdbId};
+    limit 1;`,
+    clientId,
+    accessToken
+  )
+  if (!game) return null
+
+  const ttbMap = await fetchTimeToBeat([game.id], clientId, accessToken)
+  return {
+    igdbId: game.id,
+    name: game.name,
+    coverUrl: game.cover?.image_id ? getIGDBImageUrl(game.cover.image_id) : null,
+    genres: mapIGDBGenres(game),
+    estimatedSessionLength: estimateSessionLength(game),
+    timeToBeatMinutes: ttbMap.get(game.id) ?? null,
+    description: (game.summary || "").slice(0, 500),
+  }
+}

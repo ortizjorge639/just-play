@@ -30,9 +30,9 @@ const SLIDES = [
   },
   {
     image: "/progress%20page.jpeg",
-    title: "See Your Journey",
+    title: "Your recent play",
     subtitle:
-      "Sessions, play time, streaks — watch your gaming habits come together.",
+      "See the sessions you saved.",
   },
 ]
 

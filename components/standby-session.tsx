@@ -105,7 +105,7 @@ export function StandbySession({
             {!nook ? <p className="text-sm text-white/60 [@media(max-height:500px)]:hidden">{session.status === "Paused" ? "Taking a breath" : "Your game is waiting for you"}</p> : null}
             <Dialog.Title title={nook ? session.games.name : undefined} className={nook ? "canopy-game" : "break-words text-3xl font-semibold leading-tight sm:text-5xl [@media(max-height:500px)]:text-2xl"}>{session.games.name}</Dialog.Title>
             <Dialog.Description className={nook ? "sr-only" : "text-white/60"}>
-              {nook ? "Your real play session, in a quiet Canopy nook. The room does not award residents or progress." : "Make memories. Not another scroll."}
+              {nook ? "Your real play session, in a quiet Canopy nook. The room does not award residents or progress." : "Leave this screen beside your game."}
             </Dialog.Description>
             {preferences.show_clock && session.record_time !== false ? (
               <p className={nook ? "canopy-clock" : "font-mono text-5xl tabular-nums sm:text-7xl [@media(max-height:500px)]:text-4xl"} aria-label={`${session.status} elapsed time`}>{elapsed}</p>
