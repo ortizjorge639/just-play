@@ -78,7 +78,7 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
             exit={{ opacity: 0, y: -10 }}
             className="rounded-lg bg-destructive/20 p-4"
           >
-            <p className="text-sm text-destructive">Couldn't save your filters. Check your connection and try again.</p>
+            <p className="text-sm text-destructive">Couldn&apos;t save your filters. Check your connection and try again.</p>
           </motion.div>
         )}
 
