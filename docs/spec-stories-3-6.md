@@ -309,16 +309,19 @@ This section proposes a thin, end-to-end slice of Story 3 (Residents) that can b
 
 The slice requires one new table. Owner applies this migration manually; it is not pre-applied.
 
+**Note:** This migration is numbered 023. Assign the actual next number after whatever migrations are applied from PR 7 or other branches.
+
 ```sql
--- Migration: 022_add_residents_table.sql
+-- Migration: 023_add_residents_table.sql
+-- (Numbering: assign the next migration number after PR 7 and other pending branches)
 CREATE TABLE residents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  game_id TEXT NOT NULL REFERENCES public.games(id) ON DELETE CASCADE,
   status TEXT NOT NULL CHECK (status IN ('backlogged', 'invited', 'arrived')),
-  arrived_at TIMESTAMP,
-  created_at TIMESTAMP NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP NOT NULL DEFAULT now(),
+  arrived_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(user_id, game_id)
 );
 
@@ -327,13 +330,20 @@ CREATE INDEX idx_residents_game_id ON residents(game_id);
 
 ALTER TABLE residents ENABLE ROW LEVEL SECURITY;
 
+-- Allow users to read their own residents
 CREATE POLICY residents_users_can_see_own ON residents
   FOR SELECT USING (auth.uid() = user_id);
 
+-- Allow users to insert their own residents (via server action)
 CREATE POLICY residents_users_can_insert_own ON residents
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY residents_users_can_update_own ON residents
+-- TESTING ONLY: Allow users to update their own residents to 'arrived' status.
+-- This policy is required for the manual "Mark as Arrived" button during testing.
+-- Remove this policy or restrict it before stamps (Story 4) are implemented,
+-- since stamp confirmation should be the sole path to arrival in production.
+-- Alternatively, remove this policy and route all updates through server actions only.
+CREATE POLICY residents_users_can_update_own_testing_only ON residents
   FOR UPDATE USING (auth.uid() = user_id);
 ```
 
