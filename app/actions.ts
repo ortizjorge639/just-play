@@ -772,9 +772,11 @@ export async function addSearchedGame(gameData: { igdbId: number }): Promise<Gam
     .single()
 
   if (error) {
-    // Another request may have inserted the same game first
-    const { data: raced } = await supabase.from("games").select("*").eq("id", gameId).maybeSingle()
-    if (raced) return raced as Game
+    // 23505: another request inserted the same game first
+    if (error.code === "23505") {
+      const { data: raced, error: racedError } = await supabase.from("games").select("*").eq("id", gameId).maybeSingle()
+      if (raced && !racedError) return raced as Game
+    }
     throw new Error(error.message)
   }
   revalidatePath("/")
