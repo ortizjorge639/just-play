@@ -1,8 +1,10 @@
 # Spec Stories 3-6: Residents, Stamps, Name Card, Emotes
 
-Reference: [v1 Readiness](v1-readiness.md#not-in-the-narrowed-release), [Treehouse World Study](treehouse-world-study.md)
+**Draft for owner review**
 
-These four features define the personalization and personality layer of the Canopy settlement. None are part of the narrowed v1 release; they fill gaps in the full specification for planning, estimation, and scoping future work.
+Reference: [Treehouse World Study](treehouse-world-study.md), [PRODUCT.md](../PRODUCT.md)
+
+These four stories propose features for the Canopy settlement's personalization and interaction layer: game avatars that become residents, player-defined proof milestones for arrival, player identity in the settlement, and expressive interactions with residents. This document guides design and estimation for future implementation work.
 
 ---
 
@@ -274,3 +276,182 @@ A successful implementation of these four stories means:
 - [ ] No resident is deleted or loses status due to rule changes, rule edits, or time passage
 - [ ] A visiting player (in the future) can understand whose home they're exploring and see the residents that belong there
 - [ ] An abandoned game with an arrived resident is not visually penalized or marked as a failure
+
+---
+
+## Proposed first vertical slice: residents
+
+This section proposes a thin, end-to-end slice of Story 3 (Residents) that can be implemented, tested, and shipped in isolation to validate the resident lifecycle and resident→session connection before building stamps (Story 4), name cards (Story 5), and emotes (Story 6).
+
+### Slice scope
+
+**What the slice delivers:**
+
+- Database table to store resident state (Backlogged, Invited, Arrived)
+- Server action to create an Invited resident when a player starts a game
+- Server action to manually arrive a resident (admin/testing backdoor, since stamps are not yet implemented)
+- Game session screen shows the current game's resident state (Invited, Arrived, or none)
+- "Mark arrived" button appears on the session screen (for testing; production will use Story 4 stamps)
+- Resident state persists across session resumption and app reload
+- RLS policy prevents users from viewing other users' residents
+
+**What is deliberately excluded:**
+
+- Stamps (Story 4): No automatic arrival based on proof milestones. Manual confirmation only.
+- Remnants: Dropped invitations do not create keepsakes yet. Ending an invited game simply cancels the invitation.
+- Journal/map display: Residents exist in the database but are not rendered in the settlement world or journal yet (that is a separate 3D rendering effort).
+- Name card (Story 5): No player identity display.
+- Emotes (Story 6): No interaction layer.
+- Resident deletion: No UI to manually delete residents or remnants.
+- Merit tiers: Simple binary Invited/Arrived; no progress toward deeper tiers.
+
+### Migration
+
+The slice requires one new table. Owner applies this migration manually; it is not pre-applied.
+
+```sql
+-- Migration: 022_add_residents_table.sql
+CREATE TABLE residents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK (status IN ('backlogged', 'invited', 'arrived')),
+  arrived_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP NOT NULL DEFAULT now(),
+  UNIQUE(user_id, game_id)
+);
+
+CREATE INDEX idx_residents_user_id ON residents(user_id);
+CREATE INDEX idx_residents_game_id ON residents(game_id);
+
+ALTER TABLE residents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY residents_users_can_see_own ON residents
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY residents_users_can_insert_own ON residents
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY residents_users_can_update_own ON residents
+  FOR UPDATE USING (auth.uid() = user_id);
+```
+
+### Server actions (new and modified)
+
+**New action: `createInvitedResident(gameId)`**
+
+When called from the session start flow (or from game search), this creates an Invited resident if one does not already exist.
+
+```typescript
+export async function createInvitedResident(gameId: string) {
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('Not authenticated');
+  
+  const { error } = await supabase
+    .from('residents')
+    .upsert({
+      user_id: user.id,
+      game_id: gameId,
+      status: 'invited',
+      created_at: now(),
+      updated_at: now(),
+    }, { onConflict: 'user_id,game_id' });
+  
+  if (error) throw error;
+  revalidatePath('/');
+}
+```
+
+**New action: `arriveResident(gameId)` (testing/admin backdoor)**
+
+Manual arrival endpoint for testing without stamps. Production should not expose this; stamps (Story 4) replace it.
+
+```typescript
+export async function arriveResident(gameId: string) {
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('Not authenticated');
+  
+  const { error } = await supabase
+    .from('residents')
+    .update({
+      status: 'arrived',
+      arrived_at: now(),
+      updated_at: now(),
+    })
+    .eq('user_id', user.id)
+    .eq('game_id', gameId);
+  
+  if (error) throw error;
+  revalidatePath('/');
+}
+```
+
+**Modified action: Session creation**
+
+Integrate `createInvitedResident()` into the existing session creation flow so starting a game automatically invites its resident.
+
+### UI changes
+
+**Game session screen additions:**
+
+- Add a small resident status badge showing "Invited" or "Arrived" next to the game title.
+- If Invited, show a "Mark as Arrived (test)" button that calls `arriveResident()`. Remove or hide this button once Story 4 is implemented.
+- If Arrived, show a checkmark or "Resident arrived" label and optionally a date (e.g., "Arrived Oct 20, 2026").
+
+### Acceptance checks
+
+- [ ] New residents table exists and supports Invited/Arrived states
+- [ ] Starting a game creates an Invited resident record
+- [ ] Calling `arriveResident()` updates resident status and records `arrived_at` timestamp
+- [ ] Session screen correctly displays resident state after creation and arrival
+- [ ] Reloading the app preserves resident state (resident data loads from the database)
+- [ ] RLS prevents users from seeing other users' residents
+- [ ] Manual arrival via the test button works end-to-end without errors
+- [ ] Arriving the same resident twice does not create duplicates or errors
+- [ ] App does not break when starting a game whose resident data is not yet loaded
+
+### Risks
+
+1. **3D world integration unknown:** This slice stores resident state but does not integrate with the Canopy settlement renderer. Discovering that the renderer has breaking assumptions about resident structure could require schema rework.
+2. **Stamp collision:** If Story 4 is implemented before this is shipped, developers may try to add stamp logic to this action, bloating the scope. Keep the slice minimal; story 4 is a separate task.
+3. **Test data pollution:** The testing backdoor `arriveResident()` is exposed in production. Without access controls, testers could pollute the database. Recommend removing or gating it behind an owner toggle before shipping.
+4. **Manual confirmation UX:** The "Mark as Arrived" test button is not user-friendly. If this slice ships to users (unlikely), they need a story about how to self-confirm milestones, which is Story 4.
+5. **Data migration from demo:** If real accounts already have residents from the local demo, this table needs a one-time import strategy that is not included in this scope.
+
+### Rough size estimate
+
+**Effort breakdown:**
+
+- Schema design and migration: 2–3 hours (agree on columns, indexes, RLS policies)
+- Server actions (create invited, arrive, session integration): 3–4 hours
+- Session screen UI updates (badge, test button): 2–3 hours
+- Testing (manual, E2E if applicable): 2–3 hours
+- Code review and fixes: 1–2 hours
+
+**Total: 10–15 hours** for a single developer.
+
+**Assumes:**
+- Development environment is already set up (Supabase, Next.js, local auth)
+- No new 3D integration required (residents are invisible in this slice)
+- No UI kit components need to be created (badge and button use existing primitives)
+- RLS policies follow the established pattern from other tables
+
+**Blocking dependencies:**
+- Must have write access to apply the migration (Supabase, or dev provides SQL)
+- Existing session creation flow is stable and understood
+- Game table and auth.users are available and stable
+
+### Ship criteria
+
+This slice is ready to merge when:
+
+- [ ] All acceptance checks pass
+- [ ] RLS policies are verified to prevent data leakage
+- [ ] A developer can start a game, manually arrive it, and see the state persist across reload
+- [ ] The testing backdoor (`arriveResident()`) is documented as temporary and removed before production release
+- [ ] Code review is complete and no breaking changes are introduced to the session creation flow
