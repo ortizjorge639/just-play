@@ -112,3 +112,16 @@ export interface UserPreferences {
   genre_preferences?: string[]
   discovery?: string
 }
+
+export interface Resident {
+  user_id: string
+  game_id: string
+  arrived_at: string
+  arrival_source: string
+}
+
+export interface Postcard {
+  user_id: string
+  game_id: string
+  created_at: string
+}
