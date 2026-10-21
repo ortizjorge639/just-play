@@ -1,16 +1,18 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
-import type { Session, Game, PlayerStats } from "@/lib/types"
+import type { Session, Game, PlayerStats, Resident } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
 import { XPParticles } from "./xp-particles"
+import { ResidentPortrait } from "./resident-portrait"
 
 interface ProgressProps {
   sessions: (Session & { games: Game })[]
   displayName: string | null
   playerStats: PlayerStats | null
+  residents?: Resident[]
 }
 
 interface PendingXP {
@@ -64,7 +66,8 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
   return skip ? target : value
 }
 
-export function Progress({ sessions, displayName, playerStats }: ProgressProps) {
+export function Progress({ sessions, displayName, playerStats, residents }: ProgressProps) {
+  const prefersReducedMotion = useReducedMotion()
   const [pending, setPending] = useState<PendingXP | null>(null)
   const [showBarParticles, setShowBarParticles] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
@@ -278,6 +281,32 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
           </motion.div>
         ))}
       </div>
+
+      {/* Residents section */}
+      {residents && residents.length > 0 && (
+        <motion.div
+          initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={prefersReducedMotion ? undefined : { delay: 0.3 }}
+          className="mb-6"
+        >
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+            Residents
+          </h2>
+          <div className="grid grid-cols-1 gap-2.5">
+            {residents.map((resident, i) => (
+              <motion.div
+                key={`${resident.user_id}-${resident.game_id}`}
+                initial={prefersReducedMotion ? undefined : { opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={prefersReducedMotion ? undefined : { delay: 0.3 + 0.05 * i }}
+              >
+                <ResidentPortrait resident={resident} />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Session history */}
       <div className="pb-3">

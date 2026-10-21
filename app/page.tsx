@@ -8,6 +8,7 @@ import {
   getPlayerStats,
   getBoosterPackStatus,
   backfillXP,
+  getResidents,
 } from "./actions"
 import { AppShell } from "@/components/app-shell"
 import type { PlayerStats } from "@/lib/types"
@@ -49,12 +50,14 @@ export default async function HomePage({
     getActiveGame(),
     getSessionHistory(),
     getPlayerStats(),
+    getResidents(),
   ])
   profile = results[0]
   activeSession = results[1]
   activeGame = results[2]
   sessionHistory = results[3]
   playerStats = results[4]
+  const residents = results[5]
 
   if (!profile) {
     redirect("/auth/login")
@@ -83,6 +86,7 @@ export default async function HomePage({
       activeGame={activeGame}
       sessionHistory={sessionHistory}
       playerStats={playerStats}
+      residents={residents}
       isBoosterPack={true}
       boosterPackStatus={boosterPackStatus}
     />

@@ -1,4 +1,4 @@
-import type { Game, Session, SessionStatus, StandbyPreferences } from "@/lib/types"
+import type { Game, Session, SessionStatus, StandbyPreferences, Resident } from "@/lib/types"
 
 export const game: Game = {
   id: "test-game", name: "A Short Hike", genres: ["Adventure"],
@@ -47,6 +47,7 @@ export const fixture: {
   notesWrites: string[]
   finishedNotes: string[]
   events: { kind: "notes-start" | "notes-saved" | "notes-late" | "notes-ack-held" | "notes-ack-released" | "finish" | "beaten" | "abandoned"; notes: string }[]
+  residents: Resident[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
   holdReads: false, readReleases: [], readSnapshots: [], readCompletions: 0,
@@ -60,6 +61,7 @@ export const fixture: {
   notesErrorMode: "before-commit", deferredNotes: [], settleLateOnFinish: true,
   settleLateNotes: settleLateNotes, rejectedLateNotes: 0, schema020: true,
   finalDrafts: [],
+  residents: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -178,6 +180,10 @@ function finishGame(kind: "beaten" | "abandoned", finalNotes?: string) {
     fixture.events.push({ kind, notes: fixture.session.notes || "" })
     fixture.session = null
   }
+}
+
+export async function getResidents(): Promise<Resident[]> {
+  return fixture.residents
 }
 
 // These surfaces are bundled only for the real AppShell remount test, not exercised.

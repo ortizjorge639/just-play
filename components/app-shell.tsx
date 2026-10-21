@@ -16,7 +16,7 @@ import { Settings } from "./settings"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
-import type { UserProfile, Game, Session, GameProgress, PlayerStats } from "@/lib/types"
+import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident } from "@/lib/types"
 
 type Tab = "deck" | "session" | "progress"
 
@@ -27,6 +27,7 @@ interface AppShellProps {
   activeGame: (GameProgress & { game: Game }) | null
   sessionHistory: (Session & { games: Game })[]
   playerStats: PlayerStats | null
+  residents?: Resident[]
   isBoosterPack: boolean
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
 }
@@ -38,6 +39,7 @@ export function AppShell({
   activeGame,
   sessionHistory: initialHistory,
   playerStats,
+  residents,
   isBoosterPack,
   boosterPackStatus,
 }: AppShellProps) {
@@ -268,6 +270,7 @@ export function AppShell({
               sessions={initialHistory}
               displayName={user.display_name}
               playerStats={playerStats}
+              residents={residents}
             />
           </motion.div>
         )}

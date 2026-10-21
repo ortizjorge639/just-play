@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
@@ -965,4 +965,37 @@ export async function backfillXP() {
 
   // Also update streak
   await updateUserStreak(user.id)
+}
+
+export async function getResidents(): Promise<Resident[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  try {
+    const { data, error } = await supabase
+      .from("residents")
+      .select("user_id, game_id, arrived_at, arrival_source, game:games(*)")
+      .order("arrived_at", { ascending: false })
+
+    if (error) {
+      console.warn("[residents] Query failed (table missing?):", error.message)
+      return []
+    }
+
+    // Type cast the nested game to a single object instead of array
+    return (data as Array<{
+      user_id: string
+      game_id: string
+      arrived_at: string
+      arrival_source: string
+      game?: Game | Game[]
+    }>).map(row => ({
+      ...row,
+      game: Array.isArray(row.game) ? row.game[0] : row.game,
+    })) || []
+  } catch (err) {
+    console.warn("[residents] Catch error:", err)
+    return []
+  }
 }
