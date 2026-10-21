@@ -6,7 +6,7 @@ Reference: [Treehouse World Study](treehouse-world-study.md), [PRODUCT.md](../PR
 
 These four stories propose features for the Canopy settlement's personalization and interaction layer: game avatars that become residents, player-defined proof milestones for arrival, player identity in the settlement, and expressive interactions with residents. This document guides design and estimation for future implementation work.
 
-**Note on art direction:** Product semantics below are aligned with the archived Canopy art spec's accepted model (backlogged/invited avatars outside the settlement, exactly one permanent resident per game, merit enrichment without duplication, warm postcards for dropped attempts). Visual art direction and final avatar approval remain pending owner review.
+**Note on art direction:** Product semantics below are aligned with the archived Canopy art spec's accepted model (backlogged/invited avatars outside the settlement, exactly one permanent resident per game, merit enrichment without duplication, warm postcards for dropped attempts). Visual art direction follows the latest treehouse world study mixed with the Lantern Pastel palette (owner decision). Final avatar and asset approval remain pending owner review.
 
 ---
 

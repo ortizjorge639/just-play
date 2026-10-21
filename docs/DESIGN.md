@@ -1,6 +1,6 @@
 # Just Play design system (draft for owner review)
 
-Status: proposal. Nothing here is applied to `app/globals.css` yet. Art direction for the canopy world is still pending owner approval.
+Status: tokens applied to `app/globals.css`. Owner decision: canopy art direction follows the latest treehouse world study, mixed with this palette's design. Individual assets and final avatars still need owner approval.
 
 ## Direction
 
