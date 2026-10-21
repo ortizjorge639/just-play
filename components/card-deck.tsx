@@ -297,7 +297,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
               className="h-1.5 w-3 rounded-full transition-colors"
               style={{
                 backgroundColor: deck.find((d) => d.id === g.id)
-                  ? "#5865F2"
+                  ? "var(--primary)"
                   : "rgba(255,255,255,0.08)",
               }}
             />

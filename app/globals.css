@@ -1,29 +1,38 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* Just Play - Discord-inspired dark theme. No light mode. */
+/* Just Play - Lantern Pastel dark theme. No light mode. */
 :root {
-  --background: #0f0f14;
-  --foreground: #e0e0e6;
-  --card: rgba(255, 255, 255, 0.06);
-  --card-foreground: #e0e0e6;
+  --background: #0f1a1f;
+  --background-gradient: linear-gradient(to bottom, #0f1a1f, #183241);
+  --foreground: #fcf7e9;
+  --card: #1a2e38;
+  --card-gradient: linear-gradient(to bottom, #233c49, #1a2e38);
+  --card-foreground: #fcf7e9;
   --popover: #1e1f22;
-  --popover-foreground: #e0e0e6;
-  --primary: #5865F2;
-  --primary-foreground: #ffffff;
+  --popover-foreground: #fcf7e9;
+  --primary: #f0b46a;
+  --primary-highlight: #ffd9a8;
+  --primary-foreground: #2a1a08;
   --secondary: #1e1f22;
-  --secondary-foreground: #e0e0e6;
+  --secondary-foreground: #fcf7e9;
   --muted: #2b2d31;
-  --muted-foreground: #8b8d94;
-  --accent: #5865F2;
-  --accent-foreground: #ffffff;
-  --destructive: #ED4245;
-  --destructive-foreground: #ffffff;
-  --success: #3BA55D;
-  --success-foreground: #ffffff;
+  --muted-foreground: #a9bcc0;
+  --accent: #f0b46a;
+  --accent-foreground: #2a1a08;
+  --destructive: #ffb4a2;
+  --destructive-foreground: #1a0b07;
+  --success: #8fcaa3;
+  --success-highlight: #bfe3c9;
+  --success-foreground: #10251a;
+  --info: #b7d9ee;
+  --info-foreground: #1a3344;
+  --emote: #c3b3e6;
+  --emote-highlight: #ddd2f5;
+  --emote-foreground: #2a1a38;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: #5865F2;
+  --ring: #f0b46a;
   --radius: 1.25rem;
 }
 
@@ -48,6 +57,10 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-emote: var(--emote);
+  --color-emote-foreground: var(--emote-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -66,13 +79,36 @@
   }
 }
 
-/* Frosted glass card utility */
+/* Frosted glass card utility with form styling */
 @layer utilities {
   .glass-card {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--card);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius);
+    box-shadow: 
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Form control styling: gradient with inner edge highlighting */
+  .form-control {
+    background: linear-gradient(180deg, var(--primary-highlight) 0%, var(--primary) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      inset 0 -3px 0 rgba(0, 0, 0, 0.18),
+      0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-control:hover {
+    background: linear-gradient(180deg, var(--primary-highlight) 0%, var(--primary) 100%);
+  }
+
+  /* Card form styling: soft inner highlight and neutral shadow */
+  .card-form {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 4px 12px rgba(0, 0, 0, 0.15);
   }
 }

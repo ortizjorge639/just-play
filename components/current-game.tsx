@@ -107,13 +107,13 @@ export function CurrentGame({ gameProgress, onSessionStarted, syncError, onRetry
                 sizes="320px"
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f14] via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
             </div>
 
             {/* Currently playing badge */}
-            <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: "rgba(59,165,93,0.2)", border: "1px solid rgba(59,165,93,0.3)" }}>
-              <span className="h-1.5 w-1.5 rounded-full bg-[#3BA55D]" style={{ animation: "pulse 2s infinite" }} />
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-[#3BA55D]">Playing</span>
+            <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: "var(--success) / 0.2", border: "1px solid var(--success) / 0.3" }}>
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)]" style={{ animation: "pulse 2s infinite" }} />
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--success)]">Playing</span>
             </div>
 
             {/* Game info */}
@@ -219,7 +219,7 @@ export function CurrentGame({ gameProgress, onSessionStarted, syncError, onRetry
                 </div>
                 <div className="relative h-1.5 w-full rounded-full bg-secondary overflow-hidden">
                   <motion.div
-                    className="absolute inset-y-0 left-0 rounded-full bg-[#3BA55D]"
+                    className="absolute inset-y-0 left-0 rounded-full bg-[var(--success)]"
                     initial={{ width: 0 }}
                     animate={{
                       width: `${Math.min(Math.max((gameProgress.total_sessions / 10) * 100, 4), 100)}%`,
@@ -297,7 +297,7 @@ export function CurrentGame({ gameProgress, onSessionStarted, syncError, onRetry
                   onClick={handleMarkBeaten}
                   disabled={isPending || !!syncError}
                   className="h-14 w-full rounded-xl text-base font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
-                  style={{ backgroundColor: "#3BA55D" }}
+                  style={{ backgroundColor: "var(--success)" }}
                 >
                   I Beat This Game!
                 </button>

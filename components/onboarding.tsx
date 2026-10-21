@@ -123,7 +123,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             key={i}
             className="h-1 flex-1 rounded-full transition-colors duration-300"
             style={{
-              backgroundColor: i <= step ? "#5865F2" : "rgba(255,255,255,0.08)",
+              backgroundColor: i <= step ? "var(--primary)" : "rgba(255,255,255,0.08)",
             }}
           />
         ))}
