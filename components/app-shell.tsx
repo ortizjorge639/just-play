@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { getActiveSession } from "@/app/actions"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
 import { useSessionNotes } from "@/hooks/use-session-notes"
@@ -94,8 +94,29 @@ export function AppShell({
     window.location.reload()
   }, [setActiveSession])
 
+  // Finishing a game reloads the page, so the arrival is handed over through sessionStorage.
   const handleArrived = useCallback((game: Game) => {
-    setArrivedGame(game)
+    try {
+      sessionStorage.setItem("arrivedGame", JSON.stringify({ game, timestamp: Date.now() }))
+    } catch {
+      // storage unavailable: skip the moment rather than block finishing
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("arrivedGame")
+      if (!raw) return
+      sessionStorage.removeItem("arrivedGame")
+      const { game, timestamp } = JSON.parse(raw) as { game: Game; timestamp: number }
+      if (Date.now() - timestamp < 30000) {
+        // sessionStorage only exists on the client, so it can only be read after mount
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setArrivedGame(game)
+      }
+    } catch {
+      // ignore
+    }
   }, [])
 
   const handleTabChange = useCallback((tab: Tab) => {

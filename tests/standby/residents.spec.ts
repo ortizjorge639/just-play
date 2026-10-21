@@ -17,79 +17,39 @@ test("Resident note does not display when game has no residents", async ({ page 
   await expect(page.locator("text=This game has moved into your home")).toHaveCount(0)
 })
 
-test("Arrival card shows once when game is first marked beaten", async ({ page }) => {
-  // Start with no residents
-  await page.goto("/")
+async function beatGame(page: import("@playwright/test").Page) {
+  await page.getByRole("button", { name: "End Session", exact: true }).click()
+  await page.getByRole("button", { name: "I Beat This Game!", exact: true }).click()
+}
 
-  // Simulate marking game as beaten
-  await page.evaluate(() => {
-    window.standbyFixture.gameEndWrites.push({
-      kind: "beaten",
-      gameId: "test-game",
-    })
-    // Simulate DB trigger: add game to residents
-    window.standbyFixture.residents.push({
-      user_id: "test-user",
-      game_id: "test-game",
-      arrived_at: new Date().toISOString(),
-      arrival_source: "beaten",
-      game: window.standbyFixture.session?.games ?? undefined,
-    })
-  })
+test("Arrival card shows the first time a game is beaten", async ({ page }) => {
+  await page.goto("/?app-shell")
+  await beatGame(page)
 
-  // Click Mark Beaten button (or equivalent finish action)
-  const beatButton = page.locator("button:has-text('Mark beaten')")
-  if (await beatButton.isVisible()) {
-    await beatButton.click()
-  }
-
-  // Arrival card should appear with correct copy
-  await expect(page.locator("text=has moved in")).toBeVisible()
-  await expect(page.locator("text=You can find it under Residents in Progress")).toBeVisible()
-  await expect(page.locator("button:has-text('Got it')")).toBeVisible()
-
-  // Close card
-  await page.locator("button:has-text('Got it')").click()
-  await expect(page.locator("text=has moved in")).not.toBeVisible()
+  await expect(page.getByRole("heading", { name: /has moved in/ })).toBeVisible()
+  await expect(page.getByText("You can find it under Residents in Progress.")).toBeVisible()
+  await page.getByRole("button", { name: "Got it" }).click()
+  await expect(page.getByRole("heading", { name: /has moved in/ })).toHaveCount(0)
 })
 
-test("Arrival card respects prefers-reduced-motion", async ({ page }) => {
-  // Set reduced motion preference via CSS media query override
-  await page.addInitScript(() => {
-    // Mock window.matchMedia for reduced motion
-    Object.defineProperty(window, "matchMedia", {
-      writable: true,
-      value: (query: string) => ({
-        matches: query === "(prefers-reduce-motion: reduce)",
-        media: query,
-        onchange: null,
-        addListener: () => {},
-        removeListener: () => {},
-        addEventListener: () => {},
-        removeEventListener: () => {},
-        dispatchEvent: () => true,
-      }),
-    })
-  })
+test("Arrival card does not show when the game was already a resident", async ({ page }) => {
+  await page.goto("/?app-shell&residents")
+  await beatGame(page)
 
-  await page.goto("/")
+  // The finished session is stored just before the page reloads.
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem("standby-test-finished-notes"))).not.toBeNull()
+  await expect(page.getByRole("button", { name: "End Session", exact: true })).toBeVisible()
+  await expect(page.getByRole("heading", { name: /has moved in/ })).toHaveCount(0)
+  expect(await page.evaluate(() => sessionStorage.getItem("arrivedGame"))).toBeNull()
+})
 
-  // Trigger arrival card
-  await page.evaluate(() => {
-    window.standbyFixture.residents.push({
-      user_id: "test-user",
-      game_id: "test-game",
-      arrived_at: new Date().toISOString(),
-      arrival_source: "beaten",
-      game: window.standbyFixture.session?.games ?? undefined,
-    })
-  })
+test("Arrival card is usable with reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" })
+  await page.goto("/?app-shell")
+  await beatGame(page)
 
-  // Arrival card should render (animations will be simplified)
-  await expect(page.locator("text=has moved in")).toBeVisible()
-
-  // Card should be accessible (no animation delays should impede interaction)
-  await expect(page.locator("button:has-text('Got it')")).toBeEnabled()
+  await expect(page.getByRole("heading", { name: /has moved in/ })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Got it" })).toBeEnabled()
 })
 
 test("Missing residents table gracefully degrades", async ({ page }) => {
