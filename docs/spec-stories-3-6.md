@@ -2,9 +2,11 @@
 
 **Draft for owner review**
 
-Reference: [Treehouse World Study](treehouse-world-study.md), [PRODUCT.md](../PRODUCT.md)
+Reference: [Treehouse World Study](treehouse-world-study.md), [PRODUCT.md](../PRODUCT.md), [Canopy Art Spec](canopy-art/spec.md) (archived September 26, 2026)
 
 These four stories propose features for the Canopy settlement's personalization and interaction layer: game avatars that become residents, player-defined proof milestones for arrival, player identity in the settlement, and expressive interactions with residents. This document guides design and estimation for future implementation work.
+
+**Note on art direction:** Product semantics below are aligned with the archived Canopy art spec's accepted model (backlogged/invited avatars outside the settlement, exactly one permanent resident per game, merit enrichment without duplication, warm postcards for dropped attempts). Visual art direction and final avatar approval remain pending owner review.
 
 ---
 
@@ -14,26 +16,29 @@ These four stories propose features for the Canopy settlement's personalization 
 
 ### User journey
 
-1. Player starts a game; the game's avatar appears as an **Invited** traveler, shown in the journal and on the map outside the settlement proper.
-2. Player plays and meets the configured stamp (e.g., "2 hours played" or "reach Chapter 3").
-3. Player self-confirms the milestone in the app (since telemetry is not yet verified).
-4. The avatar becomes a permanent **Arrived** resident in the settlement. This status persists across:
+1. **Backlogged:** Player adds a game to their library but has not started it yet. The avatar is outside the settlement; it is not invited or visible in the world.
+2. **Invited:** Player starts a game. The avatar begins traveling toward the settlement and is shown in the journal and map as invited, but remains outside the settlement proper.
+3. **Stamp confirmation:** Player plays and meets the configured stamp (e.g., "2 hours played" or "reach Chapter 3"). Player self-confirms the milestone in the app (since telemetry is not yet verified).
+4. **Arrival:** Meeting the stamp grants exactly one permanent resident. The avatar arrives in the settlement and remains there permanently. This status persists across:
    - Replays of the same game (replaying does not revoke residency)
-   - Earned merit tier increases (later tiers enrich the same resident's contribution without duplicate avatars)
+   - Earned merit tier increases (later tiers enrich the same resident's contribution, never duplicate or diminish the resident)
    - Stopping or abandoning the game later (stopping after arrival is a choice, not a failure)
-5. In ambient view, residents are visible and interactive without earning gameplay progress or creating obligations.
+5. **Ambient presence:** In world view, residents are visible and their presence can be enjoyed without interaction, earning gameplay progress, or creating obligations.
 
 ### Scope inclusions
 
-- **Resident state machine:** Backlogged (no invitation) → Invited (traveling, pre-arrival) → Arrived (permanent, earned contribution).
-- **Arrival permanence:** Once a game's avatar arrives, it remains a resident. Subsequent play, stopping, replays, and tier changes do not remove the resident.
-- **Remnants for dropped invitations:** If an invited game's invitation ends before arrival (player stops before reaching the stamp), a small keepsake (e.g., postcard) persists in the world and journal, manually deletable, and replaced by the full resident if re-invited and arrival is earned later.
-- **Avatar identity:** Each game gets a unique avatar that represents that specific game. The avatar's visual presence, customization options, and role in the settlement are separate (Story 5 name card, Story 6 emotes).
-- **Resident visibility:** Residents are displayed in:
+- **Resident state machine:** Backlogged (no invitation, outside settlement) → Invited (traveling toward settlement, pre-arrival) → Arrived (exactly one permanent resident per game, no duplicates regardless of replays or merit tier changes).
+- **Outside-the-settlement rule:** Backlogged and invited avatars remain outside the settlement boundary. Only arrived residents live within the settlement proper.
+- **Arrival permanence:** Once a game's avatar arrives, it remains a resident. Subsequent play, replays, stopping, abandoning, or earning additional merit tiers do not remove the resident or diminish their dignity.
+- **Merit enrichment:** Later merit tiers enrich the same resident's contribution (e.g., a larger home, more furnishings, deeper role in the settlement story) without duplicating the avatar or requiring a second "arrival."
+- **Remnants for dropped invitations:** If an invited game's session ends before arrival (player stops before reaching the stamp), a warm, non-decaying postcard persists in the journal and world as a keepsake. Re-inviting the game retains the postcard; arriving the game removes it and installs the permanent resident. Players can also explicitly delete postcards.
+- **Avatar identity:** Each game gets a unique avatar representing that specific game. The avatar's visual presence, customization options, and role in the settlement are art direction scope (pending approval).
+- **Resident visibility:** Arrived residents are displayed in:
   - The settlement's 3D world (Canopy nook)
-  - The journal (Invited vs. Arrived sections)
-  - The map (with location hints)
+  - The journal (Invited vs. Arrived sections, with postcards for dropped attempts)
+  - The map (with location hints for arrived residents)
   - Historical records and stats
+- **No costs or timers:** Construction has no resource costs, cooldowns, or timers. The player chooses compatible placement for earned contributions at their own pace.
 
 ### Scope exclusions
 
@@ -44,15 +49,18 @@ These four stories propose features for the Canopy settlement's personalization 
 
 ### Acceptance criteria
 
-- [ ] Database schema supports Invited and Arrived resident states, keyed by (user_id, game_id)
-- [ ] Creating an invitation (starting a game) inserts an Invited resident record
-- [ ] Confirming a stamp creates an Arrived resident record; retains all prior data
-- [ ] Replaying an arrived game does not change its resident status or create duplicates
-- [ ] Dropping an invitation before arrival creates a Remnant record; re-inviting replaces it with the resident upon stamp confirmation
-- [ ] Residents are displayed in the journal, map, and settlement visualization
-- [ ] Settlement layout accommodates 5+ residents without culling or degradation
-- [ ] RLS policies ensure users can only see their own residents
+- [ ] Database schema supports Backlogged, Invited, and Arrived resident states, keyed by (user_id, game_id)
+- [ ] Starting a game creates an Invited resident record; ending it before arrival creates a Postcard (remnant) record
+- [ ] Confirming a stamp creates exactly one Arrived resident record per game; no duplicates on replay
+- [ ] Replaying an arrived game does not change resident status, create duplicates, or remove the resident
+- [ ] Arriving a game removes any postcard remnant and installs the permanent resident
+- [ ] Players can manually delete postcards; deletion does not affect the game's history or future re-invitations
+- [ ] Backlogged and invited avatars are not visible in the settlement 3D world (they are outside the boundary)
+- [ ] Arrived residents are displayed in the settlement, journal (Arrived section), and map
+- [ ] Later merit tiers enrich the same resident's contribution without duplicating the avatar
+- [ ] RLS policies ensure users can only see and interact with their own residents, postcards, and invited games
 - [ ] Abandoned games retain their residents (if already arrived) without special penalty or decay
+- [ ] Ambient viewing of residents awards no progress, XP, or achievements
 
 ### Open questions
 
@@ -77,7 +85,7 @@ These four stories propose features for the Canopy settlement's personalization 
    - Progress toward that stamp (e.g., "1.5 / 2 hours")
    - An option to self-confirm when reached (since telemetry is not yet verified)
 4. Once the player self-confirms, the stamp is recorded, and the game's avatar becomes **Arrived** (Story 3).
-5. If the game has multiple **merit tiers** (e.g., "Visitor" at 2 hours, "Resident" at 10 hours, "Elder" at 50 hours), the stamp system records progress toward each tier. Reaching later tiers enriches the resident's contribution without revoking earlier arrivals.
+5. If the game has multiple **merit tiers** (e.g., "Visitor" at 2 hours, "Resident" at 10 hours, "Elder" at 50 hours), the stamp system records progress toward each tier. Reaching later tiers enriches the same resident's contribution (e.g., a home becomes more elaborate, story deepens) without duplicating the avatar or changing the resident's fundamental arrival status.
 6. Stamps are mutable: if the player changes a rule, new invitations use the new stamp, but already-arrived residents are unaffected (unless explicitly re-confirmed).
 
 ### Scope inclusions
@@ -269,13 +277,15 @@ Within a narrowed slice, consider the dependency order:
 
 A successful implementation of these four stories means:
 
-- [ ] Players can invite games, track progress toward proof milestones, and permanently arrive residents
-- [ ] The settlement displays 5+ residents without performance degradation
-- [ ] Players can interact with residents via emotes without earning gameplay rewards
-- [ ] Each player sees their own name card in the settlement context
-- [ ] No resident is deleted or loses status due to rule changes, rule edits, or time passage
-- [ ] A visiting player (in the future) can understand whose home they're exploring and see the residents that belong there
-- [ ] An abandoned game with an arrived resident is not visually penalized or marked as a failure
+- [ ] Backlogged and invited avatars remain outside the settlement (not visible in the 3D world)
+- [ ] Meeting a stamp grants exactly one permanent resident per game (no duplicates on replay or merit tier changes)
+- [ ] Arrived residents remain in the settlement permanently, with no decay or penalty for stopping/abandoning the game
+- [ ] Later merit tiers enrich the same resident's contribution without creating new avatars or diminishing earlier arrivals
+- [ ] Warm, non-decaying postcards appear when invitations end before arrival; re-inviting keeps the postcard; arriving removes it
+- [ ] Players can manually delete postcards without affecting the game's history
+- [ ] Emote interactions award no progress, XP, or achievements
+- [ ] Each player sees their own name card context in the settlement
+- [ ] Ambient viewing of residents awards no progress and creates no obligations
 
 ---
 
@@ -287,33 +297,40 @@ This section proposes a thin, end-to-end slice of Story 3 (Residents) that can b
 
 **What the slice delivers:**
 
-- Database table to store resident state (Backlogged, Invited, Arrived)
+- Database tables to store resident state (Backlogged, Invited, Arrived) and postcards (warm keepsakes from dropped invitations)
 - Server action to create an Invited resident when a player starts a game
 - Server action to manually arrive a resident (admin/testing backdoor, since stamps are not yet implemented)
-- Game session screen shows the current game's resident state (Invited, Arrived, or none)
+- Server action to create a postcard when an invited game's session ends before arrival
+- Server action to delete a postcard
+- Game session screen shows the current game's resident state (Backlogged, Invited, Arrived, or none)
 - "Mark arrived" button appears on the session screen (for testing; production will use Story 4 stamps)
+- Postcard records persist and are displayed in the journal as keepsakes (not rendered in the 3D world yet)
 - Resident state persists across session resumption and app reload
-- RLS policy prevents users from viewing other users' residents
+- RLS policy prevents users from viewing other users' residents or postcards
+- Backlogged and invited residents are explicitly not rendered in the settlement world (they are outside the boundary; settlement rendering is separate scope)
 
 **What is deliberately excluded:**
 
 - Stamps (Story 4): No automatic arrival based on proof milestones. Manual confirmation only.
-- Remnants: Dropped invitations do not create keepsakes yet. Ending an invited game simply cancels the invitation.
-- Journal/map display: Residents exist in the database but are not rendered in the settlement world or journal yet (that is a separate 3D rendering effort).
+- Postcard visual rendering: Postcards exist in the database and journal, but their appearance in the 3D world (warm non-decaying keepsakes) is a separate art/rendering effort.
+- Settlement 3D world rendering: Residents exist in the database, but their visual presence in the Canopy settlement is separate scope (depends on art approval and Blender integration).
+- Journal/map display: Residents and postcards are not yet rendered in the journal or map UI.
 - Name card (Story 5): No player identity display.
 - Emotes (Story 6): No interaction layer.
-- Resident deletion: No UI to manually delete residents or remnants.
+- Resident deletion: No UI to manually delete residents.
 - Merit tiers: Simple binary Invited/Arrived; no progress toward deeper tiers.
 
 ### Migration
 
-The slice requires one new table. Owner applies this migration manually; it is not pre-applied.
+The slice requires two new tables. Owner applies this migration manually; it is not pre-applied.
 
 **Note:** This migration is numbered 023. Assign the actual next number after whatever migrations are applied from PR 7 or other branches.
 
 ```sql
--- Migration: 023_add_residents_table.sql
+-- Migration: 023_add_residents_and_postcards.sql
 -- (Numbering: assign the next migration number after PR 7 and other pending branches)
+
+-- Residents table: tracks the lifecycle of game avatars (Backlogged, Invited, Arrived)
 CREATE TABLE residents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
@@ -345,6 +362,32 @@ CREATE POLICY residents_users_can_insert_own ON residents
 -- Alternatively, remove this policy and route all updates through server actions only.
 CREATE POLICY residents_users_can_update_own_testing_only ON residents
   FOR UPDATE USING (auth.uid() = user_id);
+
+-- Postcards table: warm, non-decaying keepsakes left by ended invitations before arrival
+CREATE TABLE postcards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  game_id TEXT NOT NULL REFERENCES public.games(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, game_id)
+);
+
+CREATE INDEX idx_postcards_user_id ON postcards(user_id);
+CREATE INDEX idx_postcards_game_id ON postcards(game_id);
+
+ALTER TABLE postcards ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to read their own postcards
+CREATE POLICY postcards_users_can_see_own ON postcards
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Allow users to insert their own postcards (via server action)
+CREATE POLICY postcards_users_can_insert_own ON postcards
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Allow users to delete their own postcards
+CREATE POLICY postcards_users_can_delete_own ON postcards
+  FOR DELETE USING (auth.uid() = user_id);
 ```
 
 ### Server actions (new and modified)
@@ -377,7 +420,7 @@ export async function createInvitedResident(gameId: string) {
 
 **New action: `arriveResident(gameId)` (testing/admin backdoor)**
 
-Manual arrival endpoint for testing without stamps. Production should not expose this; stamps (Story 4) replace it.
+Manual arrival endpoint for testing without stamps. Production should not expose this; stamps (Story 4) replace it. When a resident arrives, delete any existing postcard for the same game.
 
 ```typescript
 export async function arriveResident(gameId: string) {
@@ -386,13 +429,69 @@ export async function arriveResident(gameId: string) {
   
   if (!user) throw new Error('Not authenticated');
   
-  const { error } = await supabase
+  const { error: updateError } = await supabase
     .from('residents')
     .update({
       status: 'arrived',
       arrived_at: now(),
       updated_at: now(),
     })
+    .eq('user_id', user.id)
+    .eq('game_id', gameId);
+  
+  if (updateError) throw updateError;
+  
+  // Remove postcard if it exists
+  await supabase
+    .from('postcards')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('game_id', gameId);
+  
+  revalidatePath('/');
+}
+```
+
+**New action: `createPostcard(gameId)` (when invitation ends before arrival)**
+
+Called when a player ends a game session before its resident arrives (before the proof milestone is met). Creates a warm keepsake postcard.
+
+```typescript
+export async function createPostcard(gameId: string) {
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('Not authenticated');
+  
+  const { error } = await supabase
+    .from('postcards')
+    .insert({
+      user_id: user.id,
+      game_id: gameId,
+      created_at: now(),
+    })
+    .onConflict('user_id,game_id')
+    .update({ created_at: now() }); // Upsert: refresh if it already exists
+  
+  if (error) throw error;
+  revalidatePath('/');
+}
+```
+
+**New action: `deletePostcard(gameId)` (player removes keepsake)**
+
+Allows players to explicitly delete postcards they no longer want to keep.
+
+```typescript
+export async function deletePostcard(gameId: string) {
+  const supabase = createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error('Not authenticated');
+  
+  const { error } = await supabase
+    .from('postcards')
+    .delete()
     .eq('user_id', user.id)
     .eq('game_id', gameId);
   
@@ -405,25 +504,38 @@ export async function arriveResident(gameId: string) {
 
 Integrate `createInvitedResident()` into the existing session creation flow so starting a game automatically invites its resident.
 
+**Modified action: Session end**
+
+When a player ends a session for an invited game (before arriving), call `createPostcard()` to leave a warm keepsake. Only do this if the resident status is still 'invited' (not 'arrived').
+
 ### UI changes
 
 **Game session screen additions:**
 
-- Add a small resident status badge showing "Invited" or "Arrived" next to the game title.
+- Add a small resident status badge showing "Backlogged," "Invited," or "Arrived" next to the game title.
 - If Invited, show a "Mark as Arrived (test)" button that calls `arriveResident()`. Remove or hide this button once Story 4 is implemented.
 - If Arrived, show a checkmark or "Resident arrived" label and optionally a date (e.g., "Arrived Oct 20, 2026").
 
+**Journal or postcard view (future):**
+
+- Display postcards as keepsakes; each shows the game name and creation date.
+- Provide a delete button for players to remove postcards explicitly.
+- Note: Visual appearance of postcards in the 3D world is separate (art approval pending).
+
 ### Acceptance checks
 
-- [ ] New residents table exists and supports Invited/Arrived states
+- [ ] New residents and postcards tables exist with proper constraints
 - [ ] Starting a game creates an Invited resident record
-- [ ] Calling `arriveResident()` updates resident status and records `arrived_at` timestamp
-- [ ] Session screen correctly displays resident state after creation and arrival
-- [ ] Reloading the app preserves resident state (resident data loads from the database)
-- [ ] RLS prevents users from seeing other users' residents
+- [ ] Ending an invited game without arrival creates a postcard record
+- [ ] Calling `arriveResident()` updates resident status and records `arrived_at` timestamp, and deletes any postcard
+- [ ] Deleting a postcard removes it and does not affect the game's history
+- [ ] Session screen correctly displays resident state (Invited/Arrived) after creation and arrival
+- [ ] Reloading the app preserves resident state and postcard records
+- [ ] RLS prevents users from seeing other users' residents or postcards
 - [ ] Manual arrival via the test button works end-to-end without errors
-- [ ] Arriving the same resident twice does not create duplicates or errors
+- [ ] Arriving the same resident twice is idempotent (no duplicate records, postcards deleted)
 - [ ] App does not break when starting a game whose resident data is not yet loaded
+- [ ] Re-inviting a game with an existing postcard keeps the postcard; arriving it deletes the postcard
 
 ### Risks
 
