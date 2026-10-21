@@ -1,17 +1,13 @@
-// Test migration 023: residents and postcards feature
-// Proves eight rules: (1) INSERT resident on beaten, (2) ON CONFLICT DO NOTHING on replay,
-// (3) completed_at survives all paths, (4) user cannot write residents/postcards directly,
-// (5) no XP or counter changes, (6) migration idempotent when run twice,
-// (7) postcard created on abandoned with no resident, (8) trigger/function work correctly
-// Uses PGlite in-memory database (no Docker required).
+// Tests scripts/023_residents_and_postcards.sql by loading the real file into PGlite.
 // From the repository root:
 // npx --yes --registry https://registry.npmjs.org --package=@electric-sql/pglite@0.5.10 -- node --test scripts/migration-023-residents.test.mjs
 
 import assert from "node:assert/strict"
-import { existsSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { test } from "node:test"
+import { fileURLToPath } from "node:url"
 
 const loadPackage = createRequire(import.meta.url)
 function resolvePGlite() {
@@ -22,842 +18,225 @@ function resolvePGlite() {
       const candidate = path.resolve(bin, "..", "@electric-sql", "pglite")
       if (existsSync(path.join(candidate, "package.json"))) return candidate
     }
-    throw new Error("Run the npx --yes --registry https://registry.npmjs.org --package=@electric-sql/pglite@0.5.10 -- command documented at the top of this test.")
+    throw new Error("Run the npx command documented at the top of this test.")
+  }
+}
+const { PGlite } = loadPackage(resolvePGlite())
+
+const here = path.dirname(fileURLToPath(import.meta.url))
+const migrationSql = readFileSync(path.join(here, "023_residents_and_postcards.sql"), "utf8")
+
+const A = "11111111-1111-1111-1111-111111111111"
+const B = "22222222-2222-2222-2222-222222222222"
+
+async function rows(db, sql, args = []) {
+  return (await db.query(sql, args)).rows
+}
+
+// Runs fn as a signed-in client user, then restores the owner role.
+async function asUser(db, uid, fn) {
+  await db.exec(`select set_config('test.uid', '${uid}', false); set role authenticated;`)
+  try {
+    return await fn()
+  } finally {
+    await db.exec("reset role")
   }
 }
 
-const { PGlite } = loadPackage(resolvePGlite())
-
-async function one(db, sql, args = []) {
-  const result = await db.query(sql, args)
-  return result.rows[0]
+async function denied(db, uid, sql) {
+  try {
+    await asUser(db, uid, () => db.query(sql))
+  } catch (err) {
+    return err
+  }
+  return null
 }
 
-async function all(db, sql, args = []) {
-  const result = await db.query(sql, args)
-  return result.rows
-}
-
-async function setupDb() {
+// Prior migrations are not replayed here, so game_progress mirrors the columns 008/018 define.
+async function setup({ seed } = {}) {
   const db = new PGlite()
-  
-  // Create auth schema and minimal functions
   await db.exec(`
-    create schema auth;
-    create table auth.users (id uuid primary key, email text);
-    create function auth.uid() returns uuid language sql stable as $$ select '11111111-1111-1111-1111-111111111111'::uuid $$;
-    
-    -- Create roles for testing
-    create role authenticated nologin;
     create role anon nologin;
-  `)
-  
-  // Create public schema with minimal tables for testing
-  await db.exec(`
-    create table public.users (
-      id uuid primary key,
-      last_session_date date,
-      total_xp integer default 0,
-      level integer default 1
-    );
-    
-    create table public.games (
-      id text primary key,
-      name text not null,
-      source text default 'test',
-      created_at timestamptz default now()
-    );
-    
+    create role authenticated nologin;
+    create schema auth;
+    create function auth.uid() returns uuid language sql stable
+      as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
+    create table public.users (id uuid primary key);
+    create table public.games (id text primary key, name text);
     create table public.game_progress (
       id uuid primary key default gen_random_uuid(),
-      user_id uuid not null,
-      game_id text not null,
-      status text not null,
-      total_sessions integer default 0,
-      total_time_minutes integer default 0,
+      user_id uuid not null references public.users(id) on delete cascade,
+      game_id text not null references public.games(id) on delete cascade,
+      status text not null default 'playing' check (status in ('playing','beaten','abandoned')),
       completed_at timestamptz,
-      created_at timestamptz default now()
+      unique (user_id, game_id)
     );
-    
-    create unique index game_progress_user_game_idx on public.game_progress (user_id, game_id);
+    grant usage on schema public, auth to anon, authenticated;
+    grant execute on function auth.uid() to anon, authenticated;
+    alter default privileges in schema public grant all on tables to anon, authenticated;
+    grant select, insert, update, delete on public.game_progress to authenticated;
+    insert into public.users values ('${A}'), ('${B}');
+    insert into public.games values ('g1','One'), ('g2','Two'), ('g3','Three');
   `)
-  
-  // Apply migration 023
-  await db.exec(`
-    create table if not exists public.residents (
-      user_id uuid not null,
-      game_id text not null,
-      arrived_at timestamptz not null default clock_timestamp(),
-      arrival_source text not null default 'beaten',
-      created_at timestamptz not null default clock_timestamp(),
-      primary key (user_id, game_id),
-      constraint fk_residents_user foreign key (user_id) references public.users(id) on delete cascade,
-      constraint fk_residents_game foreign key (game_id) references public.games(id) on delete cascade,
-      constraint residents_arrival_source_check check (arrival_source in ('beaten', 'imported'))
-    );
-    
-    create table if not exists public.postcards (
-      user_id uuid not null,
-      game_id text not null,
-      created_at timestamptz not null default clock_timestamp(),
-      primary key (user_id, game_id),
-      constraint fk_postcards_user foreign key (user_id) references public.users(id) on delete cascade,
-      constraint fk_postcards_game foreign key (game_id) references public.games(id) on delete cascade
-    );
-    
-    alter table public.residents enable row level security;
-    alter table public.postcards enable row level security;
-    
-    drop policy if exists residents_select_own on public.residents;
-    create policy residents_select_own on public.residents
-      for select using (user_id = auth.uid());
-    
-    drop policy if exists postcards_select_own on public.postcards;
-    create policy postcards_select_own on public.postcards
-      for select using (user_id = auth.uid());
-    
-    create or replace function public.grant_resident_arrival(
-      p_user_id uuid,
-      p_game_id text,
-      p_arrival_source text default 'beaten'
-    )
-    returns void
-    language plpgsql
-    set search_path = public, pg_temp
-    security definer
-    as $$
-    begin
-      insert into public.residents (user_id, game_id, arrival_source, arrived_at)
-        values (p_user_id, p_game_id, p_arrival_source, clock_timestamp())
-        on conflict (user_id, game_id) do nothing;
-      
-      delete from public.postcards
-        where user_id = p_user_id and game_id = p_game_id;
-    end;
-    $$;
-    
-    revoke all on function public.grant_resident_arrival(uuid, text, text) from public, anon, authenticated;
-    
-    drop trigger if exists game_progress_residents_on_beaten on public.game_progress;
-    drop function if exists public.trigger_game_progress_residents();
-    
-    create function public.trigger_game_progress_residents()
-    returns trigger
-    language plpgsql
-    set search_path = public, pg_temp
-    security definer
-    as $$
-    begin
-      if tg_op = 'insert' or tg_op = 'update' then
-        if new.status = 'beaten' and (old.status is null or old.status is distinct from 'beaten') then
-          perform public.grant_resident_arrival(new.user_id, new.game_id, 'beaten');
-        end if;
-      end if;
-      return new;
-    end;
-    $$;
-    
-    create trigger game_progress_residents_on_beaten
-      after insert or update on public.game_progress
-      for each row execute function public.trigger_game_progress_residents();
-    
-    drop trigger if exists game_progress_postcards_on_abandoned on public.game_progress;
-    drop function if exists public.trigger_game_progress_postcards();
-    
-    create function public.trigger_game_progress_postcards()
-    returns trigger
-    language plpgsql
-    set search_path = public, pg_temp
-    security definer
-    as $$
-    begin
-      if tg_op = 'insert' or tg_op = 'update' then
-        if new.status = 'abandoned' and (old.status is null or old.status is distinct from 'abandoned') then
-          if not exists (
-            select 1 from public.residents
-            where user_id = new.user_id and game_id = new.game_id
-          ) then
-            insert into public.postcards (user_id, game_id, created_at)
-              values (new.user_id, new.game_id, clock_timestamp())
-              on conflict (user_id, game_id) do nothing;
-          end if;
-        end if;
-      end if;
-      return new;
-    end;
-    $$;
-    
-    create trigger game_progress_postcards_on_abandoned
-      after insert or update on public.game_progress
-      for each row execute function public.trigger_game_progress_postcards();
-    
-    drop function if exists public.delete_postcard(text);
-    
-    create function public.delete_postcard(p_game_id text)
-    returns void
-    language plpgsql
-    set search_path = public, pg_temp
-    security definer
-    as $$
-    declare
-      caller uuid := auth.uid();
-    begin
-      if caller is null then
-        raise exception 'Not authenticated';
-      end if;
-      delete from public.postcards
-        where user_id = caller and game_id = p_game_id;
-    end;
-    $$;
-    
-    revoke all on function public.delete_postcard(text) from public, anon;
-    grant execute on function public.delete_postcard(text) to authenticated;
-  `)
-  
-  // Insert test user
-  await db.query(
-    "insert into auth.users values ($1, $2)",
-    ["11111111-1111-1111-1111-111111111111", "test@example.com"]
-  )
-  
+  if (seed) await db.exec(seed)
+  await db.exec(migrationSql)
   return db
 }
 
-await test("Migration 023: Residents and postcards", async (t) => {
-  const db = await setupDb()
-  const userId = "11111111-1111-1111-1111-111111111111"
-  const gameId = "game-test-023"
-  const gameId2 = "game-test-023-2"
-  const gameId3 = "game-test-023-3"
-  const gameId4 = "game-test-023-4"
-  const gameId5 = "game-test-023-5"
-  
-  // Insert test user profile
-  await db.query(
-    "insert into public.users (id, last_session_date) values ($1, $2)",
-    [userId, new Date().toISOString().split("T")[0]]
+const set = (db, uid, game, status) =>
+  db.query(
+    `insert into public.game_progress (user_id, game_id, status, completed_at)
+     values ($1, $2, $3, case when $3 = 'beaten' then now() end)
+     on conflict (user_id, game_id) do update set status = excluded.status,
+       completed_at = case when excluded.status = 'beaten' then now() else public.game_progress.completed_at end`,
+    [uid, game, status],
   )
-  
-  // Add test games
-  for (const id of [gameId, gameId2, gameId3, gameId4, gameId5]) {
-    await db.query(
-      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
-      [id, `Test Game ${id}`, "test"]
-    )
+
+const residents = (db, uid) =>
+  rows(db, "select game_id from public.residents where user_id = $1 order by game_id", [uid])
+const postcards = (db, uid) =>
+  rows(db, "select game_id from public.postcards where user_id = $1 order by game_id", [uid])
+
+test("beating a game makes a resident, once", async () => {
+  const db = await setup()
+  await set(db, A, "g1", "playing")
+  assert.equal((await residents(db, A)).length, 0)
+  await set(db, A, "g1", "beaten")
+  assert.deepEqual(await residents(db, A), [{ game_id: "g1" }])
+  const first = (await rows(db, "select arrived_at from public.residents"))[0].arrived_at
+  await set(db, A, "g1", "playing")
+  await set(db, A, "g1", "beaten")
+  const again = await rows(db, "select arrived_at from public.residents")
+  assert.equal(again.length, 1)
+  assert.equal(+again[0].arrived_at, +first, "replay keeps the original arrival")
+})
+
+test("a resident stays after replay or setting aside", async () => {
+  const db = await setup()
+  await set(db, A, "g1", "beaten")
+  await set(db, A, "g1", "playing")
+  await set(db, A, "g1", "abandoned")
+  assert.deepEqual(await residents(db, A), [{ game_id: "g1" }])
+  assert.deepEqual(await postcards(db, A), [], "no postcard when a resident exists")
+})
+
+test("setting a game aside makes a postcard; re-inviting keeps it; arrival removes it", async () => {
+  const db = await setup()
+  await set(db, A, "g2", "playing")
+  await set(db, A, "g2", "abandoned")
+  assert.deepEqual(await postcards(db, A), [{ game_id: "g2" }])
+  await set(db, A, "g2", "playing")
+  assert.deepEqual(await postcards(db, A), [{ game_id: "g2" }])
+  await set(db, A, "g2", "beaten")
+  assert.deepEqual(await postcards(db, A), [])
+  assert.deepEqual(await residents(db, A), [{ game_id: "g2" }])
+})
+
+test("the completed_at stamp survives and other users are untouched", async () => {
+  const db = await setup()
+  await set(db, A, "g1", "beaten")
+  const stamp = (await rows(db, "select completed_at from public.game_progress"))[0].completed_at
+  await set(db, A, "g1", "abandoned")
+  const after = (await rows(db, "select completed_at from public.game_progress"))[0].completed_at
+  assert.equal(+after, +stamp)
+  assert.deepEqual(await residents(db, B), [])
+})
+
+test("clients cannot write residents or postcards directly", async () => {
+  const db = await setup()
+  await set(db, A, "g1", "beaten")
+  await set(db, A, "g2", "abandoned")
+  for (const sql of [
+    `insert into public.residents (user_id, game_id) values ('${A}', 'g3')`,
+    `insert into public.postcards (user_id, game_id) values ('${A}', 'g3')`,
+  ]) {
+    assert.ok(await denied(db, A, sql), `expected denial: ${sql}`)
   }
-  
-  await t.test("Rule 1: INSERT resident on beaten", async () => {
-    // Create game_progress with status 'beaten'
-    await db.query(
-      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
-       values ($1, $2, $3, now(), now())`,
-      [userId, gameId, "beaten"]
-    )
-    
-    // Verify game_progress was created
-    const progress = await one(
-      db,
-      `select status from public.game_progress where user_id = $1 and game_id = $2`,
-      [userId, gameId]
-    )
-    assert.ok(progress, "game_progress should be inserted")
-    assert.equal(progress.status, "beaten", "game_progress status should be 'beaten'")
-    
-    // Try calling the function directly to verify it works
-    await db.query(
-      `select public.grant_resident_arrival($1, $2, $3)`,
-      [userId, gameId, "beaten"]
-    )
-    
-    // Verify resident was created (either by trigger or explicit call)
-    const resident = await one(
-      db,
-      `select user_id, game_id, arrival_source from public.residents
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId]
-    )
-    
-    assert.ok(resident, "Resident should be created when game_progress.status = 'beaten'")
-    assert.equal(resident.arrival_source, "beaten", "arrival_source should be 'beaten'")
-  })
-  
-  await t.test("Rule 2: ON CONFLICT DO NOTHING on replay (idempotent)", async () => {
-    // Call grant_resident_arrival again (simulating replay)
-    await db.query(
-      `select public.grant_resident_arrival($1, $2, $3)`,
-      [userId, gameId, "beaten"]
-    )
-    
-    // Verify only one resident exists (not duplicated)
-    const residents = await all(
-      db,
-      `select user_id, game_id from public.residents
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId]
-    )
-    
-    assert.equal(residents.length, 1, "Replay should not create duplicate resident")
-  })
-  
-  await t.test("Rule 3: completed_at survives all paths", async () => {
-    // Get the game_progress we created
-    const progress = await one(
-      db,
-      `select id, completed_at from public.game_progress
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId]
-    )
-    
-    assert.ok(progress.completed_at, "completed_at should be set when game_progress.status = 'beaten'")
-    
-    // Verify resident arrived_at is preserved (not reset on replay)
-    const resident = await one(
-      db,
-      `select arrived_at from public.residents
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId]
-    )
-    
-    assert.ok(resident.arrived_at, "resident.arrived_at should be set and preserved")
-  })
-  
-  await t.test("Rule 4: user cannot write residents/postcards directly (RLS blocks INSERT/UPDATE/DELETE)", async () => {
-    // Create a second user with a different ID
-    const user2Id = "22222222-2222-2222-2222-222222222222"
-    await db.query(
-      "insert into public.users (id, last_session_date) values ($1, $2)",
-      [user2Id, new Date().toISOString().split("T")[0]]
-    )
-    
-    // Create a function to override auth.uid for testing
-    await db.exec(`
-      create or replace function auth.uid_test_user2() returns uuid language sql stable as $$ select '22222222-2222-2222-2222-222222222222'::uuid $$;
-    `)
-    
-    // Call function to create resident for user1
-    await db.query(
-      `select public.grant_resident_arrival($1, $2, $3)`,
-      [userId, gameId, "beaten"]
-    )
-    
-    // Verify user1 can see their own resident
-    const residentsAsUser1 = await all(
-      db,
-      `select user_id, game_id from public.residents where user_id = $1`,
-      [userId]
-    )
-    assert.ok(residentsAsUser1.length > 0, "User1 should see their own residents")
-    
-    // Test that RLS SELECT-own restricts visibility by querying all residents
-    // Even though auth.uid() returns user1, the policy should prevent seeing user2's data
-    const allResidents = await all(
-      db,
-      `select user_id, game_id from public.residents`
-    )
-    
-    // Only user1's residents should be visible due to RLS SELECT-own policy
-    const allOwnedByUser1 = allResidents.every(r => r.user_id === userId)
-    assert.ok(allOwnedByUser1, "RLS should restrict SELECT to own rows only")
-    
-    // Test 2: Verify direct INSERT would be restricted in production
-    // (PGlite's RLS implementation may differ, but the function is not granted to authenticated users)
-    // This proves grant_resident_arrival is the internal-only path
-  })
-  
-  await t.test("Rule 5: no XP or counter changes (residents/postcards are separate)", async () => {
-    // Verify total_xp and level on users remain unchanged
-    const user = await one(
-      db,
-      `select total_xp, level from public.users where id = $1`,
-      [userId]
-    )
-    
-    assert.equal(user.total_xp, 0, "Creating residents should not change total_xp")
-    assert.equal(user.level, 1, "Creating residents should not change level")
-    
-    // Verify game_progress counters are not modified by residents trigger
-    const progress = await one(
-      db,
-      `select total_sessions, total_time_minutes from public.game_progress
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId]
-    )
-    
-    assert.equal(progress.total_sessions, 0, "Residents should not change total_sessions")
-    assert.equal(progress.total_time_minutes, 0, "Residents should not change total_time_minutes")
-  })
-  
-  await t.test("Rule 6: migration idempotent when run twice", async () => {
-    // Count existing residents before migration replay
-    const residentsBefore = await all(
-      db,
-      `select user_id, game_id from public.residents`
-    )
-    const initialCount = residentsBefore.length
-    
-    // Re-run the full migration 023 with IF NOT EXISTS (should not error and be idempotent)
-    // This simulates running the migration file again on an existing database
-    await db.exec(`
-      -- Re-run migration 023 (idempotent version)
-      drop trigger if exists game_progress_residents_on_beaten on public.game_progress;
-      drop trigger if exists game_progress_postcards_on_abandoned on public.game_progress;
-      drop function if exists public.trigger_game_progress_residents();
-      drop function if exists public.trigger_game_progress_postcards();
-      drop function if exists public.delete_postcard(text);
-      drop function if exists public.grant_resident_arrival(uuid, text, text);
-      
-      -- Recreate the tables IF NOT EXISTS (tables remain if they exist)
-      create table if not exists public.residents (
-        user_id uuid not null,
-        game_id text not null,
-        arrived_at timestamptz not null default clock_timestamp(),
-        arrival_source text not null default 'beaten',
-        created_at timestamptz not null default clock_timestamp(),
-        primary key (user_id, game_id),
-        constraint fk_residents_user foreign key (user_id) references public.users(id) on delete cascade,
-        constraint fk_residents_game foreign key (game_id) references public.games(id) on delete cascade,
-        constraint residents_arrival_source_check check (arrival_source in ('beaten', 'imported'))
-      );
-      
-      create table if not exists public.postcards (
-        user_id uuid not null,
-        game_id text not null,
-        created_at timestamptz not null default clock_timestamp(),
-        primary key (user_id, game_id),
-        constraint fk_postcards_user foreign key (user_id) references public.users(id) on delete cascade,
-        constraint fk_postcards_game foreign key (game_id) references public.games(id) on delete cascade
-      );
-      
-      alter table public.residents enable row level security;
-      alter table public.postcards enable row level security;
-      
-      drop policy if exists residents_select_own on public.residents;
-      create policy residents_select_own on public.residents
-        for select using (user_id = auth.uid());
-      
-      drop policy if exists postcards_select_own on public.postcards;
-      create policy postcards_select_own on public.postcards
-        for select using (user_id = auth.uid());
-      
-      create or replace function public.grant_resident_arrival(
-        p_user_id uuid,
-        p_game_id text,
-        p_arrival_source text default 'beaten'
-      )
-      returns void
-      language plpgsql
-      set search_path = public, pg_temp
-      security definer
-      as $$
-      begin
-        insert into public.residents (user_id, game_id, arrival_source, arrived_at)
-          values (p_user_id, p_game_id, p_arrival_source, clock_timestamp())
-          on conflict (user_id, game_id) do nothing;
-        
-        delete from public.postcards
-          where user_id = p_user_id and game_id = p_game_id;
-      end;
-      $$;
-      
-      revoke all on function public.grant_resident_arrival(uuid, text, text) from public, anon, authenticated;
-      
-      create function public.trigger_game_progress_residents()
-      returns trigger
-      language plpgsql
-      set search_path = public, pg_temp
-      security definer
-      as $$
-      begin
-        if tg_op = 'insert' or tg_op = 'update' then
-          if new.status = 'beaten' and (old.status is null or old.status is distinct from 'beaten') then
-            perform public.grant_resident_arrival(new.user_id, new.game_id, 'beaten');
-          end if;
-        end if;
-        return new;
-      end;
-      $$;
-      
-      create trigger game_progress_residents_on_beaten
-        after insert or update on public.game_progress
-        for each row execute function public.trigger_game_progress_residents();
-      
-      create function public.trigger_game_progress_postcards()
-      returns trigger
-      language plpgsql
-      set search_path = public, pg_temp
-      security definer
-      as $$
-      begin
-        if tg_op = 'insert' or tg_op = 'update' then
-          if new.status = 'abandoned' and (old.status is null or old.status is distinct from 'abandoned') then
-            if not exists (
-              select 1 from public.residents
-              where user_id = new.user_id and game_id = new.game_id
-            ) then
-              insert into public.postcards (user_id, game_id, created_at)
-                values (new.user_id, new.game_id, clock_timestamp())
-                on conflict (user_id, game_id) do nothing;
-            end if;
-          end if;
-        end if;
-        return new;
-      end;
-      $$;
-      
-      create trigger game_progress_postcards_on_abandoned
-        after insert or update on public.game_progress
-        for each row execute function public.trigger_game_progress_postcards();
-      
-      create function public.delete_postcard(p_game_id text)
-      returns void
-      language plpgsql
-      set search_path = public, pg_temp
-      security definer
-      as $$
-      declare
-        caller uuid := auth.uid();
-      begin
-        if caller is null then
-          raise exception 'Not authenticated';
-        end if;
-        delete from public.postcards
-          where user_id = caller and game_id = p_game_id;
-      end;
-      $$;
-      
-      revoke all on function public.delete_postcard(text) from public, anon;
-      grant execute on function public.delete_postcard(text) to authenticated;
-    `)
-    
-    // Count residents after migration replay
-    const residentsAfter = await all(
-      db,
-      `select user_id, game_id from public.residents`
-    )
-    
-    // Should have same rows (tables preserved, functions/triggers recreated)
-    assert.equal(residentsAfter.length, initialCount, "Migration replay should be idempotent (same row count)")
-  })
-  
-  await t.test("Rule 7: postcard created on abandoned with no resident", async () => {
-    // Create game_progress with status 'abandoned' and no resident
-    await db.query(
-      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
-       values ($1, $2, $3, null, now())`,
-      [userId, gameId5, "abandoned"]
-    )
-    
-    // Manually insert postcard (simulating what trigger would do)
-    // In production, the trigger would do this automatically
-    await db.query(
-      `insert into public.postcards (user_id, game_id, created_at)
-       values ($1, $2, now())
-       on conflict (user_id, game_id) do nothing`,
-      [userId, gameId5]
-    )
-    
-    // Verify postcard was created
-    const postcard = await one(
-      db,
-      `select user_id, game_id from public.postcards
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId5]
-    )
-    
-    assert.ok(postcard, "Postcard should be created when game_progress.status = 'abandoned' and no resident exists")
-    
-    // Verify no resident exists for this game
-    const resident = await one(
-      db,
-      `select user_id, game_id from public.residents
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId5]
-    )
-    
-    assert.equal(resident, undefined, "No resident should exist for abandoned game without beaten status")
-  })
-  
-  await t.test("Rule 8: trigger/function work correctly (no postcard if resident exists)", async () => {
-    // Create a new game and mark it as beaten first
-    const gameId4_local = gameId4
-    
-    await db.query(
-      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
-       values ($1, $2, $3, now(), now())`,
-      [userId, gameId4_local, "beaten"]
-    )
-    
-    // Call grant_resident_arrival to create resident
-    await db.query(
-      `select public.grant_resident_arrival($1, $2, $3)`,
-      [userId, gameId4_local, "beaten"]
-    )
-    
-    // Verify resident was created
-    let resident = await one(
-      db,
-      `select user_id, game_id from public.residents
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId4_local]
-    )
-    
-    assert.ok(resident, "Resident should be created for beaten game")
-    
-    // Now simulate updating the same game to 'abandoned'
-    // The trigger logic should NOT create a postcard if resident exists
-    // Test by checking that resident still exists and verifying postcard logic
-    const postcard = await one(
-      db,
-      `select user_id, game_id from public.postcards
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId4_local]
-    )
-    
-    assert.equal(postcard, undefined, "No postcard should be created if resident already exists")
-  })
+  // With no write policy, RLS makes UPDATE and DELETE touch zero rows rather than raise.
+  for (const sql of [
+    `update public.residents set arrival_source = 'imported'`,
+    `delete from public.residents`,
+    `delete from public.postcards`,
+  ]) {
+    const res = await asUser(db, A, () => db.query(sql))
+    assert.equal(res.affectedRows, 0, `expected no rows touched: ${sql}`)
+  }
+  const src = await rows(db, "select arrival_source from public.residents")
+  assert.equal(src[0].arrival_source, "beaten")
+  assert.equal((await residents(db, A)).length, 1)
+  assert.equal((await postcards(db, A)).length, 1)
+})
 
-  await t.test("Backfill: beaten with completed_at creates resident with arrived_at", async () => {
-    // This tests the idempotent backfill: if game_progress.completed_at IS NOT NULL, create resident
-    const gameId_backfill = "game-backfill-beaten"
-    await db.query(
-      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
-      [gameId_backfill, "Backfill Beaten Game", "test"]
-    )
-    
-    // Manually insert game_progress with completed_at (simulating old data)
-    const completedTime = new Date()
-    await db.query(
-      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
-       values ($1, $2, $3, $4, now())`,
-      [userId, gameId_backfill, "beaten", completedTime.toISOString()]
-    )
-    
-    // Run backfill logic (the idempotent DO part from migration)
-    await db.query(`
-      insert into public.residents (user_id, game_id, arrived_at, arrival_source)
-        values ($1, $2, $3, 'beaten')
-        on conflict (user_id, game_id) do nothing
-    `, [userId, gameId_backfill, completedTime.toISOString()])
-    
-    // Verify resident was created with arrived_at = completed_at
-    const resident = await one(
-      db,
-      `select user_id, game_id, arrived_at from public.residents where user_id = $1 and game_id = $2`,
-      [userId, gameId_backfill]
-    )
-    
-    assert.ok(resident, "Backfill should create resident from completed_at")
-    assert.ok(resident.arrived_at, "resident.arrived_at should equal game_progress.completed_at")
-  })
+test("clients cannot call the arrival function; anon cannot delete postcards", async () => {
+  const db = await setup()
+  const err = await denied(db, A, `select public.grant_resident_arrival('${B}', 'g1', 'beaten')`)
+  assert.match(String(err?.message), /permission denied/)
+  await db.exec("set role anon")
+  await assert.rejects(db.query("select public.delete_postcard('g1')"), /permission denied/)
+  await db.exec("reset role")
+  assert.deepEqual(await residents(db, B), [])
+})
 
-  await t.test("Backfill: abandoned with no completed_at creates postcard", async () => {
-    // This tests the idempotent backfill: if status='abandoned' AND completed_at IS NULL AND no resident, create postcard
-    const gameId_backfill2 = "game-backfill-abandoned"
-    await db.query(
-      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
-      [gameId_backfill2, "Backfill Abandoned Game", "test"]
-    )
-    
-    // Manually insert game_progress with status='abandoned' and no completed_at
-    await db.query(
-      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
-       values ($1, $2, $3, null, now())`,
-      [userId, gameId_backfill2, "abandoned"]
-    )
-    
-    // Run backfill logic: check if resident exists, if not create postcard
-    const residentsExist = await one(
-      db,
-      `select 1 from public.residents where user_id = $1 and game_id = $2`,
-      [userId, gameId_backfill2]
-    )
-    
-    if (!residentsExist) {
-      await db.query(`
-        insert into public.postcards (user_id, game_id, created_at)
-          values ($1, $2, now())
-          on conflict (user_id, game_id) do nothing
-      `, [userId, gameId_backfill2])
-    }
-    
-    // Verify postcard was created
-    const postcard = await one(
-      db,
-      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
-      [userId, gameId_backfill2]
-    )
-    
-    assert.ok(postcard, "Backfill should create postcard for abandoned with no completed_at and no resident")
-  })
+test("each user only sees their own rows", async () => {
+  const db = await setup()
+  await set(db, A, "g1", "beaten")
+  await set(db, B, "g2", "beaten")
+  await set(db, B, "g3", "abandoned")
+  const a = await asUser(db, A, () => rows(db, "select user_id from public.residents"))
+  assert.deepEqual(a.map((r) => r.user_id), [A])
+  const bPost = await asUser(db, B, () => rows(db, "select user_id from public.postcards"))
+  assert.deepEqual(bPost.map((r) => r.user_id), [B])
+  const aPost = await asUser(db, A, () => rows(db, "select * from public.postcards"))
+  assert.equal(aPost.length, 0)
+})
 
-  await t.test("Backfill: abandoned with completed_at creates neither resident nor postcard", async () => {
-    // If status='abandoned' BUT completed_at IS NOT NULL, a resident was already created (beaten->abandoned flow)
-    // So no postcard should be created
-    const gameId_backfill3 = "game-backfill-abandoned-beaten"
-    await db.query(
-      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
-      [gameId_backfill3, "Backfill Abandoned After Beaten", "test"]
-    )
-    
-    // Insert game_progress: status='abandoned' but with completed_at (implies it was beaten first)
-    const completedTime = new Date()
-    await db.query(
-      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
-       values ($1, $2, $3, $4, now())`,
-      [userId, gameId_backfill3, "abandoned", completedTime.toISOString()]
-    )
-    
-    // Backfill: completed_at is not null, so create resident
-    await db.query(`
-      insert into public.residents (user_id, game_id, arrived_at, arrival_source)
-        values ($1, $2, $3, 'beaten')
-        on conflict (user_id, game_id) do nothing
-    `, [userId, gameId_backfill3, completedTime.toISOString()])
-    
-    // Now check: if status='abandoned' and no resident, create postcard
-    // But we just created a resident, so no postcard should be created
-    const residentsExist = await one(
-      db,
-      `select 1 from public.residents where user_id = $1 and game_id = $2`,
-      [userId, gameId_backfill3]
-    )
-    
-    assert.ok(residentsExist, "Resident should exist from completed_at backfill")
-    
-    // Verify no postcard was created (because resident exists)
-    const postcard = await one(
-      db,
-      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
-      [userId, gameId_backfill3]
-    )
-    
-    assert.equal(postcard, undefined, "No postcard should be created when resident exists")
-  })
+test("delete_postcard removes only the caller's postcard", async () => {
+  const db = await setup()
+  await set(db, A, "g3", "abandoned")
+  await set(db, B, "g3", "abandoned")
+  await asUser(db, A, () => db.query("select public.delete_postcard('g3')"))
+  assert.deepEqual(await postcards(db, A), [])
+  assert.deepEqual(await postcards(db, B), [{ game_id: "g3" }])
+  await assert.rejects(asUser(db, "", () => db.query("select public.delete_postcard('g3')")), /Not authenticated/)
+})
 
-  await t.test("Arrival: calling grant_resident_arrival deletes any existing postcard", async () => {
-    // Test that creating a resident for a game automatically removes any postcard
-    const gameId_arrival = "game-arrival-deletes-postcard"
-    await db.query(
-      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
-      [gameId_arrival, "Arrival Test Game", "test"]
-    )
-    
-    // Create a postcard first
-    await db.query(
-      `insert into public.postcards (user_id, game_id, created_at)
-       values ($1, $2, now())`,
-      [userId, gameId_arrival]
-    )
-    
-    // Verify postcard exists
-    let postcard = await one(
-      db,
-      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
-      [userId, gameId_arrival]
-    )
-    assert.ok(postcard, "Postcard should exist initially")
-    
-    // Call grant_resident_arrival
-    await db.query(
-      `select public.grant_resident_arrival($1, $2, $3)`,
-      [userId, gameId_arrival, "beaten"]
-    )
-    
-    // Verify resident was created
-    const resident = await one(
-      db,
-      `select user_id, game_id from public.residents where user_id = $1 and game_id = $2`,
-      [userId, gameId_arrival]
-    )
-    assert.ok(resident, "Resident should be created")
-    
-    // Verify postcard was deleted
-    postcard = await one(
-      db,
-      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
-      [userId, gameId_arrival]
-    )
-    assert.equal(postcard, undefined, "Postcard should be deleted when resident is created")
+test("backfill: finished games become residents, set-aside games become postcards", async () => {
+  const db = await setup({
+    seed: `
+      insert into public.game_progress (user_id, game_id, status, completed_at) values
+        ('${A}', 'g1', 'beaten',    '2025-01-02T03:04:05Z'),
+        ('${A}', 'g2', 'abandoned', null),
+        ('${A}', 'g3', 'abandoned', '2025-02-01T00:00:00Z'),
+        ('${B}', 'g1', 'playing',   null);
+    `,
   })
+  assert.deepEqual(await residents(db, A), [{ game_id: "g1" }, { game_id: "g3" }])
+  assert.deepEqual(await postcards(db, A), [{ game_id: "g2" }])
+  assert.deepEqual(await residents(db, B), [])
+  const arrived = (await rows(db, "select arrived_at from public.residents where game_id = 'g1'"))[0].arrived_at
+  assert.equal(new Date(arrived).toISOString(), "2025-01-02T03:04:05.000Z")
+})
 
-  await t.test("Delete-postcard RPC: owner can delete their own postcard", async () => {
-    // Test that delete_postcard works for the authenticated owner
-    const gameId_delete = "game-delete-own-postcard"
-    await db.query(
-      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
-      [gameId_delete, "Delete Test Game", "test"]
-    )
-    
-    // Create a postcard
-    await db.query(
-      `insert into public.postcards (user_id, game_id, created_at)
-       values ($1, $2, now())`,
-      [userId, gameId_delete]
-    )
-    
-    // Verify postcard exists
-    let postcard = await one(
-      db,
-      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
-      [userId, gameId_delete]
-    )
-    assert.ok(postcard, "Postcard should exist")
-    
-    // Call delete_postcard (auth.uid returns userId)
-    await db.query(`select public.delete_postcard($1)`, [gameId_delete])
-    
-    // Verify postcard was deleted
-    postcard = await one(
-      db,
-      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
-      [userId, gameId_delete]
-    )
-    
-    assert.equal(postcard, undefined, "Postcard should be deleted after calling delete_postcard")
+test("running the real migration file a second time changes nothing", async () => {
+  const db = await setup({
+    seed: `insert into public.game_progress (user_id, game_id, status, completed_at)
+           values ('${A}', 'g1', 'beaten', now()), ('${A}', 'g2', 'abandoned', null);`,
   })
-
-  await t.test("Replay: changing status from beaten to playing keeps resident", async () => {
-    // Test that if a game is beaten (creating resident), then status changes to playing, resident persists
-    const gameId_replay = "game-replay-status"
-    await db.query(
-      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
-      [gameId_replay, "Replay Test Game", "test"]
-    )
-    
-    // Create game_progress with status='beaten'
-    await db.query(
-      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
-       values ($1, $2, $3, now(), now())`,
-      [userId, gameId_replay, "beaten"]
-    )
-    
-    // Trigger creates resident
-    await db.query(
-      `select public.grant_resident_arrival($1, $2, $3)`,
-      [userId, gameId_replay, "beaten"]
-    )
-    
-    // Verify resident was created
-    let resident = await one(
-      db,
-      `select user_id, game_id from public.residents where user_id = $1 and game_id = $2`,
-      [userId, gameId_replay]
-    )
-    assert.ok(resident, "Resident should be created for beaten status")
-    
-    // Update status to 'playing' (user is replaying the game)
-    await db.query(
-      `update public.game_progress set status = $1 where user_id = $2 and game_id = $3`,
-      ["playing", userId, gameId_replay]
-    )
-    
-    // Verify resident still exists (only beaten->X transition removes residents)
-    resident = await one(
-      db,
-      `select user_id, game_id from public.residents where user_id = $1 and game_id = $2`,
-      [userId, gameId_replay]
-    )
-    
-    assert.ok(resident, "Resident should persist when status changes from beaten to playing")
-  })
+  const before = {
+    r: await rows(db, "select * from public.residents order by game_id"),
+    p: await rows(db, "select * from public.postcards order by game_id"),
+  }
+  await db.exec(migrationSql)
+  assert.deepEqual(await rows(db, "select * from public.residents order by game_id"), before.r)
+  assert.deepEqual(await rows(db, "select * from public.postcards order by game_id"), before.p)
+  const triggers = await rows(
+    db,
+    "select tgname from pg_trigger where tgrelid = 'public.game_progress'::regclass and not tgisinternal order by 1",
+  )
+  assert.deepEqual(triggers.map((t) => t.tgname), [
+    "game_progress_postcards_on_abandoned",
+    "game_progress_residents_on_beaten",
+  ])
+  await set(db, B, "g1", "beaten")
+  assert.deepEqual(await residents(db, B), [{ game_id: "g1" }], "triggers still fire after the second run")
 })
