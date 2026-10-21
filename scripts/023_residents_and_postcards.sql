@@ -1,15 +1,15 @@
 -- Migration 023: residents and postcards feature.
--- Residents track when a user beats a game (for achievements/leaderboards).
--- Postcards track abandoned games (for recommendation feedback).
+-- Residents: a keepsake home for games the player finished.
+-- Postcards: a keepsake for games the player set aside (abandoned).
 -- Trigger on game_progress: insert resident on 'beaten', insert postcard on 'abandoned'.
 -- RLS: users can only SELECT their own rows; no direct INSERT/UPDATE/DELETE from clients.
--- Grant-resident RPC: SECURITY DEFINER, ON CONFLICT DO NOTHING.
--- Delete-postcard RPC: SECURITY DEFINER, caller-only, EXECUTE revoked from PUBLIC/anon.
+-- Grant-resident: internal trigger function (SECURITY DEFINER), not exposed to clients.
+-- Delete-postcard RPC: SECURITY DEFINER, caller-only, EXECUTE restricted to trigger functions.
 
 BEGIN;
 
 -- residents: user_id, game_id, arrived_at (timestamptz), arrival_source (default 'beaten')
-CREATE TABLE public.residents (
+CREATE TABLE IF NOT EXISTS public.residents (
   user_id uuid NOT NULL,
   game_id text NOT NULL,
   arrived_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -22,7 +22,7 @@ CREATE TABLE public.residents (
 );
 
 -- postcards: user_id, game_id, created_at (timestamptz)
-CREATE TABLE public.postcards (
+CREATE TABLE IF NOT EXISTS public.postcards (
   user_id uuid NOT NULL,
   game_id text NOT NULL,
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
@@ -36,15 +36,18 @@ ALTER TABLE public.residents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.postcards ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies: SELECT-own only (no INSERT/UPDATE/DELETE for clients)
+DROP POLICY IF EXISTS residents_select_own ON public.residents;
 CREATE POLICY residents_select_own ON public.residents
   FOR SELECT USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS postcards_select_own ON public.postcards;
 CREATE POLICY postcards_select_own ON public.postcards
   FOR SELECT USING (user_id = auth.uid());
 
 -- SECURITY DEFINER function to grant resident arrival
 -- Called by trigger when game_progress.status becomes 'beaten'.
 -- Uses ON CONFLICT DO NOTHING for idempotency.
+-- NOT exposed to clients; only callable by trigger functions.
 CREATE OR REPLACE FUNCTION public.grant_resident_arrival(
   p_user_id uuid,
   p_game_id text,
@@ -52,7 +55,7 @@ CREATE OR REPLACE FUNCTION public.grant_resident_arrival(
 )
 RETURNS void
 LANGUAGE plpgsql
-SET search_path = public
+SET search_path = public, pg_temp
 SECURITY DEFINER
 AS $$
 BEGIN
@@ -65,14 +68,18 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.grant_resident_arrival(uuid, text, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.grant_resident_arrival(uuid, text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.grant_resident_arrival(uuid, text, text) FROM PUBLIC, anon, authenticated;
 
 -- Trigger on game_progress: when status becomes 'beaten', insert resident.
-CREATE OR REPLACE FUNCTION public.trigger_game_progress_residents()
+-- SECURITY DEFINER so it can call grant_resident_arrival without exposing it to clients.
+DROP TRIGGER IF EXISTS game_progress_residents_on_beaten ON public.game_progress;
+DROP FUNCTION IF EXISTS public.trigger_game_progress_residents();
+
+CREATE FUNCTION public.trigger_game_progress_residents()
 RETURNS trigger
 LANGUAGE plpgsql
-SET search_path = public
+SET search_path = public, pg_temp
+SECURITY DEFINER
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
@@ -89,10 +96,15 @@ CREATE TRIGGER game_progress_residents_on_beaten
   FOR EACH ROW EXECUTE FUNCTION public.trigger_game_progress_residents();
 
 -- Trigger on game_progress: when status becomes 'abandoned' and no resident exists, insert postcard.
-CREATE OR REPLACE FUNCTION public.trigger_game_progress_postcards()
+-- SECURITY DEFINER so it can insert postcards even when RLS is enforced.
+DROP TRIGGER IF EXISTS game_progress_postcards_on_abandoned ON public.game_progress;
+DROP FUNCTION IF EXISTS public.trigger_game_progress_postcards();
+
+CREATE FUNCTION public.trigger_game_progress_postcards()
 RETURNS trigger
 LANGUAGE plpgsql
-SET search_path = public
+SET search_path = public, pg_temp
+SECURITY DEFINER
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
@@ -117,10 +129,12 @@ CREATE TRIGGER game_progress_postcards_on_abandoned
 
 -- SECURITY DEFINER RPC: delete postcard (caller-only)
 -- Used by client to remove postcards after abandonment feedback.
-CREATE OR REPLACE FUNCTION public.delete_postcard(p_game_id text)
+DROP FUNCTION IF EXISTS public.delete_postcard(text);
+
+CREATE FUNCTION public.delete_postcard(p_game_id text)
 RETURNS void
 LANGUAGE plpgsql
-SET search_path = public
+SET search_path = public, pg_temp
 SECURITY DEFINER
 AS $$
 DECLARE
