@@ -1,4 +1,4 @@
-import type { Game, Session, SessionStatus, StandbyPreferences, Resident } from "@/lib/types"
+import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard } from "@/lib/types"
 
 export const game: Game = {
   id: "test-game", name: "A Short Hike", genres: ["Adventure"],
@@ -48,6 +48,7 @@ export const fixture: {
   finishedNotes: string[]
   events: { kind: "notes-start" | "notes-saved" | "notes-late" | "notes-ack-held" | "notes-ack-released" | "finish" | "beaten" | "abandoned"; notes: string }[]
   residents: Resident[]
+  postcards: Postcard[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
   holdReads: false, readReleases: [], readSnapshots: [], readCompletions: 0,
@@ -62,6 +63,7 @@ export const fixture: {
   settleLateNotes: settleLateNotes, rejectedLateNotes: 0, schema020: true,
   finalDrafts: [],
   residents: [],
+  postcards: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -184,6 +186,33 @@ function finishGame(kind: "beaten" | "abandoned", finalNotes?: string) {
 
 export async function getResidents(): Promise<Resident[]> {
   return fixture.residents
+}
+
+export async function getPostcards(): Promise<Postcard[]> {
+  return fixture.postcards
+}
+
+export async function deletePostcard(
+  _gameId: string
+): Promise<{ ok: boolean; error?: string }> {
+  // Mock implementation - in real app this would call the RPC
+  // Support failure via URL param for testing
+  if (new URL(globalThis.location?.href || "").searchParams.has("delete-fail")) {
+    return { ok: false, error: "Could not delete postcard. Try again." }
+  }
+  fixture.postcards = fixture.postcards.filter(p => p.game_id !== _gameId)
+  return { ok: true }
+}
+
+export async function reInviteGame(
+  _gameId: string
+): Promise<{ ok: boolean; error?: string }> {
+  // The real action starts a session; the postcard stays until the game is beaten.
+  // Support failure via URL param for testing
+  if (new URL(globalThis.location?.href || "").searchParams.has("reinvite-fail")) {
+    return { ok: false, error: "That did not go through. Try again." }
+  }
+  return { ok: true }
 }
 
 // These surfaces are bundled only for the real AppShell remount test, not exercised.

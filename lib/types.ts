@@ -125,4 +125,5 @@ export interface Postcard {
   user_id: string
   game_id: string
   created_at: string
+  game?: Game
 }
