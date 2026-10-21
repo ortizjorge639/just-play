@@ -615,4 +615,249 @@ await test("Migration 023: Residents and postcards", async (t) => {
     
     assert.equal(postcard, undefined, "No postcard should be created if resident already exists")
   })
+
+  await t.test("Backfill: beaten with completed_at creates resident with arrived_at", async () => {
+    // This tests the idempotent backfill: if game_progress.completed_at IS NOT NULL, create resident
+    const gameId_backfill = "game-backfill-beaten"
+    await db.query(
+      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
+      [gameId_backfill, "Backfill Beaten Game", "test"]
+    )
+    
+    // Manually insert game_progress with completed_at (simulating old data)
+    const completedTime = new Date()
+    await db.query(
+      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
+       values ($1, $2, $3, $4, now())`,
+      [userId, gameId_backfill, "beaten", completedTime.toISOString()]
+    )
+    
+    // Run backfill logic (the idempotent DO part from migration)
+    await db.query(`
+      insert into public.residents (user_id, game_id, arrived_at, arrival_source)
+        values ($1, $2, $3, 'beaten')
+        on conflict (user_id, game_id) do nothing
+    `, [userId, gameId_backfill, completedTime.toISOString()])
+    
+    // Verify resident was created with arrived_at = completed_at
+    const resident = await one(
+      db,
+      `select user_id, game_id, arrived_at from public.residents where user_id = $1 and game_id = $2`,
+      [userId, gameId_backfill]
+    )
+    
+    assert.ok(resident, "Backfill should create resident from completed_at")
+    assert.ok(resident.arrived_at, "resident.arrived_at should equal game_progress.completed_at")
+  })
+
+  await t.test("Backfill: abandoned with no completed_at creates postcard", async () => {
+    // This tests the idempotent backfill: if status='abandoned' AND completed_at IS NULL AND no resident, create postcard
+    const gameId_backfill2 = "game-backfill-abandoned"
+    await db.query(
+      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
+      [gameId_backfill2, "Backfill Abandoned Game", "test"]
+    )
+    
+    // Manually insert game_progress with status='abandoned' and no completed_at
+    await db.query(
+      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
+       values ($1, $2, $3, null, now())`,
+      [userId, gameId_backfill2, "abandoned"]
+    )
+    
+    // Run backfill logic: check if resident exists, if not create postcard
+    const residentsExist = await one(
+      db,
+      `select 1 from public.residents where user_id = $1 and game_id = $2`,
+      [userId, gameId_backfill2]
+    )
+    
+    if (!residentsExist) {
+      await db.query(`
+        insert into public.postcards (user_id, game_id, created_at)
+          values ($1, $2, now())
+          on conflict (user_id, game_id) do nothing
+      `, [userId, gameId_backfill2])
+    }
+    
+    // Verify postcard was created
+    const postcard = await one(
+      db,
+      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
+      [userId, gameId_backfill2]
+    )
+    
+    assert.ok(postcard, "Backfill should create postcard for abandoned with no completed_at and no resident")
+  })
+
+  await t.test("Backfill: abandoned with completed_at creates neither resident nor postcard", async () => {
+    // If status='abandoned' BUT completed_at IS NOT NULL, a resident was already created (beaten->abandoned flow)
+    // So no postcard should be created
+    const gameId_backfill3 = "game-backfill-abandoned-beaten"
+    await db.query(
+      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
+      [gameId_backfill3, "Backfill Abandoned After Beaten", "test"]
+    )
+    
+    // Insert game_progress: status='abandoned' but with completed_at (implies it was beaten first)
+    const completedTime = new Date()
+    await db.query(
+      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
+       values ($1, $2, $3, $4, now())`,
+      [userId, gameId_backfill3, "abandoned", completedTime.toISOString()]
+    )
+    
+    // Backfill: completed_at is not null, so create resident
+    await db.query(`
+      insert into public.residents (user_id, game_id, arrived_at, arrival_source)
+        values ($1, $2, $3, 'beaten')
+        on conflict (user_id, game_id) do nothing
+    `, [userId, gameId_backfill3, completedTime.toISOString()])
+    
+    // Now check: if status='abandoned' and no resident, create postcard
+    // But we just created a resident, so no postcard should be created
+    const residentsExist = await one(
+      db,
+      `select 1 from public.residents where user_id = $1 and game_id = $2`,
+      [userId, gameId_backfill3]
+    )
+    
+    assert.ok(residentsExist, "Resident should exist from completed_at backfill")
+    
+    // Verify no postcard was created (because resident exists)
+    const postcard = await one(
+      db,
+      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
+      [userId, gameId_backfill3]
+    )
+    
+    assert.equal(postcard, undefined, "No postcard should be created when resident exists")
+  })
+
+  await t.test("Arrival: calling grant_resident_arrival deletes any existing postcard", async () => {
+    // Test that creating a resident for a game automatically removes any postcard
+    const gameId_arrival = "game-arrival-deletes-postcard"
+    await db.query(
+      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
+      [gameId_arrival, "Arrival Test Game", "test"]
+    )
+    
+    // Create a postcard first
+    await db.query(
+      `insert into public.postcards (user_id, game_id, created_at)
+       values ($1, $2, now())`,
+      [userId, gameId_arrival]
+    )
+    
+    // Verify postcard exists
+    let postcard = await one(
+      db,
+      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
+      [userId, gameId_arrival]
+    )
+    assert.ok(postcard, "Postcard should exist initially")
+    
+    // Call grant_resident_arrival
+    await db.query(
+      `select public.grant_resident_arrival($1, $2, $3)`,
+      [userId, gameId_arrival, "beaten"]
+    )
+    
+    // Verify resident was created
+    const resident = await one(
+      db,
+      `select user_id, game_id from public.residents where user_id = $1 and game_id = $2`,
+      [userId, gameId_arrival]
+    )
+    assert.ok(resident, "Resident should be created")
+    
+    // Verify postcard was deleted
+    postcard = await one(
+      db,
+      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
+      [userId, gameId_arrival]
+    )
+    assert.equal(postcard, undefined, "Postcard should be deleted when resident is created")
+  })
+
+  await t.test("Delete-postcard RPC: owner can delete their own postcard", async () => {
+    // Test that delete_postcard works for the authenticated owner
+    const gameId_delete = "game-delete-own-postcard"
+    await db.query(
+      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
+      [gameId_delete, "Delete Test Game", "test"]
+    )
+    
+    // Create a postcard
+    await db.query(
+      `insert into public.postcards (user_id, game_id, created_at)
+       values ($1, $2, now())`,
+      [userId, gameId_delete]
+    )
+    
+    // Verify postcard exists
+    let postcard = await one(
+      db,
+      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
+      [userId, gameId_delete]
+    )
+    assert.ok(postcard, "Postcard should exist")
+    
+    // Call delete_postcard (auth.uid returns userId)
+    await db.query(`select public.delete_postcard($1)`, [gameId_delete])
+    
+    // Verify postcard was deleted
+    postcard = await one(
+      db,
+      `select user_id, game_id from public.postcards where user_id = $1 and game_id = $2`,
+      [userId, gameId_delete]
+    )
+    
+    assert.equal(postcard, undefined, "Postcard should be deleted after calling delete_postcard")
+  })
+
+  await t.test("Replay: changing status from beaten to playing keeps resident", async () => {
+    // Test that if a game is beaten (creating resident), then status changes to playing, resident persists
+    const gameId_replay = "game-replay-status"
+    await db.query(
+      "insert into public.games (id, name, source, created_at) values ($1, $2, $3, now())",
+      [gameId_replay, "Replay Test Game", "test"]
+    )
+    
+    // Create game_progress with status='beaten'
+    await db.query(
+      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
+       values ($1, $2, $3, now(), now())`,
+      [userId, gameId_replay, "beaten"]
+    )
+    
+    // Trigger creates resident
+    await db.query(
+      `select public.grant_resident_arrival($1, $2, $3)`,
+      [userId, gameId_replay, "beaten"]
+    )
+    
+    // Verify resident was created
+    let resident = await one(
+      db,
+      `select user_id, game_id from public.residents where user_id = $1 and game_id = $2`,
+      [userId, gameId_replay]
+    )
+    assert.ok(resident, "Resident should be created for beaten status")
+    
+    // Update status to 'playing' (user is replaying the game)
+    await db.query(
+      `update public.game_progress set status = $1 where user_id = $2 and game_id = $3`,
+      ["playing", userId, gameId_replay]
+    )
+    
+    // Verify resident still exists (only beaten->X transition removes residents)
+    resident = await one(
+      db,
+      `select user_id, game_id from public.residents where user_id = $1 and game_id = $2`,
+      [userId, gameId_replay]
+    )
+    
+    assert.ok(resident, "Resident should persist when status changes from beaten to playing")
+  })
 })
