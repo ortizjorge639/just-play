@@ -13,37 +13,55 @@ interface PostcardsListProps {
 
 export function PostcardsList({ postcards }: PostcardsListProps) {
   const prefersReducedMotion = useReducedMotion()
-  const [deleting, setDeleting] = useState<Set<string>>(new Set())
-  const [reInviting, setReInviting] = useState<Set<string>>(new Set())
+  const [actionState, setActionState] = useState<Record<string, {
+    action: 'delete' | 'reinvite' | null
+    loading: boolean
+    error?: string
+  }>>({})
+
+  const getState = (gameId: string) => actionState[gameId] || { action: null, loading: false }
 
   const handleDelete = async (gameId: string) => {
-    setDeleting(prev => new Set(prev).add(gameId))
+    setActionState(prev => ({
+      ...prev,
+      [gameId]: { action: 'delete', loading: true }
+    }))
     try {
-      await deletePostcard(gameId)
+      const result = await deletePostcard(gameId)
+      if (!result.ok) {
+        setActionState(prev => ({
+          ...prev,
+          [gameId]: { action: null, loading: false, error: result.error }
+        }))
+      }
     } catch (err) {
       console.error("Failed to delete postcard:", err)
-    } finally {
-      setDeleting(prev => {
-        const next = new Set(prev)
-        next.delete(gameId)
-        return next
-      })
+      setActionState(prev => ({
+        ...prev,
+        [gameId]: { action: null, loading: false, error: "That did not go through. Try again." }
+      }))
     }
   }
 
   const handleReInvite = async (gameId: string) => {
-    setReInviting(prev => new Set(prev).add(gameId))
+    setActionState(prev => ({
+      ...prev,
+      [gameId]: { action: 'reinvite', loading: true }
+    }))
     try {
-      // Re-invite: set game_progress status back to 'playing'
-      await reInviteGame(gameId)
+      const result = await reInviteGame(gameId)
+      if (!result.ok) {
+        setActionState(prev => ({
+          ...prev,
+          [gameId]: { action: null, loading: false, error: result.error }
+        }))
+      }
     } catch (err) {
       console.error("Failed to re-invite game:", err)
-    } finally {
-      setReInviting(prev => {
-        const next = new Set(prev)
-        next.delete(gameId)
-        return next
-      })
+      setActionState(prev => ({
+        ...prev,
+        [gameId]: { action: null, loading: false, error: "That did not go through. Try again." }
+      }))
     }
   }
 
@@ -63,8 +81,8 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
       </h2>
       <div className="grid grid-cols-1 gap-2.5">
         {postcards.map((postcard, i) => {
-          const isDeleting = deleting.has(postcard.game_id)
-          const isReInviting = reInviting.has(postcard.game_id)
+          const state = getState(postcard.game_id)
+          const isLoading = state.loading
           const createdDate = new Date(postcard.created_at)
 
           return (
@@ -98,23 +116,30 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
                       </div>
                     </div>
 
+                    {/* Error message */}
+                    {state.error && (
+                      <div className="text-xs text-destructive bg-destructive/10 rounded px-2.5 py-1.5">
+                        {state.error}
+                      </div>
+                    )}
+
                     {/* Action buttons */}
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleReInvite(postcard.game_id)}
-                        disabled={isReInviting || isDeleting}
+                        disabled={isLoading}
                         className="text-xs px-2.5 py-1.5 rounded bg-primary/15 text-primary hover:bg-primary/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                         aria-label="Bring back"
                       >
-                        {isReInviting ? "Bringing back…" : "Bring back"}
+                        {state.action === 'reinvite' && isLoading ? "Bringing back…" : "Bring back"}
                       </button>
                       <button
                         onClick={() => handleDelete(postcard.game_id)}
-                        disabled={isDeleting || isReInviting}
+                        disabled={isLoading}
                         className="text-xs px-2.5 py-1.5 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                         aria-label="Delete"
                       >
-                        {isDeleting ? "Deleting…" : "Delete"}
+                        {state.action === 'delete' && isLoading ? "Deleting…" : "Delete"}
                       </button>
                     </div>
                   </div>

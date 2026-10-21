@@ -1032,10 +1032,12 @@ export async function getPostcards(): Promise<Postcard[]> {
   }
 }
 
-export async function deletePostcard(gameId: string) {
+export async function deletePostcard(
+  gameId: string
+): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
+  if (!user) return { ok: false, error: "Not authenticated" }
 
   try {
     const { error } = await supabase.rpc("delete_postcard", {
@@ -1043,44 +1045,40 @@ export async function deletePostcard(gameId: string) {
     })
 
     if (error) {
-      console.warn("[deletePostcard] RPC failed (table missing?):", error.message)
-      return
+      console.warn("[deletePostcard] RPC failed:", error.message)
+      return { ok: false, error: "Could not delete postcard. Try again." }
     }
 
     revalidatePath("/")
+    return { ok: true }
   } catch (err) {
     console.warn("[deletePostcard] Catch error:", err)
+    return { ok: false, error: "That did not go through. Try again." }
   }
 }
 
-export async function reInviteGame(gameId: string) {
+export async function reInviteGame(
+  gameId: string
+): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
+  if (!user) return { ok: false, error: "Not authenticated" }
 
   try {
-    // Re-invite: set game_progress status back to 'playing' if it exists and is abandoned
-    const { data: progress, error: readError } = await supabase
-      .from("game_progress")
-      .select("id, status")
-      .eq("user_id", user.id)
-      .eq("game_id", gameId)
-      .maybeSingle()
+    // Re-invite: delete the postcard to allow the game to be played again
+    const { error } = await supabase.rpc("delete_postcard", {
+      p_game_id: gameId,
+    })
 
-    if (readError) throw new Error(readError.message)
-
-    if (progress && progress.status === "abandoned") {
-      const { error: updateError } = await supabase
-        .from("game_progress")
-        .update({ status: "playing" })
-        .eq("id", progress.id)
-
-      if (updateError) throw new Error(updateError.message)
+    if (error) {
+      console.warn("[reInviteGame] RPC failed:", error.message)
+      return { ok: false, error: "Could not bring back this game. Try again." }
     }
 
     revalidatePath("/")
+    return { ok: true }
   } catch (err) {
-    console.warn("[reInviteGame] Error:", err)
-    throw err
+    console.warn("[reInviteGame] Catch error:", err)
+    return { ok: false, error: "That did not go through. Try again." }
   }
 }

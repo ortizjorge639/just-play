@@ -192,15 +192,28 @@ export async function getPostcards(): Promise<Postcard[]> {
   return fixture.postcards
 }
 
-export async function deletePostcard(_gameId: string): Promise<void> {
+export async function deletePostcard(
+  _gameId: string
+): Promise<{ ok: boolean; error?: string }> {
   // Mock implementation - in real app this would call the RPC
-  // For testing, just remove from postcards array
+  // Support failure via URL param for testing
+  if (new URL(globalThis.location?.href || "").searchParams.has("delete-fail")) {
+    return { ok: false, error: "Could not delete postcard. Try again." }
+  }
   fixture.postcards = fixture.postcards.filter(p => p.game_id !== _gameId)
+  return { ok: true }
 }
 
-export async function reInviteGame(_gameId: string): Promise<void> {
-  // Mock implementation - in real app this would update game_progress
-  // For testing, just a no-op
+export async function reInviteGame(
+  _gameId: string
+): Promise<{ ok: boolean; error?: string }> {
+  // Mock implementation - in real app this would delete the postcard via RPC
+  // Support failure via URL param for testing
+  if (new URL(globalThis.location?.href || "").searchParams.has("reinvite-fail")) {
+    return { ok: false, error: "Could not bring back this game. Try again." }
+  }
+  fixture.postcards = fixture.postcards.filter(p => p.game_id !== _gameId)
+  return { ok: true }
 }
 
 // These surfaces are bundled only for the real AppShell remount test, not exercised.
