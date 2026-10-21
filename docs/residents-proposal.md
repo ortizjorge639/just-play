@@ -1,6 +1,6 @@
 # Residents: proposal and task plan
 
-**Status:** draft for owner review. Nothing here is built. It replaces the
+**Status:** owner agreed the six defaults below (R0 done). Nothing here is built yet. It replaces the
 "Proposed first vertical slice" section of
 [spec-stories-3-6.md](spec-stories-3-6.md), which stays as history. Product
 rules come from [PRODUCT.md](../PRODUCT.md) and the accepted vocabulary in the
@@ -150,7 +150,7 @@ dependencies only.
 
 | ID | Task | Needs | Done means |
 | --- | --- | --- | --- |
-| R0 | Owner answers the decisions above | none | Answers recorded here |
+| R0 | Owner answers the decisions above | none | Done: all six defaults agreed |
 | R1 | Migration 023: tables, triggers, backfill, RLS, `delete_postcard`, plus PGlite tests for rules 1 to 8, same style as `migration-022-counters.test.mjs` | R0 | Tests pass. **Owner applies it.** |
 | R2 | `getResidents()` action, types, `ResidentPortrait`, read-only Residents section on the Progress tab | R1 applied | Lists render for an account with and without data |
 | R3 | Session-screen line and the arrival moment on "Mark beaten" | R1 applied | A beaten game shows the card once, no XP change |
