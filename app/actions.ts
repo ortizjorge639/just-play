@@ -970,19 +970,30 @@ export async function backfillXP() {
 export async function getResidents(): Promise<Resident[]> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Not authenticated")
+  if (!user) return []
 
   try {
     const { data, error } = await supabase
       .from("residents")
-      .select("user_id, game_id, arrived_at, arrival_source")
+      .select("user_id, game_id, arrived_at, arrival_source, game:games(*)")
+      .order("arrived_at", { ascending: false })
 
     if (error) {
       console.warn("[residents] Query failed (table missing?):", error.message)
       return []
     }
 
-    return data || []
+    // Type cast the nested game to a single object instead of array
+    return (data as Array<{
+      user_id: string
+      game_id: string
+      arrived_at: string
+      arrival_source: string
+      game?: Game | Game[]
+    }>).map(row => ({
+      ...row,
+      game: Array.isArray(row.game) ? row.game[0] : row.game,
+    })) || []
   } catch (err) {
     console.warn("[residents] Catch error:", err)
     return []

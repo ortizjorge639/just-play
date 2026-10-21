@@ -118,6 +118,7 @@ export interface Resident {
   game_id: string
   arrived_at: string
   arrival_source: string
+  game?: Game
 }
 
 export interface Postcard {

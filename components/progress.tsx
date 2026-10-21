@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import type { Session, Game, PlayerStats, Resident } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
@@ -67,6 +67,7 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
 }
 
 export function Progress({ sessions, displayName, playerStats, residents }: ProgressProps) {
+  const prefersReducedMotion = useReducedMotion()
   const [pending, setPending] = useState<PendingXP | null>(null)
   const [showBarParticles, setShowBarParticles] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
@@ -284,21 +285,21 @@ export function Progress({ sessions, displayName, playerStats, residents }: Prog
       {/* Residents section */}
       {residents && residents.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={prefersReducedMotion ? undefined : { delay: 0.3 }}
           className="mb-6"
         >
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
             Residents
           </h2>
           <div className="grid grid-cols-1 gap-2.5">
-            {residents.slice(0, 6).map((resident, i) => (
+            {residents.map((resident, i) => (
               <motion.div
                 key={`${resident.user_id}-${resident.game_id}`}
-                initial={{ opacity: 0, y: 15 }}
+                initial={prefersReducedMotion ? undefined : { opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + 0.05 * Math.min(i, 5) }}
+                transition={prefersReducedMotion ? undefined : { delay: 0.3 + 0.05 * i }}
               >
                 <ResidentPortrait resident={resident} />
               </motion.div>
