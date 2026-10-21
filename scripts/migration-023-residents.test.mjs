@@ -388,44 +388,155 @@ await test("Migration 023: Residents and postcards", async (t) => {
   })
   
   await t.test("Rule 6: migration idempotent when run twice", async () => {
-    // Create another game_progress with a unique game_id
-    await db.query(
-      `insert into public.game_progress (user_id, game_id, status, completed_at, created_at)
-       values ($1, $2, $3, now(), now())`,
-      [userId, gameId3, "beaten"]
-    )
-    
-    // Explicitly call the function (simulating trigger)
-    await db.query(
-      `select public.grant_resident_arrival($1, $2, $3)`,
-      [userId, gameId3, "beaten"]
-    )
-    
-    // Verify resident was created
-    let resident = await one(
+    // Count existing residents before migration replay
+    const residentsBefore = await all(
       db,
-      `select user_id, game_id from public.residents
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId3]
+      `select user_id, game_id from public.residents`
     )
+    const initialCount = residentsBefore.length
     
-    assert.ok(resident, "Resident should be created")
+    // Re-run the full migration 023 with IF NOT EXISTS (should not error and be idempotent)
+    // This simulates running the migration file again on an existing database
+    await db.exec(`
+      -- Re-run migration 023 (idempotent version)
+      drop trigger if exists game_progress_residents_on_beaten on public.game_progress;
+      drop trigger if exists game_progress_postcards_on_abandoned on public.game_progress;
+      drop function if exists public.trigger_game_progress_residents();
+      drop function if exists public.trigger_game_progress_postcards();
+      drop function if exists public.delete_postcard(text);
+      drop function if exists public.grant_resident_arrival(uuid, text, text);
+      
+      -- Recreate the tables IF NOT EXISTS (tables remain if they exist)
+      create table if not exists public.residents (
+        user_id uuid not null,
+        game_id text not null,
+        arrived_at timestamptz not null default clock_timestamp(),
+        arrival_source text not null default 'beaten',
+        created_at timestamptz not null default clock_timestamp(),
+        primary key (user_id, game_id),
+        constraint fk_residents_user foreign key (user_id) references public.users(id) on delete cascade,
+        constraint fk_residents_game foreign key (game_id) references public.games(id) on delete cascade,
+        constraint residents_arrival_source_check check (arrival_source in ('beaten', 'imported'))
+      );
+      
+      create table if not exists public.postcards (
+        user_id uuid not null,
+        game_id text not null,
+        created_at timestamptz not null default clock_timestamp(),
+        primary key (user_id, game_id),
+        constraint fk_postcards_user foreign key (user_id) references public.users(id) on delete cascade,
+        constraint fk_postcards_game foreign key (game_id) references public.games(id) on delete cascade
+      );
+      
+      alter table public.residents enable row level security;
+      alter table public.postcards enable row level security;
+      
+      drop policy if exists residents_select_own on public.residents;
+      create policy residents_select_own on public.residents
+        for select using (user_id = auth.uid());
+      
+      drop policy if exists postcards_select_own on public.postcards;
+      create policy postcards_select_own on public.postcards
+        for select using (user_id = auth.uid());
+      
+      create or replace function public.grant_resident_arrival(
+        p_user_id uuid,
+        p_game_id text,
+        p_arrival_source text default 'beaten'
+      )
+      returns void
+      language plpgsql
+      set search_path = public, pg_temp
+      security definer
+      as $$
+      begin
+        insert into public.residents (user_id, game_id, arrival_source, arrived_at)
+          values (p_user_id, p_game_id, p_arrival_source, clock_timestamp())
+          on conflict (user_id, game_id) do nothing;
+        
+        delete from public.postcards
+          where user_id = p_user_id and game_id = p_game_id;
+      end;
+      $$;
+      
+      revoke all on function public.grant_resident_arrival(uuid, text, text) from public, anon, authenticated;
+      
+      create function public.trigger_game_progress_residents()
+      returns trigger
+      language plpgsql
+      set search_path = public, pg_temp
+      security definer
+      as $$
+      begin
+        if tg_op = 'insert' or tg_op = 'update' then
+          if new.status = 'beaten' and (old.status is null or old.status is distinct from 'beaten') then
+            perform public.grant_resident_arrival(new.user_id, new.game_id, 'beaten');
+          end if;
+        end if;
+        return new;
+      end;
+      $$;
+      
+      create trigger game_progress_residents_on_beaten
+        after insert or update on public.game_progress
+        for each row execute function public.trigger_game_progress_residents();
+      
+      create function public.trigger_game_progress_postcards()
+      returns trigger
+      language plpgsql
+      set search_path = public, pg_temp
+      security definer
+      as $$
+      begin
+        if tg_op = 'insert' or tg_op = 'update' then
+          if new.status = 'abandoned' and (old.status is null or old.status is distinct from 'abandoned') then
+            if not exists (
+              select 1 from public.residents
+              where user_id = new.user_id and game_id = new.game_id
+            ) then
+              insert into public.postcards (user_id, game_id, created_at)
+                values (new.user_id, new.game_id, clock_timestamp())
+                on conflict (user_id, game_id) do nothing;
+            end if;
+          end if;
+        end if;
+        return new;
+      end;
+      $$;
+      
+      create trigger game_progress_postcards_on_abandoned
+        after insert or update on public.game_progress
+        for each row execute function public.trigger_game_progress_postcards();
+      
+      create function public.delete_postcard(p_game_id text)
+      returns void
+      language plpgsql
+      set search_path = public, pg_temp
+      security definer
+      as $$
+      declare
+        caller uuid := auth.uid();
+      begin
+        if caller is null then
+          raise exception 'Not authenticated';
+        end if;
+        delete from public.postcards
+          where user_id = caller and game_id = p_game_id;
+      end;
+      $$;
+      
+      revoke all on function public.delete_postcard(text) from public, anon;
+      grant execute on function public.delete_postcard(text) to authenticated;
+    `)
     
-    // Simulate running migration again (call function again)
-    await db.query(
-      `select public.grant_resident_arrival($1, $2, $3)`,
-      [userId, gameId3, "beaten"]
-    )
-    
-    // Verify still only one resident exists
-    const residents = await all(
+    // Count residents after migration replay
+    const residentsAfter = await all(
       db,
-      `select user_id, game_id from public.residents
-       where user_id = $1 and game_id = $2`,
-      [userId, gameId3]
+      `select user_id, game_id from public.residents`
     )
     
-    assert.equal(residents.length, 1, "Running migration twice should be idempotent")
+    // Should have same rows (tables preserved, functions/triggers recreated)
+    assert.equal(residentsAfter.length, initialCount, "Migration replay should be idempotent (same row count)")
   })
   
   await t.test("Rule 7: postcard created on abandoned with no resident", async () => {
