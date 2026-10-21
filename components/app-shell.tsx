@@ -13,6 +13,7 @@ import { XPToastProvider } from "./xp-toast"
 import { BottomNav } from "./bottom-nav"
 import { QuickFilters } from "./quick-filters"
 import { Settings } from "./settings"
+import { ResidentArrivalCard } from "./resident-arrival-card"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
@@ -60,6 +61,7 @@ export function AppShell({
   const [standbyPreferences, setStandbyPreferences] = useState({
     ...DEFAULT_STANDBY_PREFERENCES, ...user.standby_preferences,
   })
+  const [arrivedGame, setArrivedGame] = useState<Game | null>(null)
   const visibleTab = activeTab === "deck" && activeSession ? "session" : activeTab
 
   // Check if there's pending XP from a recent session finish (survives page reload via sessionStorage)
@@ -91,6 +93,10 @@ export function AppShell({
     // Full reload to get updated history
     window.location.reload()
   }, [setActiveSession])
+
+  const handleArrived = useCallback((game: Game) => {
+    setArrivedGame(game)
+  }, [])
 
   const handleTabChange = useCallback((tab: Tab) => {
     if (needsRefresh) {
@@ -212,6 +218,7 @@ export function AppShell({
                 session={activeSession}
                 onFinished={handleSessionFinished}
                 onSessionUpdated={handleSessionUpdated}
+                onArrived={handleArrived}
                 standbyPreferences={standbyPreferences}
                 onPreferencesSaved={setStandbyPreferences}
                 syncError={syncError}
@@ -315,6 +322,15 @@ export function AppShell({
           />
         )}
       </AnimatePresence>
+
+      {/* Resident Arrival Card */}
+      {arrivedGame && (
+        <ResidentArrivalCard
+          game={arrivedGame}
+          isOpen={!!arrivedGame}
+          onClose={() => setArrivedGame(null)}
+        />
+      )}
     </div>
     </XPToastProvider>
   )

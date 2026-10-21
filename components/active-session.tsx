@@ -9,8 +9,9 @@ import {
   markGameBeaten,
   abandonGame,
   saveStandbyPreferences,
+  getResidents,
 } from "@/app/actions"
-import type { Session, Game, SessionStatus } from "@/lib/types"
+import type { Session, Game, SessionStatus, Resident } from "@/lib/types"
 import { SessionNotepad } from "./session-notepad"
 import { useXPToast } from "./xp-toast"
 import { StillPlayingModal } from "./still-playing-modal"
@@ -28,6 +29,7 @@ interface ActiveSessionProps {
   session: Session & { games: Game; progress: { total_sessions: number; total_time_minutes: number } | null }
   onFinished: () => void
   onSessionUpdated?: (updates: Partial<Session>) => void
+  onArrived?: (game: Game) => void
   standbyPreferences: StandbyPreferences
   onPreferencesSaved: (preferences: StandbyPreferences) => void
   syncError: string | null
@@ -51,11 +53,12 @@ export function ActiveSession(props: ActiveSessionProps) {
   return <ActiveSessionContent key={props.session.id} {...props} />
 }
 
-function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPreferences, onPreferencesSaved, syncError, onRetry, onMutationStart, onMutationEnd, notesController }: ActiveSessionProps) {
+function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived, standbyPreferences, onPreferencesSaved, syncError, onRetry, onMutationStart, onMutationEnd, notesController }: ActiveSessionProps) {
   const [status, setStatus] = useState<SessionStatus>(session.status)
   const [isPending, startTransition] = useTransition()
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [residents, setResidents] = useState<Resident[]>([])
   const { draft: notes, error: notesError, saveState: notesSaveState, flush: flushNotes, getDraft } = notesController
   const notesMessage = notesSaveState === "saved" ? "Notes saved." : notesSaveState === "acknowledged" ? "Notes acknowledged. The final draft will be saved again when finishing." : notesSaveState === "saving" ? "Saving notes..." : notesSaveState === "error" ? "Notes not saved. Your draft is still here." : "Notes not saved yet."
   const showTimer = standbyPreferences.show_clock
@@ -117,6 +120,19 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
     const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
   }, [session.started_at, session.paused_elapsed_seconds, session.record_time, status, nudgeStage, game.estimated_session_length, game.time_to_beat_minutes, standby])
+
+  // Fetch residents when component mounts to check if current game is resident
+  useEffect(() => {
+    const loadResidents = async () => {
+      try {
+        const data = await getResidents()
+        setResidents(data)
+      } catch (err) {
+        console.warn("[residents] Failed to fetch:", err)
+      }
+    }
+    loadResidents()
+  }, [])
 
   const transition = useCallback(
     (newStatus: SessionStatus) => {
@@ -204,12 +220,31 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
     startTransition(async () => {
       try {
         await flushNotes()
+        
+        // Read residents BEFORE marking beaten to detect if this game is already resident
+        const residentsBefore = await getResidents()
+        const residentGameIdsBefore = residentsBefore.map(r => r.game_id)
+        
+        // Mark as beaten (triggers DB resident creation)
         await markGameBeaten(game.id, {
           id: session.id,
           status: session.status,
           started_at: session.started_at,
           paused_elapsed_seconds: session.paused_elapsed_seconds || 0,
         }, getDraft())
+        
+        // Fetch residents after finish to check for new arrivals
+        const residentsAfter = await getResidents()
+        const residentGameIdsAfter = residentsAfter.map(r => r.game_id)
+        
+        // Check if this game is a new resident (wasn't before, is now)
+        const wasResident = residentGameIdsBefore.includes(game.id)
+        const isNowResident = residentGameIdsAfter.includes(game.id)
+        if (!wasResident && isNowResident && onArrived) {
+          onArrived(game)
+        }
+        
+        setResidents(residentsAfter)
         showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
         onFinished()
       } catch (e) {
@@ -315,6 +350,11 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
         {syncError ? <div role="alert" className="rounded-lg border border-amber-400/40 p-3 text-sm">
           {syncError} <button onClick={onRetry} className="min-h-11 underline">Retry</button>
         </div> : null}
+        {residents.some(r => r.game_id === game.id) ? (
+          <div className="rounded-lg border border-success/40 bg-success/10 p-3 text-sm text-foreground">
+            This game has moved into your home.
+          </div>
+        ) : null}
         {!isLockedIn ? <Dialog.Trigger asChild>
           <button className="min-h-14 rounded-xl border border-primary/40 bg-primary/10 p-4 text-left" onClick={() => setShowNudge(false)}>
             <span className="block font-semibold">Enter StandBy</span>
