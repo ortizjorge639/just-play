@@ -291,6 +291,11 @@ A successful implementation of these four stories means:
 
 ## Proposed first vertical slice: residents
 
+> **Superseded.** See [residents-proposal.md](residents-proposal.md). The
+> design below was reviewed against the real schema and changed: no stored
+> backlog state, no client write access, no test backdoor, and postcards tied
+> to setting a game aside rather than finishing a session. Kept as history.
+
 This section proposes a thin, end-to-end slice of Story 3 (Residents) that can be implemented, tested, and shipped in isolation to validate the resident lifecycle and resident→session connection before building stamps (Story 4), name cards (Story 5), and emotes (Story 6).
 
 ### Slice scope
