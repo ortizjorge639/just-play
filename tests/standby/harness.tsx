@@ -32,6 +32,16 @@ if (params.has("residents")) {
     },
   ]
 }
+if (params.has("postcards")) {
+  fixture.postcards = [
+    {
+      user_id: "test-postcard",
+      game_id: game.id,
+      created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      game,
+    },
+  ]
+}
 
 function Harness() {
   const { session, sessionReadRevision, updateSession, syncError, refreshSession, invalidateSessionRead, beginMutation, endMutation } = useSessionReconciliation(fixture.session, getActiveSession)
@@ -64,7 +74,7 @@ const app = params.has("app-shell")
     tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
   }} recommendations={[]} activeSession={fixture.session} activeGame={null}
-    sessionHistory={[]} playerStats={null} residents={fixture.residents} isBoosterPack={false}
+    sessionHistory={[]} playerStats={null} residents={fixture.residents} postcards={fixture.postcards} isBoosterPack={false}
     boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
   : <Harness />
 createRoot(document.getElementById("root")!).render(params.has("strict") ? <StrictMode>{app}</StrictMode> : app)

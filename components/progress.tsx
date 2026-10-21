@@ -3,16 +3,18 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
-import type { Session, Game, PlayerStats, Resident } from "@/lib/types"
+import type { Session, Game, PlayerStats, Resident, Postcard } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
 import { XPParticles } from "./xp-particles"
 import { ResidentPortrait } from "./resident-portrait"
+import { PostcardsList } from "./postcards-list"
 
 interface ProgressProps {
   sessions: (Session & { games: Game })[]
   displayName: string | null
   playerStats: PlayerStats | null
   residents?: Resident[]
+  postcards?: Postcard[]
 }
 
 interface PendingXP {
@@ -66,7 +68,7 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
   return skip ? target : value
 }
 
-export function Progress({ sessions, displayName, playerStats, residents }: ProgressProps) {
+export function Progress({ sessions, displayName, playerStats, residents, postcards }: ProgressProps) {
   const prefersReducedMotion = useReducedMotion()
   const [pending, setPending] = useState<PendingXP | null>(null)
   const [showBarParticles, setShowBarParticles] = useState(false)
@@ -307,6 +309,9 @@ export function Progress({ sessions, displayName, playerStats, residents }: Prog
           </div>
         </motion.div>
       )}
+
+      {/* Postcards section */}
+      {postcards && postcards.length > 0 && <PostcardsList postcards={postcards} />}
 
       {/* Session history */}
       <div className="pb-3">

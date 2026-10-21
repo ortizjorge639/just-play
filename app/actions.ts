@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
@@ -997,5 +997,90 @@ export async function getResidents(): Promise<Resident[]> {
   } catch (err) {
     console.warn("[residents] Catch error:", err)
     return []
+  }
+}
+
+export async function getPostcards(): Promise<Postcard[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  try {
+    const { data, error } = await supabase
+      .from("postcards")
+      .select("user_id, game_id, created_at, game:games(*)")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.warn("[postcards] Query failed (table missing?):", error.message)
+      return []
+    }
+
+    // Type cast the nested game to a single object instead of array
+    return (data as Array<{
+      user_id: string
+      game_id: string
+      created_at: string
+      game?: Game | Game[]
+    }>).map(row => ({
+      ...row,
+      game: Array.isArray(row.game) ? row.game[0] : row.game,
+    })) || []
+  } catch (err) {
+    console.warn("[postcards] Catch error:", err)
+    return []
+  }
+}
+
+export async function deletePostcard(gameId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  try {
+    const { error } = await supabase.rpc("delete_postcard", {
+      p_game_id: gameId,
+    })
+
+    if (error) {
+      console.warn("[deletePostcard] RPC failed (table missing?):", error.message)
+      return
+    }
+
+    revalidatePath("/")
+  } catch (err) {
+    console.warn("[deletePostcard] Catch error:", err)
+  }
+}
+
+export async function reInviteGame(gameId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authenticated")
+
+  try {
+    // Re-invite: set game_progress status back to 'playing' if it exists and is abandoned
+    const { data: progress, error: readError } = await supabase
+      .from("game_progress")
+      .select("id, status")
+      .eq("user_id", user.id)
+      .eq("game_id", gameId)
+      .maybeSingle()
+
+    if (readError) throw new Error(readError.message)
+
+    if (progress && progress.status === "abandoned") {
+      const { error: updateError } = await supabase
+        .from("game_progress")
+        .update({ status: "playing" })
+        .eq("id", progress.id)
+
+      if (updateError) throw new Error(updateError.message)
+    }
+
+    revalidatePath("/")
+  } catch (err) {
+    console.warn("[reInviteGame] Error:", err)
+    throw err
   }
 }
