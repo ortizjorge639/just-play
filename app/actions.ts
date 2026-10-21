@@ -1064,21 +1064,18 @@ export async function reInviteGame(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: "Not authenticated" }
 
+  // The postcard stays until the game is beaten; the database removes it on arrival.
   try {
-    // Re-invite: delete the postcard to allow the game to be played again
-    const { error } = await supabase.rpc("delete_postcard", {
-      p_game_id: gameId,
-    })
-
-    if (error) {
-      console.warn("[reInviteGame] RPC failed:", error.message)
-      return { ok: false, error: "Could not bring back this game. Try again." }
-    }
-
-    revalidatePath("/")
+    await startSessionForGame(gameId)
     return { ok: true }
   } catch (err) {
-    console.warn("[reInviteGame] Catch error:", err)
-    return { ok: false, error: "That did not go through. Try again." }
+    console.warn("[reInviteGame] Failed:", err)
+    const message = err instanceof Error ? err.message : ""
+    return {
+      ok: false,
+      error: message.includes("active session")
+        ? "Finish your current game first, then bring this one back."
+        : "That did not go through. Try again.",
+    }
   }
 }

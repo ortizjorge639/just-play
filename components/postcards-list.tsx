@@ -55,6 +55,11 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
           ...prev,
           [gameId]: { action: null, loading: false, error: result.error }
         }))
+      } else {
+        setActionState(prev => ({
+          ...prev,
+          [gameId]: { action: null, loading: false }
+        }))
       }
     } catch (err) {
       console.error("Failed to re-invite game:", err)

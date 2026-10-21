@@ -39,8 +39,6 @@ test("Delete button successfully removes postcard from the list", async ({ page 
   const deleteButton = page.getByRole("button", { name: /Delete/i }).first()
   await deleteButton.click()
 
-  // Wait for the postcard to be removed
-  await page.waitForTimeout(500)
   
   // Component should still render but postcard row should be gone
   // After successful delete, the postcard should no longer be visible
@@ -60,8 +58,6 @@ test("Delete button shows error message on failure and keeps postcard visible", 
   const deleteButton = page.getByRole("button", { name: /Delete/i }).first()
   await deleteButton.click()
 
-  // Wait for error to appear
-  await page.waitForTimeout(500)
 
   // Error message should be visible
   await expect(page.locator("text=Could not delete postcard")).toBeVisible()
@@ -70,7 +66,7 @@ test("Delete button shows error message on failure and keeps postcard visible", 
   await expect(page.locator("text=A Short Hike")).toBeVisible()
 })
 
-test("Bring back button successfully removes postcard from the list", async ({ page }) => {
+test("Bring back succeeds without an error and keeps the postcard", async ({ page }) => {
   // Navigate with postcards parameter
   await page.goto("/?postcards&app-shell")
 
@@ -85,10 +81,9 @@ test("Bring back button successfully removes postcard from the list", async ({ p
   await expect(bringBackButton).toBeVisible()
   await bringBackButton.click()
 
-  // Wait for the postcard to be removed
-  await page.waitForTimeout(500)
-  
-  // Postcard should be removed after successful re-invite
+  await expect(bringBackButton).toBeEnabled()
+  await expect(page.getByText(/did not go through/i)).toHaveCount(0)
+  await expect(page.locator("text=A Short Hike")).toBeVisible()
 })
 
 test("Bring back button shows error message on failure and keeps postcard visible", async ({ page }) => {
@@ -105,11 +100,9 @@ test("Bring back button shows error message on failure and keeps postcard visibl
   const bringBackButton = page.getByRole("button", { name: /Bring back/i })
   await bringBackButton.click()
 
-  // Wait for error to appear
-  await page.waitForTimeout(500)
 
   // Error message should be visible
-  await expect(page.locator("text=Could not bring back this game")).toBeVisible()
+  await expect(page.locator("text=That did not go through")).toBeVisible()
 
   // Postcard should still be visible (no optimistic removal)
   await expect(page.locator("text=A Short Hike")).toBeVisible()

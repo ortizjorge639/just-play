@@ -207,12 +207,11 @@ export async function deletePostcard(
 export async function reInviteGame(
   _gameId: string
 ): Promise<{ ok: boolean; error?: string }> {
-  // Mock implementation - in real app this would delete the postcard via RPC
+  // The real action starts a session; the postcard stays until the game is beaten.
   // Support failure via URL param for testing
   if (new URL(globalThis.location?.href || "").searchParams.has("reinvite-fail")) {
-    return { ok: false, error: "Could not bring back this game. Try again." }
+    return { ok: false, error: "That did not go through. Try again." }
   }
-  fixture.postcards = fixture.postcards.filter(p => p.game_id !== _gameId)
   return { ok: true }
 }
 
