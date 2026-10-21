@@ -2,7 +2,7 @@
 
 Status after two independent audit rounds (separate model, read-only).
 Auditor confidence, not a test count: **full spec 35%, narrowed release 70%**.
-Narrowed release = session tracker plus neutral StandBy/Canopy preview, no residents.
+Narrowed release = session tracker plus neutral StandBy/Canopy preview. Residents are a separate first slice, not part of the audited release.
 Target was 95%. It is not reached.
 
 ## Done in the v1 hardening work
@@ -39,11 +39,19 @@ Target was 95%. It is not reached.
 - A pack holds 3 games. The deck no longer scrolls through 10.
 - One Supabase project serves preview and production. That works. Preview writes land in live data, so use test accounts and clear them, or add a second project later.
 
-## Still blocking (code)
+## Code blockers: closed
 
-1. The Game screen still reads the stored progress counters, which stay wrong until migration 020 is corrected.
-2. Quick filter save failures are not handled.
-3. First run is still a slideshow. The spec wants an action-based start.
+1. Game screen counters: migration 022 corrects the stored `game_progress` counters (applied by the owner).
+2. Quick filter save failures now show plain-voice feedback.
+3. First run is action-based, and the old slideshow route is gone.
+
+## Residents (first slice, in review)
+
+Design: [residents-proposal.md](residents-proposal.md). The old first slice in `spec-stories-3-6.md` is superseded.
+
+- Migration 023 adds `residents` and `postcards`, written only by database triggers. **The owner must apply it** (`scripts/023_residents_and_postcards.sql`). It is additive and safe to re-run.
+- The app treats missing tables as empty lists, so code can ship before the migration, but residents only appear once it is applied.
+- Still to do after the slice: a keyboard and contrast pass on the new surfaces, then stamps, name card and emotes.
 
 ## Not in the narrowed release
 
