@@ -292,13 +292,13 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
               <span
                 className="h-2 w-2 rounded-full shrink-0"
                 style={{ 
-                  backgroundColor: isPaused ? "var(--muted-foreground)" : isPlaying ? "var(--success)" : "var(--primary)",
+                 backgroundColor: isPaused ? "var(--info)" : isPlaying ? "var(--success)" : "var(--primary)",
                   animation: isPlaying ? "pulse 2s infinite" : "none"
                 }}
               />
               <span
                 className="text-xs font-semibold uppercase tracking-wide"
-                style={{ color: isPaused ? "var(--muted-foreground)" : isPlaying ? "var(--success)" : "var(--primary)" }}
+               style={{ color: isPaused ? "var(--info)" : isPlaying ? "var(--success)" : "var(--primary)" }}
               >
                 {isPaused ? "Paused" : isPlaying ? "Playing" : "Ready"}
               </span>
@@ -578,7 +578,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, standbyPr
                 <button
                   onClick={handleMarkBeaten}
                   disabled={isPending}
-                  className="h-14 w-full rounded-xl text-base font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
+                  className="h-14 w-full rounded-xl text-base font-semibold text-success-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
                   style={{ backgroundColor: "var(--success)" }}
                 >
                   <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

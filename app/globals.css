@@ -76,13 +76,14 @@
   }
   body {
     @apply bg-background text-foreground;
+    background: var(--background-gradient);
   }
 }
 
 /* Frosted glass card utility with form styling */
 @layer utilities {
   .glass-card {
-    background: var(--card);
+    background: var(--card-gradient);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -99,10 +100,6 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.5),
       inset 0 -3px 0 rgba(0, 0, 0, 0.18),
       0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .form-control:hover {
-    background: linear-gradient(180deg, var(--primary-highlight) 0%, var(--primary) 100%);
   }
 
   /* Card form styling: soft inner highlight and neutral shadow */
