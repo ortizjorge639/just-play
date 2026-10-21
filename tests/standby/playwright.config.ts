@@ -9,6 +9,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
+  // Software WebGL in the canopy specs times out when many workers share the CPU.
+  workers: 2,
   reporter: "list",
   outputDir: "../../test-results/standby",
   use: { baseURL, trace: "retain-on-failure" },
