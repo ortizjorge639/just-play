@@ -147,7 +147,18 @@ export async function markGameBeaten(gameId: string, expected?: ExpectedSession 
   if (fixture.completionError) throw new Error(fixture.completionError)
   if (fixture.delay) await new Promise(resolve => setTimeout(resolve, fixture.delay))
   if (fixture.finalizationDelay) await new Promise(resolve => setTimeout(resolve, fixture.finalizationDelay))
+  const beatenGame = fixture.session?.games
   finishGame("beaten", finalNotes)
+  // Stands in for the migration 023 trigger, which only adds a resident the first time.
+  if (!fixture.residents.some(r => r.game_id === gameId)) {
+    fixture.residents = [...fixture.residents, {
+      user_id: "test-user",
+      game_id: gameId,
+      arrived_at: new Date().toISOString(),
+      arrival_source: "beaten",
+      game: beatenGame,
+    }]
+  }
 }
 export async function abandonGame(gameId: string, expected?: ExpectedSession | null, finalNotes?: string) {
   fixture.gameEndWrites.push({ kind: "abandoned", gameId, expected })

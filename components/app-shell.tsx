@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { getActiveSession } from "@/app/actions"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
 import { useSessionNotes } from "@/hooks/use-session-notes"
@@ -13,6 +13,7 @@ import { XPToastProvider } from "./xp-toast"
 import { BottomNav } from "./bottom-nav"
 import { QuickFilters } from "./quick-filters"
 import { Settings } from "./settings"
+import { ResidentArrivalCard } from "./resident-arrival-card"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
@@ -60,6 +61,7 @@ export function AppShell({
   const [standbyPreferences, setStandbyPreferences] = useState({
     ...DEFAULT_STANDBY_PREFERENCES, ...user.standby_preferences,
   })
+  const [arrivedGame, setArrivedGame] = useState<Game | null>(null)
   const visibleTab = activeTab === "deck" && activeSession ? "session" : activeTab
 
   // Check if there's pending XP from a recent session finish (survives page reload via sessionStorage)
@@ -91,6 +93,31 @@ export function AppShell({
     // Full reload to get updated history
     window.location.reload()
   }, [setActiveSession])
+
+  // Finishing a game reloads the page, so the arrival is handed over through sessionStorage.
+  const handleArrived = useCallback((game: Game) => {
+    try {
+      sessionStorage.setItem("arrivedGame", JSON.stringify({ game, timestamp: Date.now() }))
+    } catch {
+      // storage unavailable: skip the moment rather than block finishing
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("arrivedGame")
+      if (!raw) return
+      sessionStorage.removeItem("arrivedGame")
+      const { game, timestamp } = JSON.parse(raw) as { game: Game; timestamp: number }
+      if (Date.now() - timestamp < 30000) {
+        // sessionStorage only exists on the client, so it can only be read after mount
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setArrivedGame(game)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
 
   const handleTabChange = useCallback((tab: Tab) => {
     if (needsRefresh) {
@@ -212,6 +239,7 @@ export function AppShell({
                 session={activeSession}
                 onFinished={handleSessionFinished}
                 onSessionUpdated={handleSessionUpdated}
+                onArrived={handleArrived}
                 standbyPreferences={standbyPreferences}
                 onPreferencesSaved={setStandbyPreferences}
                 syncError={syncError}
@@ -315,6 +343,15 @@ export function AppShell({
           />
         )}
       </AnimatePresence>
+
+      {/* Resident Arrival Card */}
+      {arrivedGame && (
+        <ResidentArrivalCard
+          game={arrivedGame}
+          isOpen={!!arrivedGame}
+          onClose={() => setArrivedGame(null)}
+        />
+      )}
     </div>
     </XPToastProvider>
   )
