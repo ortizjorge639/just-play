@@ -63,17 +63,17 @@ export function ResidentArrivalCard({ game, isOpen, onClose }: ResidentArrivalCa
                     </div>
 
                     <div>
-                      <h2 className="text-xl font-bold text-foreground mb-1">
+                      <Dialog.Title className="text-xl font-bold text-foreground mb-1">
                         {game.name} has moved in
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
+                      </Dialog.Title>
+                      <Dialog.Description className="text-sm text-muted-foreground">
                         You can find it under Residents in Progress.
-                      </p>
+                      </Dialog.Description>
                     </div>
 
                     <button
                       onClick={onClose}
-                      className="mt-2 min-h-11 w-full rounded-lg bg-success text-success-foreground font-medium transition-colors hover:opacity-90"
+                      className="mt-2 min-h-11 w-full rounded-lg bg-success text-success-foreground font-medium transition-colors hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-success"
                     >
                       Got it
                     </button>
