@@ -123,7 +123,7 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
 
                     {/* Error message */}
                     {state.error && (
-                      <div className="text-xs text-destructive bg-destructive/10 rounded px-2.5 py-1.5">
+                      <div role="alert" className="text-xs text-destructive bg-destructive/10 rounded px-2.5 py-1.5">
                         {state.error}
                       </div>
                     )}
@@ -133,16 +133,16 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
                       <button
                         onClick={() => handleReInvite(postcard.game_id)}
                         disabled={isLoading}
-                        className="text-xs px-2.5 py-1.5 rounded bg-primary/15 text-primary hover:bg-primary/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-                        aria-label="Bring back"
+                        className="min-h-11 text-xs px-3.5 rounded bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary text-primary hover:bg-primary/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                        aria-label={`Bring back ${postcard.game.name}`}
                       >
                         {state.action === 'reinvite' && isLoading ? "Bringing back…" : "Bring back"}
                       </button>
                       <button
                         onClick={() => handleDelete(postcard.game_id)}
                         disabled={isLoading}
-                        className="text-xs px-2.5 py-1.5 rounded bg-destructive/15 text-destructive hover:bg-destructive/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-                        aria-label="Delete"
+                        className="min-h-11 text-xs px-3.5 rounded bg-destructive/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive text-destructive hover:bg-destructive/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                        aria-label={`Delete keepsake for ${postcard.game.name}`}
                       >
                         {state.action === 'delete' && isLoading ? "Deleting…" : "Delete"}
                       </button>
