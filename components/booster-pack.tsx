@@ -78,12 +78,12 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
           >
             {/* Pack visual */}
             <motion.div
-              className="relative flex h-48 w-36 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/10 to-primary/30 border-2 border-primary/40 shadow-lg shadow-primary/20"
+             className="relative flex h-48 w-36 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/10 to-primary/30 border-2 border-primary/40 shadow-lg"
               animate={{
                 boxShadow: [
-                  "0 0 20px rgba(88, 101, 242, 0.2)",
-                  "0 0 40px rgba(88, 101, 242, 0.4)",
-                  "0 0 20px rgba(88, 101, 242, 0.2)",
+                 "0 0 20px rgba(0, 0, 0, 0.15)",
+                 "0 0 40px rgba(0, 0, 0, 0.25)",
+                 "0 0 20px rgba(0, 0, 0, 0.15)",
                 ],
               }}
               transition={{ duration: 2, repeat: Infinity }}
