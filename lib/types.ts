@@ -119,6 +119,7 @@ export interface Resident {
   arrived_at: string
   arrival_source: string
   game?: Game
+  last_emote?: { emote: string; emoted_at: string } | null
 }
 
 export interface Postcard {
