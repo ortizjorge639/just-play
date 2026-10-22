@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test"
 
-test("Progress tab shows Keepsakes heading and game name when a postcard exists", async ({ page }) => {
+test("Home tab shows Keepsakes heading and game name when a postcard exists", async ({ page }) => {
   // Navigate with postcards parameter to populate fixture
   await page.goto("/?postcards&app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  // Navigate to Home tab
+  await page.getByRole("button", { name: /Home/i }).click()
 
   // Check for Keepsakes heading
   await expect(page.getByRole("heading", { name: /Keepsakes/i })).toBeVisible()
@@ -14,12 +14,12 @@ test("Progress tab shows Keepsakes heading and game name when a postcard exists"
   await expect(page.locator("text=A Short Hike")).toBeVisible()
 })
 
-test("Progress tab renders nothing when no postcards exist", async ({ page }) => {
+test("Home tab renders nothing when no postcards exist", async ({ page }) => {
   // Navigate without postcards parameter - fixture will be empty
   await page.goto("/?app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  // Navigate to Home tab
+  await page.getByRole("button", { name: /Home/i }).click()
 
   // Check that Keepsakes heading is not present
   await expect(page.getByRole("heading", { name: /Keepsakes/i })).toHaveCount(0)
@@ -29,8 +29,8 @@ test("Delete button successfully removes postcard from the list", async ({ page 
   // Navigate with postcards parameter
   await page.goto("/?postcards&app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  // Navigate to Home tab
+  await page.getByRole("button", { name: /Home/i }).click()
 
   // Verify postcard is visible
   await expect(page.locator("text=A Short Hike")).toBeVisible()
@@ -48,8 +48,8 @@ test("Delete button shows error message on failure and keeps postcard visible", 
   // Navigate with postcards parameter and failure flag
   await page.goto("/?postcards&delete-fail&app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  // Navigate to Home tab
+  await page.getByRole("button", { name: /Home/i }).click()
 
   // Verify postcard is visible
   await expect(page.locator("text=A Short Hike")).toBeVisible()
@@ -70,8 +70,8 @@ test("Bring back succeeds without an error and keeps the postcard", async ({ pag
   // Navigate with postcards parameter
   await page.goto("/?postcards&app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  // Navigate to Home tab
+  await page.getByRole("button", { name: /Home/i }).click()
 
   // Verify postcard is visible
   await expect(page.locator("text=A Short Hike")).toBeVisible()
@@ -90,8 +90,8 @@ test("Bring back button shows error message on failure and keeps postcard visibl
   // Navigate with postcards parameter and failure flag
   await page.goto("/?postcards&reinvite-fail&app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  // Navigate to Home tab
+  await page.getByRole("button", { name: /Home/i }).click()
 
   // Verify postcard is visible
   await expect(page.locator("text=A Short Hike")).toBeVisible()
@@ -115,8 +115,8 @@ test("Respects reduced motion preference for postcard animations", async ({ page
   // Navigate with postcards
   await page.goto("/?postcards&app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  // Navigate to Home tab
+  await page.getByRole("button", { name: /Home/i }).click()
 
   // Verify postcards still render (no animations, but visible)
   await expect(page.locator("text=A Short Hike")).toBeVisible()
@@ -126,8 +126,8 @@ test("Postcard shows creation date in human-readable format", async ({ page }) =
   // Navigate with postcards parameter
   await page.goto("/?postcards&app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  // Navigate to Home tab
+  await page.getByRole("button", { name: /Home/i }).click()
 
   // Check for date text (should show "ago" format from formatDistanceToNow)
   const dateText = page.locator("text=/ago/")
