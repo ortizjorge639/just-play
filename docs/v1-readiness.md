@@ -79,8 +79,8 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 
 ## Still to build
 
-Nothing from stories 3-6. Merit tiers wait on the settlement art.
+Nothing from stories 3-6. Merit tiers wait on the settlement art ([what that means](settlement-art.md)).
 
 ## Not in the narrowed release
 
-Spec story 7 is partly open, and `docs/v1-spec.md` is missing from main.
+Story 7 is undefined. [v1-spec.md](v1-spec.md) rebuilds what the repo supports, lists the candidates, and has the questions for the owner.
