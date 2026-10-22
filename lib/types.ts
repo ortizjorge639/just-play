@@ -127,3 +127,12 @@ export interface Postcard {
   created_at: string
   game?: Game
 }
+
+export type StampRule =
+  | { kind: "hours"; target_minutes: number; label: null; game_id: string | null }
+  | { kind: "milestone"; target_minutes: null; label: string; game_id: string | null }
+
+export type StampRuleInput =
+  | { kind: "hours"; targetMinutes: number }
+  | { kind: "milestone"; label: string }
+  | null

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard, StampRule, StampRuleInput } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
@@ -1077,5 +1077,94 @@ export async function reInviteGame(
         ? "Finish your current game first, then bring this one back."
         : "That did not go through. Try again.",
     }
+  }
+}
+
+export async function getStampRules(): Promise<StampRule[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  try {
+    const { data, error } = await supabase
+      .from("stamp_rules")
+      .select("game_id, kind, target_minutes, label")
+    if (error) {
+      console.warn("[stamps] Query failed (table missing?):", error.message)
+      return []
+    }
+    return (data ?? []) as StampRule[]
+  } catch (err) {
+    console.warn("[stamps] Catch error:", err)
+    return []
+  }
+}
+
+// gameId null is the default rule; a null rule clears it.
+export async function setStampRule(
+  gameId: string | null,
+  rule: StampRuleInput
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+
+  if (rule?.kind === "hours" && !(Number.isInteger(rule.targetMinutes) && rule.targetMinutes > 0)) {
+    return { ok: false, error: "Pick a number of hours above zero." }
+  }
+  if (rule?.kind === "milestone") {
+    const label = rule.label.trim()
+    if (label.length < 1 || label.length > 60) {
+      return { ok: false, error: "Describe the milestone in 1 to 60 characters." }
+    }
+  }
+
+  try {
+    const { error } = await supabase.rpc("set_stamp_rule", {
+      p_game_id: gameId,
+      p_kind: rule?.kind ?? null,
+      p_target_minutes: rule?.kind === "hours" ? rule.targetMinutes : null,
+      p_label: rule?.kind === "milestone" ? rule.label.trim() : null,
+    })
+    if (error) {
+      console.warn("[setStampRule] RPC failed:", error.message)
+      return { ok: false, error: "Could not save that. Try again." }
+    }
+    revalidatePath("/")
+    return { ok: true }
+  } catch (err) {
+    console.warn("[setStampRule] Catch error:", err)
+    return { ok: false, error: "That did not go through. Try again." }
+  }
+}
+
+export async function confirmStamp(
+  gameId: string
+): Promise<{ ok: boolean; arrived?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+
+  try {
+    const { data, error } = await supabase.rpc("confirm_stamp", { p_game_id: gameId })
+    if (error) {
+      console.warn("[confirmStamp] RPC failed:", error.message)
+      const message = error.message
+      return {
+        ok: false,
+        error: message.includes("Not enough time")
+          ? "You have not played that long yet."
+          : message.includes("not invited")
+            ? "Start this game first, then let it move in."
+            : message.includes("No stamp rule")
+              ? "Set a rule for this game first."
+              : "That did not go through. Try again.",
+      }
+    }
+    revalidatePath("/")
+    return { ok: true, arrived: data === true }
+  } catch (err) {
+    console.warn("[confirmStamp] Catch error:", err)
+    return { ok: false, error: "That did not go through. Try again." }
   }
 }
