@@ -1,4 +1,4 @@
-import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard } from "@/lib/types"
+import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard, StampRule, StampRuleInput } from "@/lib/types"
 
 export const game: Game = {
   id: "test-game", name: "A Short Hike", genres: ["Adventure"],
@@ -49,6 +49,8 @@ export const fixture: {
   events: { kind: "notes-start" | "notes-saved" | "notes-late" | "notes-ack-held" | "notes-ack-released" | "finish" | "beaten" | "abandoned"; notes: string }[]
   residents: Resident[]
   postcards: Postcard[]
+  stampRules: StampRule[]
+  stampCalls: string[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
   holdReads: false, readReleases: [], readSnapshots: [], readCompletions: 0,
@@ -64,6 +66,8 @@ export const fixture: {
   finalDrafts: [],
   residents: [],
   postcards: [],
+  stampRules: [],
+  stampCalls: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -224,6 +228,37 @@ export async function reInviteGame(
     return { ok: false, error: "That did not go through. Try again." }
   }
   return { ok: true }
+}
+
+function hasParam(name: string) {
+  return new URL(globalThis.location?.href || "").searchParams.has(name)
+}
+
+export async function getStampRules(): Promise<StampRule[]> {
+  return fixture.stampRules
+}
+
+export async function setStampRule(
+  gameId: string | null,
+  rule: StampRuleInput
+): Promise<{ ok: boolean; error?: string }> {
+  if (hasParam("stamp-save-fail")) return { ok: false, error: "Could not save that. Try again." }
+  fixture.stampCalls.push(`set:${gameId ?? "default"}:${rule ? rule.kind : "clear"}`)
+  fixture.stampRules = fixture.stampRules.filter(r => r.game_id !== gameId)
+  if (rule?.kind === "hours") {
+    fixture.stampRules.push({ kind: "hours", target_minutes: rule.targetMinutes, label: null, game_id: gameId })
+  } else if (rule?.kind === "milestone") {
+    fixture.stampRules.push({ kind: "milestone", target_minutes: null, label: rule.label.trim(), game_id: gameId })
+  }
+  return { ok: true }
+}
+
+export async function confirmStamp(
+  gameId: string
+): Promise<{ ok: boolean; arrived?: boolean; error?: string }> {
+  if (hasParam("stamp-confirm-fail")) return { ok: false, error: "That did not go through. Try again." }
+  fixture.stampCalls.push(`confirm:${gameId}`)
+  return { ok: true, arrived: true }
 }
 
 // These surfaces are bundled only for the real AppShell remount test, not exercised.
