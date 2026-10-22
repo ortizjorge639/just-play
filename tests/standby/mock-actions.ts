@@ -53,6 +53,7 @@ export const fixture: {
   stampCalls: string[]
   nameCard: NameCard | null
   cardCalls: NameCardInput[]
+  emoteCalls: string[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
   holdReads: false, readReleases: [], readSnapshots: [], readCompletions: 0,
@@ -72,6 +73,7 @@ export const fixture: {
   stampCalls: [],
   nameCard: null,
   cardCalls: [],
+  emoteCalls: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -277,6 +279,15 @@ export async function saveNameCard(
   }
   fixture.nameCard = card
   return { ok: true, card }
+}
+
+export async function recordEmote(
+  gameId: string,
+  emote: string
+): Promise<{ ok: boolean; emote?: string; emoted_at?: string; error?: string }> {
+  if (hasParam("emote-fail")) return { ok: false, error: "Couldn't save that one." }
+  fixture.emoteCalls.push(`${gameId}:${emote}`)
+  return { ok: true, emote, emoted_at: new Date().toISOString() }
 }
 
 // These surfaces are bundled only for the real AppShell remount test, not exercised.

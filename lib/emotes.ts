@@ -8,7 +8,14 @@ export const EMOTE_LABELS: Record<EmoteKind, string> = {
   check_in: "Check in",
 }
 
-// Draft lines, pending the owner's approval. Plain, never about need, guilt or time away.
+export const EMOTE_PAST: Record<EmoteKind, string> = {
+  wave: "Waved",
+  celebrate: "Cheered",
+  rest: "Rested together",
+  check_in: "Checked in",
+}
+
+// Lines approved by the owner. Plain, never about need, guilt or time away.
 export const EMOTE_LINES: Record<EmoteKind, readonly string[]> = {
   wave: [
     "A wave back.",
