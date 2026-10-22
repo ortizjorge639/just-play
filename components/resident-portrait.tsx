@@ -22,14 +22,14 @@ export function ResidentPortrait({ resident }: ResidentPortraitProps) {
           <div className="flex-shrink-0">
             <Image
               src={resident.game.header_image}
-              alt={resident.game.name}
+              alt=""
               width={64}
               height={64}
               className="rounded object-cover"
             />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-foreground truncate">{resident.game.name}</h3>
+            <h3 className="font-medium text-foreground line-clamp-2">{resident.game.name}</h3>
             <p className="text-xs text-muted-foreground mt-1">
               Arrived {formatted}
             </p>
