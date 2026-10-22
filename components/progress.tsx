@@ -295,18 +295,18 @@ export function Progress({ sessions, displayName, playerStats, residents, postca
           <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
             Residents
           </h2>
-          <div className="grid grid-cols-1 gap-2.5">
+          <ul className="grid grid-cols-1 gap-2.5">
             {residents.map((resident, i) => (
-              <motion.div
+              <motion.li
                 key={`${resident.user_id}-${resident.game_id}`}
                 initial={prefersReducedMotion ? undefined : { opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={prefersReducedMotion ? undefined : { delay: 0.3 + 0.05 * i }}
               >
                 <ResidentPortrait resident={resident} />
-              </motion.div>
+              </motion.li>
             ))}
-          </div>
+          </ul>
         </motion.div>
       )}
 
