@@ -68,13 +68,19 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 ## Name card (shipped)
 
 - Migration 025 (applied) adds `name_cards` and `save_name_card`. The card sits in the Progress header and is edited from Progress or Settings ([name-card-proposal.md](name-card-proposal.md)).
-- Known gap: `users_update_own` lets a signed-in player write their own `display_name`, `total_xp` and `level` directly, which skips the card's limits. A separate fix migration is pending the owner's call.
+- Migration 026 (applied) stops a direct `display_name` write from the client. `total_xp` and `level` are still client-writable, because the standby functions run as the caller. Locking them needs those functions reworked first.
 - Still open: a contrast pass on the card and form.
+
+## Emotes (shipped)
+
+- Migration 027 (applied) adds `resident_emotes` and `record_emote`. Each resident on Home has a "Say hi" menu with four emotes; only the last one is kept ([emotes-proposal.md](emotes-proposal.md)).
+- The four lines per emote live in `lib/emotes.ts` and were approved by the owner.
+- Still open: a contrast pass on the menu.
 
 ## Still to build
 
-Emotes ([emotes-proposal.md](emotes-proposal.md)). It needs its own migration and the owner's go-ahead.
+Nothing from stories 3-6. Merit tiers wait on the settlement art.
 
 ## Not in the narrowed release
 
-Emotes (spec story 6) are designed but not built. Spec story 7 is partly open, and `docs/v1-spec.md` is missing from main.
+Spec story 7 is partly open, and `docs/v1-spec.md` is missing from main.
