@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion"
 import { signout } from "@/app/auth/actions"
-import type { StandbyPreferences } from "@/lib/types"
+import type { StandbyPreferences, StampRule } from "@/lib/types"
+import { StampRuleEditor } from "./stamp-rule-editor"
 import { StandbyPreferencesForm } from "./standby-preferences"
 
 interface SettingsProps {
@@ -11,6 +12,8 @@ interface SettingsProps {
   onEditPreferences: () => void
   standbyPreferences: StandbyPreferences
   onPreferencesSaved: (preferences: StandbyPreferences) => void
+  stampRules: StampRule[]
+  onStampRuleSaved: (gameId: string | null, rule: StampRule | null) => void
 }
 
 export function Settings({ 
@@ -19,6 +22,8 @@ export function Settings({
   onEditPreferences,
   standbyPreferences,
   onPreferencesSaved,
+  stampRules,
+  onStampRuleSaved,
 }: SettingsProps) {
   return (
     <motion.div
@@ -74,6 +79,13 @@ export function Settings({
       {/* Settings list */}
       <div className="border-b border-border px-6 py-6">
         <StandbyPreferencesForm value={standbyPreferences} onSaved={onPreferencesSaved} />
+      </div>
+      <div className="border-b border-border px-6 py-6">
+        <StampRuleEditor
+          gameId={null}
+          rule={stampRules.find(r => r.game_id === null) ?? null}
+          onSaved={onStampRuleSaved}
+        />
       </div>
       <div className="px-6 py-4">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">

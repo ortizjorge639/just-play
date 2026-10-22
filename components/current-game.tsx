@@ -5,16 +5,24 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { startSessionForGame, markGameBeaten, abandonGame } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
-import type { GameProgress, Game } from "@/lib/types"
+import { StampPanel } from "./stamp-panel"
+import type { GameProgress, Game, StampRule } from "@/lib/types"
 
 interface CurrentGameProps {
   gameProgress: GameProgress & { game: Game }
   onSessionStarted: () => void
   syncError: string | null
   onRetry: () => void
+  stampRules: StampRule[]
+  isResident: boolean
+  onStampRuleSaved: (gameId: string | null, rule: StampRule | null) => void
+  onArrived: (game: Game) => void
 }
 
-export function CurrentGame({ gameProgress, onSessionStarted, syncError, onRetry }: CurrentGameProps) {
+export function CurrentGame({
+  gameProgress, onSessionStarted, syncError, onRetry,
+  stampRules, isResident, onStampRuleSaved, onArrived,
+}: CurrentGameProps) {
   const [isPending, startTransition] = useTransition()
   const [showOptions, setShowOptions] = useState(false)
   const [flipped, setFlipped] = useState(false)
@@ -22,6 +30,8 @@ export function CurrentGame({ gameProgress, onSessionStarted, syncError, onRetry
   const showXPToast = useXPToast()
 
   const game = gameProgress.game
+  const ownRule = stampRules.find(r => r.game_id === game.id) ?? null
+  const defaultRule = stampRules.find(r => r.game_id === null) ?? null
 
   const handleStartSession = () => {
     if (syncError || isPending) return
@@ -249,6 +259,17 @@ export function CurrentGame({ gameProgress, onSessionStarted, syncError, onRetry
           </motion.div>
         )}
       </AnimatePresence>
+
+      {!isResident ? (
+        <StampPanel
+          game={game}
+          playedMinutes={gameProgress.total_time_minutes}
+          rule={ownRule ?? defaultRule}
+          ownRule={ownRule}
+          onRuleSaved={onStampRuleSaved}
+          onArrived={onArrived}
+        />
+      ) : null}
 
       {/* Actions */}
       <div className="w-full max-w-[320px] flex flex-col gap-3">

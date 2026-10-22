@@ -18,7 +18,7 @@ import { ResidentArrivalCard } from "./resident-arrival-card"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
-import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, Postcard } from "@/lib/types"
+import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, Postcard, StampRule } from "@/lib/types"
 
 type Tab = "deck" | "session" | "home" | "progress"
 
@@ -31,6 +31,7 @@ interface AppShellProps {
   playerStats: PlayerStats | null
   residents?: Resident[]
   postcards?: Postcard[]
+  stampRules?: StampRule[]
   isBoosterPack: boolean
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
 }
@@ -44,6 +45,7 @@ export function AppShell({
   playerStats,
   residents,
   postcards,
+  stampRules: initialStampRules,
   isBoosterPack,
   boosterPackStatus,
 }: AppShellProps) {
@@ -63,6 +65,13 @@ export function AppShell({
     ...DEFAULT_STANDBY_PREFERENCES, ...user.standby_preferences,
   })
   const [arrivedGame, setArrivedGame] = useState<Game | null>(null)
+  const [stampRules, setStampRules] = useState<StampRule[]>(initialStampRules ?? [])
+  const handleStampRuleSaved = useCallback((gameId: string | null, rule: StampRule | null) => {
+    setStampRules(prev => {
+      const rest = prev.filter(r => r.game_id !== gameId)
+      return rule ? [...rest, rule] : rest
+    })
+  }, [])
   const visibleTab = activeTab === "deck" && activeSession ? "session" : activeTab
 
   // Check if there's pending XP from a recent session finish (survives page reload via sessionStorage)
@@ -255,6 +264,10 @@ export function AppShell({
                 onSessionStarted={handleSessionCreated}
                 syncError={syncError}
                 onRetry={refreshSession}
+                stampRules={stampRules}
+                isResident={(residents ?? []).some(r => r.game_id === activeGame.game_id)}
+                onStampRuleSaved={handleStampRuleSaved}
+                onArrived={setArrivedGame}
               />
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
@@ -352,6 +365,8 @@ export function AppShell({
             displayName={user.display_name}
             standbyPreferences={standbyPreferences}
             onPreferencesSaved={setStandbyPreferences}
+            stampRules={stampRules}
+            onStampRuleSaved={handleStampRuleSaved}
             onClose={() => setShowSettings(false)}
             onEditPreferences={() => {
               setShowSettings(false)
