@@ -65,10 +65,16 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 - Not yet checked against the live tables. After applying 024, set a rule on production and confirm it saves.
 - Still open: a contrast pass on the new controls, and merit tiers (waiting on the settlement art).
 
+## Name card (shipped)
+
+- Migration 025 (applied) adds `name_cards` and `save_name_card`. The card sits in the Progress header and is edited from Progress or Settings ([name-card-proposal.md](name-card-proposal.md)).
+- Known gap: `users_update_own` lets a signed-in player write their own `display_name`, `total_xp` and `level` directly, which skips the card's limits. A separate fix migration is pending the owner's call.
+- Still open: a contrast pass on the card and form.
+
 ## Still to build
 
-Name card and emotes ([name-card-proposal.md](name-card-proposal.md), [emotes-proposal.md](emotes-proposal.md)). Each needs its own migration (025 onward) and the owner's go-ahead.
+Emotes ([emotes-proposal.md](emotes-proposal.md)). It needs its own migration and the owner's go-ahead.
 
 ## Not in the narrowed release
 
-Name card and emotes (spec stories 3-6) are designed but not built. Spec story 7 is partly open, and `docs/v1-spec.md` is missing from main.
+Emotes (spec story 6) are designed but not built. Spec story 7 is partly open, and `docs/v1-spec.md` is missing from main.
