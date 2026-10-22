@@ -48,13 +48,12 @@ Progress goes back to what its name says: level, XP, stats and history. Stamps,
 the name card and emotes plug into this screen later without changing its
 structure.
 
-### No new tables and no migration
+### No new tables, no migration, no new read
 
-Everything Home shows is already loaded. "On the way" needs one extra read of
-the player's own `game_progress` rows that are `playing` and not in
-`residents`. That is a Server Action, using the existing server client and
-`auth.getUser()`, with no write. Nothing in this slice needs the owner to apply
-SQL.
+Everything Home shows is already loaded. The app allows only one `playing`
+game at a time (`getActiveGame` reads it with `maybeSingle`), so "On the way"
+is the current game when it has no resident yet, taken from the existing
+`activeGame`. Nothing in this slice needs a new Server Action or SQL.
 
 ### What the player sees
 
@@ -110,10 +109,9 @@ One PR per task. Arrows are real dependencies only.
 | ID | Task | Needs | Done means |
 | --- | --- | --- | --- |
 | H0 | Owner answers the decisions above | none | Defaults agreed or changed |
-| H1 | `getInvitedGames()` read action and type | H0 | Returns only the player's own `playing` games without a resident; failure is non-fatal |
-| H2 | `HomeView` component and Home tab in nav and shell; move Residents and Keepsakes out of `Progress` | H1 | Rules 1 to 3 and 5 hold |
-| H3 | Playwright coverage, keyboard and contrast pass, copy review, updated Progress tests | H2 | Rules 4 and 6 to 8 hold; lint `--max-warnings 0`, `tsc` and the standby suite pass |
-| H4 | Update `v1-readiness.md` and the spec | H3 | Docs match what shipped |
+| H1 | `HomeView` component and Home tab in nav and shell; move Residents and Keepsakes out of `Progress` | H0 | Rules 1 to 3 and 5 hold |
+| H2 | Playwright coverage, keyboard and contrast pass, copy review, updated Progress tests | H1 | Rules 4 and 6 to 8 hold; lint `--max-warnings 0`, `tsc` and the standby suite pass |
+| H3 | Update `v1-readiness.md` and the spec | H2 | Docs match what shipped |
 
 ## Safe rollout
 

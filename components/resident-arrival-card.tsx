@@ -67,7 +67,7 @@ export function ResidentArrivalCard({ game, isOpen, onClose }: ResidentArrivalCa
                         {game.name} has moved in
                       </Dialog.Title>
                       <Dialog.Description className="text-sm text-muted-foreground">
-                        You can find it under Residents in Progress.
+                        You can find it on Home.
                       </Dialog.Description>
                     </div>
 

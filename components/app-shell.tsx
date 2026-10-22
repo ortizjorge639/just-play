@@ -9,6 +9,7 @@ import { CardDeck } from "./card-deck"
 import { ActiveSession } from "./active-session"
 import { CurrentGame } from "./current-game"
 import { Progress } from "./progress"
+import { HomeView } from "./home-view"
 import { XPToastProvider } from "./xp-toast"
 import { BottomNav } from "./bottom-nav"
 import { QuickFilters } from "./quick-filters"
@@ -19,7 +20,7 @@ import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
 import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, Postcard } from "@/lib/types"
 
-type Tab = "deck" | "session" | "progress"
+type Tab = "deck" | "session" | "home" | "progress"
 
 interface AppShellProps {
   user: UserProfile
@@ -287,6 +288,24 @@ export function AppShell({
           </motion.div>
         )}
 
+        {visibleTab === "home" && (
+          <motion.div
+            key="home"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-1 flex-col"
+          >
+            <HomeView
+              displayName={user.display_name}
+              residents={residents ?? []}
+              postcards={postcards ?? []}
+              invitedGame={activeGame && !(residents ?? []).some(r => r.game_id === activeGame.game_id) ? activeGame.game : null}
+            />
+          </motion.div>
+        )}
+
         {visibleTab === "progress" && (
           <motion.div
             key="progress"
@@ -300,8 +319,6 @@ export function AppShell({
               sessions={initialHistory}
               displayName={user.display_name}
               playerStats={playerStats}
-              residents={residents}
-              postcards={postcards}
             />
           </motion.div>
         )}

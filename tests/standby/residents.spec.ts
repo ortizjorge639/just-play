@@ -27,7 +27,7 @@ test("Arrival card shows the first time a game is beaten", async ({ page }) => {
   await beatGame(page)
 
   await expect(page.getByRole("heading", { name: /has moved in/ })).toBeVisible()
-  await expect(page.getByText("You can find it under Residents in Progress.")).toBeVisible()
+  await expect(page.getByText("You can find it on Home.")).toBeVisible()
   await page.getByRole("button", { name: "Got it" }).click()
   await expect(page.getByRole("heading", { name: /has moved in/ })).toHaveCount(0)
 })
@@ -61,15 +61,13 @@ test("Missing residents table gracefully degrades", async ({ page }) => {
   await expect(page.locator("text=A Short Hike")).toBeVisible()
 })
 
-test("Progress tab shows Residents heading and game name when a resident exists", async ({ page }) => {
+test("Home tab shows Lives here heading and game name when a resident exists", async ({ page }) => {
   // Navigate with residents parameter to populate fixture
   await page.goto("/?residents&app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  await page.getByRole("button", { name: /Home/i }).click()
 
-  // Check for Residents heading
-  await expect(page.getByRole("heading", { name: /Residents/i })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Lives here" })).toBeVisible()
 
   // Check for game name in the resident card
   await expect(page.locator("text=A Short Hike")).toBeVisible()
@@ -78,13 +76,11 @@ test("Progress tab shows Residents heading and game name when a resident exists"
   await expect(page.locator("text=/Arrived/")).toBeVisible()
 })
 
-test("Progress tab renders nothing when no residents exist", async ({ page }) => {
+test("Home tab hides Lives here when no residents exist", async ({ page }) => {
   // Navigate without residents parameter - fixture will be empty
   await page.goto("/?app-shell")
 
-  // Navigate to Progress tab
-  await page.getByRole("button", { name: /Progress/i }).click()
+  await page.getByRole("button", { name: /Home/i }).click()
 
-  // Check that Residents heading is not present
-  await expect(page.getByRole("heading", { name: /Residents/i })).toHaveCount(0)
+  await expect(page.getByRole("heading", { name: "Lives here" })).toHaveCount(0)
 })
