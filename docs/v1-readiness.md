@@ -2,7 +2,7 @@
 
 Status after two independent audit rounds (separate model, read-only).
 Auditor confidence, not a test count: **full spec 35%, narrowed release 70%**.
-Narrowed release = session tracker plus neutral StandBy/Canopy preview. Residents are a separate first slice, not part of the audited release.
+Narrowed release = session tracker plus neutral StandBy/Canopy preview. Residents, Home and stamps are separate slices, not part of the audited release.
 Target was 95%. It is not reached.
 
 ## Done in the v1 hardening work
@@ -45,14 +45,30 @@ Target was 95%. It is not reached.
 2. Quick filter save failures now show plain-voice feedback.
 3. First run is action-based, and the old slideshow route is gone.
 
-## Residents (first slice, in review)
+## Residents (shipped, owner applied 023)
 
 Design: [residents-proposal.md](residents-proposal.md). The old first slice in `spec-stories-3-6.md` is superseded.
 
-- Migration 023 adds `residents` and `postcards`, written only by database triggers. **The owner must apply it** (`scripts/023_residents_and_postcards.sql`). It is additive and safe to re-run.
-- The app treats missing tables as empty lists, so code can ship before the migration, but residents only appear once it is applied.
-- Still to do after the slice: a keyboard and contrast pass on the new surfaces, then stamps, name card and emotes.
+- Migration 023 adds `residents` and `postcards`, written only by database triggers. Applied.
+- The keyboard and accessibility pass on the residents surfaces is done.
+
+## Home (shipped)
+
+Design: [home-view-proposal.md](home-view-proposal.md). A Home tab shows who lives here, the game on the way (the current game, until it has a resident) and keepsakes. Residents and keepsakes moved out of Progress. No migration.
+
+## Stamps (shipped)
+
+Design: [stamps-proposal.md](stamps-proposal.md).
+
+- Migration 024 adds `stamp_rules`, `stamp_proofs`, `confirm_stamp` and `set_stamp_rule`. **The owner must apply it** (`scripts/024_stamps.sql`). It is additive and safe to re-run. The UI needs it live.
+- Settings sets the default rule; the game screen sets a rule for one game and shows "Let it move in" once the rule is met. The player always confirms.
+- Not yet checked against the live tables. After applying 024, set a rule on production and confirm it saves.
+- Still open: a contrast pass on the new controls, and merit tiers (waiting on the settlement art).
+
+## Still to build
+
+Name card and emotes ([name-card-proposal.md](name-card-proposal.md), [emotes-proposal.md](emotes-proposal.md)). Each needs its own migration (025 onward) and the owner's go-ahead.
 
 ## Not in the narrowed release
 
-Residents, stamps, name card, emotes and home view (spec stories 3-6). Spec story 7 is partly open.
+Name card and emotes (spec stories 3-6) are designed but not built. Spec story 7 is partly open, and `docs/v1-spec.md` is missing from main.
