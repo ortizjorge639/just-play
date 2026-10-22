@@ -8,6 +8,7 @@ import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
 import { calculateStreak } from "@/lib/streak"
+import { isEmote, type EmoteKind } from "@/lib/emotes"
 import { getIGDBGameById } from "@/lib/igdb"
 
 export async function getUser() {
@@ -983,6 +984,17 @@ export async function getResidents(): Promise<Resident[]> {
       return []
     }
 
+    // Separate query so a missing emotes table never hides residents.
+    const lastEmotes = new Map<string, { emote: string; emoted_at: string }>()
+    const { data: emoteRows, error: emoteError } = await supabase
+      .from("resident_emotes")
+      .select("game_id, emote, emoted_at")
+    if (emoteError) {
+      console.warn("[residents] Emote query failed:", emoteError.message)
+    } else {
+      for (const e of emoteRows ?? []) lastEmotes.set(e.game_id, { emote: e.emote, emoted_at: e.emoted_at })
+    }
+
     // Type cast the nested game to a single object instead of array
     return (data as Array<{
       user_id: string
@@ -993,6 +1005,7 @@ export async function getResidents(): Promise<Resident[]> {
     }>).map(row => ({
       ...row,
       game: Array.isArray(row.game) ? row.game[0] : row.game,
+      last_emote: lastEmotes.get(row.game_id) ?? null,
     })) || []
   } catch (err) {
     console.warn("[residents] Catch error:", err)
@@ -1225,5 +1238,29 @@ export async function saveNameCard(
   } catch (err) {
     console.warn("[saveNameCard] Catch error:", err)
     return { ok: false, error: "Couldn't save your card. Try again." }
+  }
+}
+
+export async function recordEmote(
+  gameId: string,
+  emote: string
+): Promise<{ ok: boolean; emote?: EmoteKind; emoted_at?: string; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+  if (!isEmote(emote)) return { ok: false, error: "Pick one of the four." }
+
+  try {
+    const { data, error } = await supabase.rpc("record_emote", { p_game_id: gameId, p_emote: emote })
+    if (error) {
+      console.warn("[recordEmote] RPC failed:", error.message)
+      return { ok: false, error: "Couldn't save that one." }
+    }
+    revalidatePath("/")
+    const row = data as { emote: EmoteKind; emoted_at: string }
+    return { ok: true, emote: row.emote, emoted_at: row.emoted_at }
+  } catch (err) {
+    console.warn("[recordEmote] Catch error:", err)
+    return { ok: false, error: "Couldn't save that one." }
   }
 }
