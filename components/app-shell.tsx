@@ -14,11 +14,12 @@ import { XPToastProvider } from "./xp-toast"
 import { BottomNav } from "./bottom-nav"
 import { QuickFilters } from "./quick-filters"
 import { Settings } from "./settings"
+import { NameCardEditor } from "./name-card-editor"
 import { ResidentArrivalCard } from "./resident-arrival-card"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
-import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, Postcard, StampRule } from "@/lib/types"
+import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, Postcard, StampRule, NameCard } from "@/lib/types"
 
 type Tab = "deck" | "session" | "home" | "progress"
 
@@ -32,6 +33,7 @@ interface AppShellProps {
   residents?: Resident[]
   postcards?: Postcard[]
   stampRules?: StampRule[]
+  nameCard?: NameCard | null
   isBoosterPack: boolean
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
 }
@@ -46,6 +48,7 @@ export function AppShell({
   residents,
   postcards,
   stampRules: initialStampRules,
+  nameCard: initialNameCard,
   isBoosterPack,
   boosterPackStatus,
 }: AppShellProps) {
@@ -64,6 +67,16 @@ export function AppShell({
   const [standbyPreferences, setStandbyPreferences] = useState({
     ...DEFAULT_STANDBY_PREFERENCES, ...user.standby_preferences,
   })
+  const [nameCard, setNameCard] = useState<NameCard | null>(initialNameCard ?? null)
+  const [cardName, setCardName] = useState(user.display_name)
+  const [showCardEditor, setShowCardEditor] = useState(false)
+  const library = (() => {
+    const seen = new Map<string, Game>()
+    for (const s of initialHistory) seen.set(s.games.id, s.games)
+    if (activeGame) seen.set(activeGame.game.id, activeGame.game)
+    if (initialSession) seen.set(initialSession.games.id, initialSession.games)
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
+  })()
   const [arrivedGame, setArrivedGame] = useState<Game | null>(null)
   const [stampRules, setStampRules] = useState<StampRule[]>(initialStampRules ?? [])
   const handleStampRuleSaved = useCallback((gameId: string | null, rule: StampRule | null) => {
@@ -330,8 +343,11 @@ export function AppShell({
           >
             <Progress
               sessions={initialHistory}
-              displayName={user.display_name}
+              displayName={cardName}
               playerStats={playerStats}
+              nameCard={nameCard}
+              library={library}
+              onEditCard={() => setShowCardEditor(true)}
             />
           </motion.div>
         )}
@@ -362,7 +378,11 @@ export function AppShell({
       <AnimatePresence>
         {showSettings && (
           <Settings
-            displayName={user.display_name}
+            displayName={cardName}
+            onEditCard={() => {
+              setShowSettings(false)
+              setShowCardEditor(true)
+            }}
             standbyPreferences={standbyPreferences}
             onPreferencesSaved={setStandbyPreferences}
             stampRules={stampRules}
@@ -375,6 +395,15 @@ export function AppShell({
           />
         )}
       </AnimatePresence>
+
+      <NameCardEditor
+        open={showCardEditor}
+        onClose={() => setShowCardEditor(false)}
+        displayName={cardName}
+        card={nameCard}
+        library={library}
+        onSaved={(name, card) => { setCardName(name); setNameCard(card) }}
+      />
 
       {/* Resident Arrival Card */}
       {arrivedGame && (

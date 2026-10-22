@@ -1,4 +1,4 @@
-import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard, StampRule, StampRuleInput } from "@/lib/types"
+import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
 
 export const game: Game = {
   id: "test-game", name: "A Short Hike", genres: ["Adventure"],
@@ -51,6 +51,8 @@ export const fixture: {
   postcards: Postcard[]
   stampRules: StampRule[]
   stampCalls: string[]
+  nameCard: NameCard | null
+  cardCalls: NameCardInput[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
   holdReads: false, readReleases: [], readSnapshots: [], readCompletions: 0,
@@ -68,6 +70,8 @@ export const fixture: {
   postcards: [],
   stampRules: [],
   stampCalls: [],
+  nameCard: null,
+  cardCalls: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -259,6 +263,20 @@ export async function confirmStamp(
   if (hasParam("stamp-confirm-fail")) return { ok: false, error: "That did not go through. Try again." }
   fixture.stampCalls.push(`confirm:${gameId}`)
   return { ok: true, arrived: true }
+}
+
+export async function saveNameCard(
+  input: NameCardInput
+): Promise<{ ok: boolean; card?: NameCard; error?: string }> {
+  if (hasParam("card-save-fail")) return { ok: false, error: "Couldn't save your card. Try again." }
+  fixture.cardCalls.push(input)
+  const card = {
+    tagline: input.tagline.trim() || null,
+    play_style: input.playStyle.trim() || null,
+    favorite_game_ids: input.favoriteGameIds,
+  }
+  fixture.nameCard = card
+  return { ok: true, card }
 }
 
 // These surfaces are bundled only for the real AppShell remount test, not exercised.

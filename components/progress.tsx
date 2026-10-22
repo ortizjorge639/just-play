@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
-import type { Session, Game, PlayerStats } from "@/lib/types"
+import type { Session, Game, PlayerStats, NameCard as NameCardData } from "@/lib/types"
+import { NameCard } from "./name-card"
 import { formatDistanceToNow } from "date-fns"
 import { XPParticles } from "./xp-particles"
 
@@ -11,6 +12,9 @@ interface ProgressProps {
   sessions: (Session & { games: Game })[]
   displayName: string | null
   playerStats: PlayerStats | null
+  nameCard: NameCardData | null
+  library: Game[]
+  onEditCard: () => void
 }
 
 interface PendingXP {
@@ -64,7 +68,7 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
   return skip ? target : value
 }
 
-export function Progress({ sessions, displayName, playerStats }: ProgressProps) {
+export function Progress({ sessions, displayName, playerStats, nameCard, library, onEditCard }: ProgressProps) {
   const prefersReducedMotion = useReducedMotion()
   const [pending, setPending] = useState<PendingXP | null>(null)
   const [showBarParticles, setShowBarParticles] = useState(false)
@@ -151,10 +155,7 @@ export function Progress({ sessions, displayName, playerStats }: ProgressProps) 
         animate={{ opacity: 1, y: 0 }}
         className="pt-2 pb-6 text-center"
       >
-        <h1 className="text-2xl font-bold text-foreground">
-          {"Hey, "}
-          {displayName || "Player"} 👋
-        </h1>
+        <NameCard displayName={displayName} card={nameCard} library={library} onEdit={onEditCard} />
       </motion.div>
 
       {/* Level + XP — centered Duolingo-style */}

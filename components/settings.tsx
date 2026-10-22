@@ -10,6 +10,7 @@ interface SettingsProps {
   displayName: string | null
   onClose: () => void
   onEditPreferences: () => void
+  onEditCard: () => void
   standbyPreferences: StandbyPreferences
   onPreferencesSaved: (preferences: StandbyPreferences) => void
   stampRules: StampRule[]
@@ -20,6 +21,7 @@ export function Settings({
   displayName, 
   onClose, 
   onEditPreferences,
+  onEditCard,
   standbyPreferences,
   onPreferencesSaved,
   stampRules,
@@ -77,6 +79,11 @@ export function Settings({
       </div>
 
       {/* Settings list */}
+      <div className="border-b border-border px-6 py-4">
+        <button type="button" onClick={onEditCard} className="min-h-11 text-sm text-foreground underline">
+          Edit name card
+        </button>
+      </div>
       <div className="border-b border-border px-6 py-6">
         <StandbyPreferencesForm value={standbyPreferences} onSaved={onPreferencesSaved} />
       </div>

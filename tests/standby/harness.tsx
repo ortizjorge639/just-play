@@ -42,6 +42,15 @@ if (params.has("empty-notes") && fixture.session) {
 }
 if (params.has("stamp-hours")) fixture.stampRules = [{ kind: "hours", target_minutes: 600, label: null, game_id: null }]
 if (params.has("stamp-milestone")) fixture.stampRules = [{ kind: "milestone", target_minutes: null, label: "Reached the second act", game_id: null }]
+if (params.has("card-filled")) {
+  fixture.nameCard = { tagline: "Slow games, long evenings", play_style: "Cozy and unhurried", favorite_game_ids: ["lib-a"] }
+}
+const libraryHistory = params.has("card-library")
+  ? ["a", "b", "c"].map(k => ({
+      ...initialSession, id: `h-${k}`, game_id: `lib-${k}`, active: false, status: "Finished" as const,
+      games: { ...game, id: `lib-${k}`, name: `Library ${k.toUpperCase()}` },
+    }))
+  : []
 if (params.has("residents")) {
   fixture.residents = [
     {
@@ -90,7 +99,7 @@ const app = params.has("app-shell")
     tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
   }} recommendations={[]} activeSession={fixture.session} activeGame={null}
-    sessionHistory={[]} playerStats={null} residents={fixture.residents} postcards={fixture.postcards} stampRules={fixture.stampRules} isBoosterPack={false}
+    sessionHistory={libraryHistory} nameCard={fixture.nameCard} playerStats={null} residents={fixture.residents} postcards={fixture.postcards} stampRules={fixture.stampRules} isBoosterPack={false}
     boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
   : <Harness />
 createRoot(document.getElementById("root")!).render(params.has("strict") ? <StrictMode>{app}</StrictMode> : app)
