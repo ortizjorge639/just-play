@@ -11,6 +11,7 @@ import {
   getResidents,
   getStampRules,
   getPostcards,
+  getNameCard,
 } from "./actions"
 import { AppShell } from "@/components/app-shell"
 import type { PlayerStats } from "@/lib/types"
@@ -55,6 +56,7 @@ export default async function HomePage({
     getResidents(),
     getPostcards(),
     getStampRules(),
+    getNameCard(),
   ])
   profile = results[0]
   activeSession = results[1]
@@ -64,6 +66,7 @@ export default async function HomePage({
   const residents = results[5]
   const postcards = results[6]
   const stampRules = results[7]
+  const nameCard = results[8]
 
   if (!profile) {
     redirect("/auth/login")
@@ -95,6 +98,7 @@ export default async function HomePage({
       residents={residents}
       postcards={postcards}
       stampRules={stampRules}
+      nameCard={nameCard}
       isBoosterPack={true}
       boosterPackStatus={boosterPackStatus}
     />

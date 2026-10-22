@@ -136,3 +136,16 @@ export type StampRuleInput =
   | { kind: "hours"; targetMinutes: number }
   | { kind: "milestone"; label: string }
   | null
+
+export interface NameCard {
+  tagline: string | null
+  play_style: string | null
+  favorite_game_ids: string[]
+}
+
+export interface NameCardInput {
+  displayName: string
+  tagline: string
+  playStyle: string
+  favoriteGameIds: string[]
+}

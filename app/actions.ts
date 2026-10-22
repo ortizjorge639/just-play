@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard, StampRule, StampRuleInput } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
@@ -1166,5 +1166,64 @@ export async function confirmStamp(
   } catch (err) {
     console.warn("[confirmStamp] Catch error:", err)
     return { ok: false, error: "That did not go through. Try again." }
+  }
+}
+
+export async function getNameCard(): Promise<NameCard | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  try {
+    const { data, error } = await supabase
+      .from("name_cards")
+      .select("tagline, play_style, favorite_game_ids")
+      .maybeSingle()
+    if (error) {
+      console.warn("[nameCard] Query failed (table missing?):", error.message)
+      return null
+    }
+    return (data as NameCard | null) ?? null
+  } catch (err) {
+    console.warn("[nameCard] Catch error:", err)
+    return null
+  }
+}
+
+export async function saveNameCard(
+  input: NameCardInput
+): Promise<{ ok: boolean; card?: NameCard; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+
+  const name = input.displayName.trim()
+  if (name.length < 1 || name.length > 50) return { ok: false, error: "Your name needs 1 to 50 characters." }
+  if (input.tagline.trim().length > 200) return { ok: false, error: "Keep the tagline to 200 characters." }
+  if (input.playStyle.trim().length > 80) return { ok: false, error: "Keep the play style to 80 characters." }
+  if (input.favoriteGameIds.length > 3 || new Set(input.favoriteGameIds).size !== input.favoriteGameIds.length) {
+    return { ok: false, error: "Pick up to 3 different favorites." }
+  }
+
+  try {
+    const { data, error } = await supabase.rpc("save_name_card", {
+      p_display_name: name,
+      p_tagline: input.tagline,
+      p_play_style: input.playStyle,
+      p_favorite_game_ids: input.favoriteGameIds,
+    })
+    if (error) {
+      console.warn("[saveNameCard] RPC failed:", error.message)
+      return { ok: false, error: "Couldn't save your card. Try again." }
+    }
+    revalidatePath("/")
+    const row = data as { tagline: string | null; play_style: string | null; favorite_game_ids: string[] | null }
+    return {
+      ok: true,
+      card: { tagline: row.tagline, play_style: row.play_style, favorite_game_ids: row.favorite_game_ids ?? [] },
+    }
+  } catch (err) {
+    console.warn("[saveNameCard] Catch error:", err)
+    return { ok: false, error: "Couldn't save your card. Try again." }
   }
 }
