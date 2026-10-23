@@ -120,6 +120,7 @@ export interface Resident {
   arrival_source: string
   game?: Game
   last_emote?: { emote: string; emoted_at: string } | null
+  minutes_played?: number
 }
 
 export interface Postcard {

@@ -71,6 +71,16 @@ if (params.has("residents-many")) {
     game: { ...game, id: `many-${i}`, name: `Home ${i + 1}` },
   }))
 }
+if (params.has("residents-tiers")) {
+  fixture.residents = [0, 119, 120, 600, 3000].map((minutes, i) => ({
+    user_id: "test-resident",
+    game_id: `tier-${i}`,
+    arrived_at: new Date(Date.now() - (10 - i) * 24 * 60 * 60 * 1000).toISOString(),
+    arrival_source: "test",
+    minutes_played: minutes,
+    game: { ...game, id: `tier-${i}`, name: `Tier game ${i + 1}` },
+  }))
+}
 if (params.has("postcards")) {
   fixture.postcards = [
     {

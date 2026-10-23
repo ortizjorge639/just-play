@@ -1,4 +1,5 @@
 import { partFor } from "./catalog"
+import { tierFor } from "./tiers"
 import type { Deck, Layout, Placement, SettlementResident } from "./types"
 
 // Bump this if a rule below changes, so old and new layouts can be told apart.
@@ -24,6 +25,7 @@ export function layoutSettlement(residents: readonly SettlementResident[]): Layo
     partId: partFor(resident.game_id, resident.game?.genres, resident.arrived_at).id,
     deck: Math.floor(index / DECK_CAPACITY),
     slot: index % DECK_CAPACITY,
+    tier: tierFor(resident.minutes_played),
   }))
 
   // The first deck always exists, so an empty settlement still has somewhere to start.

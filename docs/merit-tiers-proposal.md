@@ -1,6 +1,6 @@
 # Merit tiers: proposal
 
-Status: proposal, not built. Decided on the owner's "decide". Nothing here needs a migration.
+Status: first slice built (tiers, portrait line, placeholder companions). Decided on the owner's "decide". Nothing here needs a migration.
 
 ## What a tier is
 
@@ -25,7 +25,7 @@ Fixed in code, in `lib/settlement/tiers.ts`:
 | 0 | Moved in | arrival | The trinket every resident already has. |
 | 1 | Settled | 120 (2 h) | A small companion piece beside the trinket. |
 | 2 | At home | 600 (10 h) | A second companion piece. |
-| 3 | Elder | 3000 (50 h) | A third companion piece and a warmer tint. |
+| 3 | Elder | 3000 (50 h) | A third companion piece. |
 
 Three steps above arrival, not five. The spec allows up to five; more can be appended later.
 

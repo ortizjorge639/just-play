@@ -111,6 +111,9 @@ export async function mountSettlement(
     }
     scene.add(deckGroup)
   }
+  const companionShape = new SphereGeometry(0.2, 12, 8)
+  const companionMaterials = new Map<string, MeshStandardMaterial>()
+  let companions = 0
   const homes: { gameId: Resident["game_id"]; position: Vector3 }[] = []
   for (const placement of layout.placements) {
     const part = partById.get(placement.partId)
@@ -132,8 +135,21 @@ export async function mountSettlement(
     object.position.set(origin.x + offset.x, 0.4, origin.z + offset.z)
     scene.add(object)
     homes.push({ gameId: placement.gameId, position: object.position.clone() })
+    for (let k = 0; k < placement.tier; k++) {
+      const angle = k * 2.1 + placement.slot
+      let material = companionMaterials.get(part?.family ?? "other")
+      if (!material) {
+        material = new MeshStandardMaterial({ color: FAMILY_COLOUR[part?.family ?? "other"], roughness: 0.7 })
+        companionMaterials.set(part?.family ?? "other", material)
+      }
+      const companion = new Mesh(companionShape, material)
+      companion.position.set(object.position.x + Math.cos(angle) * 0.9, 0.25, object.position.z + Math.sin(angle) * 0.9)
+      scene.add(companion)
+      companions++
+    }
   }
 
+  host.dataset.companions = String(companions)
   const renderer = new WebGLRenderer({ antialias: true, powerPreference: "low-power" })
   renderer.outputColorSpace = SRGBColorSpace
   renderer.toneMapping = ACESFilmicToneMapping
@@ -280,6 +296,7 @@ export async function mountSettlement(
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
     standIn.dispose()
+    companionShape.dispose()
     plank.dispose()
     renderer.dispose()
     renderer.forceContextLoss()

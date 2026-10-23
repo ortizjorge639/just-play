@@ -139,3 +139,15 @@ test("Tapping a home in the 3D settlement shows who lives there, dragging does n
   }
   await expect(heading).toHaveCount(1)
 })
+
+test("Deeper play adds companions to the settlement and a quiet line to the portrait", async ({ page }) => {
+  await page.goto("/?app-shell&residents-tiers")
+  await page.getByRole("button", { name: "Home" }).click()
+  await expect(page.getByText("Settled", { exact: true })).toHaveCount(1)
+  await expect(page.getByText("At home", { exact: true })).toHaveCount(1)
+  await expect(page.getByText("Elder", { exact: true })).toHaveCount(1)
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  await expect(scene).toHaveAttribute("data-companions", "6")
+})
