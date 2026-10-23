@@ -30,6 +30,7 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
   const latestPieces = useRef(pieces)
   useEffect(() => { latestPieces.current = pieces })
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading")
+  const [mounts, setMounts] = useState(0)
 
   useEffect(() => {
     const element = host.current
@@ -37,7 +38,7 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
     const controller = new AbortController()
     void import("./renderer")
       .then(({ mountSettlement }) => mountSettlement(element, layout, controller.signal, (id) => select.current?.(id), latestPieces.current))
-      .then(() => { if (!controller.signal.aborted) setState("ready") })
+      .then(() => { if (!controller.signal.aborted) { setState("ready"); setMounts((n) => n + 1) } })
       .catch(() => { if (!controller.signal.aborted) setState("failed") })
     return () => controller.abort()
   }, [layout])
@@ -45,7 +46,7 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
   useEffect(() => {
     if (state !== "ready") return
     host.current?.dispatchEvent(new CustomEvent("settlement-pieces", { detail: pieces ?? [] }))
-  }, [pieces, state])
+  }, [pieces, state, mounts])
 
   useEffect(() => {
     const element = host.current
@@ -58,7 +59,7 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
   useEffect(() => {
     if (state !== "ready") return
     host.current?.dispatchEvent(new CustomEvent("settlement-hints", { detail: hints ?? { spots: [], active: null } }))
-  }, [hints, state])
+  }, [hints, state, mounts])
 
   if (state === "failed") return <>{fallback}</>
 
