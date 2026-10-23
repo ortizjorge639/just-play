@@ -62,6 +62,15 @@ if (params.has("residents")) {
     },
   ]
 }
+if (params.has("residents-many")) {
+  fixture.residents = Array.from({ length: 7 }, (_, i) => ({
+    user_id: "test-resident",
+    game_id: `many-${i}`,
+    arrived_at: new Date(Date.now() - (10 - i) * 24 * 60 * 60 * 1000).toISOString(),
+    arrival_source: "test",
+    game: { ...game, id: `many-${i}`, name: `Home ${i + 1}` },
+  }))
+}
 if (params.has("postcards")) {
   fixture.postcards = [
     {
