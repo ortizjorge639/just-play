@@ -11,10 +11,16 @@ interface SettlementSceneProps {
   fallback: React.ReactNode
   onSelect?: (gameId: Resident["game_id"]) => void
   pieces?: SettlementPiece[]
+  hints?: SpotHints
+}
+
+export interface SpotHints {
+  spots: { deck: number; anchor: number }[]
+  active: { deck: number; anchor: number } | null
 }
 
 // Draws the approved deck art. If WebGL or the art fails, the 2D view takes over.
-export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces }: SettlementSceneProps) {
+export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints }: SettlementSceneProps) {
   const host = useRef<HTMLDivElement>(null)
   const select = useRef(onSelect)
   useEffect(() => { select.current = onSelect })
@@ -30,6 +36,11 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
       .catch(() => { if (!controller.signal.aborted) setState("failed") })
     return () => controller.abort()
   }, [layout, pieces])
+
+  useEffect(() => {
+    if (state !== "ready") return
+    host.current?.dispatchEvent(new CustomEvent("settlement-hints", { detail: hints ?? { spots: [], active: null } }))
+  }, [hints, state])
 
   if (state === "failed") return <>{fallback}</>
 

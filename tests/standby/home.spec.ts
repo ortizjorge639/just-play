@@ -187,3 +187,17 @@ test("A loft that can't be placed says so quietly", async ({ page }) => {
   await page.getByRole("button", { name: "Deck 1, spot 1" }).click()
   await expect(page.getByTestId("loft-section")).toContainText("Couldn't place it.")
 })
+
+test("Choosing a spot shows its free rings in the 3D scene and clears them after", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many&elder&pieces")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  await page.getByRole("button", { name: "Home 4", exact: true }).click()
+  await page.getByRole("button", { name: /Place the loft/ }).click()
+  // 2 decks x 3 spots, minus the 2 taken by other homes' lofts
+  await expect(scene).toHaveAttribute("data-hints", "4")
+  await page.keyboard.press("Escape")
+  await expect(scene).toHaveAttribute("data-hints", "0")
+})

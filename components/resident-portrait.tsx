@@ -1,21 +1,23 @@
 "use client"
 
-import { useRef, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
 import { placePiece, recordEmote, removePiece } from "@/app/actions"
 import { EMOTES, EMOTE_LABELS, EMOTE_PAST, isEmote, pickEmoteLine, type EmoteKind } from "@/lib/emotes"
 import { Resident, SettlementPiece } from "@/lib/types"
 import { ANCHORS_PER_DECK } from "@/lib/settlement/transforms"
+import type { SpotHints } from "@/components/settlement/scene"
 import { tierFor, tierName } from "@/lib/settlement/tiers"
 
 interface ResidentPortraitProps {
   resident: Resident
   pieces?: SettlementPiece[]
   deckCount?: number
+  onSpots?: (hints: SpotHints | undefined) => void
 }
 
-export function ResidentPortrait({ resident, pieces, deckCount = 1 }: ResidentPortraitProps) {
+export function ResidentPortrait({ resident, pieces, deckCount = 1, onSpots }: ResidentPortraitProps) {
   const arrivedDate = new Date(resident.arrived_at)
   const formatted = arrivedDate.toLocaleDateString("en-US", {
     month: "short",
@@ -59,7 +61,7 @@ export function ResidentPortrait({ resident, pieces, deckCount = 1 }: ResidentPo
         </div>
       )}
       {resident.game && pieces && tier >= 3 ? (
-        <LoftSection resident={resident} name={resident.game.name} pieces={pieces} deckCount={deckCount} />
+        <LoftSection resident={resident} name={resident.game.name} pieces={pieces} deckCount={deckCount} onSpots={onSpots} />
       ) : null}
       {resident.game ? <EmoteSection resident={resident} name={resident.game.name} /> : null}
     </div>
@@ -135,13 +137,12 @@ function EmoteSection({ resident, name }: { resident: Resident; name: string }) 
   )
 }
 
-function LoftSection({ resident, name, pieces, deckCount }: { resident: Resident; name: string; pieces: SettlementPiece[]; deckCount: number }) {
+function LoftSection({ resident, name, pieces, deckCount, onSpots }: { resident: Resident; name: string; pieces: SettlementPiece[]; deckCount: number; onSpots?: (hints: SpotHints | undefined) => void }) {
   const [open, setOpen] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const trigger = useRef<HTMLButtonElement>(null)
   const mine = pieces.find((p) => p.game_id === resident.game_id)
-  const taken = new Set(pieces.filter((p) => p.game_id !== resident.game_id).map((p) => `${p.deck}:${p.anchor}`))
 
   const run = (action: () => Promise<{ ok: boolean; error?: string }>) => {
     if (pending) return
@@ -154,12 +155,27 @@ function LoftSection({ resident, name, pieces, deckCount }: { resident: Resident
     trigger.current?.focus()
   }
 
-  const spots: { deck: number; anchor: number }[] = []
-  for (let deck = 0; deck < deckCount; deck++) {
-    for (let anchor = 0; anchor < ANCHORS_PER_DECK; anchor++) {
-      if (!taken.has(`${deck}:${anchor}`) && !(mine && mine.deck === deck && mine.anchor === anchor)) spots.push({ deck, anchor })
+  const spots = useMemo(() => {
+    const free: { deck: number; anchor: number }[] = []
+    for (let deck = 0; deck < deckCount; deck++) {
+      for (let anchor = 0; anchor < ANCHORS_PER_DECK; anchor++) {
+        const isTaken = pieces.some((p) => p.game_id !== resident.game_id && p.deck === deck && p.anchor === anchor)
+        const isMine = pieces.some((p) => p.game_id === resident.game_id && p.deck === deck && p.anchor === anchor)
+        if (!isTaken && !isMine) free.push({ deck, anchor })
+      }
     }
-  }
+    return free
+  }, [pieces, deckCount, resident.game_id])
+  const [active, setActive] = useState<{ deck: number; anchor: number } | null>(null)
+  const list = useRef<HTMLUListElement>(null)
+
+  useEffect(() => {
+    onSpots?.(open ? { spots, active } : undefined)
+  }, [open, spots, active, onSpots])
+  useEffect(() => () => onSpots?.(undefined), [onSpots])
+  useEffect(() => {
+    if (open) list.current?.scrollIntoView({ block: "nearest" })
+  }, [open])
 
   return (
     <div className="mt-3" data-testid="loft-section">
@@ -192,8 +208,9 @@ function LoftSection({ resident, name, pieces, deckCount }: { resident: Resident
       </div>
       {open ? (
         <ul
+          ref={list}
           aria-label="Free spots"
-          className="flex flex-wrap gap-2"
+          className="flex scroll-mb-24 flex-wrap gap-2"
           onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); trigger.current?.focus() } }}
         >
           {spots.length === 0 ? <li className="text-xs text-muted-foreground">No free spots.</li> : null}
@@ -202,6 +219,10 @@ function LoftSection({ resident, name, pieces, deckCount }: { resident: Resident
               <button
                 type="button"
                 autoFocus={i === 0}
+                onMouseEnter={() => setActive(s)}
+                onMouseLeave={() => setActive(null)}
+                onFocus={() => setActive(s)}
+                onBlur={() => setActive(null)}
                 onClick={() => run(() => placePiece(resident.game_id, s.deck, s.anchor))}
                 className="min-h-11 rounded-lg border border-border px-4 text-sm text-foreground"
               >
