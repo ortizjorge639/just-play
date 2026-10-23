@@ -104,3 +104,38 @@ test("Settlement view keeps filling its card when the window resizes", async ({ 
     }).toPass({ timeout: 3000 })
   }
 })
+
+test("Settlement homes can be picked from the list and show who lives there", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const chip = page.getByRole("list", { name: "Homes" }).getByRole("button", { name: "Home 3" })
+  await chip.click()
+  await expect(chip).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByRole("heading", { name: "Home 3" })).toBeVisible()
+  await chip.click()
+  await expect(page.getByRole("heading", { name: "Home 3" })).toHaveCount(0)
+})
+
+test("Tapping a home in the 3D settlement shows who lives there, dragging does not", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  const box = (await scene.boundingBox())!
+  const heading = page.getByRole("heading", { level: 3, name: /^Home \d$/ })
+
+  await page.mouse.move(box.x + 20, box.y + 20)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 120, box.y + 80, { steps: 5 })
+  await page.mouse.up()
+  await expect(heading).toHaveCount(0)
+
+  for (let y = 12; y < box.height && !(await heading.count()); y += 14) {
+    for (let x = 12; x < box.width && !(await heading.count()); x += 14) {
+      await page.mouse.click(box.x + x, box.y + y)
+    }
+  }
+  await expect(heading).toHaveCount(1)
+})

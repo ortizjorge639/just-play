@@ -4,6 +4,7 @@ import {
   BoxGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
 } from "three"
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
+import type { Resident } from "@/lib/types"
 import type { Layout } from "@/lib/settlement/types"
 import { PARTS } from "@/lib/settlement/catalog"
 import { DECK_CAPACITY } from "@/lib/settlement/layout"
@@ -59,7 +60,12 @@ function disposeTree(root: Object3D) {
   materials.forEach((m) => m.dispose())
 }
 
-export async function mountSettlement(host: HTMLElement, layout: Layout, signal: AbortSignal) {
+export async function mountSettlement(
+  host: HTMLElement,
+  layout: Layout,
+  signal: AbortSignal,
+  onSelect?: (gameId: Resident["game_id"]) => void,
+) {
   const scene = new Scene()
   scene.background = new Color("#cdd9c4")
   scene.add(new HemisphereLight("#fff0d5", "#716451", 2.1))
@@ -105,6 +111,7 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
     }
     scene.add(deckGroup)
   }
+  const homes: { gameId: Resident["game_id"]; position: Vector3 }[] = []
   for (const placement of layout.placements) {
     const part = partById.get(placement.partId)
     const origin = deckOrigin(placement.deck)
@@ -124,6 +131,7 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
     }
     object.position.set(origin.x + offset.x, 0.4, origin.z + offset.z)
     scene.add(object)
+    homes.push({ gameId: placement.gameId, position: object.position.clone() })
   }
 
   const renderer = new WebGLRenderer({ antialias: true, powerPreference: "low-power" })
@@ -186,11 +194,14 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
   }
 
   const pointers = new Map<number, { x: number; y: number }>()
+  const downAt = new Map<number, { x: number; y: number }>()
   let pinch = 0
+  let pinched = false
   const onDown = (event: PointerEvent) => {
     host.setPointerCapture(event.pointerId)
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
-    if (pointers.size === 2) pinch = distance()
+    downAt.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (pointers.size === 2) { pinch = distance(); pinched = true }
   }
   const distance = () => {
     const [a, b] = [...pointers.values()]
@@ -210,8 +221,25 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
     }
   }
   const onUp = (event: PointerEvent) => {
+    const start = downAt.get(event.pointerId)
+    const wasTap = pointers.size === 1 && !pinched && start && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 6
     pointers.delete(event.pointerId)
+    downAt.delete(event.pointerId)
     pinch = 0
+    if (pointers.size === 0) pinched = false
+    if (wasTap && event.type === "pointerup") select(event.clientX, event.clientY)
+  }
+  // A tap picks the home nearest to the finger, within a thumb's width.
+  const select = (clientX: number, clientY: number) => {
+    if (!onSelect) return
+    const rect = host.getBoundingClientRect()
+    let best: { gameId: Resident["game_id"]; d: number } | null = null
+    for (const home of homes) {
+      const p = home.position.clone().project(camera)
+      const d = Math.hypot(rect.left + ((p.x + 1) / 2) * rect.width - clientX, rect.top + ((1 - p.y) / 2) * rect.height - clientY)
+      if (d <= 32 && (!best || d < best.d)) best = { gameId: home.gameId, d }
+    }
+    if (best) onSelect(best.gameId)
   }
   const onWheel = (event: WheelEvent) => {
     event.preventDefault()
