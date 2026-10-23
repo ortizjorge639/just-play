@@ -69,6 +69,7 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 
 - Migration 025 (applied) adds `name_cards` and `save_name_card`. The card sits in the Progress header and is edited from Progress or Settings ([name-card-proposal.md](name-card-proposal.md)).
 - Migration 026 (applied) stops a direct `display_name` write from the client. Migration 028 (applied, smoke tested: XP still moves) locks `total_xp` and `level` the same way, keyed on the transaction flag the standby functions already set. No function rework was needed. See `docs/xp-lock-proposal.md`.
+- Migration 029 (written, not applied) adds `settlement_pieces` with `place_piece` and `remove_piece`, for the Elder-tier loft the player places. Nothing in the app calls it yet. See `docs/player-placement-proposal.md`.
 - Still open: a contrast pass on the card and form.
 
 ## Emotes (shipped)
