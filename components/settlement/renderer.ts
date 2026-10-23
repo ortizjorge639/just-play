@@ -194,6 +194,8 @@ export async function mountSettlement(
   const fitWidth = ((maxX - minX) + (maxZ - minZ)) * 0.36
   const fitHeight = ((maxZ - minZ) * 0.55 + (maxX - minX) * 0.3) / 2 + 4
   let zoom = 1, aspect = 1
+  type Spot = { deck: number; anchor: number }
+  let hintSpots: Spot[] = []
 
   const render = () => {
     const half = Math.max(fitWidth / aspect, fitHeight) / zoom
@@ -205,8 +207,18 @@ export async function mountSettlement(
     renderer.render(scene, camera)
     host.dataset.zoom = zoom.toFixed(3)
     host.dataset.pan = `${target.x.toFixed(2)},${target.z.toFixed(2)}`
+    publishSpotPoints()
   }
 
+  // Where each glowing ring is on screen, so tests can tap real pixels.
+  const publishSpotPoints = () => {
+    if (!hintSpots.length) { delete host.dataset.spotPoints; return }
+    const rect = host.getBoundingClientRect()
+    host.dataset.spotPoints = hintSpots.map((spot) => {
+      const p = spotPosition(spot.deck, spot.anchor).project(camera)
+      return `${spot.deck}:${spot.anchor}@${Math.round(rect.left + ((p.x + 1) / 2) * rect.width)},${Math.round(rect.top + ((1 - p.y) / 2) * rect.height)}`
+    }).join(";")
+  }
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
   const tasks = new Set<(now: number) => boolean>()
   let frame = 0
@@ -266,6 +278,7 @@ export async function mountSettlement(
     })
   }
 
+  let ghost: Group | null = null
   const placed = new Map<string, { key: string; loft: Group }>()
   const syncPieces = (list: readonly SettlementPiece[], animate: boolean) => {
     const seen = new Set<string>()
@@ -280,7 +293,10 @@ export async function mountSettlement(
       loft.position.copy(spotPosition(piece.deck, piece.anchor))
       loftGroup.add(loft)
       placed.set(piece.game_id, { key, loft })
-      if (animate) playDrop(loft)
+      if (animate) {
+        if (ghost && host.dataset.ghost === key) { loftGroup.remove(ghost); ghost = null }
+        playDrop(loft)
+      }
     }
     for (const [id, current] of placed) {
       if (!seen.has(id)) { loftGroup.remove(current.loft); placed.delete(id) }
@@ -313,9 +329,6 @@ export async function mountSettlement(
   const hintActive = new MeshStandardMaterial({ color: "#ffb43c", emissive: "#ffb43c", emissiveIntensity: 0.9, side: DoubleSide })
   const hintGroup = new Group()
   scene.add(hintGroup)
-  type Spot = { deck: number; anchor: number }
-  let hintSpots: Spot[] = []
-  let ghost: Group | null = null
   let ghostDeck = -1
   const onHints = (event: Event) => {
     const detail = (event as CustomEvent<{ spots: Spot[]; active: Spot | null }>).detail

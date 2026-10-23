@@ -247,3 +247,25 @@ test("New pieces are added to the live scene without rebuilding it or moving the
   await expect(scene).toHaveAttribute("data-pieces", "3")
   await expect(scene).toHaveAttribute("data-zoom", zoom!)
 })
+
+test("A real tap on a glowing ring in the scene picks that spot", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many&elder&pieces")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  await page.getByRole("button", { name: "Home 4", exact: true }).click()
+  await page.getByRole("button", { name: /Place the loft/ }).click()
+  await page.getByRole("button", { name: "Deck 1, spot 1" }).click()
+  await expect(scene).toHaveAttribute("data-ghost", "0:0")
+  await page.waitForTimeout(700)
+  const points = (await scene.getAttribute("data-spot-points"))!.split(";").map((entry) => {
+    const [spot, xy] = entry.split("@")
+    const [x, y] = xy.split(",").map(Number)
+    return { spot, x, y }
+  })
+  const other = points.find((p) => p.spot !== "0:0")!
+  await page.mouse.click(other.x, other.y)
+  await expect(scene).toHaveAttribute("data-ghost", other.spot)
+  await expect(page.getByRole("button", { name: "Put it here" })).toBeVisible()
+})

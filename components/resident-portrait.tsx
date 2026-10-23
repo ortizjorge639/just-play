@@ -193,6 +193,7 @@ function LoftSection({ resident, name, pieces, deckCount, hints, onSpots }: { re
       if (result.ok) {
         setLine(done)
         close()
+        trigger.current?.focus()
       } else {
         setFailed(result.error ?? "Couldn't do that.")
       }
@@ -235,7 +236,7 @@ function LoftSection({ resident, name, pieces, deckCount, hints, onSpots }: { re
       </div>
       {open ? (
         <div className="scroll-mb-24" onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); close(); trigger.current?.focus() } }}>
-          <p className="text-xs text-muted-foreground">
+          <p role="status" className="text-xs text-muted-foreground">
             {active ? `Deck ${active.deck + 1}, spot ${active.anchor + 1}. Tap another glowing spot to change it.` : "Tap a glowing spot on the deck, or pick one here."}
           </p>
           <ul ref={list} aria-label="Free spots" className="mt-1 flex flex-wrap gap-2">
