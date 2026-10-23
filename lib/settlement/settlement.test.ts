@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { PARTS, familyForGenres, partFor } from "./catalog"
+import { tierFor } from "./tiers"
 import { DECK_CAPACITY, LAYOUT_VERSION, layoutSettlement } from "./layout"
 import { deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
 import type { Part, SettlementResident } from "./types"
@@ -55,7 +56,7 @@ test("a deck fills at its capacity, then the next one opens", () => {
   assert.equal(spill.decks.length, 2)
   assert.deepEqual(spill.decks[1], { index: 1, parent: 0, residents: 1 })
   assert.deepEqual(spill.placements[DECK_CAPACITY], {
-    gameId: "game-00006", partId: spill.placements[DECK_CAPACITY].partId, deck: 1, slot: 0,
+    gameId: "game-00006", partId: spill.placements[DECK_CAPACITY].partId, deck: 1, slot: 0, tier: 0,
   })
 })
 
@@ -155,4 +156,27 @@ test("residents arriving after a part is added can be given it", () => {
     Array.from({ length: 200 }, (_, n) => partFor(`game-${n}`, ["Simulator"], "2027-02-01T00:00:00Z", grown).id),
   )
   assert.ok(picked.has("cozy-kettle"))
+})
+
+test("tiers change at exact boundaries and never go below zero", () => {
+  assert.equal(tierFor(0), 0)
+  assert.equal(tierFor(119), 0)
+  assert.equal(tierFor(120), 1)
+  assert.equal(tierFor(599), 1)
+  assert.equal(tierFor(600), 2)
+  assert.equal(tierFor(2999), 2)
+  assert.equal(tierFor(3000), 3)
+  assert.equal(tierFor(1e9), 3)
+  assert.equal(tierFor(-5), 0)
+  assert.equal(tierFor(null), 0)
+  assert.equal(tierFor(undefined), 0)
+  assert.equal(tierFor(Number.NaN), 0)
+})
+
+test("tier is carried on placements and never moves anyone", () => {
+  const base = many(8)
+  const plain = layoutSettlement(base).placements
+  const played = layoutSettlement(base.map((r, i) => ({ ...r, minutes_played: i * 700 }))).placements
+  assert.deepEqual(played.map(({ tier: _t, ...p }) => p), plain.map(({ tier: _t, ...p }) => p))
+  assert.deepEqual(played.map((p) => p.tier), [0, 2, 2, 2, 2, 3, 3, 3])
 })

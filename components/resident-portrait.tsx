@@ -6,6 +6,7 @@ import { formatDistanceToNow } from "date-fns"
 import { recordEmote } from "@/app/actions"
 import { EMOTES, EMOTE_LABELS, EMOTE_PAST, isEmote, pickEmoteLine, type EmoteKind } from "@/lib/emotes"
 import { Resident } from "@/lib/types"
+import { tierFor, tierName } from "@/lib/settlement/tiers"
 
 interface ResidentPortraitProps {
   resident: Resident
@@ -18,6 +19,8 @@ export function ResidentPortrait({ resident }: ResidentPortraitProps) {
     day: "numeric",
     year: "numeric",
   })
+
+  const depth = tierName(tierFor(resident.minutes_played))
 
   return (
     <div className="bg-card rounded-lg p-4 border border-border">
@@ -37,6 +40,7 @@ export function ResidentPortrait({ resident }: ResidentPortraitProps) {
             <p className="text-xs text-muted-foreground mt-1">
               Arrived {formatted}
             </p>
+            {depth && <p className="text-xs text-muted-foreground mt-0.5">{depth}</p>}
           </div>
         </div>
       ) : (

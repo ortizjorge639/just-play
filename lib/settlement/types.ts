@@ -19,6 +19,7 @@ export interface SettlementResident {
   game_id: string
   arrived_at: string
   game?: { genres?: string[] | null } | null
+  minutes_played?: number | null
 }
 
 export interface Placement {
@@ -26,6 +27,8 @@ export interface Placement {
   partId: string
   deck: number
   slot: number
+  // Depth of play, 0 to 3. Companion pieces sit around the same trinket and take no slot.
+  tier: number
 }
 
 export interface Deck {

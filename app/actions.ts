@@ -995,6 +995,17 @@ export async function getResidents(): Promise<Resident[]> {
       for (const e of emoteRows ?? []) lastEmotes.set(e.game_id, { emote: e.emote, emoted_at: e.emoted_at })
     }
 
+    // Same idea for play time: tiers are extra, so a failure here just leaves everyone at tier 0.
+    const minutes = new Map<string, number>()
+    const { data: progressRows, error: progressError } = await supabase
+      .from("game_progress")
+      .select("game_id, total_time_minutes")
+    if (progressError) {
+      console.warn("[residents] Progress query failed:", progressError.message)
+    } else {
+      for (const p of progressRows ?? []) minutes.set(p.game_id, p.total_time_minutes ?? 0)
+    }
+
     // Type cast the nested game to a single object instead of array
     return (data as Array<{
       user_id: string
@@ -1006,6 +1017,7 @@ export async function getResidents(): Promise<Resident[]> {
       ...row,
       game: Array.isArray(row.game) ? row.game[0] : row.game,
       last_emote: lastEmotes.get(row.game_id) ?? null,
+      minutes_played: minutes.get(row.game_id) ?? 0,
     })) || []
   } catch (err) {
     console.warn("[residents] Catch error:", err)
