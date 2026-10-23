@@ -68,7 +68,7 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 ## Name card (shipped)
 
 - Migration 025 (applied) adds `name_cards` and `save_name_card`. The card sits in the Progress header and is edited from Progress or Settings ([name-card-proposal.md](name-card-proposal.md)).
-- Migration 026 (applied) stops a direct `display_name` write from the client. Migration 028 (owner to apply) locks `total_xp` and `level` the same way, keyed on the transaction flag the standby functions already set. No function rework was needed. See `docs/xp-lock-proposal.md`.
+- Migration 026 (applied) stops a direct `display_name` write from the client. Migration 028 (applied, smoke tested: XP still moves) locks `total_xp` and `level` the same way, keyed on the transaction flag the standby functions already set. No function rework was needed. See `docs/xp-lock-proposal.md`.
 - Still open: a contrast pass on the card and form.
 
 ## Emotes (shipped)
