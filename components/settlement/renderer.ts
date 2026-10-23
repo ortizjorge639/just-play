@@ -153,6 +153,8 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
     camera.lookAt(target)
     camera.updateProjectionMatrix()
     renderer.render(scene, camera)
+    host.dataset.zoom = zoom.toFixed(3)
+    host.dataset.pan = `${target.x.toFixed(2)},${target.z.toFixed(2)}`
   }
   const resize = () => {
     const { width, height } = host.getBoundingClientRect()
