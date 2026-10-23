@@ -56,7 +56,7 @@ test("a deck fills at its capacity, then the next one opens", () => {
   assert.equal(spill.decks.length, 2)
   assert.deepEqual(spill.decks[1], { index: 1, parent: 0, residents: 1 })
   assert.deepEqual(spill.placements[DECK_CAPACITY], {
-    gameId: "game-00006", partId: spill.placements[DECK_CAPACITY].partId, deck: 1, slot: 0,
+    gameId: "game-00006", partId: spill.placements[DECK_CAPACITY].partId, deck: 1, slot: 0, tier: 0,
   })
 })
 
