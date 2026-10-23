@@ -3,7 +3,7 @@ import { test } from "node:test"
 import { PARTS, familyForGenres, partFor } from "./catalog"
 import { DECK_CAPACITY, LAYOUT_VERSION, layoutSettlement } from "./layout"
 import { deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
-import type { SettlementResident } from "./types"
+import type { Part, SettlementResident } from "./types"
 
 function resident(n: number, genres: string[] = []): SettlementResident {
   return {
@@ -130,4 +130,29 @@ test("slots sit evenly on one ring", () => {
   const points = Array.from({ length: DECK_CAPACITY }, (_, slot) => slotOffset(slot, DECK_CAPACITY))
   for (const p of points) assert.ok(Math.abs(Math.hypot(p.x, p.z) - SLOT_RING_RADIUS) < 1e-9)
   assert.equal(new Set(points.map((p) => `${p.x.toFixed(3)},${p.z.toFixed(3)}`)).size, DECK_CAPACITY)
+})
+
+test("adding a part later never changes the part of a home that already exists", () => {
+  const before = PARTS
+  const grown: Part[] = [
+    ...before,
+    { id: "cozy-kettle", family: "cozy", depth: "trinket", asset: null, availableFrom: "2027-01-01T00:00:00Z" },
+    { id: "cozy-quilt", family: "cozy", depth: "trinket", asset: null, availableFrom: "2027-06-01T00:00:00Z" },
+  ]
+  const early = "2026-03-01T00:00:00Z"
+  for (let n = 0; n < 200; n++) {
+    const id = `game-${n}`
+    assert.equal(partFor(id, ["Simulator"], early, grown).id, partFor(id, ["Simulator"], early, before).id)
+  }
+})
+
+test("residents arriving after a part is added can be given it", () => {
+  const grown: Part[] = [
+    ...PARTS,
+    { id: "cozy-kettle", family: "cozy", depth: "trinket", asset: null, availableFrom: "2027-01-01T00:00:00Z" },
+  ]
+  const picked = new Set(
+    Array.from({ length: 200 }, (_, n) => partFor(`game-${n}`, ["Simulator"], "2027-02-01T00:00:00Z", grown).id),
+  )
+  assert.ok(picked.has("cozy-kettle"))
 })

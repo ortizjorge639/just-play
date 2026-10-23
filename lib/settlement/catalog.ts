@@ -39,8 +39,18 @@ function hash(text: string): number {
 }
 
 // The same game always gets the same part, for every player. No stored rows.
-export function partFor(gameId: string, genres: readonly string[] | null | undefined): Part {
+// A part is only offered to residents who arrived after it was added (availableFrom), so growing
+// the catalogue never changes a home that already exists. Only ever append parts, with a later date.
+export function partFor(
+  gameId: string,
+  genres: readonly string[] | null | undefined,
+  arrivedAt?: string,
+  parts: readonly Part[] = PARTS,
+): Part {
   const family = familyForGenres(genres)
-  const options = PARTS.filter(part => part.family === family)
+  const inFamily = parts.filter(part => part.family === family)
+  const arrived = arrivedAt ? Date.parse(arrivedAt) : Number.NEGATIVE_INFINITY
+  const offered = inFamily.filter(part => !part.availableFrom || Date.parse(part.availableFrom) <= arrived)
+  const options = offered.length > 0 ? offered : inFamily
   return options[hash(gameId) % options.length]
 }

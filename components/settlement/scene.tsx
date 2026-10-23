@@ -32,11 +32,13 @@ export function SettlementScene({ layout, residentCount, fallback }: SettlementS
     <>
       <div
         ref={host}
-        role="img"
-        aria-label={`Settlement with ${residentCount} ${residentCount === 1 ? "home" : "homes"} on ${decks} ${decks === 1 ? "deck" : "decks"}`}
+        role="group"
+        tabIndex={0}
+        aria-roledescription="map"
+        aria-label={`Settlement with ${residentCount} ${residentCount === 1 ? "home" : "homes"} on ${decks} ${decks === 1 ? "deck" : "decks"}. Drag or use arrow keys to move, scroll or plus and minus to zoom, 0 to reset.`}
         data-testid="settlement-3d"
         data-state={state}
-        className="h-80 w-full overflow-hidden rounded-2xl border border-border bg-card"
+        className="h-80 w-full touch-none overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary rounded-2xl border border-border bg-card"
       />
       {state === "loading" && <div className="sr-only" role="status">Loading the settlement</div>}
     </>

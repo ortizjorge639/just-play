@@ -9,6 +9,9 @@ export interface Part {
   depth: PartDepth
   // Null until art exists. Renderers draw a stand-in for a part with no asset.
   asset: string | null
+  // Only residents who arrived at or after this time can be given the part. New parts are
+  // appended with a later date, so existing homes keep the part they already have.
+  availableFrom?: string
 }
 
 // The few fields the layout needs. A Resident from lib/types fits as is.

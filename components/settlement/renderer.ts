@@ -1,7 +1,7 @@
 import {
   ACESFilmicToneMapping, Box3, Color, DirectionalLight, Group, HemisphereLight, Mesh,
   MeshStandardMaterial, OrthographicCamera, Scene, SphereGeometry, SRGBColorSpace,
-  Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
+  BoxGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
 } from "three"
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 import type { Layout } from "@/lib/settlement/types"
@@ -22,14 +22,29 @@ async function loadGroup(url: string, signal: AbortSignal): Promise<Group> {
   return gltf.scene
 }
 
-// The exported deck sits at its own site in the old world. Recentre it on x/z and rest it on y = 0.
-function recentre(group: Group): Group {
-  const box = new Box3().setFromObject(group)
-  const centre = box.getCenter(new Vector3())
+// The exported deck sits at the old world's plot site (the ATTACH_plot marker). Move that site to
+// the origin, with the floor at y = 0, and find where the bridge reaches out.
+const PLOT = new Vector3(37, 4, 10)
+const PLATFORM_RADIUS = 6
+
+function recentre(group: Group): { holder: Group; tipAngle: number; tipLength: number } {
+  group.updateMatrixWorld(true)
+  const point = new Vector3()
+  let tipLength = 0, tipAngle = 0
+  group.traverse((object) => {
+    if (!(object instanceof Mesh)) return
+    const position = object.geometry.getAttribute("position")
+    for (let i = 0; i < position.count; i++) {
+      point.fromBufferAttribute(position, i).applyMatrix4(object.matrixWorld)
+      const dx = point.x - PLOT.x, dz = point.z - PLOT.z
+      const length = Math.hypot(dx, dz)
+      if (length > tipLength) { tipLength = length; tipAngle = Math.atan2(dz, dx) }
+    }
+  })
   const holder = new Group()
-  group.position.set(-centre.x, -box.max.y, -centre.z)
+  group.position.sub(PLOT)
   holder.add(group)
-  return holder
+  return { holder, tipAngle, tipLength }
 }
 
 function disposeTree(root: Object3D) {
@@ -53,7 +68,7 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
   scene.add(sun)
 
   const deckSource = await loadGroup(DECK_URL, signal)
-  const deckTemplate = recentre(deckSource)
+  const { holder: deckTemplate, tipAngle, tipLength } = recentre(deckSource)
 
   const assetUrls = [...new Set(PARTS.map((p) => p.asset).filter((a): a is string => !!a))]
   const assetTemplates = new Map<string, Group>()
@@ -66,10 +81,28 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
   const standInMaterials = new Map<string, MeshStandardMaterial>()
   const partById = new Map(PARTS.map((p) => [p.id, p]))
 
+  const plank = new BoxGeometry(1, 0.25, 1)
+  const plankMaterial = new MeshStandardMaterial({ color: "#b98a4e", roughness: 0.85 })
   for (const deck of layout.decks) {
     const origin = deckOrigin(deck.index)
     const deckGroup = deckTemplate.clone(true)
     deckGroup.position.set(origin.x, 0, origin.z)
+    if (deck.parent !== null) {
+      // Turn the deck so its own bridge points at the deck it hangs from, then lay planks across the gap.
+      const parent = deckOrigin(deck.parent)
+      const toParent = Math.atan2(parent.z - origin.z, parent.x - origin.x)
+      deckGroup.rotation.y = tipAngle - toParent
+      const tip = { x: origin.x + Math.cos(toParent) * tipLength, z: origin.z + Math.sin(toParent) * tipLength }
+      const edge = { x: parent.x - Math.cos(toParent) * PLATFORM_RADIUS, z: parent.z - Math.sin(toParent) * PLATFORM_RADIUS }
+      const length = Math.hypot(edge.x - tip.x, edge.z - tip.z)
+      if (length > 0.5) {
+        const walkway = new Mesh(plank, plankMaterial)
+        walkway.scale.set(length, 1, 2)
+        walkway.position.set((tip.x + edge.x) / 2, -0.12, (tip.z + edge.z) / 2)
+        walkway.rotation.y = -Math.atan2(edge.z - tip.z, edge.x - tip.x)
+        scene.add(walkway)
+      }
+    }
     scene.add(deckGroup)
   }
   for (const placement of layout.placements) {
@@ -101,27 +134,104 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
 
   const camera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 500)
   const origins = layout.decks.map((d) => deckOrigin(d.index))
-  const reach = 11
+  const reach = 12
   const minX = Math.min(...origins.map((o) => o.x)) - reach, maxX = Math.max(...origins.map((o) => o.x)) + reach
   const minZ = Math.min(...origins.map((o) => o.z)) - reach, maxZ = Math.max(...origins.map((o) => o.z)) + reach
-  const centreX = (minX + maxX) / 2, centreZ = (minZ + maxZ) / 2
+  const bounds = { minX, maxX, minZ, maxZ }
+  const target = new Vector3((minX + maxX) / 2, 0, (minZ + maxZ) / 2)
+  const home = target.clone()
   // The camera looks along (-1, -1.5, -1), so both axes spread across the screen width.
-  const halfWidth = ((maxX - minX) + (maxZ - minZ)) * 0.36
-  const halfHeight = ((maxZ - minZ) * 0.55 + (maxX - minX) * 0.3) / 2 + 4
+  const fitWidth = ((maxX - minX) + (maxZ - minZ)) * 0.36
+  const fitHeight = ((maxZ - minZ) * 0.55 + (maxX - minX) * 0.3) / 2 + 4
+  let zoom = 1, aspect = 1
+
+  const render = () => {
+    const half = Math.max(fitWidth / aspect, fitHeight) / zoom
+    camera.left = -half * aspect; camera.right = half * aspect
+    camera.top = half; camera.bottom = -half
+    camera.position.set(target.x + 40, 60, target.z + 40)
+    camera.lookAt(target)
+    camera.updateProjectionMatrix()
+    renderer.render(scene, camera)
+  }
   const resize = () => {
     const { width, height } = host.getBoundingClientRect()
     if (!width || !height) return
-    const aspect = width / height
-    const half = Math.max(halfWidth / aspect, halfHeight)
-    camera.left = -half * aspect; camera.right = half * aspect
-    camera.top = half; camera.bottom = -half
-    camera.position.set(centreX + 40, 60, centreZ + 40)
-    camera.lookAt(centreX, 0, centreZ)
-    camera.updateProjectionMatrix()
+    aspect = width / height
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5))
     renderer.setSize(width, height)
-    renderer.render(scene, camera)
+    render()
   }
+  const clampTarget = () => {
+    target.x = Math.min(bounds.maxX, Math.max(bounds.minX, target.x))
+    target.z = Math.min(bounds.maxZ, Math.max(bounds.minZ, target.z))
+  }
+  // Move the view by a screen-space amount, in pixels.
+  const pan = (dx: number, dy: number) => {
+    const { width } = host.getBoundingClientRect()
+    if (!width) return
+    const perPixel = (camera.right - camera.left) / width
+    const right = new Vector3().setFromMatrixColumn(camera.matrixWorld, 0)
+    const up = new Vector3().setFromMatrixColumn(camera.matrixWorld, 1)
+    target.addScaledVector(right, -dx * perPixel).addScaledVector(up, dy * perPixel)
+    target.y = 0
+    clampTarget()
+    render()
+  }
+  const setZoom = (next: number) => {
+    zoom = Math.min(4, Math.max(0.6, next))
+    render()
+  }
+
+  const pointers = new Map<number, { x: number; y: number }>()
+  let pinch = 0
+  const onDown = (event: PointerEvent) => {
+    host.setPointerCapture(event.pointerId)
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (pointers.size === 2) pinch = distance()
+  }
+  const distance = () => {
+    const [a, b] = [...pointers.values()]
+    return Math.hypot(a.x - b.x, a.y - b.y)
+  }
+  const onMove = (event: PointerEvent) => {
+    const last = pointers.get(event.pointerId)
+    if (!last) return
+    const dx = event.clientX - last.x, dy = event.clientY - last.y
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (pointers.size === 2) {
+      const now = distance()
+      if (pinch > 0) setZoom(zoom * (now / pinch))
+      pinch = now
+    } else {
+      pan(dx, dy)
+    }
+  }
+  const onUp = (event: PointerEvent) => {
+    pointers.delete(event.pointerId)
+    pinch = 0
+  }
+  const onWheel = (event: WheelEvent) => {
+    event.preventDefault()
+    setZoom(zoom * Math.exp(-event.deltaY * 0.0015))
+  }
+  const onKey = (event: KeyboardEvent) => {
+    const step = 40
+    const moves: Record<string, [number, number]> = {
+      ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step],
+    }
+    if (moves[event.key]) { event.preventDefault(); pan(...moves[event.key]) }
+    else if (event.key === "+" || event.key === "=") { event.preventDefault(); setZoom(zoom * 1.25) }
+    else if (event.key === "-") { event.preventDefault(); setZoom(zoom / 1.25) }
+    else if (event.key === "0") { event.preventDefault(); zoom = 1; target.copy(home); render() }
+  }
+  host.addEventListener("pointerdown", onDown)
+  host.addEventListener("pointermove", onMove)
+  host.addEventListener("pointerup", onUp)
+  host.addEventListener("pointercancel", onUp)
+  host.addEventListener("wheel", onWheel, { passive: false })
+  host.addEventListener("keydown", onKey)
+
   const observer = new ResizeObserver(resize)
   observer.observe(host)
   resize()
@@ -131,9 +241,16 @@ export async function mountSettlement(host: HTMLElement, layout: Layout, signal:
     if (disposed) return
     disposed = true
     observer.disconnect()
+    host.removeEventListener("pointerdown", onDown)
+    host.removeEventListener("pointermove", onMove)
+    host.removeEventListener("pointerup", onUp)
+    host.removeEventListener("pointercancel", onUp)
+    host.removeEventListener("wheel", onWheel)
+    host.removeEventListener("keydown", onKey)
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
     standIn.dispose()
+    plank.dispose()
     renderer.dispose()
     renderer.forceContextLoss()
     renderer.domElement.remove()

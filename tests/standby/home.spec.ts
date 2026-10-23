@@ -46,7 +46,7 @@ test("Settlement toggle draws the 3D settlement and returns to the list", async 
 
   await settlement.click()
   await expect(settlement).toHaveAttribute("aria-pressed", "true")
-  const scene = page.getByRole("img", { name: "Settlement with 7 homes on 2 decks" })
+  const scene = page.getByRole("group", { name: /^Settlement with 7 homes on 2 decks/ })
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await expect(scene.locator("canvas")).toHaveCount(1)
 
@@ -63,4 +63,21 @@ test("Settlement falls back to the 2D deck map when the art cannot load", async 
   await expect(page.getByRole("region", { name: "Deck 2" })).toBeVisible()
   await expect(page.getByTestId("settlement-view")).toBeVisible()
   await expect(page.getByTestId("settlement-3d")).toHaveCount(0)
+})
+
+test("Settlement view can be moved and zoomed from the keyboard", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  await scene.focus()
+  const before = await scene.screenshot()
+  await page.keyboard.press("+")
+  await page.keyboard.press("ArrowLeft")
+  const moved = await scene.screenshot()
+  expect(moved.equals(before)).toBe(false)
+  await page.keyboard.press("0")
+  await page.waitForTimeout(100)
+  expect((await scene.screenshot()).equals(moved)).toBe(false)
 })
