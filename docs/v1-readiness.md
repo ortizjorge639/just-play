@@ -77,9 +77,11 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 - The four lines per emote live in `lib/emotes.ts` and were approved by the owner.
 - Still open: a contrast pass on the menu.
 
-## Settlement logic (built, not shown)
+## Settlement (logic built, first view shipped)
 
-- `lib/settlement/` holds a kit of parts picked from game genres, an append-only layout (six residents per deck), and the shape a view accepts. No migration, no UI. Design: [settlement-logic-proposal.md](settlement-logic-proposal.md).
+- `lib/settlement/` holds a kit of parts picked from game genres, an append-only layout (six residents per deck), and the shape a view accepts. No migration. Design: [settlement-logic-proposal.md](settlement-logic-proposal.md).
+- Home has a List / Settlement toggle. Settlement draws the approved Blender deck once per layout deck, with the approved ember and tinted stand-ins for parts without art. If WebGL or the art fails, a 2D deck map shows instead. Read-only, no migration. Plan: [settlement-slice-2-plan.md](settlement-slice-2-plan.md) (option A).
+- Not yet: tapping a home, more parts, merit tiers, player placement. Part picks must be frozen before the catalogue grows.
 - Nothing in the app calls it yet. A read-only decks summary on Home and a 3D view are both separate, unstarted items.
 - Anything that imports residents must not backdate `arrived_at`, or it would move existing homes.
 

@@ -1,5 +1,5 @@
 import { createServer } from "node:http"
-import { readFile } from "node:fs/promises"
+import { readFile, readdir } from "node:fs/promises"
 import path from "node:path"
 import { build } from "esbuild"
 import postcss from "postcss"
@@ -26,13 +26,17 @@ async function main() {
   })
   const assets = new Map(result.outputFiles.map(file => [`/assets/${path.basename(file.path)}`, file.contents]))
   const robot = await readFile(path.resolve("public", "canopy", "r1-4f33b632.glb"))
+  const canopyAssets = new Map<string, Buffer>()
+  for (const name of await readdir(path.resolve("public", "canopy"))) {
+    if (name.endsWith(".glb")) canopyAssets.set(`/canopy/${name}`, await readFile(path.resolve("public", "canopy", name)))
+  }
   const css = await postcss([tailwind()]).process(await readFile(path.resolve("app", "globals.css"), "utf8"), {
     from: path.resolve("app", "globals.css"),
   })
   const html = `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Isolated StandBy test harness</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/assets/harness.css"></head><body><div id="root"></div><script type="module" src="/assets/harness.js"></script></body></html>`
   createServer((request, response) => {
     const url = request.url || "/"
-    const asset = assets.get(url) ?? (url === "/canopy/r1-4f33b632.glb" ? robot : url === "/style.css" ? css.css : html)
+    const asset = assets.get(url) ?? (url === "/canopy/r1-4f33b632.glb" ? robot : url === "/style.css" ? css.css : canopyAssets.get(url) ?? html)
     response.setHeader("Content-Type", url.endsWith(".js") ? "application/javascript"
       : url.endsWith(".css") ? "text/css" : url.endsWith(".glb") ? "model/gltf-binary" : "text/html")
     response.end(asset)

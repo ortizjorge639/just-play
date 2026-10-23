@@ -1,9 +1,13 @@
+"use client"
+
+import { useMemo } from "react"
 import Image from "next/image"
 import type { Resident } from "@/lib/types"
 import { layoutSettlement, DECK_CAPACITY } from "@/lib/settlement/layout"
+import { SettlementScene } from "./settlement/scene"
 import { PARTS } from "@/lib/settlement/catalog"
 
-interface SettlementViewProps {
+interface DeckMapProps {
   residents: Resident[]
 }
 
@@ -15,7 +19,7 @@ const FAMILY_TINT: Record<string, string> = {
   other: "bg-stone-300/20",
 }
 
-export function SettlementView({ residents }: SettlementViewProps) {
+export function DeckMap({ residents }: DeckMapProps) {
   const layout = layoutSettlement(residents)
   const byGame = new Map(residents.map((r) => [r.game_id, r]))
   const partById = new Map(PARTS.map((p) => [p.id, p]))
@@ -74,5 +78,16 @@ export function SettlementView({ residents }: SettlementViewProps) {
         )
       })}
     </div>
+  )
+}
+
+export function SettlementView({ residents }: DeckMapProps) {
+  const layout = useMemo(() => layoutSettlement(residents), [residents])
+  return (
+    <SettlementScene
+      layout={layout}
+      residentCount={residents.length}
+      fallback={<DeckMap residents={residents} />}
+    />
   )
 }

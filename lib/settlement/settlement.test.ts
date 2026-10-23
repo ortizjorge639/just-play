@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { test } from "node:test"
 import { PARTS, familyForGenres, partFor } from "./catalog"
 import { DECK_CAPACITY, LAYOUT_VERSION, layoutSettlement } from "./layout"
+import { deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
 import type { SettlementResident } from "./types"
 
 function resident(n: number, genres: string[] = []): SettlementResident {
@@ -109,4 +110,24 @@ test("5000 residents lay out quickly", () => {
 test("a resident whose game has no genre data still gets a part", () => {
   const layout = layoutSettlement([{ game_id: "g", arrived_at: "2026-01-01T00:00:00Z", game: null }])
   assert.equal(PARTS.find(p => p.id === layout.placements[0].partId)?.family, "other")
+})
+
+test("deck 0 sits at the origin", () => {
+  assert.deepEqual(deckOrigin(0), { x: 0, z: 0 })
+})
+
+test("every deck has its own spot, at least one spacing from the others", () => {
+  const origins = Array.from({ length: 63 }, (_, i) => deckOrigin(i))
+  for (let i = 0; i < origins.length; i++) {
+    for (let j = i + 1; j < origins.length; j++) {
+      const gap = Math.hypot(origins[i].x - origins[j].x, origins[i].z - origins[j].z)
+      assert.ok(gap >= DECK_SPACING - 1e-9)
+    }
+  }
+})
+
+test("slots sit evenly on one ring", () => {
+  const points = Array.from({ length: DECK_CAPACITY }, (_, slot) => slotOffset(slot, DECK_CAPACITY))
+  for (const p of points) assert.ok(Math.abs(Math.hypot(p.x, p.z) - SLOT_RING_RADIUS) < 1e-9)
+  assert.equal(new Set(points.map((p) => `${p.x.toFixed(3)},${p.z.toFixed(3)}`)).size, DECK_CAPACITY)
 })

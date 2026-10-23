@@ -37,20 +37,30 @@ test("Home says how many homes sit on how many decks", async ({ page }) => {
   await expect(page.getByText(/^\d+ homes? on \d+ decks?$/)).toBeVisible()
 })
 
-test("Settlement toggle shows homes on decks and returns to the list", async ({ page }) => {
+test("Settlement toggle draws the 3D settlement and returns to the list", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
   const list = page.getByRole("button", { name: "List" })
   const settlement = page.getByRole("button", { name: "Settlement" })
   await expect(list).toHaveAttribute("aria-pressed", "true")
-  await expect(page.getByTestId("settlement-view")).toHaveCount(0)
 
   await settlement.click()
   await expect(settlement).toHaveAttribute("aria-pressed", "true")
-  await expect(page.getByRole("region", { name: "Deck 1" })).toBeVisible()
-  await expect(page.getByRole("region", { name: "Deck 2" })).toBeVisible()
-  await expect(page.getByTestId("settlement-view").getByText("Home 7")).toBeVisible()
+  const scene = page.getByRole("img", { name: "Settlement with 7 homes on 2 decks" })
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  await expect(scene.locator("canvas")).toHaveCount(1)
 
   await list.click()
-  await expect(page.getByTestId("settlement-view")).toHaveCount(0)
+  await expect(page.getByTestId("settlement-3d")).toHaveCount(0)
+})
+
+test("Settlement falls back to the 2D deck map when the art cannot load", async ({ page }) => {
+  await page.route("**/canopy/hearth-deck-*.glb", (route) => route.abort())
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  await expect(page.getByRole("region", { name: "Deck 1" })).toBeVisible()
+  await expect(page.getByRole("region", { name: "Deck 2" })).toBeVisible()
+  await expect(page.getByTestId("settlement-view")).toBeVisible()
+  await expect(page.getByTestId("settlement-3d")).toHaveCount(0)
 })

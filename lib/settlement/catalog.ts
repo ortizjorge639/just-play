@@ -2,7 +2,7 @@ import type { Part, PartFamily } from "./types"
 
 export const PARTS: readonly Part[] = [
   { id: "cozy-plant", family: "cozy", depth: "trinket", asset: null },
-  { id: "cozy-lantern", family: "cozy", depth: "trinket", asset: null },
+  { id: "cozy-lantern", family: "cozy", depth: "trinket", asset: "/canopy/ember-small-38963249.glb" },
   { id: "fantasy-chest", family: "fantasy", depth: "trinket", asset: null },
   { id: "fantasy-banner", family: "fantasy", depth: "trinket", asset: null },
   { id: "puzzle-lamp", family: "puzzle", depth: "trinket", asset: null },
