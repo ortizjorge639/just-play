@@ -20,26 +20,17 @@ If the original wording of stories 1 and 2 exists outside the repo, send it and 
 
 ## Story 7
 
-`v1-readiness.md` calls it "partly open". Nothing in the repo says what it is. The closest candidates, each one named in existing docs:
-
-- **Anonymous sign-ins.** The readiness table says enforcement "is not written down yet." This is the only one already listed as a gate.
-- **Merit tiers.** Defined in the rules, held back on purpose. See [settlement-art.md](settlement-art.md).
-- **The settlement itself.** The 3D world residents live in. Same blocker.
-- **Friend visits.** The world study says the world is private first, with optional visits. No design exists.
-- **Account recovery.** Deferred by the owner.
-
-I am not choosing for you. Pick one and I will write it up the way stories 3 to 6 were.
+The settlement. Owner decision: the Blender slice is approved, and the design must plan for many more residents and homes over time. Spec and master plan: [spec-story-7-settlement.md](spec-story-7-settlement.md). Anonymous sign-ins, merit tiers, friend visits and account recovery stay separate items.
 
 ## Questions for the owner
 
-1. Which of the five above is story 7, or is it something else?
-2. For anonymous sign-ins: should an anonymous player be able to keep residents and a name card, and what happens to them if they never add an email?
-3. Do you have the original v1-spec text, or the wording of stories 1 and 2?
+1. For anonymous sign-ins: should an anonymous player be able to keep residents and a name card, and what happens to them if they never add an email?
+2. Do you have the original v1-spec text, or the wording of stories 1 and 2?
 
 ## What is known to be out of v1
 
 - Account recovery (deferred).
-- Merit tiers and the 3D settlement (waiting on art approval).
+- Merit tiers (slice 5 of the settlement plan, not scoped yet).
 - Licensed game characters, multiplayer, native screensaver packaging (excluded in the demo scope).
 - Social sharing of residents or settlement state ([spec-stories-3-6.md](spec-stories-3-6.md), non-goals).
 

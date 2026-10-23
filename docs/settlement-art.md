@@ -18,7 +18,7 @@ The Treehouse (also called the Canopy settlement) is the world described in [tre
 | --- | --- |
 | Product rules (arrival, permanence, tiers, postcards) | Decided. See [spec-stories-3-6.md](spec-stories-3-6.md). |
 | Colour direction | Lantern Pastel palette, owner decision. |
-| Blender slice | One representative slice, finished September 12. Technically complete. Visual approval still pending as of the September 26 archive. |
+| Blender slice | One representative slice, finished September 12. Technically complete. Approved by the owner. See [spec-story-7-settlement.md](spec-story-7-settlement.md). |
 | Full settlement | Not approved. No go-ahead to expand it. |
 | In the app today | A single furnished room in the Canopy nook ([canopy-nook.md](canopy-nook.md)), built from plain Three.js shapes. Not the settlement, and not tied to residents. |
 | Residents, stamps, name card, emotes | Shipped as data and UI on the Home tab. They do not appear in any 3D world yet. |
