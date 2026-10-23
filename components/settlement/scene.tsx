@@ -12,6 +12,7 @@ interface SettlementSceneProps {
   onSelect?: (gameId: Resident["game_id"]) => void
   pieces?: SettlementPiece[]
   hints?: SpotHints
+  onSpot?: (spot: { deck: number; anchor: number }) => void
 }
 
 export interface SpotHints {
@@ -20,10 +21,14 @@ export interface SpotHints {
 }
 
 // Draws the approved deck art. If WebGL or the art fails, the 2D view takes over.
-export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints }: SettlementSceneProps) {
+export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot }: SettlementSceneProps) {
   const host = useRef<HTMLDivElement>(null)
   const select = useRef(onSelect)
   useEffect(() => { select.current = onSelect })
+  const spot = useRef(onSpot)
+  useEffect(() => { spot.current = onSpot })
+  const latestPieces = useRef(pieces)
+  useEffect(() => { latestPieces.current = pieces })
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading")
 
   useEffect(() => {
@@ -31,11 +36,24 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
     if (!element) return
     const controller = new AbortController()
     void import("./renderer")
-      .then(({ mountSettlement }) => mountSettlement(element, layout, controller.signal, (id) => select.current?.(id), pieces))
+      .then(({ mountSettlement }) => mountSettlement(element, layout, controller.signal, (id) => select.current?.(id), latestPieces.current))
       .then(() => { if (!controller.signal.aborted) setState("ready") })
       .catch(() => { if (!controller.signal.aborted) setState("failed") })
     return () => controller.abort()
-  }, [layout, pieces])
+  }, [layout])
+
+  useEffect(() => {
+    if (state !== "ready") return
+    host.current?.dispatchEvent(new CustomEvent("settlement-pieces", { detail: pieces ?? [] }))
+  }, [pieces, state])
+
+  useEffect(() => {
+    const element = host.current
+    if (!element) return
+    const listener = (event: Event) => spot.current?.((event as CustomEvent<{ deck: number; anchor: number }>).detail)
+    element.addEventListener("settlement-spot", listener)
+    return () => element.removeEventListener("settlement-spot", listener)
+  }, [state])
 
   useEffect(() => {
     if (state !== "ready") return
