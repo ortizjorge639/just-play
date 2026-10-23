@@ -62,8 +62,8 @@ Slices 5 and 6 are not scoped here.
 - Time-based decay, expiry or upkeep.
 - Account recovery.
 
-## Open questions for the owner
+## Decisions
 
-1. Is the part catalogue allowed to change existing players' homes, or must existing homes be frozen? I recommend frozen.
-2. Should the first view live on Home, or be its own tab?
-3. Which family of parts should get art first?
+1. **Existing homes are frozen.** Growing the catalogue must never change a home that already exists. Before the first new part is added, the pick is made permanent: either a new `LAYOUT_VERSION` that only applies to new residents, or the part stored once per resident. Decide which when slice 4 is scoped.
+2. **The view lives on Home, behind a toggle.** The resident list stays the default; the settlement is a second view of the same data.
+3. **Cozy parts get art first.** Cozy matches the Lantern Pastel palette and the approved slice, and cozy games are the likeliest to be stamped early. Fantasy, puzzle and action follow.
