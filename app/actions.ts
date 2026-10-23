@@ -1047,6 +1047,49 @@ export async function getSettlementPieces(): Promise<SettlementPiece[]> {
   }
 }
 
+export async function placePiece(
+  gameId: string,
+  deck: number,
+  anchor: number
+): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+  if (!Number.isInteger(deck) || !Number.isInteger(anchor)) return { ok: false, error: "Pick a spot." }
+
+  try {
+    const { error } = await supabase.rpc("place_piece", { p_game_id: gameId, p_deck: deck, p_anchor: anchor })
+    if (error) {
+      console.warn("[placePiece] RPC failed:", error.message)
+      return { ok: false, error: error.message === "Spot taken" ? "That spot's taken." : "Couldn't place it." }
+    }
+    revalidatePath("/")
+    return { ok: true }
+  } catch (err) {
+    console.warn("[placePiece] Catch error:", err)
+    return { ok: false, error: "Couldn't place it." }
+  }
+}
+
+export async function removePiece(gameId: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+
+  try {
+    const { error } = await supabase.rpc("remove_piece", { p_game_id: gameId })
+    if (error) {
+      console.warn("[removePiece] RPC failed:", error.message)
+      return { ok: false, error: "Couldn't take it back." }
+    }
+    revalidatePath("/")
+    return { ok: true }
+  } catch (err) {
+    console.warn("[removePiece] Catch error:", err)
+    return { ok: false, error: "Couldn't take it back." }
+  }
+}
+
 export async function getPostcards(): Promise<Postcard[]> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

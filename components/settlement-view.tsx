@@ -117,7 +117,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
           </li>
         ))}
       </ul>
-      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} />}
+      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} />}
     </div>
   )
 }

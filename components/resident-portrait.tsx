@@ -3,16 +3,19 @@
 import { useRef, useState, useTransition } from "react"
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
-import { recordEmote } from "@/app/actions"
+import { placePiece, recordEmote, removePiece } from "@/app/actions"
 import { EMOTES, EMOTE_LABELS, EMOTE_PAST, isEmote, pickEmoteLine, type EmoteKind } from "@/lib/emotes"
-import { Resident } from "@/lib/types"
+import { Resident, SettlementPiece } from "@/lib/types"
+import { ANCHORS_PER_DECK } from "@/lib/settlement/transforms"
 import { tierFor, tierName } from "@/lib/settlement/tiers"
 
 interface ResidentPortraitProps {
   resident: Resident
+  pieces?: SettlementPiece[]
+  deckCount?: number
 }
 
-export function ResidentPortrait({ resident }: ResidentPortraitProps) {
+export function ResidentPortrait({ resident, pieces, deckCount = 1 }: ResidentPortraitProps) {
   const arrivedDate = new Date(resident.arrived_at)
   const formatted = arrivedDate.toLocaleDateString("en-US", {
     month: "short",
@@ -20,7 +23,8 @@ export function ResidentPortrait({ resident }: ResidentPortraitProps) {
     year: "numeric",
   })
 
-  const depth = tierName(tierFor(resident.minutes_played))
+  const tier = tierFor(resident.minutes_played)
+  const depth = tierName(tier)
 
   return (
     <div className="bg-card rounded-lg p-4 border border-border">
@@ -54,6 +58,9 @@ export function ResidentPortrait({ resident }: ResidentPortraitProps) {
           </div>
         </div>
       )}
+      {resident.game && pieces && tier >= 3 ? (
+        <LoftSection resident={resident} name={resident.game.name} pieces={pieces} deckCount={deckCount} />
+      ) : null}
       {resident.game ? <EmoteSection resident={resident} name={resident.game.name} /> : null}
     </div>
   )
@@ -124,6 +131,86 @@ function EmoteSection({ resident, name }: { resident: Resident; name: string }) 
           Last: {EMOTE_PAST[last.emote]}, {formatDistanceToNow(new Date(last.emoted_at), { addSuffix: true })}
         </p>
       ) : null}
+    </div>
+  )
+}
+
+function LoftSection({ resident, name, pieces, deckCount }: { resident: Resident; name: string; pieces: SettlementPiece[]; deckCount: number }) {
+  const [open, setOpen] = useState(false)
+  const [failed, setFailed] = useState<string | null>(null)
+  const [pending, startTransition] = useTransition()
+  const trigger = useRef<HTMLButtonElement>(null)
+  const mine = pieces.find((p) => p.game_id === resident.game_id)
+  const taken = new Set(pieces.filter((p) => p.game_id !== resident.game_id).map((p) => `${p.deck}:${p.anchor}`))
+
+  const run = (action: () => Promise<{ ok: boolean; error?: string }>) => {
+    setFailed(null)
+    setOpen(false)
+    startTransition(async () => {
+      const result = await action()
+      if (!result.ok) setFailed(result.error ?? "Couldn't do that.")
+    })
+    trigger.current?.focus()
+  }
+
+  const spots: { deck: number; anchor: number }[] = []
+  for (let deck = 0; deck < deckCount; deck++) {
+    for (let anchor = 0; anchor < ANCHORS_PER_DECK; anchor++) {
+      if (!taken.has(`${deck}:${anchor}`) && !(mine && mine.deck === deck && mine.anchor === anchor)) spots.push({ deck, anchor })
+    }
+  }
+
+  return (
+    <div className="mt-3" data-testid="loft-section">
+      <p className="text-sm text-foreground">
+        {mine ? `Loft on deck ${mine.deck + 1}, spot ${mine.anchor + 1}` : "Has a loft to place"}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          ref={trigger}
+          type="button"
+          aria-expanded={open}
+          disabled={pending}
+          aria-label={`${mine ? "Move" : "Place"} the loft for ${name}`}
+          onClick={() => setOpen((o) => !o)}
+          className="min-h-11 text-sm text-muted-foreground underline"
+        >
+          {mine ? "Move it" : "Place it"}
+        </button>
+        {mine ? (
+          <button
+            type="button"
+            disabled={pending}
+            aria-label={`Take back the loft for ${name}`}
+            onClick={() => run(() => removePiece(resident.game_id))}
+            className="min-h-11 text-sm text-muted-foreground underline"
+          >
+            Take it back
+          </button>
+        ) : null}
+      </div>
+      {open ? (
+        <ul
+          aria-label="Free spots"
+          className="flex flex-wrap gap-2"
+          onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); trigger.current?.focus() } }}
+        >
+          {spots.length === 0 ? <li className="text-xs text-muted-foreground">No free spots.</li> : null}
+          {spots.map((s, i) => (
+            <li key={`${s.deck}:${s.anchor}`}>
+              <button
+                type="button"
+                autoFocus={i === 0}
+                onClick={() => run(() => placePiece(resident.game_id, s.deck, s.anchor))}
+                className="min-h-11 rounded-lg border border-border px-4 text-sm text-foreground"
+              >
+                Deck {s.deck + 1}, spot {s.anchor + 1}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {failed ? <p role="status" className="text-xs text-muted-foreground">{failed}</p> : null}
     </div>
   )
 }
