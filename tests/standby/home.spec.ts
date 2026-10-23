@@ -30,3 +30,9 @@ test("Home is reachable by keyboard", async ({ page }) => {
   await page.keyboard.press("Enter")
   await expect(home).toHaveAttribute("aria-current", "page")
 })
+
+test("Home says how many homes sit on how many decks", async ({ page }) => {
+  await page.goto("/?app-shell&residents")
+  await page.getByRole("button", { name: "Home" }).click()
+  await expect(page.getByText(/^\d+ homes? on \d+ decks?$/)).toBeVisible()
+})

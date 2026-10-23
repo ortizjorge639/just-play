@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion"
 import type { Game, Postcard, Resident } from "@/lib/types"
 import { ResidentPortrait } from "./resident-portrait"
 import { PostcardsList } from "./postcards-list"
+import { layoutSettlement } from "@/lib/settlement/layout"
 
 interface HomeViewProps {
   displayName: string | null
@@ -15,6 +16,7 @@ interface HomeViewProps {
 
 export function HomeView({ displayName, residents, postcards, invitedGame }: HomeViewProps) {
   const prefersReducedMotion = useReducedMotion()
+  const deckCount = layoutSettlement(residents).decks.length
   const isEmpty = residents.length === 0 && postcards.length === 0 && !invitedGame
 
   return (
@@ -43,6 +45,10 @@ export function HomeView({ displayName, residents, postcards, invitedGame }: Hom
           >
             Lives here
           </h2>
+          <p className="text-sm text-muted-foreground mb-3 -mt-1">
+            {residents.length} {residents.length === 1 ? "home" : "homes"} on {deckCount}{" "}
+            {deckCount === 1 ? "deck" : "decks"}
+          </p>
           <ul className="grid grid-cols-1 gap-2.5">
             {residents.map((resident, i) => (
               <motion.li
