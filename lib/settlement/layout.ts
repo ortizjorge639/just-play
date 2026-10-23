@@ -21,7 +21,7 @@ export function layoutSettlement(residents: readonly SettlementResident[]): Layo
 
   const placements: Placement[] = ordered.map((resident, index) => ({
     gameId: resident.game_id,
-    partId: partFor(resident.game_id, resident.game?.genres).id,
+    partId: partFor(resident.game_id, resident.game?.genres, resident.arrived_at).id,
     deck: Math.floor(index / DECK_CAPACITY),
     slot: index % DECK_CAPACITY,
   }))

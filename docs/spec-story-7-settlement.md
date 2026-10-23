@@ -64,6 +64,6 @@ Slices 5 and 6 are not scoped here.
 
 ## Decisions
 
-1. **Existing homes are frozen.** Growing the catalogue must never change a home that already exists. Before the first new part is added, the pick is made permanent: either a new `LAYOUT_VERSION` that only applies to new residents, or the part stored once per resident. Decide which when slice 4 is scoped.
+1. **Existing homes are frozen.** Growing the catalogue must never change a home that already exists. Done in `partFor`: each part carries an `availableFrom` date and is only offered to residents who arrived after it. Nothing is stored. Only ever append parts, with a later date.
 2. **The view lives on Home, behind a toggle.** The resident list stays the default; the settlement is a second view of the same data.
 3. **Cozy parts get art first.** Cozy matches the Lantern Pastel palette and the approved slice, and cozy games are the likeliest to be stamped early. Fantasy, puzzle and action follow.
