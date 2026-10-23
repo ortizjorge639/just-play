@@ -1,7 +1,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { PARTS, familyForGenres, partFor } from "./catalog"
-import { tierFor } from "./tiers"
+import { readFileSync } from "node:fs"
+import { TIERS, tierFor } from "./tiers"
 import { DECK_CAPACITY, LAYOUT_VERSION, layoutSettlement } from "./layout"
 import { anchorOffset, ANCHORS_PER_DECK, ANCHOR_RADIUS, deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
 import type { Part, SettlementResident } from "./types"
@@ -188,4 +189,12 @@ test("rim spots are distinct, outside the home ring and inside the deck", () => 
     assert.ok(Math.abs(Math.hypot(p.x, p.z) - ANCHOR_RADIUS) < 1e-9)
     assert.ok(ANCHOR_RADIUS > SLOT_RING_RADIUS + 1 && ANCHOR_RADIUS < 6)
   }
+})
+
+test("migration 029 uses the same Elder threshold, deck size and spot count as the code", () => {
+  const sql = readFileSync(new URL("../../scripts/029_settlement_pieces.sql", import.meta.url), "utf8")
+  const elder = TIERS[TIERS.length - 1].minutes
+  assert.ok(sql.includes(`< ${elder} THEN`), "Elder minutes differ from SQL")
+  assert.ok(sql.includes(`(residents_count + ${DECK_CAPACITY - 1}) / ${DECK_CAPACITY}`), "deck size differs from SQL")
+  assert.ok(sql.includes(`p_anchor > ${ANCHORS_PER_DECK - 1}`), "spot count differs from SQL")
 })

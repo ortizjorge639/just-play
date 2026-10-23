@@ -81,6 +81,7 @@ if (params.has("residents-tiers")) {
     game: { ...game, id: `tier-${i}`, name: `Tier game ${i + 1}` },
   }))
 }
+if (params.has("elder")) fixture.residents = fixture.residents.map((r) => ({ ...r, minutes_played: 3000 }))
 if (params.has("pieces")) {
   fixture.pieces = [
     { game_id: "many-0", piece: "loft", deck: 0, anchor: 1 },

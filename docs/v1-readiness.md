@@ -69,7 +69,7 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 
 - Migration 025 (applied) adds `name_cards` and `save_name_card`. The card sits in the Progress header and is edited from Progress or Settings ([name-card-proposal.md](name-card-proposal.md)).
 - Migration 026 (applied) stops a direct `display_name` write from the client. Migration 028 (applied, smoke tested: XP still moves) locks `total_xp` and `level` the same way, keyed on the transaction flag the standby functions already set. No function rework was needed. See `docs/xp-lock-proposal.md`.
-- Migration 029 (applied) adds `settlement_pieces` with `place_piece` and `remove_piece`, for the Elder-tier loft the player places. The app now reads placed pieces and draws them as placeholder lofts; placing, moving and removing from the UI is the next step. See `docs/player-placement-proposal.md`.
+- Migration 029 (applied) adds `settlement_pieces` with `place_piece` and `remove_piece`, for the Elder-tier loft the player places. The app now reads placed pieces and draws them as placeholder lofts; an Elder home can place, move and take back its loft from the settlement portrait. See `docs/player-placement-proposal.md`.
 - Still open: a contrast pass on the card and form.
 
 ## Emotes (shipped)
@@ -86,7 +86,7 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 - Part picks are frozen: a part has an `availableFrom` date and is only offered to residents who arrived after it, so growing the catalogue never changes an existing home. Only append parts, with a later date.
 - Tapping a home (or picking it from the list under the view) opens the resident portrait with emotes.
 - Not yet: more parts, merit tiers, player placement.
-- The app now reads placed pieces and draws them as placeholder lofts; placing, moving and removing from the UI is the next step. A read-only decks summary on Home and a 3D view are both separate, unstarted items.
+- The app now reads placed pieces and draws them as placeholder lofts; an Elder home can place, move and take back its loft from the settlement portrait. A read-only decks summary on Home and a 3D view are both separate, unstarted items.
 - Anything that imports residents must not backdate `arrived_at`, or it would move existing homes.
 
 ## Still to build

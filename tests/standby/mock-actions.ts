@@ -55,6 +55,7 @@ export const fixture: {
   nameCard: NameCard | null
   cardCalls: NameCardInput[]
   emoteCalls: string[]
+  pieceCalls: string[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
   holdReads: false, readReleases: [], readSnapshots: [], readCompletions: 0,
@@ -76,6 +77,7 @@ export const fixture: {
   nameCard: null,
   cardCalls: [],
   emoteCalls: [],
+  pieceCalls: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -290,6 +292,17 @@ export async function recordEmote(
   if (hasParam("emote-fail")) return { ok: false, error: "Couldn't save that one." }
   fixture.emoteCalls.push(`${gameId}:${emote}`)
   return { ok: true, emote, emoted_at: new Date().toISOString() }
+}
+
+export async function placePiece(gameId: string, deck: number, anchor: number): Promise<{ ok: boolean; error?: string }> {
+  if (hasParam("piece-fail")) return { ok: false, error: "Couldn't place it." }
+  fixture.pieceCalls.push(`place:${gameId}:${deck}:${anchor}`)
+  return { ok: true }
+}
+export async function removePiece(gameId: string): Promise<{ ok: boolean; error?: string }> {
+  if (hasParam("piece-fail")) return { ok: false, error: "Couldn't take it back." }
+  fixture.pieceCalls.push(`remove:${gameId}`)
+  return { ok: true }
 }
 
 // These surfaces are bundled only for the real AppShell remount test, not exercised.
