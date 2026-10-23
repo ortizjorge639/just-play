@@ -77,6 +77,12 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 - The four lines per emote live in `lib/emotes.ts` and were approved by the owner.
 - Still open: a contrast pass on the menu.
 
+## Settlement logic (built, not shown)
+
+- `lib/settlement/` holds a kit of parts picked from game genres, an append-only layout (six residents per deck), and the shape a view accepts. No migration, no UI. Design: [settlement-logic-proposal.md](settlement-logic-proposal.md).
+- Nothing in the app calls it yet. A read-only decks summary on Home and a 3D view are both separate, unstarted items.
+- Anything that imports residents must not backdate `arrived_at`, or it would move existing homes.
+
 ## Still to build
 
 Nothing from stories 3-6. Merit tiers wait on the settlement art ([what that means](settlement-art.md)).
