@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
-import type { Game, Postcard, Resident } from "@/lib/types"
+import type { Game, Postcard, Resident, SettlementPiece } from "@/lib/types"
 import { ResidentPortrait } from "./resident-portrait"
 import { SettlementView } from "./settlement-view"
 import { cn } from "@/lib/utils"
@@ -13,11 +13,12 @@ import { layoutSettlement } from "@/lib/settlement/layout"
 interface HomeViewProps {
   displayName: string | null
   residents: Resident[]
+  pieces?: SettlementPiece[]
   postcards: Postcard[]
   invitedGame: Game | null
 }
 
-export function HomeView({ displayName, residents, postcards, invitedGame }: HomeViewProps) {
+export function HomeView({ displayName, residents, pieces = [], postcards, invitedGame }: HomeViewProps) {
   const [view, setView] = useState<"list" | "settlement">("list")
   const prefersReducedMotion = useReducedMotion()
   const deckCount = layoutSettlement(residents).decks.length
@@ -72,7 +73,7 @@ export function HomeView({ displayName, residents, postcards, invitedGame }: Hom
             ))}
           </div>
           {view === "settlement" ? (
-            <SettlementView residents={residents} />
+            <SettlementView residents={residents} pieces={pieces} />
           ) : (
             <ul className="grid grid-cols-1 gap-2.5">
               {residents.map((resident, i) => (

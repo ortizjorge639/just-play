@@ -1,4 +1,4 @@
-import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
+import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard, SettlementPiece, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
 
 export const game: Game = {
   id: "test-game", name: "A Short Hike", genres: ["Adventure"],
@@ -49,6 +49,7 @@ export const fixture: {
   events: { kind: "notes-start" | "notes-saved" | "notes-late" | "notes-ack-held" | "notes-ack-released" | "finish" | "beaten" | "abandoned"; notes: string }[]
   residents: Resident[]
   postcards: Postcard[]
+  pieces: SettlementPiece[]
   stampRules: StampRule[]
   stampCalls: string[]
   nameCard: NameCard | null
@@ -69,6 +70,7 @@ export const fixture: {
   finalDrafts: [],
   residents: [],
   postcards: [],
+  pieces: [],
   stampRules: [],
   stampCalls: [],
   nameCard: null,

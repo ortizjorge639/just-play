@@ -81,6 +81,13 @@ if (params.has("residents-tiers")) {
     game: { ...game, id: `tier-${i}`, name: `Tier game ${i + 1}` },
   }))
 }
+if (params.has("pieces")) {
+  fixture.pieces = [
+    { game_id: "many-0", piece: "loft", deck: 0, anchor: 1 },
+    { game_id: "many-1", piece: "loft", deck: 1, anchor: 0 },
+    { game_id: "many-2", piece: "loft", deck: 9, anchor: 0 },
+  ]
+}
 if (params.has("postcards")) {
   fixture.postcards = [
     {
@@ -118,7 +125,7 @@ const app = params.has("app-shell")
     tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
   }} recommendations={[]} activeSession={fixture.session} activeGame={null}
-    sessionHistory={libraryHistory} nameCard={fixture.nameCard} playerStats={null} residents={fixture.residents} postcards={fixture.postcards} stampRules={fixture.stampRules} isBoosterPack={false}
+    sessionHistory={libraryHistory} nameCard={fixture.nameCard} playerStats={null} residents={fixture.residents} pieces={fixture.pieces} postcards={fixture.postcards} stampRules={fixture.stampRules} isBoosterPack={false}
     boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
   : <Harness />
 createRoot(document.getElementById("root")!).render(params.has("strict") ? <StrictMode>{app}</StrictMode> : app)

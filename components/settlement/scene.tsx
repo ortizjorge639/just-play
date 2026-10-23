@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import type { Resident } from "@/lib/types"
+import type { SettlementPiece } from "@/lib/types"
 import type { Layout } from "@/lib/settlement/types"
 
 interface SettlementSceneProps {
@@ -9,10 +10,11 @@ interface SettlementSceneProps {
   residentCount: number
   fallback: React.ReactNode
   onSelect?: (gameId: Resident["game_id"]) => void
+  pieces?: SettlementPiece[]
 }
 
 // Draws the approved deck art. If WebGL or the art fails, the 2D view takes over.
-export function SettlementScene({ layout, residentCount, fallback, onSelect }: SettlementSceneProps) {
+export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces }: SettlementSceneProps) {
   const host = useRef<HTMLDivElement>(null)
   const select = useRef(onSelect)
   useEffect(() => { select.current = onSelect })
@@ -23,11 +25,11 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect }: S
     if (!element) return
     const controller = new AbortController()
     void import("./renderer")
-      .then(({ mountSettlement }) => mountSettlement(element, layout, controller.signal, (id) => select.current?.(id)))
+      .then(({ mountSettlement }) => mountSettlement(element, layout, controller.signal, (id) => select.current?.(id), pieces))
       .then(() => { if (!controller.signal.aborted) setState("ready") })
       .catch(() => { if (!controller.signal.aborted) setState("failed") })
     return () => controller.abort()
-  }, [layout])
+  }, [layout, pieces])
 
   if (state === "failed") return <>{fallback}</>
 

@@ -151,3 +151,12 @@ test("Deeper play adds companions to the settlement and a quiet line to the port
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await expect(scene).toHaveAttribute("data-companions", "6")
 })
+
+test("Placed lofts are drawn on their rim spots, and ones for missing decks are skipped", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many&pieces")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  await expect(scene).toHaveAttribute("data-pieces", "2")
+})

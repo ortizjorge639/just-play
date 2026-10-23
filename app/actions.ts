@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard, SettlementPiece, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
@@ -1021,6 +1021,28 @@ export async function getResidents(): Promise<Resident[]> {
     })) || []
   } catch (err) {
     console.warn("[residents] Catch error:", err)
+    return []
+  }
+}
+
+export async function getSettlementPieces(): Promise<SettlementPiece[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  try {
+    const { data, error } = await supabase
+      .from("settlement_pieces")
+      .select("game_id, piece, deck, anchor")
+      .order("deck")
+      .order("anchor")
+    if (error) {
+      console.warn("[pieces] Query failed (table missing?):", error.message)
+      return []
+    }
+    return data ?? []
+  } catch (err) {
+    console.warn("[pieces] Catch error:", err)
     return []
   }
 }

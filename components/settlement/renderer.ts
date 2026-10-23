@@ -1,14 +1,14 @@
 import {
   ACESFilmicToneMapping, Box3, Color, DirectionalLight, Group, HemisphereLight, Mesh,
   MeshStandardMaterial, OrthographicCamera, Scene, SphereGeometry, SRGBColorSpace,
-  BoxGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
+  BoxGeometry, ConeGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
 } from "three"
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
-import type { Resident } from "@/lib/types"
+import type { Resident, SettlementPiece } from "@/lib/types"
 import type { Layout } from "@/lib/settlement/types"
 import { PARTS } from "@/lib/settlement/catalog"
 import { DECK_CAPACITY } from "@/lib/settlement/layout"
-import { deckOrigin, slotOffset } from "@/lib/settlement/transforms"
+import { anchorOffset, deckOrigin, slotOffset } from "@/lib/settlement/transforms"
 
 export const DECK_URL = "/canopy/hearth-deck-64bdc8e0.glb"
 
@@ -65,6 +65,7 @@ export async function mountSettlement(
   layout: Layout,
   signal: AbortSignal,
   onSelect?: (gameId: Resident["game_id"]) => void,
+  pieces: readonly SettlementPiece[] = [],
 ) {
   const scene = new Scene()
   scene.background = new Color("#cdd9c4")
@@ -149,6 +150,28 @@ export async function mountSettlement(
     }
   }
 
+  // Placeholder loft: a small house on its rim spot, until the approved art exists.
+  const loftBody = new BoxGeometry(1.4, 1.1, 1.4)
+  const loftRoof = new ConeGeometry(1.2, 0.8, 4)
+  const loftWall = new MeshStandardMaterial({ color: "#d9b98a", roughness: 0.85 })
+  const loftTop = new MeshStandardMaterial({ color: "#a8613f", roughness: 0.8 })
+  let drawnPieces = 0
+  for (const piece of pieces) {
+    if (piece.piece !== "loft" || piece.deck >= layout.decks.length) continue
+    const origin = deckOrigin(piece.deck)
+    const offset = anchorOffset(piece.anchor)
+    const loft = new Group()
+    const body = new Mesh(loftBody, loftWall)
+    body.position.y = 0.55
+    const roof = new Mesh(loftRoof, loftTop)
+    roof.position.y = 1.5
+    roof.rotation.y = Math.PI / 4
+    loft.add(body, roof)
+    loft.position.set(origin.x + offset.x, 0.2, origin.z + offset.z)
+    scene.add(loft)
+    drawnPieces++
+  }
+  host.dataset.pieces = String(drawnPieces)
   host.dataset.companions = String(companions)
   const renderer = new WebGLRenderer({ antialias: true, powerPreference: "low-power" })
   renderer.outputColorSpace = SRGBColorSpace
@@ -297,6 +320,8 @@ export async function mountSettlement(
     disposeTree(scene)
     standIn.dispose()
     companionShape.dispose()
+    loftBody.dispose()
+    loftRoof.dispose()
     plank.dispose()
     renderer.dispose()
     renderer.forceContextLoss()

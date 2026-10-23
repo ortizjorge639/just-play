@@ -123,6 +123,13 @@ export interface Resident {
   minutes_played?: number
 }
 
+export interface SettlementPiece {
+  game_id: string
+  piece: string
+  deck: number
+  anchor: number
+}
+
 export interface Postcard {
   user_id: string
   game_id: string
