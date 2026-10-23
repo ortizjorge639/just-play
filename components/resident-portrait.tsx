@@ -144,6 +144,7 @@ function LoftSection({ resident, name, pieces, deckCount }: { resident: Resident
   const taken = new Set(pieces.filter((p) => p.game_id !== resident.game_id).map((p) => `${p.deck}:${p.anchor}`))
 
   const run = (action: () => Promise<{ ok: boolean; error?: string }>) => {
+    if (pending) return
     setFailed(null)
     setOpen(false)
     startTransition(async () => {
@@ -170,7 +171,7 @@ function LoftSection({ resident, name, pieces, deckCount }: { resident: Resident
           ref={trigger}
           type="button"
           aria-expanded={open}
-          disabled={pending}
+          aria-disabled={pending}
           aria-label={`${mine ? "Move" : "Place"} the loft for ${name}`}
           onClick={() => setOpen((o) => !o)}
           className="min-h-11 text-sm text-muted-foreground underline"
@@ -180,7 +181,7 @@ function LoftSection({ resident, name, pieces, deckCount }: { resident: Resident
         {mine ? (
           <button
             type="button"
-            disabled={pending}
+            aria-disabled={pending}
             aria-label={`Take back the loft for ${name}`}
             onClick={() => run(() => removePiece(resident.game_id))}
             className="min-h-11 text-sm text-muted-foreground underline"
