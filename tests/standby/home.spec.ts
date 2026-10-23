@@ -36,3 +36,21 @@ test("Home says how many homes sit on how many decks", async ({ page }) => {
   await page.getByRole("button", { name: "Home" }).click()
   await expect(page.getByText(/^\d+ homes? on \d+ decks?$/)).toBeVisible()
 })
+
+test("Settlement toggle shows homes on decks and returns to the list", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  const list = page.getByRole("button", { name: "List" })
+  const settlement = page.getByRole("button", { name: "Settlement" })
+  await expect(list).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByTestId("settlement-view")).toHaveCount(0)
+
+  await settlement.click()
+  await expect(settlement).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByRole("region", { name: "Deck 1" })).toBeVisible()
+  await expect(page.getByRole("region", { name: "Deck 2" })).toBeVisible()
+  await expect(page.getByTestId("settlement-view").getByText("Home 7")).toBeVisible()
+
+  await list.click()
+  await expect(page.getByTestId("settlement-view")).toHaveCount(0)
+})

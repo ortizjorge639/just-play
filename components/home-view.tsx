@@ -1,9 +1,12 @@
 "use client"
 
 import Image from "next/image"
+import { useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import type { Game, Postcard, Resident } from "@/lib/types"
 import { ResidentPortrait } from "./resident-portrait"
+import { SettlementView } from "./settlement-view"
+import { cn } from "@/lib/utils"
 import { PostcardsList } from "./postcards-list"
 import { layoutSettlement } from "@/lib/settlement/layout"
 
@@ -15,6 +18,7 @@ interface HomeViewProps {
 }
 
 export function HomeView({ displayName, residents, postcards, invitedGame }: HomeViewProps) {
+  const [view, setView] = useState<"list" | "settlement">("list")
   const prefersReducedMotion = useReducedMotion()
   const deckCount = layoutSettlement(residents).decks.length
   const isEmpty = residents.length === 0 && postcards.length === 0 && !invitedGame
@@ -49,18 +53,40 @@ export function HomeView({ displayName, residents, postcards, invitedGame }: Hom
             {residents.length} {residents.length === 1 ? "home" : "homes"} on {deckCount}{" "}
             {deckCount === 1 ? "deck" : "decks"}
           </p>
-          <ul className="grid grid-cols-1 gap-2.5">
-            {residents.map((resident, i) => (
-              <motion.li
-                key={`${resident.user_id}-${resident.game_id}`}
-                initial={prefersReducedMotion ? undefined : { opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={prefersReducedMotion ? undefined : { delay: 0.05 * i }}
+          <div role="group" aria-label="Show residents as" className="mb-3 flex gap-1.5">
+            {(["list", "settlement"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={view === option}
+                onClick={() => setView(option)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-sm",
+                  view === option
+                    ? "border-primary bg-primary/15 text-foreground"
+                    : "border-border text-muted-foreground",
+                )}
               >
-                <ResidentPortrait resident={resident} />
-              </motion.li>
+                {option === "list" ? "List" : "Settlement"}
+              </button>
             ))}
-          </ul>
+          </div>
+          {view === "settlement" ? (
+            <SettlementView residents={residents} />
+          ) : (
+            <ul className="grid grid-cols-1 gap-2.5">
+              {residents.map((resident, i) => (
+                <motion.li
+                  key={`${resident.user_id}-${resident.game_id}`}
+                  initial={prefersReducedMotion ? undefined : { opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={prefersReducedMotion ? undefined : { delay: 0.05 * i }}
+                >
+                  <ResidentPortrait resident={resident} />
+                </motion.li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 
