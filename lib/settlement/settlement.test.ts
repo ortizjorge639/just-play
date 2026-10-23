@@ -3,7 +3,7 @@ import { test } from "node:test"
 import { PARTS, familyForGenres, partFor } from "./catalog"
 import { tierFor } from "./tiers"
 import { DECK_CAPACITY, LAYOUT_VERSION, layoutSettlement } from "./layout"
-import { deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
+import { anchorOffset, ANCHORS_PER_DECK, ANCHOR_RADIUS, deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
 import type { Part, SettlementResident } from "./types"
 
 function resident(n: number, genres: string[] = []): SettlementResident {
@@ -179,4 +179,13 @@ test("tier is carried on placements and never moves anyone", () => {
   const played = layoutSettlement(base.map((r, i) => ({ ...r, minutes_played: i * 700 }))).placements
   assert.deepEqual(played.map(({ tier: _t, ...p }) => p), plain.map(({ tier: _t, ...p }) => p))
   assert.deepEqual(played.map((p) => p.tier), [0, 2, 2, 2, 2, 3, 3, 3])
+})
+
+test("rim spots are distinct, outside the home ring and inside the deck", () => {
+  const spots = Array.from({ length: ANCHORS_PER_DECK }, (_, a) => anchorOffset(a))
+  assert.equal(new Set(spots.map((p) => `${p.x.toFixed(3)},${p.z.toFixed(3)}`)).size, ANCHORS_PER_DECK)
+  for (const p of spots) {
+    assert.ok(Math.abs(Math.hypot(p.x, p.z) - ANCHOR_RADIUS) < 1e-9)
+    assert.ok(ANCHOR_RADIUS > SLOT_RING_RADIUS + 1 && ANCHOR_RADIUS < 6)
+  }
 })
