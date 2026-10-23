@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import Image from "next/image"
 import type { Resident } from "@/lib/types"
 import { layoutSettlement, DECK_CAPACITY } from "@/lib/settlement/layout"
 import { SettlementScene } from "./settlement/scene"
 import { PARTS } from "@/lib/settlement/catalog"
+import { ResidentPortrait } from "./resident-portrait"
 
 interface DeckMapProps {
   residents: Resident[]
@@ -83,11 +84,39 @@ export function DeckMap({ residents }: DeckMapProps) {
 
 export function SettlementView({ residents }: DeckMapProps) {
   const layout = useMemo(() => layoutSettlement(residents), [residents])
+  const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
+  const chosen = residents.find((r) => r.game_id === selected)
+  const ordered = layout.placements
+    .map((p) => residents.find((r) => r.game_id === p.gameId))
+    .filter((r): r is Resident => !!r)
+
   return (
-    <SettlementScene
-      layout={layout}
-      residentCount={residents.length}
-      fallback={<DeckMap residents={residents} />}
-    />
+    <div className="flex flex-col gap-3">
+      <SettlementScene
+        layout={layout}
+        residentCount={residents.length}
+        fallback={<DeckMap residents={residents} />}
+        onSelect={setSelected}
+      />
+      <ul aria-label="Homes" className="flex gap-1.5 overflow-x-auto pb-1">
+        {ordered.map((resident) => (
+          <li key={resident.game_id} className="shrink-0">
+            <button
+              type="button"
+              aria-pressed={selected === resident.game_id}
+              onClick={() => setSelected(selected === resident.game_id ? null : resident.game_id)}
+              className={`max-w-40 truncate rounded-full border px-3 py-1 text-sm ${
+                selected === resident.game_id
+                  ? "border-primary bg-primary/15 text-foreground"
+                  : "border-border text-muted-foreground"
+              }`}
+            >
+              {resident.game?.name ?? "A game"}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} />}
+    </div>
   )
 }

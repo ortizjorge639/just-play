@@ -83,7 +83,8 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 - Home has a List / Settlement toggle. Settlement draws the approved Blender deck once per layout deck, with the approved ember and tinted stand-ins for parts without art. If WebGL or the art fails, a 2D deck map shows instead. Read-only, no migration. Plan: [settlement-slice-2-plan.md](settlement-slice-2-plan.md) (option A).
 - The view pans (drag or arrow keys) and zooms (scroll, pinch, plus and minus, 0 resets). Each child deck is turned so its bridge meets the deck it hangs from, with planks across the gap.
 - Part picks are frozen: a part has an `availableFrom` date and is only offered to residents who arrived after it, so growing the catalogue never changes an existing home. Only append parts, with a later date.
-- Not yet: tapping a home, more parts, merit tiers, player placement.
+- Tapping a home (or picking it from the list under the view) opens the resident portrait with emotes.
+- Not yet: more parts, merit tiers, player placement.
 - Nothing in the app calls it yet. A read-only decks summary on Home and a 3D view are both separate, unstarted items.
 - Anything that imports residents must not backdate `arrived_at`, or it would move existing homes.
 

@@ -31,7 +31,7 @@ Each slice ships on its own and leaves the app working.
 
 1. **Deck view, 2D.** A read-only view of decks, bridges and homes drawn from `layoutSettlement`, with stand-ins for every part. Proves the plan on real residents. No new data, no migration.
 2. **Approved slice into the app.** Replace stand-ins with the approved Blender parts through the `asset` field in the catalogue, loaded lazily. Budget for 50+ residents: instanced parts, one draw path per part, no per-resident scene graph.
-3. **Tap a home.** Opens the same resident portrait and emote menu used on Home.
+3. **Tap a home.** Opens the same resident portrait and emote menu used on Home. A list of homes under the view does the same for keyboard and screen reader users.
 4. **Expand the art.** More parts per family and more deck shapes, added to the catalogue. Needs an owner go-ahead on scope per batch.
 5. **Merit tiers.** A tier enriches one existing resident (figurine to room, room to garden). Needs a data design of its own.
 6. **Player-placed pieces.** Earned structural pieces are placed by the player. Needs a placement table and a migration, and its own proposal.
