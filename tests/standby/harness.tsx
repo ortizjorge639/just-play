@@ -125,7 +125,7 @@ const app = params.has("app-shell")
     standby_preferences: DEFAULT_STANDBY_PREFERENCES, onboarding_complete: true,
     tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
-  }} recommendations={[]} activeSession={fixture.session} activeGame={null}
+  }} isAnonymous={params.has("anon")} recommendations={[]} activeSession={fixture.session} activeGame={null}
     sessionHistory={libraryHistory} nameCard={fixture.nameCard} playerStats={null} residents={fixture.residents} pieces={fixture.pieces} postcards={fixture.postcards} stampRules={fixture.stampRules} isBoosterPack={false}
     boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
   : <Harness />

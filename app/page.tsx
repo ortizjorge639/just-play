@@ -103,6 +103,7 @@ export default async function HomePage({
       postcards={postcards}
       stampRules={stampRules}
       nameCard={nameCard}
+      isAnonymous={authUser.is_anonymous === true}
       isBoosterPack={true}
       boosterPackStatus={boosterPackStatus}
     />

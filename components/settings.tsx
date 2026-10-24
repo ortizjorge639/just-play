@@ -8,6 +8,7 @@ import { StandbyPreferencesForm } from "./standby-preferences"
 
 interface SettingsProps {
   displayName: string | null
+  isAnonymous?: boolean
   onClose: () => void
   onEditPreferences: () => void
   onEditCard: () => void
@@ -19,6 +20,7 @@ interface SettingsProps {
 
 export function Settings({ 
   displayName, 
+  isAnonymous = false,
   onClose, 
   onEditPreferences,
   onEditCard,
@@ -77,6 +79,12 @@ export function Settings({
           </div>
         </div>
       </div>
+
+      {isAnonymous && (
+        <p data-testid="guest-note" className="border-b border-border px-6 py-4 text-sm text-muted-foreground">
+          You&apos;re playing as a guest. Your homes and name card live on this device&apos;s guest account, so they&apos;re gone if you clear your browser or sign out. Signing in with an email to keep them is coming.
+        </p>
+      )}
 
       {/* Settings list */}
       <div className="border-b border-border px-6 py-4">
