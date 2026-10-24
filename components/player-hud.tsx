@@ -24,7 +24,7 @@ export function PlayerHUD({ stats }: PlayerHUDProps) {
             </span>
             {stats.streak > 0 && (
               <span className="text-[10px] text-muted-foreground">
-                {stats.streak}d streak
+                {stats.streak}d combo
               </span>
             )}
           </div>
