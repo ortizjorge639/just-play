@@ -194,7 +194,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
         </motion.div>
       )}
 
-      {/* Streak — centered with weekly dots */}
+      {/* Combo — centered with weekly dots */}
       {playerStats && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -209,14 +209,14 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
               </span>
               <span className="text-base font-bold text-foreground">
                 {playerStats.streak > 0
-                  ? `${playerStats.streak} day streak`
+                  ? `${playerStats.streak}-day combo`
                   : playerStats.weeklyDays.some(Boolean)
                     ? "Played this week"
                     : "No sessions this week"}
               </span>
               {playerStats.bestStreak > 0 && (
                 <span className="text-xs text-muted-foreground ml-1">
-                  · Best: {playerStats.bestStreak}
+                  · Best combo: {playerStats.bestStreak}
                 </span>
               )}
             </div>
