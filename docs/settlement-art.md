@@ -22,6 +22,7 @@ The Treehouse (also called the Canopy settlement) is the world described in [tre
 | Full settlement | Not approved. No go-ahead to expand it. |
 | In the app today | A single furnished room in the Canopy nook ([canopy-nook.md](canopy-nook.md)), built from plain Three.js shapes. Not the settlement, and not tied to residents. |
 | Residents, stamps, name card, emotes | Shipped as data and UI on the Home tab. They do not appear in any 3D world yet. |
+| Loft art | A Blender-modelled cottage loft (`public/canopy/loft-cottage.glb`) replaces the box-and-cone stand-in. The box loft remains as a fallback if the file fails to load. |
 
 The art source notes (`docs/canopy-art/`) were kept locally and are not on main.
 
