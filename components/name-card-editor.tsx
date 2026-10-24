@@ -85,7 +85,7 @@ function EditorForm({
         <input value={name} onChange={e => setName(e.target.value)} maxLength={50} className={inputClass} />
       </Field>
       <Field label="Tagline" count={tagline.trim().length} max={200}>
-        <input value={tagline} onChange={e => setTagline(e.target.value)} maxLength={200} className={inputClass} />
+        <input value={tagline} onChange={e => setTagline(e.target.value)} maxLength={200} placeholder="One line about you as a player" className={inputClass} />
       </Field>
       <Field label="How you play" count={playStyle.trim().length} max={80}>
         <input
