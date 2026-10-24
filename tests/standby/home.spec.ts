@@ -260,6 +260,11 @@ test("A real tap on a glowing ring in the scene picks that spot", async ({ page 
   await page.getByRole("button", { name: "Deck 1, spot 1" }).click()
   await expect(scene).toHaveAttribute("data-ghost", "0:0")
   await page.waitForTimeout(700)
+  await scene.scrollIntoViewIfNeeded()
+  await scene.focus()
+  await page.keyboard.press("+")
+  await page.keyboard.press("-")
+  await page.waitForTimeout(300)
   const points = (await scene.getAttribute("data-spot-points"))!.split(";").map((entry) => {
     const [spot, xy] = entry.split("@")
     const [x, y] = xy.split(",").map(Number)
