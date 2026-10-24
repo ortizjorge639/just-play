@@ -23,7 +23,7 @@ export function StandbyPreferencesForm({
   const options = [
     ["record_time", "Record play time for future sessions"],
     ["show_clock", "Show elapsed clock (recorded sessions only)"],
-    ["reminders", "Gentle StandBy reminders (recorded sessions; never auto-pause)"],
+    ["reminders", "Gentle reminders while a session is recorded (they never pause it)"],
     ["keep_awake", "Keep screen awake while StandBy is visible"],
   ] as const
 
@@ -32,7 +32,7 @@ export function StandbyPreferencesForm({
       <legend className="mb-2 font-semibold">StandBy &amp; time</legend>
       {options.map(([key, label]) => (
         <label key={key} className="flex min-h-11 items-center gap-3 text-sm">
-          <input type="checkbox" checked={value[key]} onChange={(event) => {
+          <input type="checkbox" className="size-4 accent-accent" checked={value[key]} onChange={(event) => {
             const next = { ...value, [key]: event.target.checked }
             setError(null)
             startTransition(async () => {
@@ -48,9 +48,9 @@ export function StandbyPreferencesForm({
         </label>
       ))}
       <p className="text-xs text-muted-foreground">
-        Recording is fixed when a session is created. Hiding the clock never stops recording.
-        Without recording, no played duration or duration XP is saved. Lifecycle timestamps remain.
-        Keep-awake cannot prevent device locking or work in the background.
+        Recording is set when a session starts. Hiding the clock doesn&apos;t stop it.
+        If a session isn&apos;t recorded, its play time and the XP for it aren&apos;t saved.
+        Keeping the screen awake won&apos;t stop your device from locking, and it stops working in the background.
       </p>
       <p role="status" className="text-sm">{pending ? "Saving..." : error}</p>
     </fieldset>
