@@ -155,23 +155,26 @@ export async function mountSettlement(
   const loftRoof = new ConeGeometry(1.2, 0.8, 4)
   const loftWall = new MeshStandardMaterial({ color: "#d9b98a", roughness: 0.85 })
   const loftTop = new MeshStandardMaterial({ color: "#a8613f", roughness: 0.8 })
-  let drawnPieces = 0
-  for (const piece of pieces) {
-    if (piece.piece !== "loft" || piece.deck >= layout.decks.length) continue
-    const origin = deckOrigin(piece.deck)
-    const offset = anchorOffset(piece.anchor)
+  const ghostWall = new MeshStandardMaterial({ color: "#fff3c4", roughness: 0.9, transparent: true, opacity: 0.8 })
+  const ghostTop = new MeshStandardMaterial({ color: "#ffb43c", roughness: 0.9, transparent: true, opacity: 0.8 })
+  const puffShape = new SphereGeometry(0.4, 8, 6)
+  const makeLoft = (wall: Material, top: Material) => {
     const loft = new Group()
-    const body = new Mesh(loftBody, loftWall)
+    const body = new Mesh(loftBody, wall)
     body.position.y = 0.55
-    const roof = new Mesh(loftRoof, loftTop)
+    const roof = new Mesh(loftRoof, top)
     roof.position.y = 1.5
     roof.rotation.y = Math.PI / 4
     loft.add(body, roof)
-    loft.position.set(origin.x + offset.x, 0.2, origin.z + offset.z)
-    scene.add(loft)
-    drawnPieces++
+    return loft
   }
-  host.dataset.pieces = String(drawnPieces)
+  const spotPosition = (deck: number, anchor: number) => {
+    const origin = deckOrigin(deck)
+    const offset = anchorOffset(anchor)
+    return new Vector3(origin.x + offset.x, 0.2, origin.z + offset.z)
+  }
+  const loftGroup = new Group()
+  scene.add(loftGroup)
   host.dataset.companions = String(companions)
   const renderer = new WebGLRenderer({ antialias: true, powerPreference: "low-power" })
   renderer.outputColorSpace = SRGBColorSpace
@@ -191,6 +194,8 @@ export async function mountSettlement(
   const fitWidth = ((maxX - minX) + (maxZ - minZ)) * 0.36
   const fitHeight = ((maxZ - minZ) * 0.55 + (maxX - minX) * 0.3) / 2 + 4
   let zoom = 1, aspect = 1
+  type Spot = { deck: number; anchor: number }
+  let hintSpots: Spot[] = []
 
   const render = () => {
     const half = Math.max(fitWidth / aspect, fitHeight) / zoom
@@ -202,32 +207,166 @@ export async function mountSettlement(
     renderer.render(scene, camera)
     host.dataset.zoom = zoom.toFixed(3)
     host.dataset.pan = `${target.x.toFixed(2)},${target.z.toFixed(2)}`
+    publishSpotPoints()
   }
 
-  // Free rim spots shown while the player is choosing one. Updated by event so the camera and scene stay put.
+  // Where each glowing ring is on screen, so tests can tap real pixels.
+  const publishSpotPoints = () => {
+    if (!hintSpots.length) { delete host.dataset.spotPoints; return }
+    const rect = host.getBoundingClientRect()
+    host.dataset.spotPoints = hintSpots.map((spot) => {
+      const p = spotPosition(spot.deck, spot.anchor).project(camera)
+      return `${spot.deck}:${spot.anchor}@${Math.round(rect.left + ((p.x + 1) / 2) * rect.width)},${Math.round(rect.top + ((1 - p.y) / 2) * rect.height)}`
+    }).join(";")
+  }
+  const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
+  const tasks = new Set<(now: number) => boolean>()
+  let frame = 0
+  const tick = (now: number) => {
+    frame = 0
+    if (disposed) return
+    for (const task of [...tasks]) if (!task(now)) tasks.delete(task)
+    render()
+    if (tasks.size) frame = requestAnimationFrame(tick)
+  }
+  const run = (task: (now: number) => boolean) => {
+    tasks.add(task)
+    if (!frame) frame = requestAnimationFrame(tick)
+  }
+
+  // A loft drops in, squashes a little on landing and kicks up a few puffs of dust.
+  const playDrop = (loft: Group) => {
+    if (reduced) return
+    const base = loft.position.y
+    const started = performance.now()
+    const puffs: Mesh[] = []
+    let spawned = false
+    loft.position.y = base + 4
+    run((now) => {
+      const t = Math.max(0, (now - started) / 1000)
+      if (t < 0.35) {
+        const k = t / 0.35
+        loft.position.y = base + 4 * (1 - k * k)
+        return true
+      }
+      loft.position.y = base
+      const s = t - 0.35
+      if (!spawned) {
+        spawned = true
+        for (let i = 0; i < 7; i++) {
+          const puff = new Mesh(puffShape, new MeshStandardMaterial({ color: "#f3e6cc", transparent: true, opacity: 0.7, roughness: 1 }))
+          puff.userData.angle = (i / 7) * Math.PI * 2
+          puffs.push(puff)
+          loftGroup.add(puff)
+        }
+      }
+      const squash = s < 0.25 ? Math.sin((s / 0.25) * Math.PI) : 0
+      loft.scale.set(1 + 0.18 * squash, 1 - 0.22 * squash, 1 + 0.18 * squash)
+      const k = Math.min(1, s / 0.6)
+      for (const puff of puffs) {
+        const angle = puff.userData.angle as number
+        puff.position.set(loft.position.x + Math.cos(angle) * (0.9 + k * 0.9), base + 0.3 + k * 0.4, loft.position.z + Math.sin(angle) * (0.9 + k * 0.9))
+        puff.scale.setScalar(0.5 + k * 0.9)
+        ;(puff.material as MeshStandardMaterial).opacity = 0.7 * (1 - k)
+      }
+      if (k >= 1) {
+        for (const puff of puffs) { loftGroup.remove(puff); (puff.material as Material).dispose() }
+        loft.scale.set(1, 1, 1)
+        return false
+      }
+      return true
+    })
+  }
+
+  let ghost: Group | null = null
+  const placed = new Map<string, { key: string; loft: Group }>()
+  const syncPieces = (list: readonly SettlementPiece[], animate: boolean) => {
+    const seen = new Set<string>()
+    for (const piece of list) {
+      if (piece.piece !== "loft" || piece.deck >= layout.decks.length) continue
+      seen.add(piece.game_id)
+      const key = `${piece.deck}:${piece.anchor}`
+      const current = placed.get(piece.game_id)
+      if (current?.key === key) continue
+      if (current) loftGroup.remove(current.loft)
+      const loft = makeLoft(loftWall, loftTop)
+      loft.position.copy(spotPosition(piece.deck, piece.anchor))
+      loftGroup.add(loft)
+      placed.set(piece.game_id, { key, loft })
+      if (animate) {
+        if (ghost && host.dataset.ghost === key) { loftGroup.remove(ghost); ghost = null }
+        playDrop(loft)
+      }
+    }
+    for (const [id, current] of placed) {
+      if (!seen.has(id)) { loftGroup.remove(current.loft); placed.delete(id) }
+    }
+    host.dataset.pieces = String(placed.size)
+    render()
+  }
+  syncPieces(pieces, false)
+
+  const glideTo = (x: number, z: number) => {
+    const toX = Math.min(bounds.maxX, Math.max(bounds.minX, x))
+    const toZ = Math.min(bounds.maxZ, Math.max(bounds.minZ, z))
+    const toZoom = Math.min(4, Math.max(zoom, 1.8))
+    if (reduced) { target.set(toX, 0, toZ); zoom = toZoom; render(); return }
+    const from = target.clone(), fromZoom = zoom, started = performance.now()
+    run((now) => {
+      const k = Math.min(1, Math.max(0, (now - started) / 450))
+      const e = 1 - Math.pow(1 - k, 3)
+      target.set(from.x + (toX - from.x) * e, 0, from.z + (toZ - from.z) * e)
+      zoom = fromZoom + (toZoom - fromZoom) * e
+      return k < 1
+    })
+  }
+
+  // Free rim spots shown while the player is choosing one, with a see-through loft on the chosen spot.
+  // Updated by event so the camera and scene stay put.
   const hintRing = new RingGeometry(0.9, 1.25, 32)
   hintRing.rotateX(-Math.PI / 2)
   const hintIdle = new MeshStandardMaterial({ color: "#fff3c4", emissive: "#fff3c4", emissiveIntensity: 0.5, side: DoubleSide, transparent: true, opacity: 0.8 })
   const hintActive = new MeshStandardMaterial({ color: "#ffb43c", emissive: "#ffb43c", emissiveIntensity: 0.9, side: DoubleSide })
   const hintGroup = new Group()
   scene.add(hintGroup)
+  let ghostDeck = -1
   const onHints = (event: Event) => {
-    const detail = (event as CustomEvent<{ spots: { deck: number; anchor: number }[]; active: { deck: number; anchor: number } | null }>).detail
+    const detail = (event as CustomEvent<{ spots: Spot[]; active: Spot | null }>).detail
+    hintSpots = detail.spots.filter((spot) => spot.deck < layout.decks.length)
     hintGroup.clear()
-    for (const spot of detail.spots) {
-      if (spot.deck >= layout.decks.length) continue
-      const origin = deckOrigin(spot.deck)
-      const offset = anchorOffset(spot.anchor)
+    for (const spot of hintSpots) {
       const isActive = detail.active?.deck === spot.deck && detail.active?.anchor === spot.anchor
       const ring = new Mesh(hintRing, isActive ? hintActive : hintIdle)
-      ring.position.set(origin.x + offset.x, 0.3, origin.z + offset.z)
+      const at = spotPosition(spot.deck, spot.anchor)
+      ring.position.set(at.x, 0.3, at.z)
       if (isActive) ring.scale.setScalar(1.35)
       hintGroup.add(ring)
     }
     host.dataset.hints = String(hintGroup.children.length)
+    if (ghost) { loftGroup.remove(ghost); ghost = null }
+    const active = detail.active && detail.active.deck < layout.decks.length ? detail.active : null
+    host.dataset.ghost = active ? `${active.deck}:${active.anchor}` : ""
+    if (active) {
+      const at = spotPosition(active.deck, active.anchor)
+      const mine = makeLoft(ghostWall, ghostTop)
+      mine.position.copy(at)
+      loftGroup.add(mine)
+      ghost = mine
+      if (!reduced) run((now) => {
+        if (ghost !== mine) return false
+        mine.position.y = at.y + 0.3 + 0.18 * Math.sin(now / 260)
+        return true
+      })
+      if (active.deck !== ghostDeck) glideTo(at.x, at.z)
+      ghostDeck = active.deck
+    } else {
+      ghostDeck = -1
+    }
     render()
   }
   host.addEventListener("settlement-hints", onHints)
+  const onPieces = (event: Event) => syncPieces((event as CustomEvent<SettlementPiece[]>).detail, true)
+  host.addEventListener("settlement-pieces", onPieces)
   const resize = () => {
     const { width, height } = host.getBoundingClientRect()
     if (!width || !height) return
@@ -295,8 +434,18 @@ export async function mountSettlement(
   }
   // A tap picks the home nearest to the finger, within a thumb's width.
   const select = (clientX: number, clientY: number) => {
-    if (!onSelect) return
     const rect = host.getBoundingClientRect()
+    let nearSpot: { spot: Spot; d: number } | null = null
+    for (const spot of hintSpots) {
+      const p = spotPosition(spot.deck, spot.anchor).project(camera)
+      const d = Math.hypot(rect.left + ((p.x + 1) / 2) * rect.width - clientX, rect.top + ((1 - p.y) / 2) * rect.height - clientY)
+      if (d <= 44 && (!nearSpot || d < nearSpot.d)) nearSpot = { spot, d }
+    }
+    if (nearSpot) {
+      host.dispatchEvent(new CustomEvent("settlement-spot", { detail: nearSpot.spot }))
+      return
+    }
+    if (!onSelect) return
     let best: { gameId: Resident["game_id"]; d: number } | null = null
     for (const home of homes) {
       const p = home.position.clone().project(camera)
@@ -342,12 +491,20 @@ export async function mountSettlement(
     host.removeEventListener("wheel", onWheel)
     host.removeEventListener("keydown", onKey)
     host.removeEventListener("settlement-hints", onHints)
+    host.removeEventListener("settlement-pieces", onPieces)
+    if (frame) cancelAnimationFrame(frame)
+    tasks.clear()
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
     standIn.dispose()
     companionShape.dispose()
     loftBody.dispose()
     hintRing.dispose()
+    puffShape.dispose()
+    ghostWall.dispose()
+    ghostTop.dispose()
+    loftWall.dispose()
+    loftTop.dispose()
     hintIdle.dispose()
     hintActive.dispose()
     loftRoof.dispose()

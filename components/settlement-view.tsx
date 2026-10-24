@@ -100,6 +100,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
         onSelect={setSelected}
         pieces={pieces}
         hints={hints}
+        onSpot={(spot) => setHints((h) => (h ? { ...h, active: spot } : h))}
       />
       <ul aria-label="Homes" className="flex gap-1.5 overflow-x-auto pb-1">
         {ordered.map((resident) => (
@@ -119,7 +120,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
           </li>
         ))}
       </ul>
-      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} onSpots={setHints} />}
+      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} hints={hints} onSpots={setHints} />}
     </div>
   )
 }

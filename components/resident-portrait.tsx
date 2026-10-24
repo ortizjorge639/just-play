@@ -14,10 +14,11 @@ interface ResidentPortraitProps {
   resident: Resident
   pieces?: SettlementPiece[]
   deckCount?: number
+  hints?: SpotHints
   onSpots?: (hints: SpotHints | undefined) => void
 }
 
-export function ResidentPortrait({ resident, pieces, deckCount = 1, onSpots }: ResidentPortraitProps) {
+export function ResidentPortrait({ resident, pieces, deckCount = 1, hints, onSpots }: ResidentPortraitProps) {
   const arrivedDate = new Date(resident.arrived_at)
   const formatted = arrivedDate.toLocaleDateString("en-US", {
     month: "short",
@@ -61,7 +62,7 @@ export function ResidentPortrait({ resident, pieces, deckCount = 1, onSpots }: R
         </div>
       )}
       {resident.game && pieces && tier >= 3 ? (
-        <LoftSection resident={resident} name={resident.game.name} pieces={pieces} deckCount={deckCount} onSpots={onSpots} />
+        <LoftSection resident={resident} name={resident.game.name} pieces={pieces} deckCount={deckCount} hints={hints} onSpots={onSpots} />
       ) : null}
       {resident.game ? <EmoteSection resident={resident} name={resident.game.name} /> : null}
     </div>
@@ -137,23 +138,27 @@ function EmoteSection({ resident, name }: { resident: Resident; name: string }) 
   )
 }
 
-function LoftSection({ resident, name, pieces, deckCount, onSpots }: { resident: Resident; name: string; pieces: SettlementPiece[]; deckCount: number; onSpots?: (hints: SpotHints | undefined) => void }) {
+const PLACED_LINES = [
+  "Oh, I like this one. Good view from here.",
+  "That works. I can see the whole deck.",
+  "Right where I wanted it.",
+]
+const REMOVED_LINES = ["No rush. I'll keep it safe.", "Fine by me. It'll be here when you want it."]
+
+function lineFor(gameId: string, lines: string[]) {
+  let sum = 0
+  for (const ch of gameId) sum = (sum + ch.charCodeAt(0)) % 997
+  return lines[sum % lines.length]
+}
+
+function LoftSection({ resident, name, pieces, deckCount, hints, onSpots }: { resident: Resident; name: string; pieces: SettlementPiece[]; deckCount: number; hints?: SpotHints; onSpots?: (hints: SpotHints | undefined) => void }) {
   const [open, setOpen] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
+  const [line, setLine] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
   const trigger = useRef<HTMLButtonElement>(null)
   const mine = pieces.find((p) => p.game_id === resident.game_id)
-
-  const run = (action: () => Promise<{ ok: boolean; error?: string }>) => {
-    if (pending) return
-    setFailed(null)
-    setOpen(false)
-    startTransition(async () => {
-      const result = await action()
-      if (!result.ok) setFailed(result.error ?? "Couldn't do that.")
-    })
-    trigger.current?.focus()
-  }
+  const active = open ? (hints?.active ?? null) : null
 
   const spots = useMemo(() => {
     const free: { deck: number; anchor: number }[] = []
@@ -166,12 +171,35 @@ function LoftSection({ resident, name, pieces, deckCount, onSpots }: { resident:
     }
     return free
   }, [pieces, deckCount, resident.game_id])
-  const [active, setActive] = useState<{ deck: number; anchor: number } | null>(null)
   const list = useRef<HTMLUListElement>(null)
 
-  useEffect(() => {
-    onSpots?.(open ? { spots, active } : undefined)
-  }, [open, spots, active, onSpots])
+  const close = () => {
+    setOpen(false)
+    onSpots?.(undefined)
+  }
+  const choose = (spot: { deck: number; anchor: number } | null) => onSpots?.({ spots, active: spot })
+  const start = () => {
+    if (open) { close(); return }
+    setOpen(true)
+    setLine(null)
+    choose(null)
+  }
+
+  const run = (action: () => Promise<{ ok: boolean; error?: string }>, done: string) => {
+    if (pending) return
+    setFailed(null)
+    startTransition(async () => {
+      const result = await action()
+      if (result.ok) {
+        setLine(done)
+        close()
+        trigger.current?.focus()
+      } else {
+        setFailed(result.error ?? "Couldn't do that.")
+      }
+    })
+  }
+
   useEffect(() => () => onSpots?.(undefined), [onSpots])
   useEffect(() => {
     if (open) list.current?.scrollIntoView({ block: "nearest" })
@@ -188,18 +216,18 @@ function LoftSection({ resident, name, pieces, deckCount, onSpots }: { resident:
           type="button"
           aria-expanded={open}
           aria-disabled={pending}
-          aria-label={`${mine ? "Move" : "Place"} the loft for ${name}`}
-          onClick={() => setOpen((o) => !o)}
+          aria-label={open ? "Never mind" : `${mine ? "Move" : "Place"} the loft for ${name}`}
+          onClick={start}
           className="min-h-11 text-sm text-muted-foreground underline"
         >
-          {mine ? "Move it" : "Place it"}
+          {open ? "Never mind" : mine ? "Move it" : "Place it"}
         </button>
-        {mine ? (
+        {mine && !open ? (
           <button
             type="button"
             aria-disabled={pending}
             aria-label={`Take back the loft for ${name}`}
-            onClick={() => run(() => removePiece(resident.game_id))}
+            onClick={() => run(() => removePiece(resident.game_id), lineFor(resident.game_id, REMOVED_LINES))}
             className="min-h-11 text-sm text-muted-foreground underline"
           >
             Take it back
@@ -207,31 +235,42 @@ function LoftSection({ resident, name, pieces, deckCount, onSpots }: { resident:
         ) : null}
       </div>
       {open ? (
-        <ul
-          ref={list}
-          aria-label="Free spots"
-          className="flex scroll-mb-24 flex-wrap gap-2"
-          onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setOpen(false); trigger.current?.focus() } }}
-        >
-          {spots.length === 0 ? <li className="text-xs text-muted-foreground">No free spots.</li> : null}
-          {spots.map((s, i) => (
-            <li key={`${s.deck}:${s.anchor}`}>
-              <button
-                type="button"
-                autoFocus={i === 0}
-                onMouseEnter={() => setActive(s)}
-                onMouseLeave={() => setActive(null)}
-                onFocus={() => setActive(s)}
-                onBlur={() => setActive(null)}
-                onClick={() => run(() => placePiece(resident.game_id, s.deck, s.anchor))}
-                className="min-h-11 rounded-lg border border-border px-4 text-sm text-foreground"
-              >
-                Deck {s.deck + 1}, spot {s.anchor + 1}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="scroll-mb-24" onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); close(); trigger.current?.focus() } }}>
+          <p role="status" className="text-xs text-muted-foreground">
+            {active ? `Deck ${active.deck + 1}, spot ${active.anchor + 1}. Tap another glowing spot to change it.` : "Tap a glowing spot on the deck, or pick one here."}
+          </p>
+          <ul ref={list} aria-label="Free spots" className="mt-1 flex flex-wrap gap-2">
+            {spots.length === 0 ? <li className="text-xs text-muted-foreground">No free spots.</li> : null}
+            {spots.map((s, i) => {
+              const picked = active?.deck === s.deck && active?.anchor === s.anchor
+              return (
+                <li key={`${s.deck}:${s.anchor}`}>
+                  <button
+                    type="button"
+                    autoFocus={i === 0}
+                    aria-pressed={picked}
+                    onClick={() => choose(s)}
+                    className={`min-h-11 rounded-lg border px-4 text-sm text-foreground ${picked ? "border-primary bg-primary/15" : "border-border"}`}
+                  >
+                    Deck {s.deck + 1}, spot {s.anchor + 1}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          {active ? (
+            <button
+              type="button"
+              aria-disabled={pending}
+              onClick={() => run(() => placePiece(resident.game_id, active.deck, active.anchor), lineFor(resident.game_id, PLACED_LINES))}
+              className="mt-2 min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
+            >
+              Put it here
+            </button>
+          ) : null}
+        </div>
       ) : null}
+      {line ? <p role="status" className="mt-1 text-sm text-foreground">{name}: &ldquo;{line}&rdquo;</p> : null}
       {failed ? <p role="status" className="text-xs text-muted-foreground">{failed}</p> : null}
     </div>
   )
