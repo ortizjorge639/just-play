@@ -16,9 +16,10 @@ interface ResidentPortraitProps {
   deckCount?: number
   hints?: SpotHints
   onSpots?: (hints: SpotHints | undefined) => void
+  onSay?: (line: string) => void
 }
 
-export function ResidentPortrait({ resident, pieces, deckCount = 1, hints, onSpots }: ResidentPortraitProps) {
+export function ResidentPortrait({ resident, pieces, deckCount = 1, hints, onSpots, onSay }: ResidentPortraitProps) {
   const arrivedDate = new Date(resident.arrived_at)
   const formatted = arrivedDate.toLocaleDateString("en-US", {
     month: "short",
@@ -62,7 +63,7 @@ export function ResidentPortrait({ resident, pieces, deckCount = 1, hints, onSpo
         </div>
       )}
       {resident.game && pieces && tier >= 3 ? (
-        <LoftSection resident={resident} name={resident.game.name} pieces={pieces} deckCount={deckCount} hints={hints} onSpots={onSpots} />
+        <LoftSection resident={resident} name={resident.game.name} pieces={pieces} deckCount={deckCount} hints={hints} onSpots={onSpots} onSay={onSay} />
       ) : null}
       {resident.game ? <EmoteSection resident={resident} name={resident.game.name} /> : null}
     </div>
@@ -151,7 +152,7 @@ function lineFor(gameId: string, lines: string[]) {
   return lines[sum % lines.length]
 }
 
-function LoftSection({ resident, name, pieces, deckCount, hints, onSpots }: { resident: Resident; name: string; pieces: SettlementPiece[]; deckCount: number; hints?: SpotHints; onSpots?: (hints: SpotHints | undefined) => void }) {
+function LoftSection({ resident, name, pieces, deckCount, hints, onSpots, onSay }: { onSay?: (line: string) => void; resident: Resident; name: string; pieces: SettlementPiece[]; deckCount: number; hints?: SpotHints; onSpots?: (hints: SpotHints | undefined) => void }) {
   const [open, setOpen] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [line, setLine] = useState<string | null>(null)
@@ -192,6 +193,7 @@ function LoftSection({ resident, name, pieces, deckCount, hints, onSpots }: { re
       const result = await action()
       if (result.ok) {
         setLine(done)
+        onSay?.(done)
         close()
         trigger.current?.focus()
       } else {

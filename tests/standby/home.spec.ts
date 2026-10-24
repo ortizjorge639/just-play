@@ -175,6 +175,7 @@ test("An Elder home can place, move and take back its loft", async ({ page }) =>
   await page.getByRole("button", { name: "Put it here" }).click()
   await expect(spots).toHaveCount(0)
   await expect(page.getByTestId("loft-section")).toContainText("Home 4:")
+  await expect(page.getByTestId("settlement-3d").locator("xpath=..").locator("p[aria-hidden=true]")).toContainText("Home 4:")
   await page.getByRole("button", { name: "Home 1", exact: true }).click()
   await expect(page.getByTestId("loft-section")).toContainText("Loft on deck 1, spot 2")
   await page.getByRole("button", { name: /Take back the loft/ }).click()
