@@ -21,7 +21,7 @@ Target was 95%. It is not reached.
 | Gate | Needed |
 | --- | --- |
 | Environments | One Supabase project serves preview and production (accepted for v1). A separate preview project is optional later. |
-| Anonymous sign-ins | Allowed for people who want to stay anonymous, with the full experience (owner decision, see v1-spec). Settings now shows a plain guest note. Left to do: confirm the anonymous setting in Supabase; email linking waits for account recovery. |
+| Anonymous sign-ins | Allowed for people who want to stay anonymous, with the full experience (owner decision, see v1-spec). Settings now shows a plain guest note. Deferred by the owner: confirming the anonymous setting in Supabase (the owner doesn't know where it is yet) and email linking, which waits for account recovery. |
 | Account recovery (C) | Deferred by the owner. Run it on the approved origin, or record the precise blocker. |
 
 ## Done since the last audit (not yet re-audited)
@@ -62,7 +62,7 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 
 - Migration 024 adds `stamp_rules`, `stamp_proofs`, `confirm_stamp` and `set_stamp_rule`. **The owner must apply it** (`scripts/024_stamps.sql`). It is additive and safe to re-run. The UI needs it live.
 - Settings sets the default rule; the game screen sets a rule for one game and shows "Let it move in" once the rule is met. The player always confirms.
-- Not yet checked against the live tables. After applying 024, set a rule on production and confirm it saves.
+- Checked on production by the owner: a default rule saves and is still set after a reload.
 - Contrast pass done: body text, muted text, accent text and button text all clear 7:1 on the card and page colours (muted 7.1, accent 7.7, button 9.2). Disabled buttons are dimmed, which WCAG exempts.
 
 ## Name card (shipped)
