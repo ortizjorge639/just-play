@@ -1,3 +1,4 @@
+import { playLand } from "./sound"
 import {
   ACESFilmicToneMapping, Box3, Color, DirectionalLight, Group, HemisphereLight, Mesh,
   MeshStandardMaterial, OrthographicCamera, Scene, SphereGeometry, SRGBColorSpace,
@@ -253,6 +254,7 @@ export async function mountSettlement(
       const s = t - 0.35
       if (!spawned) {
         spawned = true
+        playLand()
         for (let i = 0; i < 7; i++) {
           const puff = new Mesh(puffShape, new MeshStandardMaterial({ color: "#f3e6cc", transparent: true, opacity: 0.7, roughness: 1 }))
           puff.userData.angle = (i / 7) * Math.PI * 2

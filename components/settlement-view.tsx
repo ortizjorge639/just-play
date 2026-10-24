@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
 import type { Resident, SettlementPiece } from "@/lib/types"
 import { layoutSettlement, DECK_CAPACITY } from "@/lib/settlement/layout"
 import { SettlementScene, type SpotHints } from "./settlement/scene"
+import { setSoundOn, soundOn, subscribeSound } from "./settlement/sound"
 import { PARTS } from "@/lib/settlement/catalog"
 import { ResidentPortrait } from "./resident-portrait"
 
@@ -86,6 +87,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
   const layout = useMemo(() => layoutSettlement(residents), [residents])
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
   const [hints, setHints] = useState<SpotHints | undefined>(undefined)
+  const sound = useSyncExternalStore(subscribeSound, soundOn, () => true)
   const [said, setSaid] = useState<{ name: string; line: string } | null>(null)
   useEffect(() => {
     if (!said) return
@@ -115,6 +117,14 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
         </p>
       )}
       </div>
+      <button
+        type="button"
+        aria-pressed={sound}
+        onClick={() => setSoundOn(!sound)}
+        className="min-h-11 self-start text-sm text-muted-foreground underline"
+      >
+        {sound ? "Sound on" : "Sound off"}
+      </button>
       <ul aria-label="Homes" className="flex gap-1.5 overflow-x-auto pb-1">
         {ordered.map((resident) => (
           <li key={resident.game_id} className="shrink-0">
