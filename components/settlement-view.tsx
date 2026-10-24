@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import type { Resident, SettlementPiece } from "@/lib/types"
 import { layoutSettlement, DECK_CAPACITY } from "@/lib/settlement/layout"
@@ -86,6 +86,12 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
   const layout = useMemo(() => layoutSettlement(residents), [residents])
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
   const [hints, setHints] = useState<SpotHints | undefined>(undefined)
+  const [said, setSaid] = useState<{ name: string; line: string } | null>(null)
+  useEffect(() => {
+    if (!said) return
+    const timer = setTimeout(() => setSaid(null), 4500)
+    return () => clearTimeout(timer)
+  }, [said])
   const chosen = residents.find((r) => r.game_id === selected)
   const ordered = layout.placements
     .map((p) => residents.find((r) => r.game_id === p.gameId))
@@ -93,6 +99,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="relative">
       <SettlementScene
         layout={layout}
         residentCount={residents.length}
@@ -102,6 +109,12 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
         hints={hints}
         onSpot={(spot) => setHints((h) => (h ? { ...h, active: spot } : h))}
       />
+      {said && (
+        <p aria-hidden="true" className="pointer-events-none absolute inset-x-3 bottom-3 mx-auto w-fit max-w-[90%] rounded-2xl border border-border bg-card/95 px-3 py-2 text-sm text-foreground shadow-lg motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
+          <span className="font-medium">{said.name}:</span> {said.line}
+        </p>
+      )}
+      </div>
       <ul aria-label="Homes" className="flex gap-1.5 overflow-x-auto pb-1">
         {ordered.map((resident) => (
           <li key={resident.game_id} className="shrink-0">
@@ -120,7 +133,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
           </li>
         ))}
       </ul>
-      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} hints={hints} onSpots={setHints} />}
+      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} hints={hints} onSpots={setHints} onSay={(line) => setSaid({ name: chosen.game?.name ?? "A game", line })} />}
     </div>
   )
 }
