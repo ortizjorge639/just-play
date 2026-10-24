@@ -12,6 +12,7 @@ import { DECK_CAPACITY } from "@/lib/settlement/layout"
 import { anchorOffset, deckOrigin, slotOffset } from "@/lib/settlement/transforms"
 
 export const DECK_URL = "/canopy/hearth-deck-64bdc8e0.glb"
+export const LOFT_URL = "/canopy/loft-cottage.glb"
 
 const FAMILY_COLOUR: Record<string, string> = {
   cozy: "#e8b46a", fantasy: "#a98bd6", puzzle: "#7fb6dc", action: "#dc7f86", other: "#b9b0a2",
@@ -108,6 +109,10 @@ export async function mountSettlement(
   }))
   if (signal.aborted) throw new DOMException("Aborted", "AbortError")
 
+  // The modelled loft. If it can't load, the plain box loft below stands in.
+  const loftModel = await loadGroup(LOFT_URL, signal).catch(() => null)
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError")
+
   const standIn = new SphereGeometry(0.4, 16, 12)
   const standInMaterials = new Map<string, MeshStandardMaterial>()
   const partById = new Map(PARTS.map((p) => [p.id, p]))
@@ -190,7 +195,14 @@ export async function mountSettlement(
   const ghostWall = new MeshStandardMaterial({ color: "#fff3c4", roughness: 0.9, transparent: true, opacity: 0.8 })
   const ghostTop = new MeshStandardMaterial({ color: "#ffb43c", roughness: 0.9, transparent: true, opacity: 0.8 })
   const puffShape = new SphereGeometry(0.4, 8, 6)
-  const makeLoft = (wall: Material, top: Material) => {
+  const makeLoft = (wall: Material, top: Material, ghost = false) => {
+    if (loftModel) {
+      const copy = loftModel.clone(true)
+      if (ghost) copy.traverse((o) => { if (o instanceof Mesh) o.material = wall })
+      const holder = new Group()
+      holder.add(copy)
+      return holder
+    }
     const loft = new Group()
     const body = new Mesh(loftBody, wall)
     body.position.y = 0.55
@@ -381,7 +393,7 @@ export async function mountSettlement(
     host.dataset.ghost = active ? `${active.deck}:${active.anchor}` : ""
     if (active) {
       const at = spotPosition(active.deck, active.anchor)
-      const mine = makeLoft(ghostWall, ghostTop)
+      const mine = makeLoft(ghostWall, ghostTop, true)
       mine.position.copy(at)
       loftGroup.add(mine)
       ghost = mine
