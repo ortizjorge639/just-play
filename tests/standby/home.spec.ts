@@ -275,3 +275,16 @@ test("A real tap on a glowing ring in the scene picks that spot", async ({ page 
   await expect(scene).toHaveAttribute("data-ghost", other.spot)
   await expect(page.getByRole("button", { name: "Put it here" })).toBeVisible()
 })
+
+test("With more than one deck the scene labels each deck, a single deck has no labels", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  await expect(scene).toHaveAttribute("data-labels", "2")
+  await page.goto("/?app-shell&residents")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-labels", "0")
+})
