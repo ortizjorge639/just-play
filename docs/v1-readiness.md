@@ -63,14 +63,14 @@ Design: [stamps-proposal.md](stamps-proposal.md).
 - Migration 024 adds `stamp_rules`, `stamp_proofs`, `confirm_stamp` and `set_stamp_rule`. **The owner must apply it** (`scripts/024_stamps.sql`). It is additive and safe to re-run. The UI needs it live.
 - Settings sets the default rule; the game screen sets a rule for one game and shows "Let it move in" once the rule is met. The player always confirms.
 - Not yet checked against the live tables. After applying 024, set a rule on production and confirm it saves.
-- Still open: a contrast pass on the new controls, and merit tiers (waiting on the settlement art).
+- Contrast pass done: body text, muted text, accent text and button text all clear 7:1 on the card and page colours (muted 7.1, accent 7.7, button 9.2). Disabled buttons are dimmed, which WCAG exempts.
 
 ## Name card (shipped)
 
 - Migration 025 (applied) adds `name_cards` and `save_name_card`. The card sits in the Progress header and is edited from Progress or Settings ([name-card-proposal.md](name-card-proposal.md)).
 - Migration 026 (applied) stops a direct `display_name` write from the client. Migration 028 (applied, smoke tested: XP still moves) locks `total_xp` and `level` the same way, keyed on the transaction flag the standby functions already set. No function rework was needed. See `docs/xp-lock-proposal.md`.
 - Migration 029 (applied) adds `settlement_pieces` with `place_piece` and `remove_piece`, for the Elder-tier loft the player places. The app now reads placed pieces and draws them as placeholder lofts; an Elder home can place, move and take back its loft from the settlement portrait. See `docs/player-placement-proposal.md`.
-- Still open: a contrast pass on the card and form.
+- Contrast pass done, same result as stamps.
 
 ## Emotes (shipped)
 
