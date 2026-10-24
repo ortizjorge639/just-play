@@ -2,7 +2,7 @@ import { playLand } from "./sound"
 import {
   ACESFilmicToneMapping, Box3, Color, DirectionalLight, Group, HemisphereLight, Mesh,
   MeshStandardMaterial, OrthographicCamera, Scene, SphereGeometry, SRGBColorSpace,
-  BoxGeometry, ConeGeometry, DoubleSide, RingGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
+  BoxGeometry, CanvasTexture, ConeGeometry, Sprite, SpriteMaterial, DoubleSide, RingGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
 } from "three"
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 import type { Resident, SettlementPiece } from "@/lib/types"
@@ -49,6 +49,29 @@ function recentre(group: Group): { holder: Group; tipAngle: number; tipLength: n
   return { holder, tipAngle, tipLength }
 }
 
+// A small flat-colour caption that always faces the camera.
+function makeLabel(text: string) {
+  const canvas = document.createElement("canvas")
+  canvas.width = 256
+  canvas.height = 80
+  const g = canvas.getContext("2d")!
+  g.fillStyle = "rgba(15, 26, 31, 0.78)"
+  g.beginPath()
+  g.roundRect(8, 8, 240, 64, 32)
+  g.fill()
+  g.fillStyle = "#fcf7e9"
+  g.font = "600 34px system-ui, sans-serif"
+  g.textAlign = "center"
+  g.textBaseline = "middle"
+  g.fillText(text, 128, 42)
+  const texture = new CanvasTexture(canvas)
+  texture.colorSpace = SRGBColorSpace
+  const sprite = new Sprite(new SpriteMaterial({ map: texture, depthTest: false, transparent: true }))
+  sprite.scale.set(7, 2.2, 1)
+  sprite.renderOrder = 10
+  return sprite
+}
+
 function disposeTree(root: Object3D) {
   const geometries = new Set<BufferGeometry>(), materials = new Set<Material>()
   root.traverse((object) => {
@@ -89,6 +112,7 @@ export async function mountSettlement(
   const standInMaterials = new Map<string, MeshStandardMaterial>()
   const partById = new Map(PARTS.map((p) => [p.id, p]))
 
+  const labels: Sprite[] = []
   const plank = new BoxGeometry(1, 0.25, 1)
   const plankMaterial = new MeshStandardMaterial({ color: "#b98a4e", roughness: 0.85 })
   for (const deck of layout.decks) {
@@ -112,7 +136,14 @@ export async function mountSettlement(
       }
     }
     scene.add(deckGroup)
+    if (layout.decks.length > 1) {
+      const label = makeLabel(`Deck ${deck.index + 1}`)
+      label.position.set(origin.x, 0.5, origin.z + PLATFORM_RADIUS + 1.6)
+      scene.add(label)
+      labels.push(label)
+    }
   }
+  host.dataset.labels = String(labels.length)
   const companionShape = new SphereGeometry(0.2, 12, 8)
   const companionMaterials = new Map<string, MeshStandardMaterial>()
   let companions = 0
@@ -498,6 +529,7 @@ export async function mountSettlement(
     tasks.clear()
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
+    for (const label of labels) { label.material.map?.dispose(); label.material.dispose() }
     standIn.dispose()
     companionShape.dispose()
     loftBody.dispose()
