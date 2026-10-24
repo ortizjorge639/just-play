@@ -24,7 +24,7 @@ The settlement. Owner decision: the Blender slice is approved, and the design mu
 
 ## Questions for the owner
 
-1. For anonymous sign-ins: should an anonymous player be able to keep residents and a name card, and what happens to them if they never add an email?
+1. Answered. An anonymous player gets the whole experience: residents, name card, stamps, emotes and the settlement. Nothing is gated behind an email. Their data lives with that anonymous account, so it is lost if they clear the browser or sign out without adding an email. The app should say that plainly where someone can add one, without nagging. Linking an email later belongs with account recovery, which stays deferred.
 2. Do you have the original v1-spec text, or the wording of stories 1 and 2?
 
 ## What is known to be out of v1
