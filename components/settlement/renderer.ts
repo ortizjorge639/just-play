@@ -1,7 +1,7 @@
 import {
   ACESFilmicToneMapping, Box3, Color, DirectionalLight, Group, HemisphereLight, Mesh,
   MeshStandardMaterial, OrthographicCamera, Scene, SphereGeometry, SRGBColorSpace,
-  BoxGeometry, ConeGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
+  BoxGeometry, ConeGeometry, DoubleSide, RingGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
 } from "three"
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 import type { Resident, SettlementPiece } from "@/lib/types"
@@ -203,6 +203,31 @@ export async function mountSettlement(
     host.dataset.zoom = zoom.toFixed(3)
     host.dataset.pan = `${target.x.toFixed(2)},${target.z.toFixed(2)}`
   }
+
+  // Free rim spots shown while the player is choosing one. Updated by event so the camera and scene stay put.
+  const hintRing = new RingGeometry(0.9, 1.25, 32)
+  hintRing.rotateX(-Math.PI / 2)
+  const hintIdle = new MeshStandardMaterial({ color: "#fff3c4", emissive: "#fff3c4", emissiveIntensity: 0.5, side: DoubleSide, transparent: true, opacity: 0.8 })
+  const hintActive = new MeshStandardMaterial({ color: "#ffb43c", emissive: "#ffb43c", emissiveIntensity: 0.9, side: DoubleSide })
+  const hintGroup = new Group()
+  scene.add(hintGroup)
+  const onHints = (event: Event) => {
+    const detail = (event as CustomEvent<{ spots: { deck: number; anchor: number }[]; active: { deck: number; anchor: number } | null }>).detail
+    hintGroup.clear()
+    for (const spot of detail.spots) {
+      if (spot.deck >= layout.decks.length) continue
+      const origin = deckOrigin(spot.deck)
+      const offset = anchorOffset(spot.anchor)
+      const isActive = detail.active?.deck === spot.deck && detail.active?.anchor === spot.anchor
+      const ring = new Mesh(hintRing, isActive ? hintActive : hintIdle)
+      ring.position.set(origin.x + offset.x, 0.3, origin.z + offset.z)
+      if (isActive) ring.scale.setScalar(1.35)
+      hintGroup.add(ring)
+    }
+    host.dataset.hints = String(hintGroup.children.length)
+    render()
+  }
+  host.addEventListener("settlement-hints", onHints)
   const resize = () => {
     const { width, height } = host.getBoundingClientRect()
     if (!width || !height) return
@@ -316,11 +341,15 @@ export async function mountSettlement(
     host.removeEventListener("pointercancel", onUp)
     host.removeEventListener("wheel", onWheel)
     host.removeEventListener("keydown", onKey)
+    host.removeEventListener("settlement-hints", onHints)
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
     standIn.dispose()
     companionShape.dispose()
     loftBody.dispose()
+    hintRing.dispose()
+    hintIdle.dispose()
+    hintActive.dispose()
     loftRoof.dispose()
     plank.dispose()
     renderer.dispose()

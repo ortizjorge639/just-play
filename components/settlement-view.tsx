@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import Image from "next/image"
 import type { Resident, SettlementPiece } from "@/lib/types"
 import { layoutSettlement, DECK_CAPACITY } from "@/lib/settlement/layout"
-import { SettlementScene } from "./settlement/scene"
+import { SettlementScene, type SpotHints } from "./settlement/scene"
 import { PARTS } from "@/lib/settlement/catalog"
 import { ResidentPortrait } from "./resident-portrait"
 
@@ -85,6 +85,7 @@ export function DeckMap({ residents }: DeckMapProps) {
 export function SettlementView({ residents, pieces = [] }: DeckMapProps & { pieces?: SettlementPiece[] }) {
   const layout = useMemo(() => layoutSettlement(residents), [residents])
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
+  const [hints, setHints] = useState<SpotHints | undefined>(undefined)
   const chosen = residents.find((r) => r.game_id === selected)
   const ordered = layout.placements
     .map((p) => residents.find((r) => r.game_id === p.gameId))
@@ -98,6 +99,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
         fallback={<DeckMap residents={residents} />}
         onSelect={setSelected}
         pieces={pieces}
+        hints={hints}
       />
       <ul aria-label="Homes" className="flex gap-1.5 overflow-x-auto pb-1">
         {ordered.map((resident) => (
@@ -105,7 +107,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
             <button
               type="button"
               aria-pressed={selected === resident.game_id}
-              onClick={() => setSelected(selected === resident.game_id ? null : resident.game_id)}
+              onClick={() => { setHints(undefined); setSelected(selected === resident.game_id ? null : resident.game_id) }}
               className={`max-w-40 truncate rounded-full border px-3 py-1 text-sm ${
                 selected === resident.game_id
                   ? "border-primary bg-primary/15 text-foreground"
@@ -117,7 +119,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
           </li>
         ))}
       </ul>
-      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} />}
+      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} onSpots={setHints} />}
     </div>
   )
 }
