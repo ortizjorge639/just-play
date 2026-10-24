@@ -71,6 +71,7 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
 export function Progress({ sessions, displayName, playerStats, nameCard, library, onEditCard }: ProgressProps) {
   const prefersReducedMotion = useReducedMotion()
   const [pending, setPending] = useState<PendingXP | null>(null)
+  const [showAllSessions, setShowAllSessions] = useState(false)
   const [showBarParticles, setShowBarParticles] = useState(false)
   const barRef = useRef<HTMLDivElement>(null)
   const [barParticleOrigin, setBarParticleOrigin] = useState({ x: 0, y: 0 })
@@ -296,7 +297,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {sessions.map((session, i) => (
+            {(showAllSessions ? sessions : sessions.slice(0, 10)).map((session, i) => (
               <motion.div
                 key={session.id}
                 initial={{ opacity: 0, y: 15 }}
@@ -335,6 +336,15 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
                 )}
               </motion.div>
             ))}
+            {sessions.length > 10 && (
+              <button
+                type="button"
+                onClick={() => setShowAllSessions((v) => !v)}
+                className="min-h-11 rounded-lg text-sm font-semibold text-accent"
+              >
+                {showAllSessions ? "Show fewer" : `Show all ${sessions.length}`}
+              </button>
+            )}
           </div>
         )}
       </div>
