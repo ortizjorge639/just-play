@@ -88,3 +88,14 @@ test("the editor is reachable from Settings and works by keyboard", async ({ pag
   await page.keyboard.press("Enter")
   await expect(page.getByRole("dialog")).toHaveCount(0)
 })
+
+test("a guest is told plainly that their homes stay on this device, a signed-in player is not", async ({ page }) => {
+  await page.goto("/?app-shell&anon")
+  await page.getByRole("button", { name: /Progress/i }).click()
+  await page.getByRole("button", { name: "Settings" }).click()
+  await expect(page.getByTestId("guest-note")).toContainText("guest")
+  await page.goto("/?app-shell")
+  await page.getByRole("button", { name: /Progress/i }).click()
+  await page.getByRole("button", { name: "Settings" }).click()
+  await expect(page.getByTestId("guest-note")).toHaveCount(0)
+})

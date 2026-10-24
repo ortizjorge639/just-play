@@ -21,7 +21,7 @@ Target was 95%. It is not reached.
 | Gate | Needed |
 | --- | --- |
 | Environments | One Supabase project serves preview and production (accepted for v1). A separate preview project is optional later. |
-| Anonymous sign-ins | Allowed for people who want to stay anonymous, with the full experience (owner decision, see v1-spec). Left to do: confirm the anonymous setting in Supabase and add the plain "add an email to keep this" note in the app. |
+| Anonymous sign-ins | Allowed for people who want to stay anonymous, with the full experience (owner decision, see v1-spec). Settings now shows a plain guest note. Left to do: confirm the anonymous setting in Supabase; email linking waits for account recovery. |
 | Account recovery (C) | Deferred by the owner. Run it on the approved origin, or record the precise blocker. |
 
 ## Done since the last audit (not yet re-audited)

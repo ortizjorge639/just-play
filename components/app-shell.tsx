@@ -35,6 +35,7 @@ interface AppShellProps {
   postcards?: Postcard[]
   stampRules?: StampRule[]
   nameCard?: NameCard | null
+  isAnonymous?: boolean
   isBoosterPack: boolean
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
 }
@@ -51,6 +52,7 @@ export function AppShell({
   postcards,
   stampRules: initialStampRules,
   nameCard: initialNameCard,
+  isAnonymous,
   isBoosterPack,
   boosterPackStatus,
 }: AppShellProps) {
@@ -382,6 +384,7 @@ export function AppShell({
         {showSettings && (
           <Settings
             displayName={cardName}
+            isAnonymous={isAnonymous}
             onEditCard={() => {
               setShowSettings(false)
               setShowCardEditor(true)
