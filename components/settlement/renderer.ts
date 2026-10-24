@@ -228,7 +228,7 @@ export async function mountSettlement(
 
   const camera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 500)
   const origins = layout.decks.map((d) => deckOrigin(d.index))
-  const reach = 12
+  const reach = 8.5
   const minX = Math.min(...origins.map((o) => o.x)) - reach, maxX = Math.max(...origins.map((o) => o.x)) + reach
   const minZ = Math.min(...origins.map((o) => o.z)) - reach, maxZ = Math.max(...origins.map((o) => o.z)) + reach
   const bounds = { minX, maxX, minZ, maxZ }
