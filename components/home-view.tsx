@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useCallback, useRef, useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
-import type { Game, Postcard, Resident, SettlementPiece, SavedSpot } from "@/lib/types"
+import type { Game, NameCard, Postcard, Resident, SettlementPiece, SavedSpot } from "@/lib/types"
 import { ResidentPortrait } from "./resident-portrait"
 import { SettlementView } from "./settlement-view"
 import { EmptyPlot } from "./empty-plot"
@@ -18,9 +18,10 @@ interface HomeViewProps {
   savedLayout?: SavedSpot[]
   postcards: Postcard[]
   invitedGame: Game | null
+  nameCard?: NameCard | null
 }
 
-export function HomeView({ displayName, residents, pieces = [], savedLayout = [], postcards, invitedGame }: HomeViewProps) {
+export function HomeView({ displayName, residents, pieces = [], savedLayout = [], postcards, invitedGame, nameCard }: HomeViewProps) {
   const [view, setView] = useState<"list" | "settlement">("list")
   const settlementButton = useRef<HTMLButtonElement>(null)
   const leaveSettlement = useCallback(() => {
@@ -93,7 +94,7 @@ export function HomeView({ displayName, residents, pieces = [], savedLayout = []
             ))}
           </div>
           {view === "settlement" ? (
-            <SettlementView residents={residents} pieces={pieces} savedLayout={savedLayout} fullscreen onBack={leaveSettlement} />
+            <SettlementView residents={residents} pieces={pieces} savedLayout={savedLayout} fullscreen onBack={leaveSettlement} ownerName={displayName} tagline={nameCard?.tagline} />
           ) : (
             <ul className="grid grid-cols-1 gap-2.5">
               {residents.map((resident, i) => (

@@ -17,6 +17,8 @@ interface DeckMapProps {
   residents: Resident[]
 }
 
+const HINT_KEY = "jp-settlement-hint"
+
 const FAMILY_TINT: Record<string, string> = {
   cozy: "bg-amber-200/20",
   fantasy: "bg-violet-300/20",
@@ -87,7 +89,7 @@ export function DeckMap({ residents, saved = [] }: DeckMapProps & { saved?: Save
   )
 }
 
-export function SettlementView({ residents, pieces = [], savedLayout = [], fullscreen = false, onBack }: DeckMapProps & { pieces?: SettlementPiece[]; savedLayout?: SavedSpot[]; fullscreen?: boolean; onBack?: () => void }) {
+export function SettlementView({ residents, pieces = [], savedLayout = [], fullscreen = false, onBack, ownerName, tagline }: DeckMapProps & { pieces?: SettlementPiece[]; savedLayout?: SavedSpot[]; fullscreen?: boolean; onBack?: () => void; ownerName?: string | null; tagline?: string | null }) {
   const [committed, setCommitted] = useState<SavedSpot[] | null>(null)
   const [draft, setDraft] = useState<SavedSpot[] | null>(null)
   const [history, setHistory] = useState<SavedSpot[][]>([])
@@ -122,6 +124,15 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
     return () => clearTimeout(timer)
   }, [said])
   const layer = useFullscreenLayer(onBack, fullscreen)
+  const [hintSeen, setHintSeen] = useState(() => {
+    if (!fullscreen) return true
+    try { return window.localStorage.getItem(HINT_KEY) === "1" } catch { return true }
+  })
+  const dismissHintIfShown = () => { if (!hintSeen) dismissHint() }
+  const dismissHint = () => {
+    setHintSeen(true)
+    try { window.localStorage.setItem(HINT_KEY, "1") } catch { /* storage unavailable: the hint just shows again next time */ }
+  }
   const chosen = residents.find((r) => r.game_id === selected)
   const ordered = layout.placements
     .map((p) => residents.find((r) => r.game_id === p.gameId))
@@ -154,6 +165,10 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
           >
             Back to Home
           </button>
+          <div className="min-w-0 flex-1 px-3 text-center">
+            <p className="truncate text-sm font-medium text-foreground">{ownerName ? `${ownerName}\u2019s settlement` : "Your settlement"}</p>
+            {tagline ? <p className="truncate text-xs text-muted-foreground">{tagline}</p> : null}
+          </div>
           <div className="flex items-center gap-3">
             {residents.length > 1 && !arranging && (
               <button type="button" onClick={startArranging} className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground">
@@ -185,6 +200,12 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
       </div>
       {!fullscreen && soundButton}
       <div className={fullscreen ? "flex max-h-[45dvh] flex-col gap-3 overflow-y-auto px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]" : "contents"}>
+      {fullscreen && !hintSeen && !arranging && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-3 py-2">
+          <p className="text-sm text-muted-foreground">Tap a home to see who lives there. Drag to look around.</p>
+          <button type="button" onClick={dismissHint} className="min-h-11 shrink-0 text-sm text-foreground underline">Got it</button>
+        </div>
+      )}
       {arranging && (
         <ArrangePanel
           layout={layout}
@@ -208,7 +229,7 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
             <button
               type="button"
               aria-pressed={selected === resident.game_id}
-              onClick={() => { setHints(undefined); setSelected(selected === resident.game_id ? null : resident.game_id) }}
+              onClick={() => { dismissHintIfShown(); setHints(undefined); setSelected(selected === resident.game_id ? null : resident.game_id) }}
               className={`max-w-40 truncate rounded-full border px-3 py-1 text-sm ${
                 selected === resident.game_id
                   ? "border-primary bg-primary/15 text-foreground"
