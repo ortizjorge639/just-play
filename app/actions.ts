@@ -142,6 +142,26 @@ export async function getBoosterPack() {
 
   const seenIds = new Set<string>(profile?.seen_game_ids || [])
 
+  // Games already on Home and games the player said are not for them are never offered.
+  // Separate queries so a missing table never breaks recommendations.
+  const [residentRows, skippedRows] = await Promise.all([
+    supabase.from("residents").select("game_id"),
+    supabase.from("not_for_me").select("game_id"),
+  ])
+  const excluded = new Set<string>([
+    ...(residentRows.error ? [] : (residentRows.data ?? []).map((r) => r.game_id as string)),
+    ...(skippedRows.error ? [] : (skippedRows.data ?? []).map((r) => r.game_id as string)),
+  ])
+  // Genres the player keeps skipping count against similar games.
+  const skippedGenres = new Map<string, number>()
+  if (!skippedRows.error) {
+    const skippedIds = new Set((skippedRows.data ?? []).map((r) => r.game_id as string))
+    for (const g of games) {
+      if (!skippedIds.has(g.id)) continue
+      for (const genre of (g.genres ?? []) as string[]) skippedGenres.set(genre, (skippedGenres.get(genre) ?? 0) + 1)
+    }
+  }
+
   // Filter out already-seen games
   let available = games.filter((g) => !seenIds.has(g.id))
 
@@ -163,6 +183,40 @@ export async function getBoosterPack() {
     .eq("id", user.id)
 
   return deck
+}
+
+export async function markNotForMe(gameId: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+  try {
+    const { error } = await supabase.rpc("mark_not_for_me", { p_game_id: gameId })
+    if (error) {
+      console.warn("[markNotForMe] RPC failed:", error.message)
+      return { ok: false, error: "Could not save that. Try again." }
+    }
+    return { ok: true }
+  } catch (err) {
+    console.warn("[markNotForMe] Catch error:", err)
+    return { ok: false, error: "That did not go through. Try again." }
+  }
+}
+
+export async function clearNotForMe(): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+  try {
+    const { error } = await supabase.rpc("clear_not_for_me")
+    if (error) {
+      console.warn("[clearNotForMe] RPC failed:", error.message)
+      return { ok: false, error: "Could not clear that. Try again." }
+    }
+    return { ok: true }
+  } catch (err) {
+    console.warn("[clearNotForMe] Catch error:", err)
+    return { ok: false, error: "That did not go through. Try again." }
+  }
 }
 
 export async function getBoosterPackStatus() {
@@ -228,6 +282,26 @@ export async function getRecommendations(preferences: UserPreferences) {
   if (!games || games.length === 0) return []
 
   const seenIds = new Set<string>(profile?.seen_game_ids || [])
+
+  // Games already on Home and games the player said are not for them are never offered.
+  // Separate queries so a missing table never breaks recommendations.
+  const [residentRows, skippedRows] = await Promise.all([
+    supabase.from("residents").select("game_id"),
+    supabase.from("not_for_me").select("game_id"),
+  ])
+  const excluded = new Set<string>([
+    ...(residentRows.error ? [] : (residentRows.data ?? []).map((r) => r.game_id as string)),
+    ...(skippedRows.error ? [] : (skippedRows.data ?? []).map((r) => r.game_id as string)),
+  ])
+  // Genres the player keeps skipping count against similar games.
+  const skippedGenres = new Map<string, number>()
+  if (!skippedRows.error) {
+    const skippedIds = new Set((skippedRows.data ?? []).map((r) => r.game_id as string))
+    for (const g of games) {
+      if (!skippedIds.has(g.id)) continue
+      for (const genre of (g.genres ?? []) as string[]) skippedGenres.set(genre, (skippedGenres.get(genre) ?? 0) + 1)
+    }
+  }
 
   // Score all games
   const scored = games.map((game) => {
@@ -307,6 +381,11 @@ export async function getRecommendations(preferences: UserPreferences) {
         score += 2
     }
 
+    // Learn from "not for me": each shared genre costs up to 3 points.
+    for (const genre of (game.genres ?? []) as string[]) {
+      score -= Math.min(skippedGenres.get(genre) ?? 0, 3)
+    }
+
     // Discovery preference: add variance for non-curated modes
     if (preferences.discovery === "adventurous") {
       score += Math.random() * 4 - 1 // -1 to +3 random variance
@@ -320,12 +399,15 @@ export async function getRecommendations(preferences: UserPreferences) {
   // Sort by score descending
   scored.sort((a, b) => b.score - a.score)
 
+  const eligible = scored.filter((g) => !excluded.has(g.id))
+  if (eligible.length === 0) return []
+
   // Filter out already-seen games
-  let unseen = scored.filter((g) => !seenIds.has(g.id))
+  let unseen = eligible.filter((g) => !seenIds.has(g.id))
 
   // If fewer than a full pack of unseen games remain, reset the cycle
   if (unseen.length < DECK_SIZE) {
-    unseen = scored
+    unseen = eligible
     seenIds.clear()
   }
 

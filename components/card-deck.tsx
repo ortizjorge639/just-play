@@ -6,7 +6,7 @@ import { GameCard } from "./game-card"
 import { GameSearch } from "./game-search"
 import { QuickFilters } from "./quick-filters"
 import { BoosterPack } from "./booster-pack"
-import { createSession } from "@/app/actions"
+import { createSession, markNotForMe } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
 import type { Game, UserPreferences } from "@/lib/types"
 
@@ -24,6 +24,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
   const [rejectedStack, setRejectedStack] = useState<Game[]>([])
   const [lockedGame, setLockedGame] = useState<Game | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [skipPending, startSkip] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(!onboardingComplete)
   const [packOpened, setPackOpened] = useState(false)
@@ -61,6 +62,20 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     setRejectedStack((prev) => prev.slice(0, -1))
     setDeck((prev) => [...prev, lastRejected])
   }, [rejectedStack])
+
+  const handleNotForMe = useCallback(() => {
+    const top = deck[deck.length - 1]
+    if (!top) return
+    setError(null)
+    startSkip(async () => {
+      const result = await markNotForMe(top.id)
+      if (!result.ok) {
+        setError(result.error ?? "That did not go through. Try again.")
+        return
+      }
+      setDeck((prev) => prev.filter((g) => g.id !== top.id))
+    })
+  }, [deck])
 
   const handleLockIn = useCallback((game: Game) => {
     setLockedGame(game)
@@ -304,6 +319,19 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
           ))}
         </div>
       </div>
+
+      {deck.length > 0 && (
+        <div className="flex justify-center px-6 pb-2">
+          <button
+            type="button"
+            onClick={handleNotForMe}
+            disabled={skipPending}
+            className="min-h-[44px] rounded-full px-5 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+          >
+            Not for me. Don&apos;t suggest this again
+          </button>
+        </div>
+      )}
 
       {/* Undo button - positioned below the card area */}
       <AnimatePresence>
