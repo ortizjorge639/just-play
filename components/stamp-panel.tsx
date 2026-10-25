@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { confirmStamp } from "@/app/actions"
 import { StampRuleEditor } from "./stamp-rule-editor"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import type { Game, StampRule } from "@/lib/types"
 
 interface StampPanelProps {
@@ -73,15 +74,16 @@ export function StampPanel({ game, playedMinutes, rule, ownRule, onRuleSaved, on
         type="button"
         onClick={() => setEditing((v) => !v)}
         aria-expanded={editing}
-        className="mt-1 min-h-11 text-sm text-muted-foreground underline"
+        className="mt-2 min-h-11 w-full rounded-xl border border-border px-4 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
       >
         {rule ? "Change for this game" : "Choose when this game moves in"}
       </button>
-      {editing ? (
-        <div className="mt-2 rounded-xl border border-border p-4">
+      <Sheet open={editing} onOpenChange={setEditing}>
+        <SheetContent side="bottom" aria-describedby={undefined} className="mx-auto max-w-md rounded-t-3xl p-6 pb-10">
+          <SheetTitle className="sr-only">Move-in rule for {game.name}</SheetTitle>
           <StampRuleEditor gameId={game.id} rule={ownRule} onSaved={onRuleSaved} />
-        </div>
-      ) : null}
+        </SheetContent>
+      </Sheet>
     </section>
   )
 }
