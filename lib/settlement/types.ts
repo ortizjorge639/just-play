@@ -26,9 +26,20 @@ export interface Placement {
   gameId: string
   partId: string
   deck: number
+  // The cell on the deck's grid. Automatic spots are cells 0 to 5.
   slot: number
+  // Quarter turns, 0 to 3.
+  rotation: number
   // Depth of play, 0 to 3. Companion pieces sit around the same trinket and take no slot.
   tier: number
+}
+
+// Where the player put a home. Matches a row of settlement_layout.
+export interface SavedSpot {
+  game_id: string
+  deck: number
+  cell: number
+  rotation: number
 }
 
 export interface Deck {

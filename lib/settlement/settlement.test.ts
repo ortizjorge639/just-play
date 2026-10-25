@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs"
 import { TIERS, tierFor } from "./tiers"
 import { DECK_CAPACITY, LAYOUT_VERSION, layoutSettlement } from "./layout"
 import { anchorOffset, ANCHORS_PER_DECK, ANCHOR_RADIUS, deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
-import type { Part, SettlementResident } from "./types"
+import type { Part, SavedSpot, SettlementResident } from "./types"
 
 function resident(n: number, genres: string[] = []): SettlementResident {
   return {
@@ -57,7 +57,7 @@ test("a deck fills at its capacity, then the next one opens", () => {
   assert.equal(spill.decks.length, 2)
   assert.deepEqual(spill.decks[1], { index: 1, parent: 0, residents: 1 })
   assert.deepEqual(spill.placements[DECK_CAPACITY], {
-    gameId: "game-00006", partId: spill.placements[DECK_CAPACITY].partId, deck: 1, slot: 0, tier: 0,
+    gameId: "game-00006", partId: spill.placements[DECK_CAPACITY].partId, deck: 1, slot: 0, rotation: 0, tier: 0,
   })
 })
 
@@ -197,4 +197,50 @@ test("migration 029 uses the same Elder threshold, deck size and spot count as t
   assert.ok(sql.includes(`< ${elder} THEN`), "Elder minutes differ from SQL")
   assert.ok(sql.includes(`(residents_count + ${DECK_CAPACITY - 1}) / ${DECK_CAPACITY}`), "deck size differs from SQL")
   assert.ok(sql.includes(`p_anchor > ${ANCHORS_PER_DECK - 1}`), "spot count differs from SQL")
+})
+
+test("with nothing saved, the layout is the automatic one", () => {
+  const rows = many(13)
+  assert.deepEqual(layoutSettlement(rows, []), layoutSettlement(rows))
+})
+
+test("a saved spot wins, and a home with none takes the first free automatic cell", () => {
+  const rows = many(3)
+  const layout = layoutSettlement(rows, [{ game_id: rows[0].game_id, deck: 0, cell: 20, rotation: 2 }])
+  const first = layout.placements.find((p) => p.gameId === rows[0].game_id)!
+  assert.deepEqual([first.deck, first.slot, first.rotation], [0, 20, 2])
+  const others = layout.placements.filter((p) => p.gameId !== rows[0].game_id).map((p) => p.slot)
+  assert.deepEqual(others, [0, 1])
+})
+
+test("a new arrival never displaces a saved home", () => {
+  const rows = many(7)
+  const saved: SavedSpot[] = [{ game_id: rows[0].game_id, deck: 0, cell: 0, rotation: 0 }, { game_id: rows[1].game_id, deck: 0, cell: 1, rotation: 0 }]
+  const before = layoutSettlement(rows.slice(0, 6), saved)
+  const after = layoutSettlement(rows, saved)
+  for (const p of before.placements.filter((q) => saved.some((s) => s.game_id === q.gameId))) {
+    const same = after.placements.find((q) => q.gameId === p.gameId)!
+    assert.deepEqual([same.deck, same.slot], [p.deck, p.slot])
+  }
+})
+
+test("homes can sit on any deck, and no two share a cell", () => {
+  const rows = many(8)
+  const saved: SavedSpot[] = rows.slice(0, 4).map((r, i) => ({ game_id: r.game_id, deck: 1, cell: i * 3, rotation: 0 }))
+  const layout = layoutSettlement(rows, saved)
+  assert.equal(layout.decks.length, 2)
+  const keys = layout.placements.map((p) => `${p.deck}:${p.slot}`)
+  assert.equal(new Set(keys).size, keys.length)
+  assert.equal(layout.decks.reduce((n, d) => n + d.residents, 0), 8)
+})
+
+test("saved spots for unknown games or clashing cells are ignored", () => {
+  const rows = many(2)
+  const layout = layoutSettlement(rows, [
+    { game_id: "nobody", deck: 0, cell: 0, rotation: 0 },
+    { game_id: rows[0].game_id, deck: 0, cell: 4, rotation: 0 },
+    { game_id: rows[1].game_id, deck: 0, cell: 4, rotation: 0 },
+  ])
+  const keys = layout.placements.map((p) => `${p.deck}:${p.slot}`)
+  assert.equal(new Set(keys).size, 2)
 })
