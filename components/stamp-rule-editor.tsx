@@ -2,6 +2,7 @@
 
 import { useId, useState, useTransition } from "react"
 import { setStampRule } from "@/app/actions"
+import { cn } from "@/lib/utils"
 import type { StampRule } from "@/lib/types"
 
 type Choice = "none" | "hours" | "milestone"
@@ -56,8 +57,13 @@ export function StampRuleEditor({ gameId, rule, onSaved }: StampRuleEditorProps)
     })
   }
 
-  const option = (value: Choice, text: string) => (
-    <label className="flex min-h-11 items-center gap-3 text-sm text-foreground">
+  const option = (value: Choice, text: string, hint: string) => (
+    <label
+      className={cn(
+        "relative flex min-h-14 cursor-pointer flex-col justify-center rounded-xl border px-4 py-3 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--primary)]",
+        choice === value ? "border-primary bg-primary/10" : "border-border hover:bg-muted"
+      )}
+    >
       <input
         type="radio"
         name={name}
@@ -67,9 +73,10 @@ export function StampRuleEditor({ gameId, rule, onSaved }: StampRuleEditorProps)
           setChoice(value)
           setSaved(false)
         }}
-        className="h-4 w-4 accent-[var(--primary)]"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
       />
-      {text}
+      <span className="text-sm font-medium text-foreground">{text}</span>
+      <span className="text-xs text-muted-foreground">{hint}</span>
     </label>
   )
 
@@ -77,14 +84,17 @@ export function StampRuleEditor({ gameId, rule, onSaved }: StampRuleEditorProps)
     "min-h-11 w-full rounded-lg border border-border bg-secondary px-3 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
 
   return (
-    <fieldset className="flex flex-col gap-1" disabled={isPending}>
+    <fieldset className="flex flex-col gap-2" disabled={isPending}>
       <legend className="mb-1 text-base font-medium text-foreground">
         {gameId ? "When does this game move in?" : "When does a game move in?"}
       </legend>
-      {option("none", noneLabel)}
-      {option("hours", "After a set number of hours")}
+      <p className="mb-2 text-sm text-muted-foreground">
+        When a game counts as done, it becomes a resident in your settlement. You will find it on the Home tab. Pick what counts as done.
+      </p>
+      {option("none", noneLabel, gameId ? "Follows what you set for all games." : "Nothing moves in until you say it is beaten.")}
+      {option("hours", "After a set number of hours", "It moves in once you have played this long.")}
       {choice === "hours" ? (
-        <label className="ml-7 flex flex-col gap-1 text-sm text-muted-foreground">
+        <label className="mx-1 flex flex-col gap-1 text-sm text-muted-foreground">
           Hours
           <input
             type="number"
@@ -97,9 +107,9 @@ export function StampRuleEditor({ gameId, rule, onSaved }: StampRuleEditorProps)
           />
         </label>
       ) : null}
-      {option("milestone", "When I say so")}
+      {option("milestone", "When I say so", "You pick the moment, like finishing a chapter.")}
       {choice === "milestone" ? (
-        <label className="ml-7 flex flex-col gap-1 text-sm text-muted-foreground">
+        <label className="mx-1 flex flex-col gap-1 text-sm text-muted-foreground">
           What counts as done enough?
           <input
             type="text"
