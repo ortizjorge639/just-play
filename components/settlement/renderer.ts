@@ -118,7 +118,12 @@ export async function mountSettlement(
   const figureSource = await loadFigureSource(signal).catch(() => null)
   if (signal.aborted) throw new DOMException("Aborted", "AbortError")
 
-  const standIn = new SphereGeometry(0.4, 16, 12)
+  // Homes without their own art are small cottages in their game's colour, door toward +z.
+  const cottageWalls = new BoxGeometry(1, 0.7, 0.9)
+  const cottageRoof = new ConeGeometry(0.85, 0.5, 4)
+  const cottageDoor = new BoxGeometry(0.22, 0.4, 0.06)
+  const roofMaterial = new MeshStandardMaterial({ color: "#6b3f2a", roughness: 0.8 })
+  const doorMaterial = new MeshStandardMaterial({ color: "#3d2616", roughness: 0.8 })
   const standInMaterials = new Map<string, MeshStandardMaterial>()
   const partById = new Map(PARTS.map((p) => [p.id, p]))
 
@@ -178,7 +183,16 @@ export async function mountSettlement(
         material = new MeshStandardMaterial({ color: FAMILY_COLOUR[family], roughness: 0.8 })
         standInMaterials.set(family, material)
       }
-      object = new Mesh(standIn, material)
+      const cottage = new Group()
+      const walls = new Mesh(cottageWalls, material)
+      walls.position.y = 0.35
+      const roof = new Mesh(cottageRoof, roofMaterial)
+      roof.position.y = 0.95
+      roof.rotation.y = Math.PI / 4
+      const door = new Mesh(cottageDoor, doorMaterial)
+      door.position.set(0, 0.2, 0.46)
+      cottage.add(walls, roof, door)
+      object = cottage
     }
     object.position.set(origin.x + offset.x, 0.4, origin.z + offset.z)
     object.rotation.y = -placement.rotation * (Math.PI / 2)
@@ -735,7 +749,11 @@ export async function mountSettlement(
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
     for (const label of labels) { label.material.map?.dispose(); label.material.dispose() }
-    standIn.dispose()
+    cottageWalls.dispose()
+    cottageRoof.dispose()
+    cottageDoor.dispose()
+    roofMaterial.dispose()
+    doorMaterial.dispose()
     seatWood.dispose()
     seatBoard.dispose()
     seatLeg.dispose()
