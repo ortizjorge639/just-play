@@ -152,22 +152,14 @@ export async function getBoosterPack() {
     ...(residentRows.error ? [] : (residentRows.data ?? []).map((r) => r.game_id as string)),
     ...(skippedRows.error ? [] : (skippedRows.data ?? []).map((r) => r.game_id as string)),
   ])
-  // Genres the player keeps skipping count against similar games.
-  const skippedGenres = new Map<string, number>()
-  if (!skippedRows.error) {
-    const skippedIds = new Set((skippedRows.data ?? []).map((r) => r.game_id as string))
-    for (const g of games) {
-      if (!skippedIds.has(g.id)) continue
-      for (const genre of (g.genres ?? []) as string[]) skippedGenres.set(genre, (skippedGenres.get(genre) ?? 0) + 1)
-    }
-  }
-
   // Filter out already-seen games
-  let available = games.filter((g) => !seenIds.has(g.id))
+  const eligible = games.filter((g) => !excluded.has(g.id))
+  if (eligible.length === 0) return []
+  let available = eligible.filter((g) => !seenIds.has(g.id))
 
   // If fewer than a full pack of unseen featured games remain, reset the cycle
   if (available.length < DECK_SIZE) {
-    available = games
+    available = eligible
     seenIds.clear()
   }
 
