@@ -4,6 +4,7 @@ import { PARTS, familyForGenres, partFor } from "./catalog"
 import { readFileSync } from "node:fs"
 import { TIERS, tierFor } from "./tiers"
 import { DECK_CAPACITY, LAYOUT_VERSION, layoutSettlement } from "./layout"
+import { moveHome, sameSpots, toSpots } from "./arrange"
 import { anchorOffset, ANCHORS_PER_DECK, ANCHOR_RADIUS, deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
 import type { Part, SavedSpot, SettlementResident } from "./types"
 
@@ -243,4 +244,40 @@ test("saved spots for unknown games or clashing cells are ignored", () => {
   ])
   const keys = layout.placements.map((p) => `${p.deck}:${p.slot}`)
   assert.equal(new Set(keys).size, 2)
+})
+
+test("moving a home to a free cell moves only that home", () => {
+  const rows = many(3)
+  const spots = toSpots(layoutSettlement(rows))
+  const moved = moveHome(spots, rows[0].game_id, 0, 5)
+  assert.equal(moved.find((s) => s.game_id === rows[0].game_id)!.cell, 5)
+  assert.deepEqual(moved.filter((s) => s.game_id !== rows[0].game_id), spots.filter((s) => s.game_id !== rows[0].game_id))
+})
+
+test("moving onto a home swaps the two, across decks too", () => {
+  const rows = many(7)
+  const spots = toSpots(layoutSettlement(rows))
+  const moved = moveHome(spots, rows[0].game_id, 1, 0)
+  assert.deepEqual(moved.find((s) => s.game_id === rows[0].game_id), { game_id: rows[0].game_id, deck: 1, cell: 0, rotation: 0 })
+  assert.deepEqual(moved.find((s) => s.game_id === rows[6].game_id), { game_id: rows[6].game_id, deck: 0, cell: 0, rotation: 0 })
+})
+
+test("a deck that loses its last home closes up", () => {
+  const rows = many(7)
+  const spots = moveHome(toSpots(layoutSettlement(rows)), rows[6].game_id, 0, 0)
+  assert.equal(new Set(spots.map((s) => s.deck)).size, 2)
+  const fewer = many(2)
+  const one = moveHome([{ game_id: fewer[0].game_id, deck: 0, cell: 0, rotation: 0 }, { game_id: fewer[1].game_id, deck: 1, cell: 0, rotation: 0 }], fewer[1].game_id, 0, 3)
+  assert.deepEqual(one.map((s) => s.deck), [0, 0])
+})
+
+test("a move never leaves two homes in one cell, and bad targets change nothing", () => {
+  const rows = many(7)
+  const spots = toSpots(layoutSettlement(rows))
+  const moved = moveHome(spots, rows[2].game_id, 1, 0)
+  const keys = moved.map((s) => `${s.deck}:${s.cell}`)
+  assert.equal(new Set(keys).size, keys.length)
+  assert.deepEqual(moveHome(spots, rows[0].game_id, 0, 6), spots)
+  assert.deepEqual(moveHome(spots, "nobody", 0, 1), spots)
+  assert.ok(sameSpots(moveHome(spots, rows[0].game_id, 0, 0), spots))
 })

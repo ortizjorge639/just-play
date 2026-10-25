@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
 import type { Resident, SavedSpot, SettlementPiece } from "@/lib/types"
 import { layoutSettlement, DECK_CAPACITY } from "@/lib/settlement/layout"
+import { compactDecks, moveHome, sameSpots, toSpots } from "@/lib/settlement/arrange"
+import { ArrangePanel } from "./arrange-panel"
+import { saveLayout } from "@/app/actions"
 import { SettlementScene, type SpotHints } from "./settlement/scene"
 import { setSoundOn, soundOn, subscribeSound } from "./settlement/sound"
 import { PARTS } from "@/lib/settlement/catalog"
@@ -22,8 +25,8 @@ const FAMILY_TINT: Record<string, string> = {
   other: "bg-stone-300/20",
 }
 
-export function DeckMap({ residents }: DeckMapProps) {
-  const layout = layoutSettlement(residents)
+export function DeckMap({ residents, saved = [] }: DeckMapProps & { saved?: SavedSpot[] }) {
+  const layout = layoutSettlement(residents, saved)
   const byGame = new Map(residents.map((r) => [r.game_id, r]))
   const partById = new Map(PARTS.map((p) => [p.id, p]))
 
@@ -85,7 +88,29 @@ export function DeckMap({ residents }: DeckMapProps) {
 }
 
 export function SettlementView({ residents, pieces = [], savedLayout = [], fullscreen = false, onBack }: DeckMapProps & { pieces?: SettlementPiece[]; savedLayout?: SavedSpot[]; fullscreen?: boolean; onBack?: () => void }) {
-  const layout = useMemo(() => layoutSettlement(residents, savedLayout), [residents, savedLayout])
+  const [committed, setCommitted] = useState<SavedSpot[] | null>(null)
+  const [draft, setDraft] = useState<SavedSpot[] | null>(null)
+  const [history, setHistory] = useState<SavedSpot[][]>([])
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const savedNow = committed ?? savedLayout
+  const layout = useMemo(() => layoutSettlement(residents, draft ?? savedNow), [residents, draft, savedNow])
+  const arranging = draft !== null
+  const startArranging = () => { setHints(undefined); setSelected(null); setSaveError(null); setHistory([]); setDraft(toSpots(layoutSettlement(residents, savedNow))) }
+  const stopArranging = () => { setDraft(null); setHistory([]); setSaveError(null) }
+  const change = (next: SavedSpot[]) => { if (!draft) return; setHistory((h) => [...h, draft]); setDraft(next) }
+  const finishArranging = async () => {
+    if (!draft) return
+    const original = toSpots(layoutSettlement(residents, savedNow))
+    if (sameSpots(draft, original)) { stopArranging(); return }
+    setSaving(true)
+    setSaveError(null)
+    const result = await saveLayout(draft)
+    setSaving(false)
+    if (!result.ok) { setSaveError(`${result.error ?? "Couldn't save that."} Your changes are still here.`); return }
+    setCommitted(draft)
+    stopArranging()
+  }
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
   const [hints, setHints] = useState<SpotHints | undefined>(undefined)
   const sound = useSyncExternalStore(subscribeSound, soundOn, () => true)
@@ -128,14 +153,21 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
           >
             Back to Home
           </button>
-          {soundButton}
+          <div className="flex items-center gap-3">
+            {residents.length > 1 && !arranging && (
+              <button type="button" onClick={startArranging} className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground">
+                Arrange
+              </button>
+            )}
+            {soundButton}
+          </div>
         </header>
       )}
       <div className={fullscreen ? "relative mt-2 min-h-0 flex-1 overflow-y-auto" : "relative"}>
       <SettlementScene
         layout={layout}
         residentCount={residents.length}
-        fallback={<DeckMap residents={residents} />}
+        fallback={<DeckMap residents={residents} saved={draft ?? savedNow} />}
         onSelect={setSelected}
         pieces={pieces}
         hints={hints}
@@ -150,7 +182,21 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
       </div>
       {!fullscreen && soundButton}
       <div className={fullscreen ? "flex max-h-[45dvh] flex-col gap-3 overflow-y-auto px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]" : "contents"}>
-      <ul aria-label="Homes" className="flex gap-1.5 overflow-x-auto pb-1">
+      {arranging && (
+        <ArrangePanel
+          layout={layout}
+          residents={residents}
+          canUndo={history.length > 0}
+          saving={saving}
+          error={saveError}
+          onMove={(id, deck, cell) => change(moveHome(draft!, id, deck, cell))}
+          onUndo={() => { setDraft(history[history.length - 1]); setHistory((h) => h.slice(0, -1)) }}
+          onReset={() => change(compactDecks(toSpots(layoutSettlement(residents))))}
+          onDone={finishArranging}
+          onCancel={stopArranging}
+        />
+      )}
+      {!arranging && <ul aria-label="Homes" className="flex gap-1.5 overflow-x-auto pb-1">
         {ordered.map((resident) => (
           <li key={resident.game_id} className="shrink-0">
             <button
@@ -167,8 +213,8 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
             </button>
           </li>
         ))}
-      </ul>
-      {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} hints={hints} onSpots={setHints} onSay={(line) => setSaid({ name: chosen.game?.name ?? "A game", line })} />}
+      </ul>}
+      {!arranging && chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} hints={hints} onSpots={setHints} onSay={(line) => setSaid({ name: chosen.game?.name ?? "A game", line })} />}
       </div>
     </div>
   )

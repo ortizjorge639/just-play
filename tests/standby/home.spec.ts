@@ -340,3 +340,70 @@ test("With more than one deck the scene labels each deck, a single deck has no l
   await page.getByRole("button", { name: "Settlement" }).click()
   await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-labels", "0")
 })
+
+const layoutCalls = (page: import("@playwright/test").Page) =>
+  page.evaluate(() => (window as unknown as { standbyFixture: { layoutCalls: string[] } }).standbyFixture.layoutCalls)
+
+async function openArrange(page: import("@playwright/test").Page, query = "") {
+  await page.goto(`/?app-shell&residents-many${query}`)
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Arrange" }).click()
+}
+
+test("Arrange: pick a home, swap it with another, undo, and save on Done", async ({ page }) => {
+  await openArrange(page)
+  const picker = page.getByRole("list", { name: "Pick a home" })
+  await picker.getByRole("button", { name: /Home 1 ·/ }).click()
+  await page.getByRole("button", { name: "Deck 2, spot 1, swap with Home 7" }).click()
+  await expect(picker.getByRole("button", { name: "Home 1 · Deck 2, spot 1" })).toBeVisible()
+  await expect(picker.getByRole("button", { name: "Home 7 · Deck 1, spot 1" })).toBeVisible()
+
+  await page.getByRole("button", { name: "Undo" }).click()
+  await expect(picker.getByRole("button", { name: "Home 1 · Deck 1, spot 1" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled()
+
+  await page.getByRole("button", { name: "Deck 2, spot 1, swap with Home 7" }).click()
+  await page.getByRole("button", { name: "Done" }).click()
+  await expect(page.getByRole("button", { name: "Arrange" })).toBeVisible()
+  const calls = await layoutCalls(page)
+  expect(calls).toHaveLength(1)
+  expect(calls[0]).toContain("many-0:1:0")
+  expect(calls[0]).toContain("many-6:0:0")
+
+  await page.getByRole("button", { name: "Arrange" }).click()
+  await expect(page.getByRole("list", { name: "Pick a home" }).getByRole("button", { name: "Home 1 · Deck 2, spot 1" })).toBeVisible()
+})
+
+test("Arrange: a free spot says so, and Cancel saves nothing", async ({ page }) => {
+  await openArrange(page)
+  await page.getByRole("list", { name: "Pick a home" }).getByRole("button", { name: /Home 7 ·/ }).click()
+  await page.getByRole("button", { name: "Deck 2, spot 4, free" }).click()
+  await page.getByRole("button", { name: "Cancel" }).click()
+  expect(await layoutCalls(page)).toHaveLength(0)
+  await page.getByRole("button", { name: "Arrange" }).click()
+  await expect(page.getByRole("list", { name: "Pick a home" }).getByRole("button", { name: "Home 7 · Deck 2, spot 1" })).toBeVisible()
+})
+
+test("Arrange: Done with no changes saves nothing, and Reset goes back to the automatic layout", async ({ page }) => {
+  await openArrange(page)
+  await page.getByRole("button", { name: "Done" }).click()
+  expect(await layoutCalls(page)).toHaveLength(0)
+
+  await page.getByRole("button", { name: "Arrange" }).click()
+  const picker = page.getByRole("list", { name: "Pick a home" })
+  await picker.getByRole("button", { name: /Home 2 ·/ }).click()
+  await page.getByRole("button", { name: "Deck 1, spot 6, swap with Home 6" }).click()
+  await page.getByRole("button", { name: "Reset" }).click()
+  await expect(picker.getByRole("button", { name: "Home 2 · Deck 1, spot 2" })).toBeVisible()
+})
+
+test("Arrange: a failed save says so in plain words and keeps the changes", async ({ page }) => {
+  await openArrange(page, "&layout-fail")
+  const picker = page.getByRole("list", { name: "Pick a home" })
+  await picker.getByRole("button", { name: /Home 1 ·/ }).click()
+  await page.getByRole("button", { name: "Deck 2, spot 1, swap with Home 7" }).click()
+  await page.getByRole("button", { name: "Done" }).click()
+  await expect(page.getByRole("alert")).toContainText("Couldn't save that. Your changes are still here.")
+  await expect(picker.getByRole("button", { name: "Home 1 · Deck 2, spot 1" })).toBeVisible()
+})

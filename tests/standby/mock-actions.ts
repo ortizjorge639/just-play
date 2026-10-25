@@ -1,4 +1,4 @@
-import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard, SettlementPiece, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
+import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postcard, SettlementPiece, SavedSpot, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
 
 export const game: Game = {
   id: "test-game", name: "A Short Hike", genres: ["Adventure"],
@@ -56,6 +56,7 @@ export const fixture: {
   cardCalls: NameCardInput[]
   emoteCalls: string[]
   pieceCalls: string[]
+  layoutCalls: string[]
 } = {
   session: { ...initialSession }, error: null, delay: 0, writes: [], savedPreferences: null, gameEndWrites: [],
   holdReads: false, readReleases: [], readSnapshots: [], readCompletions: 0,
@@ -78,6 +79,7 @@ export const fixture: {
   cardCalls: [],
   emoteCalls: [],
   pieceCalls: [],
+  layoutCalls: [],
 }
 
 type ExpectedSession = Pick<Session, "id" | "status" | "started_at" | "paused_elapsed_seconds">
@@ -297,6 +299,11 @@ export async function recordEmote(
 export async function placePiece(gameId: string, deck: number, anchor: number): Promise<{ ok: boolean; error?: string }> {
   if (hasParam("piece-fail")) return { ok: false, error: "Couldn't place it." }
   fixture.pieceCalls.push(`place:${gameId}:${deck}:${anchor}`)
+  return { ok: true }
+}
+export async function saveLayout(cells: SavedSpot[]): Promise<{ ok: boolean; error?: string }> {
+  if (hasParam("layout-fail")) return { ok: false, error: "Couldn't save that." }
+  fixture.layoutCalls.push(JSON.stringify(cells.map((c) => `${c.game_id}:${c.deck}:${c.cell}`)))
   return { ok: true }
 }
 export async function removePiece(gameId: string): Promise<{ ok: boolean; error?: string }> {
