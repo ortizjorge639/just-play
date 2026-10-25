@@ -1,5 +1,5 @@
 import {
-  AnimationAction, AnimationClip, AnimationMixer, Color, LoopOnce, Mesh, MeshStandardMaterial, type Group, type Material, type Object3D,
+  AnimationAction, AnimationClip, AnimationMixer, Color, LoopOnce, Mesh, MeshStandardMaterial, Quaternion, Vector3, type Group, type Material, type Object3D,
 } from "three"
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 import { clone } from "three/addons/utils/SkeletonUtils.js"
@@ -25,6 +25,9 @@ export interface Figure {
   // Plays clips back to back, then settles into idle again.
   chain: (names: string[]) => void
   busy: () => boolean
+  // Sit down (or stand up) with a short ease. Clips that move the whole body stand the figure up while they play.
+  sit: (on: boolean) => void
+  seated: () => boolean
   dispose: () => void
 }
 
@@ -33,6 +36,36 @@ const split = (clip: AnimationClip, name: string) => {
   const face = new AnimationClip(`${name}:face`, clip.duration, clip.tracks.filter((t) => t.name.startsWith("Face")))
   const body = new AnimationClip(`${name}:body`, clip.duration, clip.tracks.filter((t) => !t.name.startsWith("Face")))
   return [body, face]
+}
+
+const FORWARD = new Vector3(0, -0.1, 1).normalize()
+const DOWN = new Vector3(0, -1, 0)
+
+// The rig has no sitting clip, so the legs are bent by hand: thighs point forward, shins drop to the floor.
+function makeSeat(object: Object3D) {
+  const get = (name: string) => object.getObjectByName(name)
+  const pelvis = get("Pelvis")
+  const legs = (["L", "R"] as const).flatMap((side) => {
+    const thigh = get(`Thigh${side}`), shin = get(`Shin${side}`), foot = get(`Foot${side}`)
+    return thigh && shin && foot ? [{ thigh, shin, foot }] : []
+  })
+  if (!pelvis || legs.length !== 2) return null
+  const rest = pelvis.position.y
+  const drop = legs[0].shin.position.length()
+  const dir = new Vector3(), aim = new Quaternion(), seatThigh = new Quaternion(), seatShin = new Quaternion(), inverse = new Quaternion()
+  return (weight: number) => {
+    pelvis.position.y = rest - drop * weight
+    for (const { thigh, shin, foot } of legs) {
+      const thighNow = thigh.quaternion.clone(), shinNow = shin.quaternion.clone()
+      dir.copy(shin.position).applyQuaternion(thighNow).normalize()
+      seatThigh.copy(aim.setFromUnitVectors(dir, FORWARD)).multiply(thighNow)
+      dir.copy(foot.position).applyQuaternion(shinNow).applyQuaternion(seatThigh).normalize()
+      inverse.copy(seatThigh).invert()
+      seatShin.copy(inverse).multiply(aim.setFromUnitVectors(dir, DOWN)).multiply(seatThigh).multiply(shinNow)
+      thigh.quaternion.copy(thighNow).slerp(seatThigh, weight)
+      shin.quaternion.copy(shinNow).slerp(seatShin, weight)
+    }
+  }
 }
 
 export function createFigure(source: FigureSource, shell: string, phase: number): Figure {
@@ -62,10 +95,12 @@ export function createFigure(source: FigureSource, shell: string, phase: number)
     const next = queue.shift()
     if (next) { start(next); return }
     current.splice(0).forEach((action) => action.fadeOut(0.25))
+    playing = null
     idleActions.forEach((action) => action.reset().fadeIn(0.25).play())
   }
   const start = (name: string) => {
     const clip = source.clips.get(name)
+    playing = name
     if (!clip) { const next = queue.shift(); if (next) start(next); return }
     let actions = once.get(name)
     if (!actions) {
@@ -78,6 +113,10 @@ export function createFigure(source: FigureSource, shell: string, phase: number)
   }
   mixer.addEventListener("finished", finished as never)
 
+  const pose = makeSeat(object)
+  let wantSit = false, sitWeight = 0
+  let playing: string | null = null
+
   let nextLook = 3 + (phase * 7) % 6
   return {
     object,
@@ -87,7 +126,14 @@ export function createFigure(source: FigureSource, shell: string, phase: number)
         this.play("look")
       }
       mixer.update(seconds)
+      if (!pose) return
+      const target = wantSit && (playing === null || playing === "look") ? 1 : 0
+      sitWeight += (target - sitWeight) * Math.min(1, 6 * seconds)
+      if (Math.abs(target - sitWeight) < 0.01) sitWeight = target
+      if (sitWeight > 0) pose(sitWeight)
     },
+    sit(on) { wantSit = on },
+    seated: () => sitWeight > 0.5,
     busy: () => current.length > 0,
     play(name) { queue.length = 0; start(name) },
     chain(names) { queue.length = 0; queue.push(...names.slice(1)); start(names[0]) },

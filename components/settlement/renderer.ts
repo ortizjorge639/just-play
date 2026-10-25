@@ -158,6 +158,10 @@ export async function mountSettlement(
   const companionMaterials = new Map<string, MeshStandardMaterial>()
   let companions = 0
   const figures = new Map<string, Figure>()
+  const seatWood = new MeshStandardMaterial({ color: "#a8794a", roughness: 0.85 })
+  const seatBoard = new BoxGeometry(1, 0.07, 0.4)
+  const seatLeg = new BoxGeometry(0.08, 0.15, 0.32)
+  let seats = 0
   const homes: { gameId: Resident["game_id"]; position: Vector3; object: Object3D; rotation: number }[] = []
   for (const placement of layout.placements) {
     const part = partById.get(placement.partId)
@@ -189,6 +193,21 @@ export async function mountSettlement(
       )
       figure.object.rotation.y = Math.PI / 4
       figure.object.scale.setScalar(1.25)
+      // A small bench where the resident waits, facing the camera like they do.
+      const bench = new Group()
+      const board = new Mesh(seatBoard, seatWood)
+      board.position.y = 0.185
+      bench.add(board)
+      for (const x of [-0.38, 0.38]) {
+        const leg = new Mesh(seatLeg, seatWood)
+        leg.position.set(x, 0.075, 0)
+        bench.add(leg)
+      }
+      bench.position.set(figure.object.position.x, 0.4, figure.object.position.z)
+      bench.rotation.y = Math.PI / 4
+      scene.add(bench)
+      figure.sit(true)
+      seats++
       scene.add(figure.object)
       figures.set(placement.gameId, figure)
     }
@@ -240,6 +259,7 @@ export async function mountSettlement(
   scene.add(loftGroup)
   host.dataset.companions = String(companions)
   host.dataset.figures = String(figures.size)
+  host.dataset.seats = String(seats)
   const renderer = new WebGLRenderer({ antialias: true, powerPreference: "low-power" })
   renderer.outputColorSpace = SRGBColorSpace
   renderer.toneMapping = ACESFilmicToneMapping
@@ -716,6 +736,9 @@ export async function mountSettlement(
     disposeTree(scene)
     for (const label of labels) { label.material.map?.dispose(); label.material.dispose() }
     standIn.dispose()
+    seatWood.dispose()
+    seatBoard.dispose()
+    seatLeg.dispose()
     companionShape.dispose()
     loftBody.dispose()
     hintRing.dispose()

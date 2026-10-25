@@ -498,6 +498,7 @@ test("Settlement: every resident stands beside their home", async ({ page }) => 
   await page.getByRole("button", { name: "Home" }).click()
   await page.getByRole("button", { name: "Settlement" }).click()
   await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-figures", "7")
+  await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-seats", "7")
 })
 
 test("Saying hi makes that resident hop and emote in the scene, then settle back", async ({ page }) => {
