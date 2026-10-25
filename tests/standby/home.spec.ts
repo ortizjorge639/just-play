@@ -492,3 +492,10 @@ test("Arrange: Turn and the R key turn a home a quarter, and Done saves the turn
   await expect.poll(() => page.evaluate(() => document.querySelector<HTMLElement>("[data-rotations]")?.dataset.rotations ?? "")).toContain("many-2:1")
 })
 
+
+test("Settlement: every resident stands beside their home", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-figures", "7")
+})
