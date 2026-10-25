@@ -1,4 +1,5 @@
 import { playLand } from "./sound"
+import { createFigure, loadFigureSource, type Figure } from "./figures"
 import {
   ACESFilmicToneMapping, Box3, Color, DirectionalLight, Group, HemisphereLight, Mesh,
   MeshStandardMaterial, OrthographicCamera, Scene, SphereGeometry, SRGBColorSpace,
@@ -113,6 +114,10 @@ export async function mountSettlement(
   const loftModel = await loadGroup(LOFT_URL, signal).catch(() => null)
   if (signal.aborted) throw new DOMException("Aborted", "AbortError")
 
+  // Each resident stands beside their home. If the figure art can't load, the homes still stand.
+  const figureSource = await loadFigureSource(signal).catch(() => null)
+  if (signal.aborted) throw new DOMException("Aborted", "AbortError")
+
   const standIn = new SphereGeometry(0.4, 16, 12)
   const standInMaterials = new Map<string, MeshStandardMaterial>()
   const partById = new Map(PARTS.map((p) => [p.id, p]))
@@ -152,6 +157,7 @@ export async function mountSettlement(
   const companionShape = new SphereGeometry(0.2, 12, 8)
   const companionMaterials = new Map<string, MeshStandardMaterial>()
   let companions = 0
+  const figures = new Map<string, Figure>()
   const homes: { gameId: Resident["game_id"]; position: Vector3; object: Object3D; rotation: number }[] = []
   for (const placement of layout.placements) {
     const part = partById.get(placement.partId)
@@ -174,6 +180,18 @@ export async function mountSettlement(
     object.rotation.y = -placement.rotation * (Math.PI / 2)
     scene.add(object)
     homes.push({ gameId: placement.gameId, position: object.position.clone(), object, rotation: placement.rotation })
+    if (figureSource) {
+      const figure = createFigure(figureSource, FAMILY_COLOUR[part?.family ?? "other"], placement.slot * 1.7 + placement.deck)
+      const inward = Math.hypot(origin.x - object.position.x, origin.z - object.position.z) || 1
+      figure.object.position.set(
+        object.position.x + ((origin.x - object.position.x) / inward) * 1.3, 0.4,
+        object.position.z + ((origin.z - object.position.z) / inward) * 1.3,
+      )
+      figure.object.rotation.y = Math.PI / 4
+      figure.object.scale.setScalar(1.25)
+      scene.add(figure.object)
+      figures.set(placement.gameId, figure)
+    }
     for (let k = 0; k < placement.tier; k++) {
       const angle = k * 2.1 + placement.slot
       let material = companionMaterials.get(part?.family ?? "other")
@@ -221,6 +239,7 @@ export async function mountSettlement(
   const loftGroup = new Group()
   scene.add(loftGroup)
   host.dataset.companions = String(companions)
+  host.dataset.figures = String(figures.size)
   const renderer = new WebGLRenderer({ antialias: true, powerPreference: "low-power" })
   renderer.outputColorSpace = SRGBColorSpace
   renderer.toneMapping = ACESFilmicToneMapping
@@ -286,9 +305,16 @@ export async function mountSettlement(
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
   const tasks = new Set<(now: number) => boolean>()
   let frame = 0
+  let drawn = 0, gap = 48, seen = 0
   const tick = (now: number) => {
     frame = 0
     if (disposed) return
+    // With only the residents' idle going, 20 frames a second is plenty. When the browser is
+    // slow to hand out frames (a weak GPU, software drawing), idle draws back off to match.
+    if (seen) gap = Math.min(1500, Math.max(48, gap * 0.8, (now - seen) * 2.5))
+    seen = now
+    if (tasks.size === 1 && now - drawn < gap) { frame = requestAnimationFrame(tick); return }
+    drawn = now
     for (const task of [...tasks]) if (!task(now)) tasks.delete(task)
     render()
     if (tasks.size) frame = requestAnimationFrame(tick)
@@ -297,6 +323,15 @@ export async function mountSettlement(
     tasks.add(task)
     if (!frame) frame = requestAnimationFrame(tick)
   }
+
+  // Residents breathe and glance around, so the scene keeps drawing while it is on screen.
+  let last = 0
+  run(function live(now) {
+    const seconds = last ? Math.min(0.1, (now - last) / 1000) : 0
+    last = now
+    figures.forEach((figure) => figure.update(seconds, now))
+    return !disposed
+  })
 
   // A loft drops in, squashes a little on landing and kicks up a few puffs of dust.
   const playDrop = (loft: Group) => {
@@ -624,6 +659,7 @@ export async function mountSettlement(
     host.removeEventListener("settlement-pieces", onPieces)
     if (frame) cancelAnimationFrame(frame)
     tasks.clear()
+    figures.forEach((figure) => figure.dispose())
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
     for (const label of labels) { label.material.map?.dispose(); label.material.dispose() }
