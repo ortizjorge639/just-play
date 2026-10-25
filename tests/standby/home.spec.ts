@@ -95,6 +95,33 @@ test("Settlement takes the whole screen, with a way back", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Settlement" })).toBeFocused()
 })
 
+test("Settlement header shows whose it is, and a hint shows once", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many&card-filled")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const layer = page.getByRole("dialog", { name: "Your settlement" })
+  await expect(layer.getByText("Slow games, long evenings")).toBeVisible()
+  const hint = layer.getByText("Tap a home to see who lives there. Drag to look around.")
+  await expect(hint).toBeVisible()
+  await layer.getByRole("button", { name: "Got it" }).click()
+  await expect(hint).toHaveCount(0)
+
+  await page.getByRole("button", { name: "Back to Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  await expect(layer).toBeVisible()
+  await expect(hint).toHaveCount(0)
+})
+
+test("Picking a home also clears the hint", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const hint = page.getByText("Tap a home to see who lives there. Drag to look around.")
+  await expect(hint).toBeVisible()
+  await page.getByRole("list", { name: "Homes" }).getByRole("button", { name: "Home 3" }).click()
+  await expect(hint).toHaveCount(0)
+})
+
 test("The 2D fallback scrolls inside the full-screen layer", async ({ page }) => {
   await page.route("**/canopy/hearth-deck-*.glb", (route) => route.abort())
   await page.setViewportSize({ width: 390, height: 500 })

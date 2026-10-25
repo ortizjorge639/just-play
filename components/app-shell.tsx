@@ -330,11 +330,12 @@ export function AppShell({
             className="flex flex-1 flex-col"
           >
             <HomeView
-              displayName={user.display_name}
+              displayName={cardName}
               residents={residents ?? []}
               pieces={pieces ?? []}
               savedLayout={savedLayout ?? []}
               postcards={postcards ?? []}
+              nameCard={nameCard}
               invitedGame={activeGame && !(residents ?? []).some(r => r.game_id === activeGame.game_id) ? activeGame.game : null}
             />
           </motion.div>
