@@ -8,6 +8,7 @@ import { SettlementScene, type SpotHints } from "./settlement/scene"
 import { setSoundOn, soundOn, subscribeSound } from "./settlement/sound"
 import { PARTS } from "@/lib/settlement/catalog"
 import { ResidentPortrait } from "./resident-portrait"
+import { useFullscreenLayer } from "./use-fullscreen-layer"
 
 interface DeckMapProps {
   residents: Resident[]
@@ -83,7 +84,7 @@ export function DeckMap({ residents }: DeckMapProps) {
   )
 }
 
-export function SettlementView({ residents, pieces = [] }: DeckMapProps & { pieces?: SettlementPiece[] }) {
+export function SettlementView({ residents, pieces = [], fullscreen = false, onBack }: DeckMapProps & { pieces?: SettlementPiece[]; fullscreen?: boolean; onBack?: () => void }) {
   const layout = useMemo(() => layoutSettlement(residents), [residents])
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
   const [hints, setHints] = useState<SpotHints | undefined>(undefined)
@@ -94,14 +95,43 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
     const timer = setTimeout(() => setSaid(null), 4500)
     return () => clearTimeout(timer)
   }, [said])
+  const layer = useFullscreenLayer(onBack, fullscreen)
   const chosen = residents.find((r) => r.game_id === selected)
   const ordered = layout.placements
     .map((p) => residents.find((r) => r.game_id === p.gameId))
     .filter((r): r is Resident => !!r)
 
+  const soundButton = (
+    <button
+      type="button"
+      aria-pressed={sound}
+      onClick={() => setSoundOn(!sound)}
+      className="min-h-11 self-start text-sm text-muted-foreground underline"
+    >
+      {sound ? "Sound on" : "Sound off"}
+    </button>
+  )
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="relative">
+    <div
+      ref={layer}
+      {...(fullscreen ? { role: "dialog", "aria-modal": true, "aria-label": "Your settlement" } : {})}
+      className={fullscreen ? "fixed inset-0 z-[60] flex flex-col bg-background" : "flex flex-col gap-3"}
+    >
+      {fullscreen && (
+        <header className="flex items-center justify-between px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <button
+            type="button"
+            onClick={onBack}
+            data-initial-focus
+            className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground"
+          >
+            Back to Home
+          </button>
+          {soundButton}
+        </header>
+      )}
+      <div className={fullscreen ? "relative mt-2 min-h-0 flex-1 overflow-y-auto" : "relative"}>
       <SettlementScene
         layout={layout}
         residentCount={residents.length}
@@ -110,6 +140,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
         pieces={pieces}
         hints={hints}
         onSpot={(spot) => setHints((h) => (h ? { ...h, active: spot } : h))}
+        fullscreen={fullscreen}
       />
       {said && (
         <p aria-hidden="true" className="pointer-events-none absolute inset-x-3 bottom-3 mx-auto w-fit max-w-[90%] rounded-2xl border border-border bg-card/95 px-3 py-2 text-sm text-foreground shadow-lg motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2">
@@ -117,14 +148,8 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
         </p>
       )}
       </div>
-      <button
-        type="button"
-        aria-pressed={sound}
-        onClick={() => setSoundOn(!sound)}
-        className="min-h-11 self-start text-sm text-muted-foreground underline"
-      >
-        {sound ? "Sound on" : "Sound off"}
-      </button>
+      {!fullscreen && soundButton}
+      <div className={fullscreen ? "flex max-h-[45dvh] flex-col gap-3 overflow-y-auto px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]" : "contents"}>
       <ul aria-label="Homes" className="flex gap-1.5 overflow-x-auto pb-1">
         {ordered.map((resident) => (
           <li key={resident.game_id} className="shrink-0">
@@ -144,6 +169,7 @@ export function SettlementView({ residents, pieces = [] }: DeckMapProps & { piec
         ))}
       </ul>
       {chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} hints={hints} onSpots={setHints} onSay={(line) => setSaid({ name: chosen.game?.name ?? "A game", line })} />}
+      </div>
     </div>
   )
 }

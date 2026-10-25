@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import type { Game, Postcard, Resident, SettlementPiece } from "@/lib/types"
 import { ResidentPortrait } from "./resident-portrait"
@@ -20,6 +20,11 @@ interface HomeViewProps {
 
 export function HomeView({ displayName, residents, pieces = [], postcards, invitedGame }: HomeViewProps) {
   const [view, setView] = useState<"list" | "settlement">("list")
+  const settlementButton = useRef<HTMLButtonElement>(null)
+  const leaveSettlement = useCallback(() => {
+    setView("list")
+    requestAnimationFrame(() => settlementButton.current?.focus())
+  }, [])
   const prefersReducedMotion = useReducedMotion()
   const deckCount = layoutSettlement(residents).decks.length
   const isEmpty = residents.length === 0 && postcards.length === 0 && !invitedGame
@@ -58,6 +63,7 @@ export function HomeView({ displayName, residents, pieces = [], postcards, invit
             {(["list", "settlement"] as const).map((option) => (
               <button
                 key={option}
+                ref={option === "settlement" ? settlementButton : undefined}
                 type="button"
                 aria-pressed={view === option}
                 onClick={() => setView(option)}
@@ -73,7 +79,7 @@ export function HomeView({ displayName, residents, pieces = [], postcards, invit
             ))}
           </div>
           {view === "settlement" ? (
-            <SettlementView residents={residents} pieces={pieces} />
+            <SettlementView residents={residents} pieces={pieces} fullscreen onBack={leaveSettlement} />
           ) : (
             <ul className="grid grid-cols-1 gap-2.5">
               {residents.map((resident, i) => (
