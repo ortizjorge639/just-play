@@ -13,6 +13,7 @@ interface SettlementSceneProps {
   pieces?: SettlementPiece[]
   hints?: SpotHints
   onSpot?: (spot: { deck: number; anchor: number }) => void
+  fullscreen?: boolean
 }
 
 export interface SpotHints {
@@ -21,7 +22,7 @@ export interface SpotHints {
 }
 
 // Draws the approved deck art. If WebGL or the art fails, the 2D view takes over.
-export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot }: SettlementSceneProps) {
+export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot, fullscreen }: SettlementSceneProps) {
   const host = useRef<HTMLDivElement>(null)
   const select = useRef(onSelect)
   useEffect(() => { select.current = onSelect })
@@ -74,9 +75,21 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
         aria-label={`Settlement with ${residentCount} ${residentCount === 1 ? "home" : "homes"} on ${decks} ${decks === 1 ? "deck" : "decks"}. Tap a home to see who lives there. Drag or use arrow keys to move, scroll or plus and minus to zoom, 0 to reset.`}
         data-testid="settlement-3d"
         data-state={state}
-        className="h-80 w-full touch-none overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary rounded-2xl border border-border bg-card"
+        className={
+          fullscreen
+            ? "h-full w-full touch-none overflow-hidden bg-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            : "h-80 w-full touch-none overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary rounded-2xl border border-border bg-card"
+        }
       />
-      {state === "loading" && <div className="sr-only" role="status">Loading the settlement</div>}
+      {state === "loading" && (
+        fullscreen ? (
+          <div role="status" className="absolute inset-0 grid place-items-center bg-background">
+            <p className="text-sm text-muted-foreground motion-safe:animate-pulse">Getting your settlement ready</p>
+          </div>
+        ) : (
+          <div className="sr-only" role="status">Loading the settlement</div>
+        )
+      )}
     </>
   )
 }

@@ -50,8 +50,31 @@ test("Settlement toggle draws the 3D settlement and returns to the list", async 
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await expect(scene.locator("canvas")).toHaveCount(1)
 
-  await list.click()
+  await page.getByRole("button", { name: "Back to Home" }).click()
   await expect(page.getByTestId("settlement-3d")).toHaveCount(0)
+  await expect(list).toHaveAttribute("aria-pressed", "true")
+  await expect(settlement).toBeFocused()
+})
+
+test("Settlement takes the whole screen, with a way back", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const layer = page.getByRole("dialog", { name: "Your settlement" })
+  await expect(layer).toBeVisible()
+  const viewport = page.viewportSize()!
+  const box = await layer.boundingBox()
+  expect(Math.abs(box!.width - viewport.width)).toBeLessThan(2)
+  expect(Math.abs(box!.height - viewport.height)).toBeLessThan(2)
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
+  const sceneBox = await scene.boundingBox()
+  expect(sceneBox!.width).toBeGreaterThan(viewport.width - 2)
+  expect(sceneBox!.height).toBeGreaterThan(viewport.height * 0.4)
+
+  await page.keyboard.press("Escape")
+  await expect(layer).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "Settlement" })).toBeFocused()
 })
 
 test("Settlement falls back to the 2D deck map when the art cannot load", async ({ page }) => {
