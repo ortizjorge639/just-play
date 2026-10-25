@@ -18,19 +18,30 @@ export function EmptyPlot({ onBack }: { onBack: () => void }) {
         </button>
       </header>
       <div className="flex flex-1 flex-col items-center justify-center gap-6 px-8 text-center">
-        <div
+        <svg
           aria-hidden="true"
           data-testid="first-home-plot"
-          className="relative grid size-56 place-items-center rounded-full border-2 border-dashed border-primary/50 bg-card"
+          viewBox="0 0 240 180"
+          className="w-full max-w-[280px]"
         >
-          <div className="grid size-20 place-items-center rounded-2xl border border-primary/60 bg-primary/10">
-            <span className="text-3xl text-primary">+</span>
-          </div>
-        </div>
+          <ellipse cx="120" cy="140" rx="104" ry="26" className="fill-card stroke-border" strokeWidth="1.5" />
+          <g className="text-primary" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5 5" strokeLinejoin="round">
+            <ellipse cx="120" cy="136" rx="56" ry="14" opacity="0.7" />
+            <path d="M92 130V96h56v34" opacity="0.5" />
+            <path d="M84 98l36-30 36 30z" opacity="0.5" />
+            <path d="M114 130v-18h12v18" opacity="0.5" />
+          </g>
+          <g>
+            <rect x="196" y="112" width="5" height="22" rx="2" className="fill-muted-foreground/50" />
+            <circle cx="198" cy="102" r="15" className="fill-muted-foreground/30" />
+            <rect x="34" y="118" width="5" height="18" rx="2" className="fill-muted-foreground/50" />
+            <circle cx="36" cy="110" r="12" className="fill-muted-foreground/30" />
+          </g>
+        </svg>
         <div className="max-w-xs">
           <h2 className="text-xl font-semibold text-foreground">Your first home goes here</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Beat a game and it moves in. Lock one in from the Deck to get started.
+            Finish a game and it moves in here as a resident. Lock one in from the Deck to get started.
           </p>
         </div>
       </div>
