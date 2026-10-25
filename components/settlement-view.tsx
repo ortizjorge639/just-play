@@ -8,6 +8,7 @@ import { SettlementScene, type SpotHints } from "./settlement/scene"
 import { setSoundOn, soundOn, subscribeSound } from "./settlement/sound"
 import { PARTS } from "@/lib/settlement/catalog"
 import { ResidentPortrait } from "./resident-portrait"
+import { useFullscreenLayer } from "./use-fullscreen-layer"
 
 interface DeckMapProps {
   residents: Resident[]
@@ -94,17 +95,7 @@ export function SettlementView({ residents, pieces = [], fullscreen = false, onB
     const timer = setTimeout(() => setSaid(null), 4500)
     return () => clearTimeout(timer)
   }, [said])
-  useEffect(() => {
-    if (!fullscreen || !onBack) return
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onBack() }
-    window.addEventListener("keydown", onKey)
-    const previous = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    return () => {
-      window.removeEventListener("keydown", onKey)
-      document.body.style.overflow = previous
-    }
-  }, [fullscreen, onBack])
+  const layer = useFullscreenLayer(onBack, fullscreen)
   const chosen = residents.find((r) => r.game_id === selected)
   const ordered = layout.placements
     .map((p) => residents.find((r) => r.game_id === p.gameId))
@@ -123,7 +114,8 @@ export function SettlementView({ residents, pieces = [], fullscreen = false, onB
 
   return (
     <div
-      {...(fullscreen ? { role: "dialog", "aria-label": "Your settlement" } : {})}
+      ref={layer}
+      {...(fullscreen ? { role: "dialog", "aria-modal": true, "aria-label": "Your settlement" } : {})}
       className={fullscreen ? "fixed inset-0 z-[60] flex flex-col bg-background" : "flex flex-col gap-3"}
     >
       {fullscreen && (
@@ -131,6 +123,7 @@ export function SettlementView({ residents, pieces = [], fullscreen = false, onB
           <button
             type="button"
             onClick={onBack}
+            data-initial-focus
             className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground"
           >
             Back to Home
@@ -138,7 +131,7 @@ export function SettlementView({ residents, pieces = [], fullscreen = false, onB
           {soundButton}
         </header>
       )}
-      <div className={fullscreen ? "relative mt-2 min-h-0 flex-1" : "relative"}>
+      <div className={fullscreen ? "relative mt-2 min-h-0 flex-1 overflow-y-auto" : "relative"}>
       <SettlementScene
         layout={layout}
         residentCount={residents.length}

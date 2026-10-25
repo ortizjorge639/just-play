@@ -72,9 +72,26 @@ test("Settlement takes the whole screen, with a way back", async ({ page }) => {
   expect(sceneBox!.width).toBeGreaterThan(viewport.width - 2)
   expect(sceneBox!.height).toBeGreaterThan(viewport.height * 0.4)
 
+  await expect(page.getByRole("button", { name: "Back to Home" })).toBeFocused()
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press("Tab")
+    expect(await layer.evaluate((el) => el.contains(document.activeElement))).toBe(true)
+  }
+
   await page.keyboard.press("Escape")
   await expect(layer).toHaveCount(0)
   await expect(page.getByRole("button", { name: "Settlement" })).toBeFocused()
+})
+
+test("The 2D fallback scrolls inside the full-screen layer", async ({ page }) => {
+  await page.route("**/canopy/hearth-deck-*.glb", (route) => route.abort())
+  await page.setViewportSize({ width: 390, height: 500 })
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const deck2 = page.getByRole("region", { name: "Deck 2" })
+  await deck2.scrollIntoViewIfNeeded()
+  await expect(deck2).toBeInViewport()
 })
 
 test("Settlement falls back to the 2D deck map when the art cannot load", async ({ page }) => {
