@@ -28,6 +28,11 @@ export function moveHome(spots: readonly SavedSpot[], gameId: string, deck: numb
   return compactDecks(next)
 }
 
+// A quarter turn clockwise.
+export function turnHome(spots: readonly SavedSpot[], gameId: string): SavedSpot[] {
+  return spots.map((s) => (s.game_id === gameId ? { ...s, rotation: (s.rotation + 1) % 4 } : s))
+}
+
 export function sameSpots(a: readonly SavedSpot[], b: readonly SavedSpot[]): boolean {
   if (a.length !== b.length) return false
   const key = (s: SavedSpot) => `${s.game_id}:${s.deck}:${s.cell}:${s.rotation}`

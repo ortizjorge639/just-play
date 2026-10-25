@@ -2,7 +2,7 @@ import { playLand } from "./sound"
 import {
   ACESFilmicToneMapping, Box3, Color, DirectionalLight, Group, HemisphereLight, Mesh,
   MeshStandardMaterial, OrthographicCamera, Scene, SphereGeometry, SRGBColorSpace,
-  BoxGeometry, CanvasTexture, ConeGeometry, Sprite, SpriteMaterial, DoubleSide, RingGeometry, Vector3, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
+  BoxGeometry, CanvasTexture, ConeGeometry, Sprite, SpriteMaterial, DoubleSide, RingGeometry, Vector3, Vector2, Plane, Raycaster, WebGLRenderer, type BufferGeometry, type Material, type Object3D,
 } from "three"
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 import type { Resident, SettlementPiece } from "@/lib/types"
@@ -152,7 +152,7 @@ export async function mountSettlement(
   const companionShape = new SphereGeometry(0.2, 12, 8)
   const companionMaterials = new Map<string, MeshStandardMaterial>()
   let companions = 0
-  const homes: { gameId: Resident["game_id"]; position: Vector3 }[] = []
+  const homes: { gameId: Resident["game_id"]; position: Vector3; object: Object3D; rotation: number }[] = []
   for (const placement of layout.placements) {
     const part = partById.get(placement.partId)
     const origin = deckOrigin(placement.deck)
@@ -171,8 +171,9 @@ export async function mountSettlement(
       object = new Mesh(standIn, material)
     }
     object.position.set(origin.x + offset.x, 0.4, origin.z + offset.z)
+    object.rotation.y = -placement.rotation * (Math.PI / 2)
     scene.add(object)
-    homes.push({ gameId: placement.gameId, position: object.position.clone() })
+    homes.push({ gameId: placement.gameId, position: object.position.clone(), object, rotation: placement.rotation })
     for (let k = 0; k < placement.tier; k++) {
       const angle = k * 2.1 + placement.slot
       let material = companionMaterials.get(part?.family ?? "other")
@@ -254,8 +255,27 @@ export async function mountSettlement(
     publishSpotPoints()
   }
 
-  // Where each glowing ring is on screen, so tests can tap real pixels.
+  let arranging = false
+  // Where each glowing ring, and while arranging each home and spot, is on screen, so tests can use real pixels.
   const publishSpotPoints = () => {
+    if (arranging) {
+      const box = host.getBoundingClientRect()
+      const at = (v: Vector3) => {
+        const p = v.clone().project(camera)
+        return `${Math.round(box.left + ((p.x + 1) / 2) * box.width)},${Math.round(box.top + ((1 - p.y) / 2) * box.height)}`
+      }
+      host.dataset.homePoints = homes.map((h) => `${h.gameId}@${at(h.position)}`).join(";")
+      host.dataset.cellPoints = layout.decks.flatMap((deck) => Array.from({ length: DECK_CAPACITY }, (_, cell) => {
+        const origin = deckOrigin(deck.index)
+        const offset = slotOffset(cell, DECK_CAPACITY)
+        return `${deck.index}:${cell}@${at(new Vector3(origin.x + offset.x, 0.4, origin.z + offset.z))}`
+      })).join(";")
+      host.dataset.rotations = homes.map((h) => `${h.gameId}:${h.rotation}`).join(";")
+    } else {
+      delete host.dataset.homePoints
+      delete host.dataset.cellPoints
+      delete host.dataset.rotations
+    }
     if (!hintSpots.length) { delete host.dataset.spotPoints; return }
     const rect = host.getBoundingClientRect()
     host.dataset.spotPoints = hintSpots.map((spot) => {
@@ -445,8 +465,46 @@ export async function mountSettlement(
   const downAt = new Map<number, { x: number; y: number }>()
   let pinch = 0
   let pinched = false
+  // While arranging, a home can be dragged and dropped on any spot of any deck.
+  let dragging: (typeof homes)[number] | null = null
+  let dragMoved = false
+  const raycaster = new Raycaster()
+  const groundPlane = new Plane(new Vector3(0, 1, 0), -0.4)
+  const groundAt = (clientX: number, clientY: number) => {
+    const rect = host.getBoundingClientRect()
+    raycaster.setFromCamera(new Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -(((clientY - rect.top) / rect.height) * 2 - 1)), camera)
+    return raycaster.ray.intersectPlane(groundPlane, new Vector3())
+  }
+  const nearestHome = (clientX: number, clientY: number) => {
+    const rect = host.getBoundingClientRect()
+    let best: { home: (typeof homes)[number]; d: number } | null = null
+    for (const home of homes) {
+      const p = home.position.clone().project(camera)
+      const d = Math.hypot(rect.left + ((p.x + 1) / 2) * rect.width - clientX, rect.top + ((1 - p.y) / 2) * rect.height - clientY)
+      if (d <= 36 && (!best || d < best.d)) best = { home, d }
+    }
+    return best?.home ?? null
+  }
+  const nearestSpot = (point: Vector3) => {
+    let best: { deck: number; cell: number; d: number } | null = null
+    for (const deck of layout.decks) {
+      const origin = deckOrigin(deck.index)
+      for (let cell = 0; cell < DECK_CAPACITY; cell++) {
+        const offset = slotOffset(cell, DECK_CAPACITY)
+        const d = Math.hypot(origin.x + offset.x - point.x, origin.z + offset.z - point.z)
+        if (d <= 2.2 && (!best || d < best.d)) best = { deck: deck.index, cell, d }
+      }
+    }
+    return best
+  }
+  const onArrange = (event: Event) => { arranging = (event as CustomEvent<boolean>).detail; render() }
+  host.addEventListener("settlement-arrange", onArrange)
   const onDown = (event: PointerEvent) => {
     host.setPointerCapture(event.pointerId)
+    if (arranging && pointers.size === 0) {
+      dragging = nearestHome(event.clientX, event.clientY)
+      dragMoved = false
+    }
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
     downAt.set(event.pointerId, { x: event.clientX, y: event.clientY })
     if (pointers.size === 2) { pinch = distance(); pinched = true }
@@ -460,6 +518,16 @@ export async function mountSettlement(
     if (!last) return
     const dx = event.clientX - last.x, dy = event.clientY - last.y
     pointers.set(event.pointerId, { x: event.clientX, y: event.clientY })
+    if (dragging) {
+      const start = downAt.get(event.pointerId)
+      if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) >= 6) dragMoved = true
+      const point = dragMoved ? groundAt(event.clientX, event.clientY) : null
+      if (point) {
+        dragging.object.position.set(point.x, 0.9, point.z)
+        render()
+      }
+      return
+    }
     if (pointers.size === 2) {
       const now = distance()
       if (pinch > 0) setZoom(zoom * (now / pinch))
@@ -470,6 +538,22 @@ export async function mountSettlement(
   }
   const onUp = (event: PointerEvent) => {
     const start = downAt.get(event.pointerId)
+    if (dragging) {
+      const held = dragging
+      dragging = null
+      if (dragMoved && event.type === "pointerup") {
+        const point = groundAt(event.clientX, event.clientY)
+        const spot = point ? nearestSpot(point) : null
+        if (spot) host.dispatchEvent(new CustomEvent("settlement-drop", { detail: { gameId: held.gameId, deck: spot.deck, cell: spot.cell } }))
+      }
+      held.object.position.copy(held.position)
+      render()
+      if (dragMoved) {
+        pointers.delete(event.pointerId)
+        downAt.delete(event.pointerId)
+        return
+      }
+    }
     const wasTap = pointers.size === 1 && !pinched && start && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 6
     pointers.delete(event.pointerId)
     downAt.delete(event.pointerId)
@@ -535,6 +619,7 @@ export async function mountSettlement(
     host.removeEventListener("pointercancel", onUp)
     host.removeEventListener("wheel", onWheel)
     host.removeEventListener("keydown", onKey)
+    host.removeEventListener("settlement-arrange", onArrange)
     host.removeEventListener("settlement-hints", onHints)
     host.removeEventListener("settlement-pieces", onPieces)
     if (frame) cancelAnimationFrame(frame)

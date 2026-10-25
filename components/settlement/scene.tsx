@@ -14,6 +14,8 @@ interface SettlementSceneProps {
   hints?: SpotHints
   onSpot?: (spot: { deck: number; anchor: number }) => void
   fullscreen?: boolean
+  arranging?: boolean
+  onDrop?: (drop: { gameId: string; deck: number; cell: number }) => void
 }
 
 export interface SpotHints {
@@ -22,12 +24,14 @@ export interface SpotHints {
 }
 
 // Draws the approved deck art. If WebGL or the art fails, the 2D view takes over.
-export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot, fullscreen }: SettlementSceneProps) {
+export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot, fullscreen, arranging, onDrop }: SettlementSceneProps) {
   const host = useRef<HTMLDivElement>(null)
   const select = useRef(onSelect)
   useEffect(() => { select.current = onSelect })
   const spot = useRef(onSpot)
   useEffect(() => { spot.current = onSpot })
+  const drop = useRef(onDrop)
+  useEffect(() => { drop.current = onDrop })
   const latestPieces = useRef(pieces)
   useEffect(() => { latestPieces.current = pieces })
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading")
@@ -56,6 +60,19 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
     element.addEventListener("settlement-spot", listener)
     return () => element.removeEventListener("settlement-spot", listener)
   }, [state])
+
+  useEffect(() => {
+    const element = host.current
+    if (!element) return
+    const listener = (event: Event) => drop.current?.((event as CustomEvent<{ gameId: string; deck: number; cell: number }>).detail)
+    element.addEventListener("settlement-drop", listener)
+    return () => element.removeEventListener("settlement-drop", listener)
+  }, [state])
+
+  useEffect(() => {
+    if (state !== "ready") return
+    host.current?.dispatchEvent(new CustomEvent("settlement-arrange", { detail: !!arranging }))
+  }, [arranging, state, mounts])
 
   useEffect(() => {
     if (state !== "ready") return

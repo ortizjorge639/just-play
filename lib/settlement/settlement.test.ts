@@ -4,7 +4,7 @@ import { PARTS, familyForGenres, partFor } from "./catalog"
 import { readFileSync } from "node:fs"
 import { TIERS, tierFor } from "./tiers"
 import { DECK_CAPACITY, LAYOUT_VERSION, layoutSettlement } from "./layout"
-import { moveHome, sameSpots, toSpots } from "./arrange"
+import { moveHome, sameSpots, toSpots, turnHome } from "./arrange"
 import { anchorOffset, ANCHORS_PER_DECK, ANCHOR_RADIUS, deckOrigin, slotOffset, DECK_SPACING, SLOT_RING_RADIUS } from "./transforms"
 import type { Part, SavedSpot, SettlementResident } from "./types"
 
@@ -280,4 +280,14 @@ test("a move never leaves two homes in one cell, and bad targets change nothing"
   assert.deepEqual(moveHome(spots, rows[0].game_id, 0, 6), spots)
   assert.deepEqual(moveHome(spots, "nobody", 0, 1), spots)
   assert.ok(sameSpots(moveHome(spots, rows[0].game_id, 0, 0), spots))
+})
+
+test("turning a home is a quarter turn that wraps, and touches nobody else", () => {
+  const rows = many(2)
+  let spots = toSpots(layoutSettlement(rows))
+  for (let i = 0; i < 3; i++) spots = turnHome(spots, rows[0].game_id)
+  assert.equal(spots[0].rotation, 3)
+  assert.equal(turnHome(spots, rows[0].game_id)[0].rotation, 0)
+  assert.equal(spots[1].rotation, 0)
+  assert.equal(layoutSettlement(rows, spots).placements[0].rotation, 3)
 })

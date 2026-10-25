@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
 import type { Resident, SavedSpot, SettlementPiece } from "@/lib/types"
 import { layoutSettlement, DECK_CAPACITY } from "@/lib/settlement/layout"
-import { compactDecks, moveHome, sameSpots, toSpots } from "@/lib/settlement/arrange"
+import { compactDecks, moveHome, sameSpots, toSpots, turnHome } from "@/lib/settlement/arrange"
 import { ArrangePanel } from "./arrange-panel"
 import { saveLayout } from "@/app/actions"
 import { SettlementScene, type SpotHints } from "./settlement/scene"
@@ -91,12 +91,13 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
   const [committed, setCommitted] = useState<SavedSpot[] | null>(null)
   const [draft, setDraft] = useState<SavedSpot[] | null>(null)
   const [history, setHistory] = useState<SavedSpot[][]>([])
+  const [picked, setPicked] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const savedNow = committed ?? savedLayout
   const layout = useMemo(() => layoutSettlement(residents, draft ?? savedNow), [residents, draft, savedNow])
   const arranging = draft !== null
-  const startArranging = () => { setHints(undefined); setSelected(null); setSaveError(null); setHistory([]); setDraft(toSpots(layoutSettlement(residents, savedNow))) }
+  const startArranging = () => { setHints(undefined); setSelected(null); setSaveError(null); setPicked(null); setHistory([]); setDraft(toSpots(layoutSettlement(residents, savedNow))) }
   const stopArranging = () => { setDraft(null); setHistory([]); setSaveError(null) }
   const change = (next: SavedSpot[]) => { if (!draft) return; setHistory((h) => [...h, draft]); setDraft(next) }
   const finishArranging = async () => {
@@ -168,7 +169,9 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
         layout={layout}
         residentCount={residents.length}
         fallback={<DeckMap residents={residents} saved={draft ?? savedNow} />}
-        onSelect={setSelected}
+        onSelect={arranging ? setPicked : setSelected}
+        arranging={arranging}
+        onDrop={(drop) => { if (draft) change(moveHome(draft, drop.gameId, drop.deck, drop.cell)) }}
         pieces={pieces}
         hints={hints}
         onSpot={(spot) => setHints((h) => (h ? { ...h, active: spot } : h))}
@@ -189,7 +192,10 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
           canUndo={history.length > 0}
           saving={saving}
           error={saveError}
+          picked={picked}
+          onPick={setPicked}
           onMove={(id, deck, cell) => change(moveHome(draft!, id, deck, cell))}
+          onTurn={(id) => change(turnHome(draft!, id))}
           onUndo={() => { setDraft(history[history.length - 1]); setHistory((h) => h.slice(0, -1)) }}
           onReset={() => change(compactDecks(toSpots(layoutSettlement(residents))))}
           onDone={finishArranging}
