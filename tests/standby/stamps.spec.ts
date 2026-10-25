@@ -91,3 +91,14 @@ test("Settings shows the saved default rule", async ({ page }) => {
   await expect(page.getByRole("radio", { name: "After a set number of hours" })).toBeChecked()
   await expect(page.getByRole("spinbutton", { name: "Hours" })).toHaveValue("10")
 })
+
+test("the move-in note shows once and stays dismissed", async ({ page }) => {
+  await page.goto("/?current-game&played=120")
+  const note = page.getByTestId("move-in-note")
+  await expect(note).toContainText("moves into your settlement as a resident")
+  await note.getByRole("button", { name: "Got it" }).click()
+  await expect(note).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByRole("button", { name: "Choose when this game counts as done" })).toBeVisible()
+  await expect(page.getByTestId("move-in-note")).toHaveCount(0)
+})
