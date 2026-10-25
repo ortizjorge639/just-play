@@ -407,3 +407,61 @@ test("Arrange: a failed save says so in plain words and keeps the changes", asyn
   await expect(page.getByRole("alert")).toContainText("Couldn't save that. Your changes are still here.")
   await expect(picker.getByRole("button", { name: "Home 1 · Deck 2, spot 1" })).toBeVisible()
 })
+
+async function points(page: import("@playwright/test").Page, attr: "homePoints" | "cellPoints") {
+  await page.waitForFunction((a) => !!document.querySelector(`[data-${a === "homePoints" ? "home-points" : "cell-points"}]`), attr)
+  const raw = await page.evaluate((a) => {
+    const el = document.querySelector<HTMLElement>(`[data-${a === "homePoints" ? "home-points" : "cell-points"}]`)
+    return el?.dataset[a] ?? ""
+  }, attr)
+  return Object.fromEntries(raw.split(";").map((entry) => {
+    const [key, xy] = entry.split("@")
+    const [x, y] = xy.split(",").map(Number)
+    return [key, { x, y }]
+  })) as Record<string, { x: number; y: number }>
+}
+
+test("Arrange: dragging a home onto another spot swaps them, and Done saves it", async ({ page }) => {
+  await openArrange(page)
+  const homes = await points(page, "homePoints")
+  const cells = await points(page, "cellPoints")
+  const from = homes["many-0"]
+  const to = cells["0:1"]
+  await page.mouse.move(from.x, from.y)
+  await page.mouse.down()
+  await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 })
+  await page.mouse.move(to.x, to.y, { steps: 5 })
+  await page.mouse.up()
+  const picker = page.getByRole("list", { name: "Pick a home" })
+  await expect(picker.getByRole("button", { name: "Home 1 · Deck 1, spot 2" })).toBeVisible()
+  await expect(picker.getByRole("button", { name: "Home 2 · Deck 1, spot 1" })).toBeVisible()
+  await page.getByRole("button", { name: "Done" }).click()
+  const calls = await layoutCalls(page)
+  expect(calls[0]).toContain("many-0:0:1")
+  expect(calls[0]).toContain("many-1:0:0")
+})
+
+test("Arrange: dropping a home in empty space puts it back", async ({ page }) => {
+  await openArrange(page)
+  const homes = await points(page, "homePoints")
+  const from = homes["many-0"]
+  await page.mouse.move(from.x, from.y)
+  await page.mouse.down()
+  await page.mouse.move(from.x - 60, from.y - 160, { steps: 8 })
+  await page.mouse.up()
+  await expect(page.getByRole("list", { name: "Pick a home" }).getByRole("button", { name: "Home 1 · Deck 1, spot 1" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled()
+})
+
+test("Arrange: Turn and the R key turn a home a quarter, and Done saves the turn", async ({ page }) => {
+  await openArrange(page)
+  const picker = page.getByRole("list", { name: "Pick a home" })
+  await picker.getByRole("button", { name: /Home 3 ·/ }).click()
+  await page.getByRole("button", { name: "Turn" }).click()
+  await page.getByRole("button", { name: "Turn" }).focus()
+  await page.keyboard.press("r")
+  await expect.poll(() => page.evaluate(() => document.querySelector<HTMLElement>("[data-rotations]")?.dataset.rotations ?? "")).toContain("many-2:2")
+  await page.getByRole("button", { name: "Undo" }).click()
+  await expect.poll(() => page.evaluate(() => document.querySelector<HTMLElement>("[data-rotations]")?.dataset.rotations ?? "")).toContain("many-2:1")
+})
+

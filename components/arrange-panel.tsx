@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import type { Resident } from "@/lib/types"
 import { DECK_CAPACITY } from "@/lib/settlement/layout"
 import type { Layout } from "@/lib/settlement/types"
@@ -11,7 +10,10 @@ interface ArrangePanelProps {
   canUndo: boolean
   saving: boolean
   error: string | null
+  picked: string | null
+  onPick: (gameId: string | null) => void
   onMove: (gameId: string, deck: number, cell: number) => void
+  onTurn: (gameId: string) => void
   onUndo: () => void
   onReset: () => void
   onDone: () => void
@@ -20,17 +22,22 @@ interface ArrangePanelProps {
 
 const button = "min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground disabled:opacity-50"
 
-export function ArrangePanel({ layout, residents, canUndo, saving, error, onMove, onUndo, onReset, onDone, onCancel }: ArrangePanelProps) {
-  const [picked, setPicked] = useState<string | null>(null)
+export function ArrangePanel({ layout, residents, canUndo, saving, error, picked, onPick, onMove, onTurn, onUndo, onReset, onDone, onCancel }: ArrangePanelProps) {
   const nameOf = (gameId: string) => residents.find((r) => r.game_id === gameId)?.game?.name ?? "A game"
   const spotOf = (gameId: string) => layout.placements.find((p) => p.gameId === gameId)
   const occupant = (deck: number, cell: number) => layout.placements.find((p) => p.deck === deck && p.slot === cell)
   const current = picked ? spotOf(picked) : undefined
 
   return (
-    <section aria-label="Arrange" className="flex flex-col gap-3">
+    <section
+      aria-label="Arrange"
+      className="flex flex-col gap-3"
+      onKeyDown={(event) => {
+        if ((event.key === "r" || event.key === "R") && picked && !event.metaKey && !event.ctrlKey) onTurn(picked)
+      }}
+    >
       <p className="text-sm text-muted-foreground">
-        Pick a home, then pick where it goes. If a home is already there, the two swap.
+        Drag a home to a spot, or pick one here and choose where it goes. If a home is already there, the two swap.
       </p>
       <ul aria-label="Pick a home" className="flex gap-1.5 overflow-x-auto pb-1">
         {layout.placements.map((p) => (
@@ -38,7 +45,7 @@ export function ArrangePanel({ layout, residents, canUndo, saving, error, onMove
             <button
               type="button"
               aria-pressed={picked === p.gameId}
-              onClick={() => setPicked(picked === p.gameId ? null : p.gameId)}
+              onClick={() => onPick(picked === p.gameId ? null : p.gameId)}
               className={`max-w-48 truncate rounded-full border px-3 py-1 text-sm ${
                 picked === p.gameId ? "border-primary bg-primary/15 text-foreground" : "border-border text-muted-foreground"
               }`}
@@ -50,7 +57,10 @@ export function ArrangePanel({ layout, residents, canUndo, saving, error, onMove
       </ul>
       {picked && current && (
         <div className="flex flex-col gap-1.5">
-          <p className="text-sm text-foreground">Where should {nameOf(picked)} go?</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-foreground">Where should {nameOf(picked)} go?</p>
+            <button type="button" className={button} onClick={() => onTurn(picked)} disabled={saving}>Turn</button>
+          </div>
           <ul aria-label="Move to" className="flex flex-wrap gap-1.5">
             {layout.decks.flatMap((deck) =>
               Array.from({ length: DECK_CAPACITY }, (_, cell) => {
