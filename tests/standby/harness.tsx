@@ -14,7 +14,7 @@ declare global {
 }
 window.standbyFixture = fixture
 function StampGameHarness(props: { syncError: string | null; onRetry: () => void; onSessionStarted: () => void }) {
-  const [rules, setRules] = useState<StampRule[]>(fixture.stampRules)
+  const rules: StampRule[] = fixture.stampRules
   const [arrived, setArrived] = useState<Game | null>(null)
   const played = Number(new URLSearchParams(window.location.search).get("played") ?? 20)
   return <>
@@ -26,7 +26,6 @@ function StampGameHarness(props: { syncError: string | null; onRetry: () => void
       }}
       {...props}
       stampRules={rules} isResident={false}
-      onStampRuleSaved={(gameId, rule) => setRules(prev => [...prev.filter(r => r.game_id !== gameId), ...(rule ? [rule] : [])])}
       onArrived={setArrived}
     />
     {arrived ? <p role="status">{arrived.name} moved in</p> : null}

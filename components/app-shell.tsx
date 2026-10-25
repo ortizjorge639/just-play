@@ -285,7 +285,6 @@ export function AppShell({
                 onRetry={refreshSession}
                 stampRules={stampRules}
                 isResident={(residents ?? []).some(r => r.game_id === activeGame.game_id)}
-                onStampRuleSaved={handleStampRuleSaved}
                 onArrived={setArrivedGame}
               />
             ) : (
