@@ -1,26 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
+import { useFullscreenLayer } from "./use-fullscreen-layer"
 
 export function EmptyPlot({ onBack }: { onBack: () => void }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onBack() }
-    window.addEventListener("keydown", onKey)
-    const previous = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    return () => {
-      window.removeEventListener("keydown", onKey)
-      document.body.style.overflow = previous
-    }
-  }, [onBack])
+  const layer = useFullscreenLayer(onBack)
 
   return (
-    <div role="dialog" aria-label="Your settlement" className="fixed inset-0 z-[60] flex flex-col bg-background">
+    <div ref={layer} role="dialog" aria-modal="true" aria-label="Your settlement" className="fixed inset-0 z-[60] flex flex-col bg-background">
       <header className="px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <button
           type="button"
           onClick={onBack}
-          autoFocus
+          data-initial-focus
           className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground"
         >
           Back to Home
