@@ -324,12 +324,28 @@ export async function mountSettlement(
     if (!frame) frame = requestAnimationFrame(tick)
   }
 
+  // Saying hi: a hop, a beat on landing, then the emote itself.
+  const REACTIONS: Record<string, string[]> = {
+    wave: ["jump", "land", "greeting"],
+    celebrate: ["jump", "land", "emotes"],
+    rest: ["land", "emotes"],
+    check_in: ["jump", "land", "look"],
+  }
+  const onReact = (event: Event) => {
+    const { gameId, emote } = (event as CustomEvent<{ gameId: string; emote: string }>).detail
+    figures.get(gameId)?.chain(REACTIONS[emote] ?? ["jump", "land"])
+    if (!frame) frame = requestAnimationFrame(tick)
+  }
+  host.addEventListener("settlement-react", onReact)
+
   // Residents breathe and glance around, so the scene keeps drawing while it is on screen.
   let last = 0
   run(function live(now) {
     const seconds = last ? Math.min(0.1, (now - last) / 1000) : 0
     last = now
     figures.forEach((figure) => figure.update(seconds, now))
+    const acting = [...figures].filter(([, figure]) => figure.busy()).map(([id]) => id).join(";")
+    if (host.dataset.acting !== acting) host.dataset.acting = acting
     return !disposed
   })
 
@@ -654,6 +670,7 @@ export async function mountSettlement(
     host.removeEventListener("pointercancel", onUp)
     host.removeEventListener("wheel", onWheel)
     host.removeEventListener("keydown", onKey)
+    host.removeEventListener("settlement-react", onReact)
     host.removeEventListener("settlement-arrange", onArrange)
     host.removeEventListener("settlement-hints", onHints)
     host.removeEventListener("settlement-pieces", onPieces)

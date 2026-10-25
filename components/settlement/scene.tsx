@@ -15,6 +15,7 @@ interface SettlementSceneProps {
   onSpot?: (spot: { deck: number; anchor: number }) => void
   fullscreen?: boolean
   arranging?: boolean
+  reaction?: { gameId: string; emote: string; nonce: number } | null
   onDrop?: (drop: { gameId: string; deck: number; cell: number }) => void
 }
 
@@ -24,7 +25,7 @@ export interface SpotHints {
 }
 
 // Draws the approved deck art. If WebGL or the art fails, the 2D view takes over.
-export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot, fullscreen, arranging, onDrop }: SettlementSceneProps) {
+export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot, fullscreen, arranging, reaction, onDrop }: SettlementSceneProps) {
   const host = useRef<HTMLDivElement>(null)
   const select = useRef(onSelect)
   useEffect(() => { select.current = onSelect })
@@ -68,6 +69,11 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
     element.addEventListener("settlement-drop", listener)
     return () => element.removeEventListener("settlement-drop", listener)
   }, [state])
+
+  useEffect(() => {
+    if (state !== "ready" || !reaction) return
+    host.current?.dispatchEvent(new CustomEvent("settlement-react", { detail: reaction }))
+  }, [reaction, state])
 
   useEffect(() => {
     if (state !== "ready") return

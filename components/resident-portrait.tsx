@@ -17,9 +17,10 @@ interface ResidentPortraitProps {
   hints?: SpotHints
   onSpots?: (hints: SpotHints | undefined) => void
   onSay?: (line: string) => void
+  onEmote?: (emote: EmoteKind) => void
 }
 
-export function ResidentPortrait({ resident, pieces, deckCount = 1, hints, onSpots, onSay }: ResidentPortraitProps) {
+export function ResidentPortrait({ resident, pieces, deckCount = 1, hints, onSpots, onSay, onEmote }: ResidentPortraitProps) {
   const arrivedDate = new Date(resident.arrived_at)
   const formatted = arrivedDate.toLocaleDateString("en-US", {
     month: "short",
@@ -65,12 +66,12 @@ export function ResidentPortrait({ resident, pieces, deckCount = 1, hints, onSpo
       {resident.game && pieces && tier >= 3 ? (
         <LoftSection resident={resident} name={resident.game.name} pieces={pieces} deckCount={deckCount} hints={hints} onSpots={onSpots} onSay={onSay} />
       ) : null}
-      {resident.game ? <EmoteSection resident={resident} name={resident.game.name} /> : null}
+      {resident.game ? <EmoteSection resident={resident} name={resident.game.name} onEmote={onEmote} /> : null}
     </div>
   )
 }
 
-function EmoteSection({ resident, name }: { resident: Resident; name: string }) {
+function EmoteSection({ resident, name, onEmote }: { resident: Resident; name: string; onEmote?: (emote: EmoteKind) => void }) {
   const [open, setOpen] = useState(false)
   const [line, setLine] = useState<string | null>(null)
   const [saveFailed, setSaveFailed] = useState(false)
@@ -86,6 +87,7 @@ function EmoteSection({ resident, name }: { resident: Resident; name: string }) 
   const choose = (emote: EmoteKind) => {
     setLine(pickEmoteLine(resident.game_id, emote))
     setSaveFailed(false)
+    onEmote?.(emote)
     close()
     startTransition(async () => {
       const result = await recordEmote(resident.game_id, emote)
