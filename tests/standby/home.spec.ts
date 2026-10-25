@@ -499,3 +499,16 @@ test("Settlement: every resident stands beside their home", async ({ page }) => 
   await page.getByRole("button", { name: "Settlement" }).click()
   await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-figures", "7")
 })
+
+test("Saying hi makes that resident hop and emote in the scene, then settle back", async ({ page }) => {
+  await page.goto("/?app-shell&residents-many")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-figures", "7")
+  await page.getByRole("button", { name: "Home 3", exact: true }).click()
+  await page.getByRole("button", { name: /Say hi/ }).click()
+  await page.getByRole("button", { name: "Wave" }).click()
+  await expect(scene).toHaveAttribute("data-acting", /many-2/)
+  await expect(scene).not.toHaveAttribute("data-acting", /many-2/, { timeout: 15000 })
+})

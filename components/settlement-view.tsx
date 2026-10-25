@@ -117,6 +117,7 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
   const [hints, setHints] = useState<SpotHints | undefined>(undefined)
   const sound = useSyncExternalStore(subscribeSound, soundOn, () => true)
+  const [reaction, setReaction] = useState<{ gameId: string; emote: string; nonce: number } | null>(null)
   const [said, setSaid] = useState<{ name: string; line: string } | null>(null)
   useEffect(() => {
     if (!said) return
@@ -186,6 +187,7 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
         fallback={<DeckMap residents={residents} saved={draft ?? savedNow} />}
         onSelect={arranging ? setPicked : setSelected}
         arranging={arranging}
+        reaction={reaction}
         onDrop={(drop) => { if (draft) change(moveHome(draft, drop.gameId, drop.deck, drop.cell)) }}
         pieces={pieces}
         hints={hints}
@@ -241,7 +243,7 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
           </li>
         ))}
       </ul>}
-      {!arranging && chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} hints={hints} onSpots={setHints} onSay={(line) => setSaid({ name: chosen.game?.name ?? "A game", line })} />}
+      {!arranging && chosen && <ResidentPortrait key={chosen.game_id} resident={chosen} pieces={pieces} deckCount={layout.decks.length} hints={hints} onSpots={setHints} onEmote={(emote) => setReaction((r) => ({ gameId: chosen.game_id, emote, nonce: (r?.nonce ?? 0) + 1 }))} onSay={(line) => setSaid({ name: chosen.game?.name ?? "A game", line })} />}
       </div>
     </div>
   )

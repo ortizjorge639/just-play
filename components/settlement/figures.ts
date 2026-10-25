@@ -22,6 +22,9 @@ export interface Figure {
   update: (seconds: number, now: number) => void
   // Plays a one-off clip (look, jump, land, emotes, greeting) over the idle loop.
   play: (name: string) => void
+  // Plays clips back to back, then settles into idle again.
+  chain: (names: string[]) => void
+  busy: () => boolean
   dispose: () => void
 }
 
@@ -53,10 +56,25 @@ export function createFigure(source: FigureSource, shell: string, phase: number)
   idleActions.forEach((action) => { action.play(); action.time = phase % (idle?.duration ?? 1) })
   const once = new Map<string, AnimationAction[]>()
   const current: AnimationAction[] = []
+  const queue: string[] = []
   const finished = (event: { action: AnimationAction }) => {
     if (!current.includes(event.action)) return
+    const next = queue.shift()
+    if (next) { start(next); return }
     current.splice(0).forEach((action) => action.fadeOut(0.25))
     idleActions.forEach((action) => action.reset().fadeIn(0.25).play())
+  }
+  const start = (name: string) => {
+    const clip = source.clips.get(name)
+    if (!clip) { const next = queue.shift(); if (next) start(next); return }
+    let actions = once.get(name)
+    if (!actions) {
+      actions = split(clip, name).map((c) => { const a = mixer.clipAction(c); a.setLoop(LoopOnce, 1); a.clampWhenFinished = true; return a })
+      once.set(name, actions)
+    }
+    current.splice(0).forEach((action) => action.stop())
+    idleActions.forEach((action) => action.fadeOut(0.25))
+    actions.forEach((action) => { action.reset().fadeIn(0.15).play(); current.push(action) })
   }
   mixer.addEventListener("finished", finished as never)
 
@@ -70,18 +88,9 @@ export function createFigure(source: FigureSource, shell: string, phase: number)
       }
       mixer.update(seconds)
     },
-    play(name) {
-      const clip = source.clips.get(name)
-      if (!clip) return
-      let actions = once.get(name)
-      if (!actions) {
-        actions = split(clip, name).map((c) => { const a = mixer.clipAction(c); a.setLoop(LoopOnce, 1); a.clampWhenFinished = true; return a })
-        once.set(name, actions)
-      }
-      current.splice(0).forEach((action) => action.stop())
-      idleActions.forEach((action) => action.fadeOut(0.25))
-      actions.forEach((action) => { action.reset().fadeIn(0.25).play(); current.push(action) })
-    },
+    busy: () => current.length > 0,
+    play(name) { queue.length = 0; start(name) },
+    chain(names) { queue.length = 0; queue.push(...names.slice(1)); start(names[0]) },
     dispose() {
       mixer.removeEventListener("finished", finished as never)
       mixer.stopAllAction()
