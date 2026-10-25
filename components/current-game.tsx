@@ -6,6 +6,7 @@ import Image from "next/image"
 import { startSessionForGame, markGameBeaten, abandonGame } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
 import { StampPanel } from "./stamp-panel"
+import { MoveInNote } from "./move-in-note"
 import type { GameProgress, Game, StampRule } from "@/lib/types"
 
 interface CurrentGameProps {
@@ -259,6 +260,8 @@ export function CurrentGame({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {!isResident ? <MoveInNote /> : null}
 
       {!isResident ? (
         <StampPanel
