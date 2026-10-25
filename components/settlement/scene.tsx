@@ -15,6 +15,8 @@ interface SettlementSceneProps {
   onSpot?: (spot: { deck: number; anchor: number }) => void
   fullscreen?: boolean
   arranging?: boolean
+  arriving?: string[]
+  onArrived?: (gameId: string) => void
   reaction?: { gameId: string; emote: string; nonce: number } | null
   onDrop?: (drop: { gameId: string; deck: number; cell: number }) => void
 }
@@ -25,12 +27,14 @@ export interface SpotHints {
 }
 
 // Draws the approved deck art. If WebGL or the art fails, the 2D view takes over.
-export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot, fullscreen, arranging, reaction, onDrop }: SettlementSceneProps) {
+export function SettlementScene({ layout, residentCount, fallback, onSelect, pieces, hints, onSpot, fullscreen, arranging, reaction, arriving, onArrived, onDrop }: SettlementSceneProps) {
   const host = useRef<HTMLDivElement>(null)
   const select = useRef(onSelect)
   useEffect(() => { select.current = onSelect })
   const spot = useRef(onSpot)
   useEffect(() => { spot.current = onSpot })
+  const arrived = useRef(onArrived)
+  useEffect(() => { arrived.current = onArrived })
   const drop = useRef(onDrop)
   useEffect(() => { drop.current = onDrop })
   const latestPieces = useRef(pieces)
@@ -71,6 +75,20 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
   }, [state])
 
   useEffect(() => {
+    const element = host.current
+    if (!element) return
+    const listener = (event: Event) => arrived.current?.((event as CustomEvent<string>).detail)
+    element.addEventListener("settlement-arrived", listener)
+    return () => element.removeEventListener("settlement-arrived", listener)
+  }, [state])
+
+  const arrivalKey = (arriving ?? []).join(",")
+  useEffect(() => {
+    if (state !== "ready" || !arrivalKey) return
+    host.current?.dispatchEvent(new CustomEvent("settlement-arrive", { detail: arrivalKey.split(",") }))
+  }, [arrivalKey, state, mounts])
+
+  useEffect(() => {
     if (state !== "ready" || !reaction) return
     host.current?.dispatchEvent(new CustomEvent("settlement-react", { detail: reaction }))
   }, [reaction, state])
@@ -107,7 +125,12 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
       {state === "loading" && (
         fullscreen ? (
           <div role="status" className="absolute inset-0 grid place-items-center bg-background">
-            <p className="text-sm text-muted-foreground motion-safe:animate-pulse">Getting your settlement ready</p>
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-sm text-muted-foreground">Getting your settlement ready</p>
+              <div className="h-1 w-40 overflow-hidden rounded-full bg-muted">
+                <div className="h-full w-1/2 rounded-full bg-primary motion-safe:animate-[settlement-load_1.4s_ease-in-out_infinite]" />
+              </div>
+            </div>
           </div>
         ) : (
           <div className="sr-only" role="status">Loading the settlement</div>

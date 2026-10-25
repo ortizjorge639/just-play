@@ -89,6 +89,21 @@ export function DeckMap({ residents, saved = [] }: DeckMapProps & { saved?: Save
   )
 }
 
+const SEEN_KEY = "jp-seen-arrivals"
+const RECENT_DAYS = 3
+const readSeen = (): string[] => {
+  try { const raw = JSON.parse(localStorage.getItem(SEEN_KEY) ?? "[]"); return Array.isArray(raw) ? raw : [] } catch { return [] }
+}
+const markSeen = (id: string) => {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify([...new Set([...readSeen(), id])])) } catch { /* private mode: it may drop in again next visit */ }
+}
+// Someone who moved in lately and hasn't been seen dropping in yet.
+const newcomers = (residents: Resident[]) => {
+  const seen = readSeen()
+  const since = Date.now() - RECENT_DAYS * 86_400_000
+  return residents.filter((r) => new Date(r.arrived_at).getTime() >= since && !seen.includes(r.game_id)).map((r) => r.game_id)
+}
+
 export function SettlementView({ residents, pieces = [], savedLayout = [], fullscreen = false, onBack, ownerName, tagline }: DeckMapProps & { pieces?: SettlementPiece[]; savedLayout?: SavedSpot[]; fullscreen?: boolean; onBack?: () => void; ownerName?: string | null; tagline?: string | null }) {
   const [committed, setCommitted] = useState<SavedSpot[] | null>(null)
   const [draft, setDraft] = useState<SavedSpot[] | null>(null)
@@ -117,6 +132,7 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
   const [hints, setHints] = useState<SpotHints | undefined>(undefined)
   const sound = useSyncExternalStore(subscribeSound, soundOn, () => true)
+  const [arriving, setArriving] = useState<string[]>(() => newcomers(residents))
   const [reaction, setReaction] = useState<{ gameId: string; emote: string; nonce: number } | null>(null)
   const [said, setSaid] = useState<{ name: string; line: string } | null>(null)
   useEffect(() => {
@@ -188,6 +204,8 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
         onSelect={arranging ? setPicked : setSelected}
         arranging={arranging}
         reaction={reaction}
+        arriving={arriving}
+        onArrived={(id) => { markSeen(id); setArriving((list) => list.filter((x) => x !== id)) }}
         onDrop={(drop) => { if (draft) change(moveHome(draft, drop.gameId, drop.deck, drop.cell)) }}
         pieces={pieces}
         hints={hints}

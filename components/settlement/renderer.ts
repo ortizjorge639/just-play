@@ -1,4 +1,4 @@
-import { playLand } from "./sound"
+import { playLand, startAmbient } from "./sound"
 import { createFigure, loadFigureSource, type Figure } from "./figures"
 import {
   ACESFilmicToneMapping, Box3, Color, DirectionalLight, Group, HemisphereLight, Mesh,
@@ -338,6 +338,39 @@ export async function mountSettlement(
   }
   host.addEventListener("settlement-react", onReact)
 
+  // A new neighbour drops in from above, lands, and says hello.
+  const onArrive = (event: Event) => {
+    const ids = (event as CustomEvent<string[]>).detail.filter((id) => figures.has(id)).slice(0, 3)
+    ids.forEach((id, order) => {
+      const figure = figures.get(id)!
+      const rest = figure.object.position.y
+      const began = performance.now() + order * 700
+      figure.object.visible = false
+      let landed = false
+      run((now) => {
+        const t = (now - began) / 1000
+        if (t < 0) return true
+        figure.object.visible = true
+        if (t < 0.8) {
+          const k = t / 0.8
+          figure.object.position.y = rest + 9 * (1 - k * k)
+          return true
+        }
+        figure.object.position.y = rest
+        if (!landed) {
+          landed = true
+          playLand()
+          figure.chain(["land", "greeting"])
+          host.dispatchEvent(new CustomEvent("settlement-arrived", { detail: id }))
+        }
+        return false
+      })
+    })
+    host.dataset.arriving = String(ids.length)
+  }
+  host.addEventListener("settlement-arrive", onArrive)
+  const stopAmbient = startAmbient()
+
   // Residents breathe and glance around, so the scene keeps drawing while it is on screen.
   let last = 0
   run(function live(now) {
@@ -671,6 +704,8 @@ export async function mountSettlement(
     host.removeEventListener("wheel", onWheel)
     host.removeEventListener("keydown", onKey)
     host.removeEventListener("settlement-react", onReact)
+    host.removeEventListener("settlement-arrive", onArrive)
+    stopAmbient()
     host.removeEventListener("settlement-arrange", onArrange)
     host.removeEventListener("settlement-hints", onHints)
     host.removeEventListener("settlement-pieces", onPieces)

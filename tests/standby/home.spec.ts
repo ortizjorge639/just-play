@@ -512,3 +512,15 @@ test("Saying hi makes that resident hop and emote in the scene, then settle back
   await expect(scene).toHaveAttribute("data-acting", /many-2/)
   await expect(scene).not.toHaveAttribute("data-acting", /many-2/, { timeout: 15000 })
 })
+
+test("A newcomer drops in once, then is just there on the next visit", async ({ page }) => {
+  await page.goto("/?app-shell&residents")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-arriving", "1")
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("jp-seen-arrivals"))).toContain("test-game")
+  await page.getByRole("button", { name: "Back to Home" }).click()
+  await page.getByRole("button", { name: "Settlement" }).click()
+  await expect(page.getByTestId("settlement-3d")).not.toHaveAttribute("data-arriving", /./)
+})
