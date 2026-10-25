@@ -1,6 +1,6 @@
 # Planner mode (H5): spec
 
-Status: spec, not built. One decision is open (see Open question). H5 in [home-facelift.md](home-facelift.md).
+Status: spec, approved, not built. H5 in [home-facelift.md](home-facelift.md).
 
 ## Why
 
@@ -42,14 +42,9 @@ One table, `settlement_layout`, owner-read only:
 
 `UNIQUE(user_id, deck, cell)`. A function `save_layout(p_cells jsonb)` replaces the whole layout in one transaction under the per-account advisory lock. It refuses unknown games, non-residents, out-of-range values and duplicate cells. Needs a migration, so the owner applies it.
 
-## Open question
+## Decision
 
-Can a home leave its deck, or only swap spots within the decks that already exist?
-
-- **Move anywhere (recommended):** a home can go to any free cell on any existing deck. More freedom, matches the planner idea. Costs: empty decks need rules (a deck exists while it has a home or the first deck), and the bridge layout needs to follow.
-- **Stay on the deck:** homes only move within their deck. Simpler and safer for the bridge layout, but it feels like a puzzle, not planning.
-
-Build waits on this answer.
+Homes can go to any free cell on any existing deck (owner, agreed). A deck exists while it holds a home, and the first deck always exists. Empty decks are dropped and later decks renumber. The bridge layout follows the decks that exist.
 
 ## Tests the build must hold
 
