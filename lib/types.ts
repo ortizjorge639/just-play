@@ -123,6 +123,8 @@ export interface Resident {
   minutes_played?: number
 }
 
+export type { SavedSpot } from "@/lib/settlement/types"
+
 export interface SettlementPiece {
   game_id: string
   piece: string

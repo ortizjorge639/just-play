@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useCallback, useRef, useState } from "react"
 import { motion, useReducedMotion } from "framer-motion"
-import type { Game, Postcard, Resident, SettlementPiece } from "@/lib/types"
+import type { Game, Postcard, Resident, SettlementPiece, SavedSpot } from "@/lib/types"
 import { ResidentPortrait } from "./resident-portrait"
 import { SettlementView } from "./settlement-view"
 import { EmptyPlot } from "./empty-plot"
@@ -15,11 +15,12 @@ interface HomeViewProps {
   displayName: string | null
   residents: Resident[]
   pieces?: SettlementPiece[]
+  savedLayout?: SavedSpot[]
   postcards: Postcard[]
   invitedGame: Game | null
 }
 
-export function HomeView({ displayName, residents, pieces = [], postcards, invitedGame }: HomeViewProps) {
+export function HomeView({ displayName, residents, pieces = [], savedLayout = [], postcards, invitedGame }: HomeViewProps) {
   const [view, setView] = useState<"list" | "settlement">("list")
   const settlementButton = useRef<HTMLButtonElement>(null)
   const leaveSettlement = useCallback(() => {
@@ -27,7 +28,7 @@ export function HomeView({ displayName, residents, pieces = [], postcards, invit
     requestAnimationFrame(() => settlementButton.current?.focus())
   }, [])
   const prefersReducedMotion = useReducedMotion()
-  const deckCount = layoutSettlement(residents).decks.length
+  const deckCount = layoutSettlement(residents, savedLayout).decks.length
   const [plotOpen, setPlotOpen] = useState(false)
   const closePlot = useCallback(() => setPlotOpen(false), [])
   const isEmpty = residents.length === 0 && postcards.length === 0 && !invitedGame
@@ -92,7 +93,7 @@ export function HomeView({ displayName, residents, pieces = [], postcards, invit
             ))}
           </div>
           {view === "settlement" ? (
-            <SettlementView residents={residents} pieces={pieces} fullscreen onBack={leaveSettlement} />
+            <SettlementView residents={residents} pieces={pieces} savedLayout={savedLayout} fullscreen onBack={leaveSettlement} />
           ) : (
             <ul className="grid grid-cols-1 gap-2.5">
               {residents.map((resident, i) => (

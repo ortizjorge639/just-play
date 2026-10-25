@@ -19,7 +19,7 @@ import { ResidentArrivalCard } from "./resident-arrival-card"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
-import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, SettlementPiece, Postcard, StampRule, NameCard } from "@/lib/types"
+import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, SettlementPiece, SavedSpot, Postcard, StampRule, NameCard } from "@/lib/types"
 
 type Tab = "deck" | "session" | "home" | "progress"
 
@@ -32,6 +32,7 @@ interface AppShellProps {
   playerStats: PlayerStats | null
   residents?: Resident[]
   pieces?: SettlementPiece[]
+  savedLayout?: SavedSpot[]
   postcards?: Postcard[]
   stampRules?: StampRule[]
   nameCard?: NameCard | null
@@ -49,6 +50,7 @@ export function AppShell({
   playerStats,
   residents,
   pieces,
+  savedLayout,
   postcards,
   stampRules: initialStampRules,
   nameCard: initialNameCard,
@@ -331,6 +333,7 @@ export function AppShell({
               displayName={user.display_name}
               residents={residents ?? []}
               pieces={pieces ?? []}
+              savedLayout={savedLayout ?? []}
               postcards={postcards ?? []}
               invitedGame={activeGame && !(residents ?? []).some(r => r.game_id === activeGame.game_id) ? activeGame.game : null}
             />

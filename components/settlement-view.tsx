@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 import Image from "next/image"
-import type { Resident, SettlementPiece } from "@/lib/types"
+import type { Resident, SavedSpot, SettlementPiece } from "@/lib/types"
 import { layoutSettlement, DECK_CAPACITY } from "@/lib/settlement/layout"
 import { SettlementScene, type SpotHints } from "./settlement/scene"
 import { setSoundOn, soundOn, subscribeSound } from "./settlement/sound"
@@ -84,8 +84,8 @@ export function DeckMap({ residents }: DeckMapProps) {
   )
 }
 
-export function SettlementView({ residents, pieces = [], fullscreen = false, onBack }: DeckMapProps & { pieces?: SettlementPiece[]; fullscreen?: boolean; onBack?: () => void }) {
-  const layout = useMemo(() => layoutSettlement(residents), [residents])
+export function SettlementView({ residents, pieces = [], savedLayout = [], fullscreen = false, onBack }: DeckMapProps & { pieces?: SettlementPiece[]; savedLayout?: SavedSpot[]; fullscreen?: boolean; onBack?: () => void }) {
+  const layout = useMemo(() => layoutSettlement(residents, savedLayout), [residents, savedLayout])
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
   const [hints, setHints] = useState<SpotHints | undefined>(undefined)
   const sound = useSyncExternalStore(subscribeSound, soundOn, () => true)

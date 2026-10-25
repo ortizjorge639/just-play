@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard, SettlementPiece, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard, SettlementPiece, SavedSpot, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
@@ -1044,6 +1044,49 @@ export async function getSettlementPieces(): Promise<SettlementPiece[]> {
   } catch (err) {
     console.warn("[pieces] Catch error:", err)
     return []
+  }
+}
+
+export async function getSettlementLayout(): Promise<SavedSpot[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  try {
+    const { data, error } = await supabase
+      .from("settlement_layout")
+      .select("game_id, deck, cell, rotation")
+      .order("deck")
+      .order("cell")
+    if (error) {
+      console.warn("[layout] Query failed (table missing?):", error.message)
+      return []
+    }
+    return data ?? []
+  } catch (err) {
+    console.warn("[layout] Catch error:", err)
+    return []
+  }
+}
+
+// Saves the whole layout, one entry per home. An empty list puts everyone back on their automatic spot.
+export async function saveLayout(cells: SavedSpot[]): Promise<{ ok: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: "Not authenticated" }
+  if (!Array.isArray(cells)) return { ok: false, error: "Couldn't save that." }
+
+  try {
+    const { error } = await supabase.rpc("save_layout", { p_cells: cells })
+    if (error) {
+      console.warn("[saveLayout] RPC failed:", error.message)
+      return { ok: false, error: error.message === "Cell taken" ? "Two homes can't share a spot." : "Couldn't save that." }
+    }
+    revalidatePath("/")
+    return { ok: true }
+  } catch (err) {
+    console.warn("[saveLayout] Catch error:", err)
+    return { ok: false, error: "Couldn't save that." }
   }
 }
 
