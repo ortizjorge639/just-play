@@ -9,6 +9,18 @@ test("Home shows a calm empty state when nothing lives here yet", async ({ page 
   await expect(page.getByRole("heading", { name: "Archived" })).toHaveCount(0)
 })
 
+test("With no homes, the settlement shows a first home plot and a way back", async ({ page }) => {
+  await page.goto("/?app-shell")
+  await page.getByRole("button", { name: "Home" }).click()
+  await page.getByRole("button", { name: "See your settlement" }).click()
+  const layer = page.getByRole("dialog", { name: "Your settlement" })
+  await expect(layer).toBeVisible()
+  await expect(layer.getByRole("heading", { name: "Your first home goes here" })).toBeVisible()
+  await expect(layer.getByTestId("first-home-plot")).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(layer).toHaveCount(0)
+})
+
 test("Home tab is announced as the current page and Progress no longer lists residents", async ({ page }) => {
   await page.goto("/?app-shell&residents&postcards")
   const home = page.getByRole("button", { name: "Home" })

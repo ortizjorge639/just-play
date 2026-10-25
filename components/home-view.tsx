@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion"
 import type { Game, Postcard, Resident, SettlementPiece } from "@/lib/types"
 import { ResidentPortrait } from "./resident-portrait"
 import { SettlementView } from "./settlement-view"
+import { EmptyPlot } from "./empty-plot"
 import { cn } from "@/lib/utils"
 import { PostcardsList } from "./postcards-list"
 import { layoutSettlement } from "@/lib/settlement/layout"
@@ -27,6 +28,8 @@ export function HomeView({ displayName, residents, pieces = [], postcards, invit
   }, [])
   const prefersReducedMotion = useReducedMotion()
   const deckCount = layoutSettlement(residents).decks.length
+  const [plotOpen, setPlotOpen] = useState(false)
+  const closePlot = useCallback(() => setPlotOpen(false), [])
   const isEmpty = residents.length === 0 && postcards.length === 0 && !invitedGame
 
   return (
@@ -42,10 +45,20 @@ export function HomeView({ displayName, residents, pieces = [], postcards, invit
       </motion.div>
 
       {isEmpty && (
-        <p className="text-sm text-muted-foreground text-center">
-          Games you finish will live here.
-        </p>
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-sm text-muted-foreground text-center">
+            Games you finish will live here.
+          </p>
+          <button
+            type="button"
+            onClick={() => setPlotOpen(true)}
+            className="min-h-11 rounded-full border border-border px-4 text-sm text-foreground"
+          >
+            See your settlement
+          </button>
+        </div>
       )}
+      {plotOpen && <EmptyPlot onBack={closePlot} />}
 
       {residents.length > 0 && (
         <section className="mb-6" aria-labelledby="home-residents">
