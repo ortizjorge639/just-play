@@ -40,7 +40,7 @@ test("with no rule the game shows no confirm button, and a per-game rule can be 
   const toggle = page.getByRole("button", { name: "Choose when this game moves in" })
   await expect(toggle).toHaveAttribute("aria-expanded", "false")
   await toggle.click()
-  await expect(toggle).toHaveAttribute("aria-expanded", "true")
+  await expect(page.getByRole("dialog")).toBeVisible()
 
   await page.getByRole("radio", { name: "After a set number of hours" }).check()
   await page.getByRole("spinbutton", { name: "Hours" }).fill("3")
