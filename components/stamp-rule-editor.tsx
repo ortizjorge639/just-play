@@ -86,7 +86,7 @@ export function StampRuleEditor({ gameId, rule, onSaved }: StampRuleEditorProps)
   return (
     <fieldset className="flex flex-col gap-2" disabled={isPending}>
       <legend className="mb-1 text-base font-medium text-foreground">
-        {gameId ? "When does this game move in?" : "When does a game move in?"}
+        {gameId ? "When does this game count as done?" : "When does a game count as done?"}
       </legend>
       <p className="mb-2 text-sm text-muted-foreground">
         When a game counts as done, it becomes a resident in your settlement. You will find it on the Home tab. Pick what counts as done.

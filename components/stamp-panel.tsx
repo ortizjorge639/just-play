@@ -57,7 +57,7 @@ export function StampPanel({ game, playedMinutes, rule, ownRule, onRuleSaved, on
         : null
 
   return (
-    <section aria-label="When this game moves in" className="mb-4 w-full max-w-[320px] text-sm">
+    <section aria-label="When this game counts as done" className="mb-4 w-full max-w-[320px] text-sm">
       {line ? <p className="text-foreground/80">{line}</p> : null}
       {ready ? (
         <button
@@ -76,11 +76,11 @@ export function StampPanel({ game, playedMinutes, rule, ownRule, onRuleSaved, on
         aria-expanded={editing}
         className="mt-2 min-h-11 w-full rounded-xl border border-border px-4 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
       >
-        {rule ? "Change for this game" : "Choose when this game moves in"}
+        {rule ? "Change for this game" : "Choose when this game counts as done"}
       </button>
       <Sheet open={editing} onOpenChange={setEditing}>
         <SheetContent side="bottom" aria-describedby={undefined} className="mx-auto max-w-md rounded-t-3xl p-6 pb-10">
-          <SheetTitle className="sr-only">Move-in rule for {game.name}</SheetTitle>
+          <SheetTitle className="sr-only">When {game.name} counts as done</SheetTitle>
           <StampRuleEditor gameId={game.id} rule={ownRule} onSaved={onRuleSaved} />
         </SheetContent>
       </Sheet>

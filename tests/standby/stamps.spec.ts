@@ -37,7 +37,7 @@ test("a failed confirm shows a plain message and keeps the button", async ({ pag
 test("with no rule the game shows no confirm button, and a per-game rule can be set", async ({ page }) => {
   await page.goto("/?current-game&played=120")
   await expect(page.getByRole("button", { name: "Let it move in" })).toHaveCount(0)
-  const toggle = page.getByRole("button", { name: "Choose when this game moves in" })
+  const toggle = page.getByRole("button", { name: "Choose when this game counts as done" })
   await expect(toggle).toHaveAttribute("aria-expanded", "false")
   await toggle.click()
   await expect(page.getByRole("dialog")).toBeVisible()
@@ -52,7 +52,7 @@ test("with no rule the game shows no confirm button, and a per-game rule can be 
 
 test("saving a rule that fails shows a plain message and does not say saved", async ({ page }) => {
   await page.goto("/?current-game&played=120&stamp-save-fail")
-  await page.getByRole("button", { name: "Choose when this game moves in" }).click()
+  await page.getByRole("button", { name: "Choose when this game counts as done" }).click()
   await page.getByRole("radio", { name: "When I say so" }).check()
   await page.getByLabel("What counts as done enough?").fill("Beat the first boss")
   await page.getByRole("button", { name: "Save", exact: true }).click()
@@ -63,7 +63,7 @@ test("saving a rule that fails shows a plain message and does not say saved", as
 
 test("zero hours is refused before anything is sent", async ({ page }) => {
   await page.goto("/?current-game&played=120")
-  await page.getByRole("button", { name: "Choose when this game moves in" }).click()
+  await page.getByRole("button", { name: "Choose when this game counts as done" }).click()
   await page.getByRole("radio", { name: "After a set number of hours" }).check()
   await page.getByRole("spinbutton", { name: "Hours" }).fill("0")
   await page.getByRole("button", { name: "Save", exact: true }).click()
@@ -75,7 +75,7 @@ test("Settings has the default rule and saving it sends the default", async ({ p
   await page.goto("/?app-shell")
   await page.getByRole("button", { name: /Progress/i }).click()
   await page.getByRole("button", { name: "Settings" }).click()
-  await expect(page.getByText("When does a game move in?")).toBeVisible()
+  await expect(page.getByText("When does a game count as done?")).toBeVisible()
   await expect(page.getByRole("radio", { name: "When I mark it beaten" })).toBeChecked()
   await page.getByRole("radio", { name: "After a set number of hours" }).check()
   await page.getByRole("spinbutton", { name: "Hours" }).fill("5")
