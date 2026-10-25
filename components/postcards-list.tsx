@@ -82,7 +82,7 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
       className="mb-6"
     >
       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-        Keepsakes
+        Archived
       </h2>
       <div className="grid grid-cols-1 gap-2.5">
         {postcards.map((postcard, i) => {

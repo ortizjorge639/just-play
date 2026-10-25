@@ -32,7 +32,7 @@ Each ticket is one PR. Order follows the dependencies.
 
 1. **H1. Full-screen Settlement shell.** Entering from Home opens a full-viewport layer with a loading screen, then the scene. A visible Back button returns to Home and restores focus. Escape also goes back. Tests cover open, loading state, and back. Blocks H3 to H5.
 2. **H2. First-home plot.** With no residents, the Settlement shows one empty plot with a "first home" marker and a plain line pointing to locking in a game. The entry button is available even with zero homes. Blocked by H1.
-3. **H3. Home shell and list.** The List/Settlement choice moves above the sections and is remembered per player. Keepsakes is renamed Archived. List sections read Lives here, On the way, Archived. Independent of H1.
+3. **H3. Home shell and list.** Keepsakes is renamed Archived. The List/Settlement choice is not remembered, because Settlement is a full-screen layer and would open on every load. List sections read Lives here, On the way, Archived. Independent of H1.
 4. **H4. Settlement front door.** Name card in the full-screen HUD, tap a home opens a bottom sheet with the portrait, a one-time plain hint on first visit. Blocked by H1.
 5. **H5. Planner mode.** Drag to place, move and rotate homes on a snap grid, with undo. Builds on the placement actions already shipped. Needs its own short spec before code.
 6. **H6. Living residents.** Idle motion, a visible reaction to Say hi, an arrival moment after a session. Needs art direction first.

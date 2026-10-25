@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test"
 
-test("Home tab shows Keepsakes heading and game name when a postcard exists", async ({ page }) => {
+test("Home tab shows Archived heading and game name when a postcard exists", async ({ page }) => {
   // Navigate with postcards parameter to populate fixture
   await page.goto("/?postcards&app-shell")
 
   // Navigate to Home tab
   await page.getByRole("button", { name: /Home/i }).click()
 
-  // Check for Keepsakes heading
-  await expect(page.getByRole("heading", { name: /Keepsakes/i })).toBeVisible()
+  // Check for Archived heading
+  await expect(page.getByRole("heading", { name: /Archived/i })).toBeVisible()
 
   // Check for game name in the postcard card
   await expect(page.locator("text=A Short Hike")).toBeVisible()
@@ -21,8 +21,8 @@ test("Home tab renders nothing when no postcards exist", async ({ page }) => {
   // Navigate to Home tab
   await page.getByRole("button", { name: /Home/i }).click()
 
-  // Check that Keepsakes heading is not present
-  await expect(page.getByRole("heading", { name: /Keepsakes/i })).toHaveCount(0)
+  // Check that Archived heading is not present
+  await expect(page.getByRole("heading", { name: /Archived/i })).toHaveCount(0)
 })
 
 test("Delete button successfully removes postcard from the list", async ({ page }) => {

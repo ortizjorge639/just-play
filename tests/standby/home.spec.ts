@@ -6,7 +6,7 @@ test("Home shows a calm empty state when nothing lives here yet", async ({ page 
 
   await expect(page.getByText("Games you finish will live here.")).toBeVisible()
   await expect(page.getByRole("heading", { name: "Lives here" })).toHaveCount(0)
-  await expect(page.getByRole("heading", { name: "Keepsakes" })).toHaveCount(0)
+  await expect(page.getByRole("heading", { name: "Archived" })).toHaveCount(0)
 })
 
 test("Home tab is announced as the current page and Progress no longer lists residents", async ({ page }) => {
@@ -15,11 +15,11 @@ test("Home tab is announced as the current page and Progress no longer lists res
   await home.click()
   await expect(home).toHaveAttribute("aria-current", "page")
   await expect(page.getByRole("heading", { name: "Lives here" })).toBeVisible()
-  await expect(page.getByRole("heading", { name: "Keepsakes" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Archived" })).toBeVisible()
 
   await page.getByRole("button", { name: /Progress/i }).click()
   await expect(page.getByRole("heading", { name: "Lives here" })).toHaveCount(0)
-  await expect(page.getByRole("heading", { name: "Keepsakes" })).toHaveCount(0)
+  await expect(page.getByRole("heading", { name: "Archived" })).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "Residents" })).toHaveCount(0)
 })
 
