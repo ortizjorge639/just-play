@@ -34,36 +34,35 @@ test("a failed confirm shows a plain message and keeps the button", async ({ pag
   expect(await calls(page)).toEqual([])
 })
 
-test("with no rule the game shows no confirm button, and a per-game rule can be set", async ({ page }) => {
+test("with no rule the game shows no done prompt and no per-game control", async ({ page }) => {
   await page.goto("/?current-game&played=120")
   await expect(page.getByRole("button", { name: "Let it move in" })).toHaveCount(0)
-  const toggle = page.getByRole("button", { name: "Choose when this game counts as done" })
-  await expect(toggle).toHaveAttribute("aria-expanded", "false")
-  await toggle.click()
-  await expect(page.getByRole("dialog")).toBeVisible()
-
-  await page.getByRole("radio", { name: "After a set number of hours" }).check()
-  await page.getByRole("spinbutton", { name: "Hours" }).fill("3")
-  await page.getByRole("button", { name: "Save", exact: true }).click()
-  await expect(page.getByText("Saved.", { exact: true })).toBeVisible()
-  await expect(page.getByText("2 of 3 hours")).toBeVisible()
-  expect(await calls(page)).toEqual(["set:test-game:hours"])
+  await expect(page.getByRole("button", { name: /counts as done/ })).toHaveCount(0)
 })
 
-test("saving a rule that fails shows a plain message and does not say saved", async ({ page }) => {
-  await page.goto("/?current-game&played=120&stamp-save-fail")
-  await page.getByRole("button", { name: "Choose when this game counts as done" }).click()
+test("when a game is ready it asks if it is done, and Not yet puts it away", async ({ page }) => {
+  await page.goto("/?current-game&stamp-hours&played=600")
+  await expect(page.getByText("Is A Short Hike done?")).toBeVisible()
+  await page.getByRole("button", { name: "Not yet" }).click()
+  await expect(page.getByText("Is A Short Hike done?")).toHaveCount(0)
+  expect(await calls(page)).toEqual([])
+})
+
+test("saving a rule in Settings that fails shows a plain message and does not say saved", async ({ page }) => {
+  await page.goto("/?app-shell&stamp-save-fail")
+  await page.getByRole("button", { name: /Progress/i }).click()
+  await page.getByRole("button", { name: "Settings" }).click()
   await page.getByRole("radio", { name: "When I say so" }).check()
   await page.getByLabel("What counts as done enough?").fill("Beat the first boss")
   await page.getByRole("button", { name: "Save", exact: true }).click()
   await expect(page.getByRole("alert").filter({ hasText: "Could not save that. Try again." })).toBeVisible()
   await expect(page.getByText("Saved.", { exact: true })).toHaveCount(0)
-  await expect(page.getByText("Your own mark")).toHaveCount(0)
 })
 
 test("zero hours is refused before anything is sent", async ({ page }) => {
-  await page.goto("/?current-game&played=120")
-  await page.getByRole("button", { name: "Choose when this game counts as done" }).click()
+  await page.goto("/?app-shell")
+  await page.getByRole("button", { name: /Progress/i }).click()
+  await page.getByRole("button", { name: "Settings" }).click()
   await page.getByRole("radio", { name: "After a set number of hours" }).check()
   await page.getByRole("spinbutton", { name: "Hours" }).fill("0")
   await page.getByRole("button", { name: "Save", exact: true }).click()
@@ -99,6 +98,5 @@ test("the move-in note shows once and stays dismissed", async ({ page }) => {
   await note.getByRole("button", { name: "Got it" }).click()
   await expect(note).toHaveCount(0)
   await page.reload()
-  await expect(page.getByRole("button", { name: "Choose when this game counts as done" })).toBeVisible()
   await expect(page.getByTestId("move-in-note")).toHaveCount(0)
 })

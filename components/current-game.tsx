@@ -16,13 +16,12 @@ interface CurrentGameProps {
   onRetry: () => void
   stampRules: StampRule[]
   isResident: boolean
-  onStampRuleSaved: (gameId: string | null, rule: StampRule | null) => void
   onArrived: (game: Game) => void
 }
 
 export function CurrentGame({
   gameProgress, onSessionStarted, syncError, onRetry,
-  stampRules, isResident, onStampRuleSaved, onArrived,
+  stampRules, isResident, onArrived,
 }: CurrentGameProps) {
   const [isPending, startTransition] = useTransition()
   const [showOptions, setShowOptions] = useState(false)
@@ -268,8 +267,6 @@ export function CurrentGame({
           game={game}
           playedMinutes={gameProgress.total_time_minutes}
           rule={ownRule ?? defaultRule}
-          ownRule={ownRule}
-          onRuleSaved={onStampRuleSaved}
           onArrived={onArrived}
         />
       ) : null}

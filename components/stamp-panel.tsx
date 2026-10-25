@@ -2,8 +2,6 @@
 
 import { useState, useTransition } from "react"
 import { confirmStamp } from "@/app/actions"
-import { StampRuleEditor } from "./stamp-rule-editor"
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import type { Game, StampRule } from "@/lib/types"
 
 interface StampPanelProps {
@@ -11,8 +9,6 @@ interface StampPanelProps {
   playedMinutes: number
   // The rule that applies to this game: its own, else the player's default.
   rule: StampRule | null
-  ownRule: StampRule | null
-  onRuleSaved: (gameId: string | null, rule: StampRule | null) => void
   onArrived: (game: Game) => void
 }
 
@@ -24,13 +20,13 @@ function hoursWord(minutes: number) {
   return formatHours(minutes) === "1" ? "hour" : "hours"
 }
 
-export function StampPanel({ game, playedMinutes, rule, ownRule, onRuleSaved, onArrived }: StampPanelProps) {
-  const [editing, setEditing] = useState(false)
+export function StampPanel({ game, playedMinutes, rule, onArrived }: StampPanelProps) {
+  const [later, setLater] = useState(false)
   const [moved, setMoved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  if (moved) return null
+  if (moved || !rule) return null
 
   const ready = rule?.kind === "milestone" || (rule?.kind === "hours" && playedMinutes >= rule.target_minutes)
 
@@ -56,34 +52,31 @@ export function StampPanel({ game, playedMinutes, rule, ownRule, onRuleSaved, on
         ? `Your own mark: ${rule.label}`
         : null
 
+  if (!ready) {
+    return line ? <p aria-label="When this game counts as done" className="mb-4 w-full max-w-[320px] text-sm text-foreground/70">{line}</p> : null
+  }
+  if (later) return null
+
   return (
-    <section aria-label="When this game counts as done" className="mb-4 w-full max-w-[320px] text-sm">
-      {line ? <p className="text-foreground/80">{line}</p> : null}
-      {ready ? (
-        <button
-          type="button"
-          onClick={confirm}
-          disabled={isPending}
-          className="mt-2 min-h-11 w-full rounded-xl border border-border bg-secondary px-4 text-sm font-semibold text-foreground disabled:opacity-50"
-        >
-          {isPending ? "Moving in..." : "Let it move in"}
-        </button>
-      ) : null}
-      {error ? <p role="alert" className="mt-2 text-destructive">{error}</p> : null}
+    <section aria-label="When this game counts as done" className="mb-4 w-full max-w-[320px] rounded-xl border border-border bg-card/60 p-4 text-sm">
+      <p className="text-base font-semibold text-foreground">Is {game.name} done?</p>
+      {line ? <p className="mt-1 text-foreground/80">{line}</p> : null}
       <button
         type="button"
-        onClick={() => setEditing((v) => !v)}
-        aria-expanded={editing}
-        className="mt-2 min-h-11 w-full rounded-xl border border-border px-4 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+        onClick={confirm}
+        disabled={isPending}
+        className="mt-3 min-h-11 w-full rounded-xl bg-success px-4 text-sm font-semibold text-success-foreground disabled:opacity-50"
       >
-        {rule ? "Change for this game" : "Choose when this game counts as done"}
+        {isPending ? "Moving in..." : "Let it move in"}
       </button>
-      <Sheet open={editing} onOpenChange={setEditing}>
-        <SheetContent side="bottom" aria-describedby={undefined} className="mx-auto max-w-md rounded-t-3xl p-6 pb-10">
-          <SheetTitle className="sr-only">When {game.name} counts as done</SheetTitle>
-          <StampRuleEditor gameId={game.id} rule={ownRule} onSaved={onRuleSaved} />
-        </SheetContent>
-      </Sheet>
+      <button
+        type="button"
+        onClick={() => setLater(true)}
+        className="mt-2 min-h-11 w-full rounded-xl border border-border px-4 text-sm font-medium text-foreground/80 hover:bg-muted"
+      >
+        Not yet
+      </button>
+      {error ? <p role="alert" className="mt-2 text-destructive">{error}</p> : null}
     </section>
   )
 }
