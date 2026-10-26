@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useState, useTransition } from "react"
+import { clearPersistedDeck } from "@/hooks/use-persisted-deck"
 import { signout } from "@/app/auth/actions"
 import { clearNotForMe } from "@/app/actions"
 import type { StandbyPreferences, StampRule } from "@/lib/types"
@@ -176,7 +177,7 @@ export function Settings({
           Account
         </h2>
         <div className="flex flex-col gap-1">
-          <form action={signout}>
+          <form action={signout} onSubmit={clearPersistedDeck}>
             <button
               type="submit"
               className="w-full flex items-center gap-4 p-4 rounded-xl text-left transition-colors hover:bg-secondary min-h-[56px]"
