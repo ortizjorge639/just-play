@@ -7,6 +7,7 @@ import type { Session, Game, PlayerStats, NameCard as NameCardData } from "@/lib
 import { NameCard } from "./name-card"
 import { formatDistanceToNow } from "date-fns"
 import { calculateStreak } from "@/lib/streak"
+import { groupHistory } from "@/lib/session-history"
 import { XPParticles } from "./xp-particles"
 
 interface ProgressProps {
@@ -69,26 +70,7 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
   return skip ? target : value
 }
 
-type HistoryRow = Session & { games: Game; count: number }
-
-// Back-to-back sessions of one game on the same day read as one row.
 const subscribeNever = () => () => {}
-
-function groupHistory(sessions: (Session & { games: Game })[]): HistoryRow[] {
-  const rows: HistoryRow[] = []
-  for (const s of sessions) {
-    const last = rows[rows.length - 1]
-    const day = (x: Session) => new Date(x.ended_at ?? x.started_at).toDateString()
-    if (last && last.game_id === s.game_id && day(last) === day(s)) {
-      last.duration_minutes = (last.duration_minutes || 0) + (s.duration_minutes || 0)
-      last.xp_awarded = (last.xp_awarded || 0) + (s.xp_awarded || 0)
-      last.count += 1
-    } else {
-      rows.push({ ...s, count: 1 })
-    }
-  }
-  return rows
-}
 
 export function Progress({ sessions, displayName, playerStats, nameCard, library, onEditCard }: ProgressProps) {
   const prefersReducedMotion = useReducedMotion()
