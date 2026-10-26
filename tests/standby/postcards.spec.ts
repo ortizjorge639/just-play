@@ -38,6 +38,7 @@ test("Delete button successfully removes postcard from the list", async ({ page 
   // Click delete button
   const deleteButton = page.getByRole("button", { name: /Delete/i }).first()
   await deleteButton.click()
+  await page.getByRole("button", { name: /Yes, delete/i }).click()
 
   
   // Component should still render but postcard row should be gone
@@ -57,6 +58,7 @@ test("Delete button shows error message on failure and keeps postcard visible", 
   // Click delete button
   const deleteButton = page.getByRole("button", { name: /Delete/i }).first()
   await deleteButton.click()
+  await page.getByRole("button", { name: /Yes, delete/i }).click()
 
 
   // Error message should be visible
@@ -132,4 +134,14 @@ test("Postcard shows creation date in human-readable format", async ({ page }) =
   // Check for date text (should show "ago" format from formatDistanceToNow)
   const dateText = page.locator("text=/ago/")
   await expect(dateText).toBeVisible()
+})
+
+test("Delete asks first, and Keep it leaves the postcard alone", async ({ page }) => {
+  await page.goto("/?postcards&app-shell")
+  await page.getByRole("button", { name: /Home/i }).click()
+  await page.getByRole("button", { name: /^Delete keepsake/i }).first().click()
+  await expect(page.getByText("Delete this keepsake for good?")).toBeVisible()
+  await page.getByRole("button", { name: "Keep it" }).click()
+  await expect(page.getByText("Delete this keepsake for good?")).toHaveCount(0)
+  await expect(page.locator("text=A Short Hike")).toBeVisible()
 })

@@ -19,9 +19,12 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
     error?: string
   }>>({})
 
+  const [confirming, setConfirming] = useState<string | null>(null)
+
   const getState = (gameId: string) => actionState[gameId] || { action: null, loading: false }
 
   const handleDelete = async (gameId: string) => {
+    setConfirming(null)
     setActionState(prev => ({
       ...prev,
       [gameId]: { action: 'delete', loading: true }
@@ -128,6 +131,10 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
                       </div>
                     )}
 
+                    {confirming === postcard.game_id && (
+                      <p className="text-xs text-muted-foreground">Delete this keepsake for good? It cannot be brought back.</p>
+                    )}
+
                     {/* Action buttons */}
                     <div className="flex gap-2">
                       <button
@@ -138,14 +145,33 @@ export function PostcardsList({ postcards }: PostcardsListProps) {
                       >
                         {state.action === 'reinvite' && isLoading ? "Bringing back…" : "Bring back"}
                       </button>
-                      <button
-                        onClick={() => handleDelete(postcard.game_id)}
-                        disabled={isLoading}
-                        className="min-h-11 text-xs px-3.5 rounded bg-destructive/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive text-destructive hover:bg-destructive/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-                        aria-label={`Delete keepsake for ${postcard.game.name}`}
-                      >
-                        {state.action === 'delete' && isLoading ? "Deleting…" : "Delete"}
-                      </button>
+                      {confirming === postcard.game_id ? (
+                        <>
+                          <button
+                            onClick={() => handleDelete(postcard.game_id)}
+                            disabled={isLoading}
+                            className="min-h-11 text-xs px-3.5 rounded bg-destructive/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive text-destructive hover:bg-destructive/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                            aria-label={`Yes, delete keepsake for ${postcard.game.name}`}
+                          >
+                            Yes, delete it
+                          </button>
+                          <button
+                            onClick={() => setConfirming(null)}
+                            className="min-h-11 text-xs px-3.5 rounded border border-border text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary font-medium"
+                          >
+                            Keep it
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setConfirming(postcard.game_id)}
+                          disabled={isLoading}
+                          className="min-h-11 text-xs px-3.5 rounded bg-destructive/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destructive text-destructive hover:bg-destructive/25 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                          aria-label={`Delete keepsake for ${postcard.game.name}`}
+                        >
+                          {state.action === 'delete' && isLoading ? "Deleting…" : "Delete"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
