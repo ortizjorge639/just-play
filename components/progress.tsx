@@ -68,6 +68,25 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
   return skip ? target : value
 }
 
+type HistoryRow = Session & { games: Game; count: number }
+
+// Back-to-back sessions of one game on the same day read as one row.
+function groupHistory(sessions: (Session & { games: Game })[]): HistoryRow[] {
+  const rows: HistoryRow[] = []
+  for (const s of sessions) {
+    const last = rows[rows.length - 1]
+    const day = (x: Session) => new Date(x.ended_at ?? x.started_at).toDateString()
+    if (last && last.game_id === s.game_id && day(last) === day(s)) {
+      last.duration_minutes = (last.duration_minutes || 0) + (s.duration_minutes || 0)
+      last.xp_awarded = (last.xp_awarded || 0) + (s.xp_awarded || 0)
+      last.count += 1
+    } else {
+      rows.push({ ...s, count: 1 })
+    }
+  }
+  return rows
+}
+
 export function Progress({ sessions, displayName, playerStats, nameCard, library, onEditCard }: ProgressProps) {
   const prefersReducedMotion = useReducedMotion()
   const [pending, setPending] = useState<PendingXP | null>(null)
@@ -138,6 +157,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
   )
   const totalHours = Math.floor(totalMinutes / 60)
   const remainingMinutes = totalMinutes % 60
+  const history = groupHistory(sessions)
   const uniqueGames = new Set(sessions.map((s) => s.game_id)).size
 
   // XP bar width: animate from previous to current
@@ -289,7 +309,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
       </div>
 
       <div className="flex-1 pb-8">
-        {sessions.length === 0 ? (
+        {history.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
             <p className="text-muted-foreground text-sm">
               No sessions yet. Go play something!
@@ -297,7 +317,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
           </div>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {(showAllSessions ? sessions : sessions.slice(0, 10)).map((session, i) => (
+            {(showAllSessions ? history : history.slice(0, 10)).map((session, i) => (
               <motion.div
                 key={session.id}
                 initial={{ opacity: 0, y: 15 }}
@@ -322,6 +342,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
                     {session.duration_minutes
                       ? `${session.duration_minutes} min`
                       : "< 1 min"}
+                    {session.count > 1 && ` · ${session.count} sessions`}
                     {" "}
                     {session.ended_at &&
                       `· ${formatDistanceToNow(new Date(session.ended_at), {
@@ -336,13 +357,13 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
                 )}
               </motion.div>
             ))}
-            {sessions.length > 10 && (
+            {history.length > 10 && (
               <button
                 type="button"
                 onClick={() => setShowAllSessions((v) => !v)}
                 className="min-h-11 rounded-lg text-sm font-semibold text-accent"
               >
-                {showAllSessions ? "Show fewer" : `Show all ${sessions.length}`}
+                {showAllSessions ? "Show fewer" : `Show all ${history.length}`}
               </button>
             )}
           </div>
