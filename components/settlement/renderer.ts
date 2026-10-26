@@ -250,6 +250,8 @@ export async function mountSettlement(
   const makeLoft = (wall: Material, top: Material, ghost = false) => {
     if (loftModel) {
       const copy = loftModel.clone(true)
+      // The exported loft has its roof toward -Z, so it lay on its side. Stand it up.
+      copy.rotation.x = Math.PI / 2
       if (ghost) copy.traverse((o) => { if (o instanceof Mesh) o.material = wall })
       const holder = new Group()
       holder.add(copy)
