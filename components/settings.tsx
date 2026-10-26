@@ -102,7 +102,7 @@ export function Settings({
 
       {/* Settings list */}
       <div className="border-b border-border px-6 py-4">
-        <button type="button" onClick={onEditCard} className="min-h-11 text-sm text-foreground underline">
+        <button type="button" onClick={onEditCard} className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground">
           Edit name card
         </button>
       </div>

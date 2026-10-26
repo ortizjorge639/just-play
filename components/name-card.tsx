@@ -35,7 +35,7 @@ export function NameCard({ displayName, card, library, onEdit }: NameCardProps) 
       <button
         type="button"
         onClick={onEdit}
-        className="mt-1 min-h-11 text-sm text-muted-foreground underline"
+        className="mt-2 min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground"
       >
         Edit card
       </button>

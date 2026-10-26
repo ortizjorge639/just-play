@@ -107,7 +107,7 @@ function EmoteSection({ resident, name, onEmote }: { resident: Resident; name: s
         aria-expanded={open}
         aria-label={`Say hi to ${name}`}
         onClick={() => setOpen(o => !o)}
-        className="min-h-11 text-sm text-muted-foreground underline"
+        className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground"
       >
         Say hi
       </button>
@@ -222,7 +222,7 @@ function LoftSection({ resident, name, pieces, deckCount, hints, onSpots, onSay 
           aria-disabled={pending}
           aria-label={open ? "Never mind" : `${mine ? "Move" : "Place"} the loft for ${name}`}
           onClick={start}
-          className="min-h-11 text-sm text-muted-foreground underline"
+          className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground"
         >
           {open ? "Never mind" : mine ? "Move it" : "Place it"}
         </button>
@@ -232,7 +232,7 @@ function LoftSection({ resident, name, pieces, deckCount, hints, onSpots, onSay 
             aria-disabled={pending}
             aria-label={`Take back the loft for ${name}`}
             onClick={() => run(() => removePiece(resident.game_id), lineFor(resident.game_id, REMOVED_LINES))}
-            className="min-h-11 text-sm text-muted-foreground underline"
+            className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground"
           >
             Take it back
           </button>
