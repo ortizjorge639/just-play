@@ -16,6 +16,7 @@ import { QuickFilters } from "./quick-filters"
 import { Settings } from "./settings"
 import { NameCardEditor } from "./name-card-editor"
 import { ResidentArrivalCard } from "./resident-arrival-card"
+import { clearPersistedDeck } from "@/hooks/use-persisted-deck"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
@@ -207,7 +208,7 @@ export function AppShell({
               </svg>
             </button>
           )}
-          <form action={signout}>
+          <form action={signout} onSubmit={clearPersistedDeck}>
             <button
               type="submit"
               className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px]"

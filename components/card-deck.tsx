@@ -8,6 +8,7 @@ import { QuickFilters } from "./quick-filters"
 import { BoosterPack } from "./booster-pack"
 import { createSession, markNotForMe } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
+import { usePersistedDeck } from "@/hooks/use-persisted-deck"
 import type { Game, UserPreferences } from "@/lib/types"
 
 interface CardDeckProps {
@@ -20,7 +21,7 @@ interface CardDeckProps {
 }
 
 export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, boosterPackStatus, onboardingComplete = true }: CardDeckProps) {
-  const [deck, setDeck] = useState<Game[]>(games)
+  const [deck, setDeck] = usePersistedDeck(games)
   const [rejectedStack, setRejectedStack] = useState<Game[]>([])
   const [lockedGame, setLockedGame] = useState<Game | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -35,7 +36,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     setDeck(newGames)
     setPackOpened(true)
     setShowBoosterPack(false)
-  }, [])
+  }, [setDeck])
 
   // Add a searched game to the top of the deck, then auto-show lock-in
   const addSearchedGame = useCallback((game: Game) => {
@@ -46,14 +47,14 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     })
     // Brief delay before auto-showing lock-in confirmation
     setTimeout(() => setLockedGame(game), 600)
-  }, [])
+  }, [setDeck])
 
   const handleReject = useCallback(
     (game: Game) => {
       setDeck((prev) => prev.filter((g) => g.id !== game.id))
       setRejectedStack((prev) => [...prev, game])
     },
-    []
+    [setDeck]
   )
 
   const handleUndo = useCallback(() => {
@@ -61,7 +62,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     const lastRejected = rejectedStack[rejectedStack.length - 1]
     setRejectedStack((prev) => prev.slice(0, -1))
     setDeck((prev) => [...prev, lastRejected])
-  }, [rejectedStack])
+  }, [rejectedStack, setDeck])
 
   const handleNotForMe = useCallback(() => {
     const top = deck[deck.length - 1]
@@ -75,7 +76,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
       }
       setDeck((prev) => prev.filter((g) => g.id !== top.id))
     })
-  }, [deck])
+  }, [deck, setDeck])
 
   const handleLockIn = useCallback((game: Game) => {
     setLockedGame(game)
