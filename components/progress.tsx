@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import type { Session, Game, PlayerStats, NameCard as NameCardData } from "@/lib/types"
 import { NameCard } from "./name-card"
 import { formatDistanceToNow } from "date-fns"
+import { calculateStreak } from "@/lib/streak"
 import { XPParticles } from "./xp-particles"
 
 interface ProgressProps {
@@ -71,6 +72,8 @@ function useCountUp(target: number, from: number, duration = 1200, enabled = tru
 type HistoryRow = Session & { games: Game; count: number }
 
 // Back-to-back sessions of one game on the same day read as one row.
+const subscribeNever = () => () => {}
+
 function groupHistory(sessions: (Session & { games: Game })[]): HistoryRow[] {
   const rows: HistoryRow[] = []
   for (const s of sessions) {
@@ -158,6 +161,12 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
   const totalHours = Math.floor(totalMinutes / 60)
   const remainingMinutes = totalMinutes % 60
   const history = groupHistory(sessions)
+  // The server runs in UTC, so around midnight its "today" differs from the player's. Recount in local time once mounted.
+  const mounted = useSyncExternalStore(subscribeNever, () => true, () => false)
+  const localStreak = useMemo(
+    () => (mounted ? calculateStreak(sessions.map((x) => x.started_at)) : null),
+    [mounted, sessions],
+  )
   const uniqueGames = new Set(sessions.map((s) => s.game_id)).size
 
   // XP bar width: animate from previous to current
@@ -226,18 +235,18 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
           <div className="flex flex-col items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="text-2xl">
-                {playerStats.streak >= 2 ? "🔥" : "📅"}
+                {(localStreak?.consecutive ?? playerStats.streak) >= 2 ? "🔥" : "📅"}
               </span>
               <span className="text-base font-bold text-foreground">
-                {playerStats.streak > 0
-                  ? `${playerStats.streak}-day combo`
-                  : playerStats.weeklyDays.some(Boolean)
+                {(localStreak?.consecutive ?? playerStats.streak) > 0
+                  ? `${(localStreak?.consecutive ?? playerStats.streak)}-day combo`
+                  : (localStreak?.weeklyDays ?? playerStats.weeklyDays).some(Boolean)
                     ? "Played this week"
                     : "No sessions this week"}
               </span>
-              {playerStats.bestStreak > 0 && (
+              {(localStreak?.bestStreak ?? playerStats.bestStreak) > 0 && (
                 <span className="text-xs text-muted-foreground ml-1">
-                  · Best combo: {playerStats.bestStreak}
+                  · Best combo: {(localStreak?.bestStreak ?? playerStats.bestStreak)}
                 </span>
               )}
             </div>
@@ -245,7 +254,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
             {/* Weekly dots — evenly spaced */}
             <div className="flex items-center justify-center gap-3 w-full">
               {WEEKDAY_LABELS.map((label, i) => {
-                const played = playerStats.weeklyDays[i]
+                const played = (localStreak?.weeklyDays ?? playerStats.weeklyDays)[i]
                 return (
                   <div key={i} className="flex flex-col items-center gap-1">
                     <div

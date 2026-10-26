@@ -107,7 +107,9 @@ function countConsecutiveBackward(
   startKey: string
 ): number {
   let count = 1
-  let current = new Date(startKey)
+  // new Date("YYYY-MM-DD") parses as UTC and slips a day back in zones behind UTC
+  const [y, m, d] = startKey.split("-").map(Number)
+  let current = new Date(y, m - 1, d)
 
   while (true) {
     current = addDays(current, -1)
