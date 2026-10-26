@@ -160,7 +160,7 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
       type="button"
       aria-pressed={sound}
       onClick={() => setSoundOn(!sound)}
-      className="min-h-11 self-start text-sm text-muted-foreground underline"
+      className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground"
     >
       {sound ? "Sound on" : "Sound off"}
     </button>
@@ -182,11 +182,11 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
           >
             Back to Home
           </button>
-          <div className="min-w-0 flex-1 px-3 text-center">
+          <div className="min-w-0 flex-1 px-3 text-center max-sm:sr-only">
             <p className="truncate text-sm font-medium text-foreground">{ownerName ? `${ownerName}\u2019s settlement` : "Your settlement"}</p>
             {tagline ? <p className="truncate text-xs text-muted-foreground">{tagline}</p> : null}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2">
             {residents.length > 1 && !arranging && (
               <button type="button" onClick={startArranging} className="min-h-11 rounded-full border border-border bg-card px-4 text-sm text-foreground">
                 Arrange
