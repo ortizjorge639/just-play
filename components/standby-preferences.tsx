@@ -49,7 +49,7 @@ export function StandbyPreferencesForm({
       ))}
       <p className="text-xs text-muted-foreground">
         Recording is set when a session starts. Hiding the clock doesn&apos;t stop it.
-        If a session isn&apos;t recorded, its play time and the XP for it aren&apos;t saved.
+        If a session isn&apos;t recorded, its play time and XP aren&apos;t saved.
         Keeping the screen awake won&apos;t stop your device from locking, and it stops working in the background.
       </p>
       <p role="status" className="text-sm">{pending ? "Saving..." : error}</p>

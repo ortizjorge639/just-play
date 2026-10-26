@@ -87,9 +87,6 @@ export function Settings({
             <span className="text-base font-semibold text-foreground">
               {displayName || "Player"}
             </span>
-            <span className="text-sm text-muted-foreground">
-              Just Play Member
-            </span>
           </div>
         </div>
       </div>
