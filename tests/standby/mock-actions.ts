@@ -250,6 +250,18 @@ export async function getStampRules(): Promise<StampRule[]> {
   return fixture.stampRules
 }
 
+export async function markNotForMe(gameId: string): Promise<{ ok: boolean; error?: string }> {
+  if (hasParam("skip-fail")) return { ok: false, error: "Could not save that. Try again." }
+  fixture.stampCalls.push(`skip:${gameId}`)
+  return { ok: true }
+}
+
+export async function clearNotForMe(): Promise<{ ok: boolean; error?: string }> {
+  if (hasParam("skip-fail")) return { ok: false, error: "Could not clear that. Try again." }
+  fixture.stampCalls.push("skip-clear")
+  return { ok: true }
+}
+
 export async function setStampRule(
   gameId: string | null,
   rule: StampRuleInput

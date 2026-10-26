@@ -1,7 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { useState, useTransition } from "react"
 import { signout } from "@/app/auth/actions"
+import { clearNotForMe } from "@/app/actions"
 import type { StandbyPreferences, StampRule } from "@/lib/types"
 import { StampRuleEditor } from "./stamp-rule-editor"
 import { StandbyPreferencesForm } from "./standby-preferences"
@@ -29,6 +31,17 @@ export function Settings({
   stampRules,
   onStampRuleSaved,
 }: SettingsProps) {
+  const [clearing, startClear] = useTransition()
+  const [clearMessage, setClearMessage] = useState<string | null>(null)
+  const [clearFailed, setClearFailed] = useState(false)
+  const clearSkipped = () => {
+    setClearMessage(null)
+    startClear(async () => {
+      const result = await clearNotForMe()
+      setClearFailed(!result.ok)
+      setClearMessage(result.ok ? "Cleared. Those games can show up again." : result.error ?? "That did not go through. Try again.")
+    })
+  }
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -101,6 +114,21 @@ export function Settings({
           rule={stampRules.find(r => r.game_id === null) ?? null}
           onSaved={onStampRuleSaved}
         />
+      </div>
+      <div className="border-b border-border px-6 py-6">
+        <h2 className="text-base font-semibold text-foreground">Games you skipped</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Games you mark &quot;Not for me&quot; stop showing up. Clear the list to see them again.</p>
+        <button
+          type="button"
+          onClick={clearSkipped}
+          disabled={clearing}
+          className="mt-3 min-h-11 rounded-xl border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+        >
+          Clear my skipped games
+        </button>
+        {clearMessage ? (
+          <p role={clearFailed ? "alert" : "status"} className={clearFailed ? "mt-2 text-sm text-destructive" : "mt-2 text-sm text-foreground/80"}>{clearMessage}</p>
+        ) : null}
       </div>
       <div className="px-6 py-4">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">

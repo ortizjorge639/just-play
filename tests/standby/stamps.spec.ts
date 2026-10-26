@@ -100,3 +100,28 @@ test("the move-in note shows once and stays dismissed", async ({ page }) => {
   await page.reload()
   await expect(page.getByTestId("move-in-note")).toHaveCount(0)
 })
+
+test("Not for me removes the top card and tells the engine", async ({ page }) => {
+  await page.goto("/?app-shell&current-game&deck")
+  await page.getByRole("button", { name: /Not for me/ }).click()
+  await expect.poll(() => calls(page)).toEqual(["skip:deck-B"])
+  await page.getByRole("button", { name: /Not for me/ }).click()
+  await expect.poll(() => calls(page)).toEqual(["skip:deck-B", "skip:deck-A"])
+})
+
+test("a failed Not for me keeps the card and says so plainly", async ({ page }) => {
+  await page.goto("/?app-shell&current-game&deck&skip-fail")
+  await page.getByRole("button", { name: /Not for me/ }).click()
+  await expect(page.getByText("Could not save that. Try again.")).toBeVisible()
+  await expect(page.getByRole("button", { name: /Not for me/ })).toBeVisible()
+  expect(await calls(page)).toEqual([])
+})
+
+test("Settings can clear the skipped games", async ({ page }) => {
+  await page.goto("/?app-shell")
+  await page.getByRole("button", { name: /Progress/i }).click()
+  await page.getByRole("button", { name: "Settings" }).click()
+  await page.getByRole("button", { name: "Clear my skipped games" }).click()
+  await expect(page.getByText("Cleared. Those games can show up again.")).toBeVisible()
+  expect(await calls(page)).toEqual(["skip-clear"])
+})
