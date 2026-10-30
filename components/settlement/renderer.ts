@@ -386,6 +386,7 @@ export async function mountSettlement(
   host.addEventListener("settlement-react", onReact)
 
   // A new neighbour drops in from above, lands, and says hello.
+  const arrivals = new Set<() => void>()
   const onArrive = (event: Event) => {
     const ids = (event as CustomEvent<string[]>).detail.filter((id) => figures.has(id)).slice(0, 3)
     ids.forEach((id, order) => {
@@ -397,8 +398,18 @@ export async function mountSettlement(
       const rest = figure.object.position.y
       const began = visualNow() + order * 700
       figure.object.visible = false
-      let landed = false
-      run((now) => {
+      const finish = () => {
+        figure.object.visible = true
+        figure.object.position.y = rest
+        tasks.delete(arrive)
+        arrivals.delete(finish)
+        if (!reduced) {
+          playLand()
+          figure.chain(["land", "greeting"])
+        }
+        host.dispatchEvent(new CustomEvent("settlement-arrived", { detail: id }))
+      }
+      const arrive = (now: number) => {
         const t = (now - began) / 1000
         if (t < 0) return true
         figure.object.visible = true
@@ -407,15 +418,11 @@ export async function mountSettlement(
           figure.object.position.y = rest + 9 * (1 - k * k)
           return true
         }
-        figure.object.position.y = rest
-        if (!landed) {
-          landed = true
-          playLand()
-          figure.chain(["land", "greeting"])
-          host.dispatchEvent(new CustomEvent("settlement-arrived", { detail: id }))
-        }
+        finish()
         return false
-      })
+      }
+      arrivals.add(finish)
+      run(arrive)
     })
     host.dataset.arriving = String(ids.length)
   }
@@ -775,6 +782,10 @@ export async function mountSettlement(
     frame = 0
     last = 0
     seen = 0
+    if (reduced && !disposed) {
+      for (const finish of [...arrivals]) finish()
+      if (!document.hidden) render()
+    }
     host.dataset.renderState = document.hidden ? "hidden" : reduced ? "reduced-motion" : "running"
     if (!document.hidden && !reduced && !disposed) frame = requestAnimationFrame(tick)
   }
@@ -803,6 +814,7 @@ export async function mountSettlement(
     host.removeEventListener("settlement-pieces", onPieces)
     if (frame) cancelAnimationFrame(frame)
     tasks.clear()
+    arrivals.clear()
     figures.forEach((figure) => figure.dispose())
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
