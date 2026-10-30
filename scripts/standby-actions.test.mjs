@@ -37,7 +37,7 @@ function fixture(responses, authenticated = true) {
         single: execute,
         maybeSingle: execute,
       }
-      for (const method of ["select", "update", "insert", "eq", "neq", "is", "order", "limit", "returns"]) {
+      for (const method of ["select", "update", "insert", "eq", "neq", "is", "order", "limit", "range", "returns"]) {
         query[method] = (...args) => {
           call.methods.push([method, ...args])
           return query
@@ -72,6 +72,34 @@ function fixture(responses, authenticated = true) {
   }
 }
 const ok = (data = null) => ({ data, error: null })
+test("resident depth reads every page of actual finished recorded sessions, not stale progress", async () => {
+  const resident = { game_id: "game", user_id: "user", games: { genres: [] } }
+  const recorded = { game_id: "game", status: "Finished", record_time: true, duration_minutes: 1 }
+  const f = fixture([ok([resident]), ok([]), ok(Array.from({ length: 1000 }, () => recorded)), ok([
+    { ...recorded, duration_minutes: 31 },
+    { ...recorded, record_time: false, duration_minutes: 99 },
+    { ...recorded, status: "Paused", duration_minutes: 99 },
+  ])])
+  const result = await f.actions.getResidents()
+  assert.equal(result[0].minutes_played, 1031)
+  assert.equal(f.calls.some(c => c.table === "game_progress"), false)
+  for (const [index, call] of f.calls.slice(2).entries()) {
+    assert.equal(call.table, "sessions")
+    for (const expected of [["eq", "user_id", "user"], ["eq", "status", "Finished"], ["eq", "record_time", true], ["range", index * 1000, index * 1000 + 999]]) {
+      assert.ok(call.methods.some(m => JSON.stringify(m) === JSON.stringify(expected)))
+    }
+    assert.ok(call.methods.some(m => m[0] === "order" && m[1] === "id"))
+    assert.equal(call.methods.some(m => ["update", "insert"].includes(m[0])), false)
+  }
+  f.done()
+})
+
+test("failed resident time page never presents a misleading partial total", async () => {
+  const f = fixture([ok([{ game_id: "game", game: { genres: [] } }]), ok([]), { data: null, error: { message: "offline" } }])
+  assert.equal((await f.actions.getResidents())[0].minutes_played, 0)
+  f.done()
+})
+
 const session = {
   id: "session", user_id: "user", game_id: "game", status: "Playing", active: true,
   started_at: "2026-10-17T10:00:00.000Z", ended_at: null,

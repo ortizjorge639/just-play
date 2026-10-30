@@ -128,6 +128,7 @@ const app = params.has("app-shell")
     tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
   }} isAnonymous={params.has("anon")} recommendations={deckGames} activeSession={fixture.session} activeGame={null}
+    savedLayout={params.has("far-home") ? [{ game_id: game.id, deck: 0, cell: 35, rotation: 0 }] : []}
     sessionHistory={libraryHistory} nameCard={fixture.nameCard} playerStats={null} residents={fixture.residents} pieces={fixture.pieces} postcards={fixture.postcards} stampRules={fixture.stampRules} isBoosterPack={false}
     boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
   : <Harness />

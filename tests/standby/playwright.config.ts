@@ -13,7 +13,10 @@ export default defineConfig({
   workers: 2,
   reporter: "list",
   outputDir: "../../test-results/standby",
-  use: { baseURL, trace: "retain-on-failure" },
+  // Automatic trace filmstrips force GPU readbacks on every captured frame.
+  // Software WebGL then stalls independently of app input/render scheduling.
+  // Keep DOM/network/source traces; composition specs still take explicit images.
+  use: { baseURL, trace: { mode: "retain-on-failure", screenshots: false, snapshots: true, sources: true } },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },

@@ -10,6 +10,7 @@ import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
 import { calculateStreak } from "@/lib/streak"
 import { isEmote, type EmoteKind } from "@/lib/emotes"
 import { getIGDBGameById } from "@/lib/igdb"
+import { recordedMinutes } from "@/lib/world/recorded-minutes"
 
 export async function getUser() {
   const supabase = await createClient()
@@ -1069,15 +1070,27 @@ export async function getResidents(): Promise<Resident[]> {
       for (const e of emoteRows ?? []) lastEmotes.set(e.game_id, { emote: e.emote, emoted_at: e.emoted_at })
     }
 
-    // Same idea for play time: tiers are extra, so a failure here just leaves everyone at tier 0.
+    // Read canonical recorded sessions: ordinary finishes don't refresh the old progress cache.
+    // Page deterministically so accounts with >1,000 sessions don't lose resident history.
     const minutes = new Map<string, number>()
-    const { data: progressRows, error: progressError } = await supabase
-      .from("game_progress")
-      .select("game_id, total_time_minutes")
-    if (progressError) {
-      console.warn("[residents] Progress query failed:", progressError.message)
-    } else {
-      for (const p of progressRows ?? []) minutes.set(p.game_id, p.total_time_minutes ?? 0)
+    for (let offset = 0; ; offset += 1000) {
+      const { data: sessions, error: sessionError } = await supabase
+        .from("sessions")
+        .select("game_id, status, record_time, duration_minutes")
+        .eq("user_id", user.id)
+        .eq("status", "Finished")
+        .eq("record_time", true)
+        .order("id", { ascending: true })
+        .range(offset, offset + 999)
+      if (sessionError) {
+        console.warn("[residents] Session history query failed:", sessionError.message)
+        minutes.clear() // Never expose a partial history as an authoritative depth.
+        break
+      }
+      for (const [id, value] of recordedMinutes(sessions ?? [])) {
+        minutes.set(id, Math.min(Number.MAX_SAFE_INTEGER, (minutes.get(id) ?? 0) + value))
+      }
+      if (!sessions || sessions.length < 1000) break
     }
 
     // Type cast the nested game to a single object instead of array

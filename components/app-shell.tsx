@@ -266,6 +266,7 @@ export function AppShell({
             {activeSession ? (
               <ActiveSession
                 key={activeSession.id}
+                world={{ residents: residents ?? [], pieces, savedLayout }}
                 session={activeSession}
                 onFinished={handleSessionFinished}
                 onSessionUpdated={handleSessionUpdated}

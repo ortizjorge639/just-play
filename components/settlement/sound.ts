@@ -1,7 +1,10 @@
 const KEY = "jp-settlement-sound"
+let visitSound = false
+let storageWriteFailed = false
 
 export const soundOn = () => {
-  try { return localStorage.getItem(KEY) !== "off" } catch { return true }
+  if (storageWriteFailed) return visitSound
+  try { return localStorage.getItem(KEY) === "on" } catch { return visitSound }
 }
 
 const listeners = new Set<() => void>()
@@ -11,7 +14,11 @@ export const subscribeSound = (fn: () => void) => {
 }
 
 export const setSoundOn = (on: boolean) => {
-  try { localStorage.setItem(KEY, on ? "on" : "off") } catch { /* private mode: stays on for this visit */ }
+  visitSound = on
+  try {
+    localStorage.setItem(KEY, on ? "on" : "off")
+    storageWriteFailed = false
+  } catch { storageWriteFailed = true } // The explicit choice wins over stale storage for this visit.
   listeners.forEach((fn) => fn())
 }
 

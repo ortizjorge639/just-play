@@ -11,6 +11,7 @@ import type { Layout } from "@/lib/settlement/types"
 import { PARTS } from "@/lib/settlement/catalog"
 import { DECK_CAPACITY } from "@/lib/settlement/layout"
 import { anchorOffset, deckOrigin, slotOffset } from "@/lib/settlement/transforms"
+import { ambientBehavior, type AmbientActivity } from "@/lib/world/behavior"
 
 export const DECK_URL = "/canopy/hearth-deck-64bdc8e0.glb"
 export const LOFT_URL = "/canopy/loft-cottage.glb"
@@ -163,6 +164,7 @@ export async function mountSettlement(
   const companionMaterials = new Map<string, MeshStandardMaterial>()
   let companions = 0
   const figures = new Map<string, Figure>()
+  const routines = new Map<string, { origin: Vector3; tier: number; activity: AmbientActivity }>()
   const seatWood = new MeshStandardMaterial({ color: "#a8794a", roughness: 0.85 })
   const seatBoard = new BoxGeometry(1, 0.07, 0.4)
   const seatLeg = new BoxGeometry(0.08, 0.15, 0.32)
@@ -221,9 +223,11 @@ export async function mountSettlement(
       bench.rotation.y = Math.PI / 4
       scene.add(bench)
       figure.sit(true)
+      figure.update(2, 0)
       seats++
       scene.add(figure.object)
       figures.set(placement.gameId, figure)
+      routines.set(placement.gameId, { origin: figure.object.position.clone(), tier: placement.tier, activity: "rest" })
     }
     for (let k = 0; k < placement.tier; k++) {
       const angle = k * 2.1 + placement.slot
@@ -338,13 +342,18 @@ export async function mountSettlement(
       return `${spot.deck}:${spot.anchor}@${Math.round(rect.left + ((p.x + 1) / 2) * rect.width)},${Math.round(rect.top + ((1 - p.y) / 2) * rect.height)}`
     }).join(";")
   }
-  const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
+  const motion = matchMedia("(prefers-reduced-motion: reduce)")
+  let reduced = motion.matches
+  let hiddenAt = document.hidden ? performance.now() : 0
+  let hiddenDuration = 0
+  const visualNow = () => (hiddenAt || performance.now()) - hiddenDuration
   const tasks = new Set<(now: number) => boolean>()
   let frame = 0
   let drawn = 0, gap = 48, seen = 0
-  const tick = (now: number) => {
+  const tick = (timestamp: number) => {
     frame = 0
-    if (disposed) return
+    if (disposed || document.hidden || reduced) return
+    const now = timestamp - hiddenDuration
     // With only the residents' idle going, 20 frames a second is plenty. When the browser is
     // slow to hand out frames (a weak GPU, software drawing), idle draws back off to match.
     if (seen) gap = Math.min(1500, Math.max(48, gap * 0.8, (now - seen) * 2.5))
@@ -356,8 +365,9 @@ export async function mountSettlement(
     if (tasks.size) frame = requestAnimationFrame(tick)
   }
   const run = (task: (now: number) => boolean) => {
+    if (reduced) { task(visualNow() + 100000); render(); return }
     tasks.add(task)
-    if (!frame) frame = requestAnimationFrame(tick)
+    if (!frame && !document.hidden) frame = requestAnimationFrame(tick)
   }
 
   // Saying hi: a hop, a beat on landing, then the emote itself.
@@ -368,22 +378,38 @@ export async function mountSettlement(
     check_in: ["jump", "land", "look"],
   }
   const onReact = (event: Event) => {
+    if (reduced) return
     const { gameId, emote } = (event as CustomEvent<{ gameId: string; emote: string }>).detail
     figures.get(gameId)?.chain(REACTIONS[emote] ?? ["jump", "land"])
-    if (!frame) frame = requestAnimationFrame(tick)
+    if (!frame && !document.hidden) frame = requestAnimationFrame(tick)
   }
   host.addEventListener("settlement-react", onReact)
 
   // A new neighbour drops in from above, lands, and says hello.
+  const arrivals = new Set<() => void>()
   const onArrive = (event: Event) => {
     const ids = (event as CustomEvent<string[]>).detail.filter((id) => figures.has(id)).slice(0, 3)
     ids.forEach((id, order) => {
       const figure = figures.get(id)!
+      if (reduced) {
+        host.dispatchEvent(new CustomEvent("settlement-arrived", { detail: id }))
+        return
+      }
       const rest = figure.object.position.y
-      const began = performance.now() + order * 700
+      const began = visualNow() + order * 700
       figure.object.visible = false
-      let landed = false
-      run((now) => {
+      const finish = () => {
+        figure.object.visible = true
+        figure.object.position.y = rest
+        tasks.delete(arrive)
+        arrivals.delete(finish)
+        if (!reduced) {
+          playLand()
+          figure.chain(["land", "greeting"])
+        }
+        host.dispatchEvent(new CustomEvent("settlement-arrived", { detail: id }))
+      }
+      const arrive = (now: number) => {
         const t = (now - began) / 1000
         if (t < 0) return true
         figure.object.visible = true
@@ -392,15 +418,11 @@ export async function mountSettlement(
           figure.object.position.y = rest + 9 * (1 - k * k)
           return true
         }
-        figure.object.position.y = rest
-        if (!landed) {
-          landed = true
-          playLand()
-          figure.chain(["land", "greeting"])
-          host.dispatchEvent(new CustomEvent("settlement-arrived", { detail: id }))
-        }
+        finish()
         return false
-      })
+      }
+      arrivals.add(finish)
+      run(arrive)
     })
     host.dataset.arriving = String(ids.length)
   }
@@ -409,20 +431,43 @@ export async function mountSettlement(
 
   // Residents breathe and glance around, so the scene keeps drawing while it is on screen.
   let last = 0
-  run(function live(now) {
-    const seconds = last ? Math.min(0.1, (now - last) / 1000) : 0
+  let visibleSeconds = 0
+  const live = (now: number) => {
+    const seconds = last ? Math.min(1.5, (now - last) / 1000) : 0
     last = now
-    figures.forEach((figure) => figure.update(seconds, now))
+    // Use the same visible-time delta for routines and authored clips. Capping
+    // only the mixer at 0.1s makes reactions last many times longer on slow GPUs.
+    visibleSeconds += seconds
+    figures.forEach((figure, id) => {
+      const routine = routines.get(id)!
+      const pose = ambientBehavior(id, visibleSeconds, routine.tier)
+      // Reactions and arrivals retain control until their authored clip finishes.
+      if (!figure.busy()) {
+        if (pose.activity !== routine.activity && pose.activity === "greeting") figure.play("greeting")
+        if (pose.activity !== routine.activity && pose.activity === "look") figure.play("look")
+        if (pose.activity === "stroll") figure.play("walk")
+        routine.activity = pose.activity
+      }
+      figure.sit(pose.activity !== "stroll" && pose.activity !== "greeting")
+      figure.object.position.x = routine.origin.x + pose.distance * 0.7
+      figure.object.position.z = routine.origin.z + pose.distance * 0.7
+      figure.object.rotation.y = pose.activity === "stroll" ? Math.PI / 4 + (pose.facing < 0 ? Math.PI : 0) : Math.PI / 4
+      figure.update(seconds, now)
+    })
+    host.dataset.routines = [...routines].map(([id, routine]) => `${id}:${routine.activity}`).join(";")
     const acting = [...figures].filter(([, figure]) => figure.busy()).map(([id]) => id).join(";")
     if (host.dataset.acting !== acting) host.dataset.acting = acting
     return !disposed
-  })
+  }
+  // Keep the live task queued even in reduced motion, but never schedule its frame loop.
+  tasks.add(live)
+  if (!reduced && !document.hidden) frame = requestAnimationFrame(tick)
 
   // A loft drops in, squashes a little on landing and kicks up a few puffs of dust.
   const playDrop = (loft: Group) => {
     if (reduced) return
     const base = loft.position.y
-    const started = performance.now()
+    const started = visualNow()
     const puffs: Mesh[] = []
     let spawned = false
     loft.position.y = base + 4
@@ -496,7 +541,7 @@ export async function mountSettlement(
     const toZ = Math.min(bounds.maxZ, Math.max(bounds.minZ, z))
     const toZoom = Math.min(4, Math.max(zoom, 1.8))
     if (reduced) { target.set(toX, 0, toZ); zoom = toZoom; render(); return }
-    const from = target.clone(), fromZoom = zoom, started = performance.now()
+    const from = target.clone(), fromZoom = zoom, started = visualNow()
     run((now) => {
       const k = Math.min(1, Math.max(0, (now - started) / 450))
       const e = 1 - Math.pow(1 - k, 3)
@@ -726,12 +771,34 @@ export async function mountSettlement(
 
   const observer = new ResizeObserver(resize)
   observer.observe(host)
-  resize()
 
   let disposed = false
+  const visibility = () => {
+    const now = performance.now()
+    if (document.hidden && !hiddenAt) hiddenAt = now
+    else if (!document.hidden && hiddenAt) { hiddenDuration += now - hiddenAt; hiddenAt = 0 }
+    reduced = motion.matches
+    if (frame) cancelAnimationFrame(frame)
+    frame = 0
+    last = 0
+    seen = 0
+    if (reduced && !disposed) {
+      for (const finish of [...arrivals]) finish()
+      if (!document.hidden) render()
+    }
+    host.dataset.renderState = document.hidden ? "hidden" : reduced ? "reduced-motion" : "running"
+    if (!document.hidden && !reduced && !disposed) frame = requestAnimationFrame(tick)
+  }
+  const contextLost = (event: Event) => {
+    event.preventDefault()
+    if (!disposed) host.dispatchEvent(new Event("settlement-error"))
+  }
   const dispose = () => {
     if (disposed) return
     disposed = true
+    motion.removeEventListener("change", visibility)
+    document.removeEventListener("visibilitychange", visibility)
+    renderer.domElement.removeEventListener("webglcontextlost", contextLost)
     observer.disconnect()
     host.removeEventListener("pointerdown", onDown)
     host.removeEventListener("pointermove", onMove)
@@ -747,6 +814,7 @@ export async function mountSettlement(
     host.removeEventListener("settlement-pieces", onPieces)
     if (frame) cancelAnimationFrame(frame)
     tasks.clear()
+    arrivals.clear()
     figures.forEach((figure) => figure.dispose())
     signal.removeEventListener("abort", dispose)
     disposeTree(scene)
@@ -777,5 +845,11 @@ export async function mountSettlement(
     scene.clear()
   }
   signal.addEventListener("abort", dispose, { once: true })
+  motion.addEventListener("change", visibility)
+  document.addEventListener("visibilitychange", visibility)
+  renderer.domElement.addEventListener("webglcontextlost", contextLost)
+  if (signal.aborted) { dispose(); return dispose }
+  resize()
+  visibility()
   return dispose
 }

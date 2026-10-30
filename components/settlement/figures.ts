@@ -117,14 +117,9 @@ export function createFigure(source: FigureSource, shell: string, phase: number)
   let wantSit = false, sitWeight = 0
   let playing: string | null = null
 
-  let nextLook = 3 + (phase * 7) % 6
   return {
     object,
-    update(seconds, now) {
-      if (!current.length && now / 1000 >= nextLook) {
-        nextLook = now / 1000 + 6 + Math.random() * 8
-        this.play("look")
-      }
+    update(seconds) {
       mixer.update(seconds)
       if (!pose) return
       const target = wantSit && (playing === null || playing === "look") ? 1 : 0
