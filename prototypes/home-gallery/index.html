@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f1a1f">
+    <title>Just Play — Home prototype</title>
+    <!-- Three prototype-only Home layouts answer: how can a quiet personal gallery feel meaningful without competing with play? -->
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1a1f;
+        --surface: #1a2e38;
+        --surface-raised: #233c49;
+        --ink: #fcf7e9;
+        --muted: #a9bcc0;
+        --gold: #f0b46a;
+        --gold-ink: #2a1a08;
+        --sage: #8fcaa3;
+        --line: rgba(255, 255, 255, .12);
+        --radius: 1.25rem;
+        font-family: Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100dvh; padding-bottom: 10rem; }
+      button { color: inherit; font: inherit; }
+      button:focus-visible, summary:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 3px;
+      }
+      .shell { width: min(100% - 2rem, 70rem); margin-inline: auto; }
+      .topbar {
+        height: 4.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand { display: flex; align-items: center; gap: .7rem; font-weight: 750; letter-spacing: -.025em; }
+      .brand-mark {
+        display: grid;
+        width: 2rem;
+        aspect-ratio: 1;
+        place-items: center;
+        border: 1px solid rgba(240, 180, 106, .45);
+        border-radius: 50%;
+        color: var(--gold);
+      }
+      .prototype-tag {
+        border: 1px solid rgba(240, 180, 106, .35);
+        border-radius: 999px;
+        padding: .35rem .65rem;
+        color: var(--gold);
+        font-size: .72rem;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+      }
+      main { padding-top: 1.7rem; }
+      h1, h2, p { margin-top: 0; }
+      h1 { margin-bottom: .45rem; font-size: clamp(1.7rem, 4vw, 2.4rem); letter-spacing: -.035em; line-height: 1.1; text-wrap: balance; }
+      h2 { margin-bottom: .5rem; font-size: 1.05rem; letter-spacing: -.015em; }
+      p { color: var(--muted); line-height: 1.55; }
+      .intro { max-width: 39rem; margin-bottom: 1.2rem; }
+      .sample-note { margin: 0 0 1.25rem; font-size: .75rem; }
+      .view { display: none; }
+      .view.active { display: block; }
+      .surface {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+      }
+      .scene {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #193139;
+      }
+      .scene svg { display: block; width: 100%; height: auto; }
+      .scene-caption {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .9rem 1rem;
+        border-top: 1px solid var(--line);
+      }
+      .scene-caption p { margin: 0; font-size: .9rem; }
+      .scene-caption strong { color: var(--ink); font-weight: 650; }
+      .count { color: var(--gold); white-space: nowrap; font-size: .82rem; }
+      .details {
+        margin-top: 1rem;
+        border-bottom: 1px solid var(--line);
+      }
+      .details summary { padding: .9rem 0; cursor: pointer; font-weight: 650; }
+      .resident-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; padding: 0 0 1rem; }
+      .resident-row { min-width: 0; padding: .8rem; border-radius: 1rem; background: rgba(255,255,255,.035); }
+      .resident-row strong, .resident-row span { display: block; overflow: hidden; text-overflow: ellipsis; }
+      .resident-row strong { margin-bottom: .25rem; font-size: .86rem; }
+      .resident-row span { color: var(--muted); font-size: .74rem; }
+      .gallery-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: 1.3rem 0 .8rem; }
+      .gallery-head p { margin: 0; font-size: .85rem; }
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .85rem;
+      }
+      .artwork {
+        display: flex;
+        min-height: 11rem;
+        flex-direction: column;
+        justify-content: end;
+        overflow: hidden;
+        position: relative;
+        border-radius: 1rem;
+        padding: 1rem;
+        background: #274c4a;
+      }
+      .artwork::before, .artwork::after { position: absolute; content: ""; pointer-events: none; }
+      .artwork::before {
+        width: 9rem;
+        height: 9rem;
+        right: -2rem;
+        top: -3rem;
+        border: 1px solid rgba(252,247,233,.28);
+        border-radius: 50%;
+      }
+      .artwork::after {
+        width: 6rem;
+        height: 6rem;
+        right: 2rem;
+        top: 2rem;
+        border: 1px solid rgba(252,247,233,.2);
+        border-radius: 50%;
+      }
+      .artwork:nth-child(2) { background: #314c54; }
+      .artwork:nth-child(3) { background: #4a493b; }
+      .artwork > * { position: relative; z-index: 1; }
+      .artwork small { margin-bottom: .35rem; color: rgba(252,247,233,.76); }
+      .artwork strong { max-width: 13rem; font-size: 1.05rem; line-height: 1.2; text-wrap: balance; }
+      .archive-link { margin-top: 1rem; color: var(--gold); font-size: .88rem; }
+      .peek {
+        display: grid;
+        grid-template-columns: minmax(10rem, .8fr) 1.2fr;
+        align-items: center;
+        gap: 1.25rem;
+        margin-top: 1.25rem;
+        padding: 1rem;
+      }
+      .peek .scene { border-radius: .9rem; }
+      .peek .scene svg { min-height: 7rem; object-fit: cover; }
+      .peek p { margin-bottom: 0; }
+      .timeline {
+        position: relative;
+        display: grid;
+        gap: 0;
+        margin: 1.5rem 0 0 .75rem;
+        padding-left: 1.5rem;
+        border-left: 1px solid rgba(240,180,106,.42);
+      }
+      .moment { position: relative; padding: 0 0 1.35rem 0; }
+      .moment::before {
+        position: absolute;
+        top: .25rem;
+        left: -1.9rem;
+        width: .65rem;
+        height: .65rem;
+        border: 2px solid var(--bg);
+        border-radius: 50%;
+        background: var(--gold);
+        content: "";
+      }
+      .moment time { display: block; margin-bottom: .3rem; color: var(--muted); font-size: .75rem; }
+      .moment strong { display: block; margin-bottom: .22rem; font-size: 1rem; }
+      .moment p { margin: 0; font-size: .87rem; }
+      .moment .arrival-label { color: var(--sage); }
+      .nav {
+        position: fixed;
+        z-index: 5;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: flex;
+        min-height: 4.25rem;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(1.5rem, 7vw, 4rem);
+        border-top: 1px solid var(--line);
+        padding: .5rem 1rem max(.5rem, env(safe-area-inset-bottom));
+        background: var(--bg);
+      }
+      .nav span { color: var(--muted); font-size: .78rem; }
+      .nav .current { color: var(--gold); font-weight: 700; }
+      .switcher {
+        position: fixed;
+        z-index: 6;
+        bottom: calc(5rem + env(safe-area-inset-bottom));
+        left: 50%;
+        display: flex;
+        width: max-content;
+        max-width: calc(100vw - 1.5rem);
+        align-items: center;
+        justify-content: space-between;
+        gap: .8rem;
+        transform: translateX(-50%);
+        border: 1px solid rgba(240,180,106,.5);
+        border-radius: 999px;
+        padding: .4rem .55rem;
+        background: #263d43;
+        box-shadow: 0 8px 26px rgba(0,0,0,.4);
+      }
+      .switcher button {
+        display: grid;
+        width: 2.3rem;
+        min-height: 2.3rem;
+        place-items: center;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        cursor: pointer;
+      }
+      .switcher button:hover { background: rgba(255,255,255,.1); }
+      .variant-name { min-width: 10.5rem; text-align: center; font-size: .8rem; font-weight: 650; }
+      .switcher-hint { display: none; }
+      @media (max-width: 620px) {
+        .shell { width: min(100% - 1.25rem, 70rem); }
+        main { padding-top: 1.25rem; }
+        .resident-list, .gallery { grid-template-columns: 1fr; }
+        .resident-row { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+        .artwork { min-height: 8rem; }
+        .peek { grid-template-columns: 1fr; }
+        .peek .scene svg { max-height: 8rem; }
+        .scene-caption { align-items: start; flex-direction: column; gap: .3rem; }
+        .nav { gap: clamp(1rem, 7vw, 2.2rem); }
+        .switcher { bottom: calc(4.75rem + env(safe-area-inset-bottom)); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="topbar shell">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">J</span><span>Just Play</span></div>
+      <span class="prototype-tag">Home prototype · sample data</span>
+    </header>
+
+    <main class="shell">
+      <section class="view active" data-view="A" aria-labelledby="heading-a">
+        <h1 id="heading-a">A place for the games that stay with you.</h1>
+        <p class="intro">Let the world be the first thing you see. Keep its details close, but never in the way.</p>
+        <figure class="scene">
+          <svg viewBox="0 0 960 420" role="img" aria-labelledby="scene-title scene-desc">
+            <title id="scene-title">A small treehouse settlement</title>
+            <desc id="scene-desc">Three quiet homes linked by branches beneath a pale moon.</desc>
+            <rect width="960" height="420" fill="#193139"/>
+            <circle cx="780" cy="82" r="31" fill="#f0d7a8"/>
+            <circle cx="770" cy="74" r="30" fill="#193139"/>
+            <path d="M470 430V180m0 85-205-80m205 28 230-72m-230 139-153 39m153-54 185 72" fill="none" stroke="#718a72" stroke-width="24" stroke-linecap="round"/>
+            <path d="M470 238 327 178m143 28 187-60m-187 160-128 24m128-42 151 59" fill="none" stroke="#9eaa7a" stroke-width="9" stroke-linecap="round"/>
+            <g fill="#355b4c">
+              <circle cx="204" cy="93" r="83"/><circle cx="320" cy="73" r="77"/><circle cx="425" cy="101" r="86"/>
+              <circle cx="590" cy="74" r="77"/><circle cx="704" cy="105" r="83"/><circle cx="830" cy="123" r="96"/>
+              <circle cx="100" cy="174" r="81"/><circle cx="391" cy="165" r="77"/><circle cx="775" cy="198" r="80"/>
+            </g>
+            <g fill="#f0b46a" stroke="#fcf7e9" stroke-opacity=".38" stroke-width="3">
+              <path d="M188 172h104v75H188z"/><path d="m177 174 63-47 63 47z"/>
+              <path d="M426 111h105v77H426z"/><path d="m415 113 64-48 64 48z"/>
+              <path d="M637 227h105v77H637z"/><path d="m626 229 64-48 64 48z"/>
+            </g>
+            <g fill="#fcf7e9" opacity=".82"><rect x="232" y="197" width="17" height="25" rx="3"/><rect x="468" y="137" width="20" height="25" rx="3"/><rect x="678" y="253" width="20" height="25" rx="3"/></g>
+            <g fill="#fcf7e9" opacity=".58"><circle cx="108" cy="59" r="2"/><circle cx="550" cy="46" r="2"/><circle cx="877" cy="216" r="2"/><circle cx="368" cy="41" r="1.5"/></g>
+          </svg>
+          <figcaption class="scene-caption">
+            <p><strong>Your world, at rest.</strong> Three games have found a home here.</p>
+            <span class="count">3 homes · 2 decks</span>
+          </figcaption>
+        </figure>
+        <details class="details">
+          <summary>Residents &amp; keepsakes</summary>
+          <div class="resident-list">
+            <div class="resident-row"><strong>Lanternfall</strong><span>Arrived · Oct 12</span></div>
+            <div class="resident-row"><strong>Mosslight</strong><span>Arrived · Sep 28</span></div>
+            <div class="resident-row"><strong>Quiet Harbor</strong><span>Arrived · Sep 04</span></div>
+          </div>
+        </details>
+      </section>
+
+      <section class="view" data-view="B" aria-labelledby="heading-b">
+        <h1 id="heading-b">The games you made room for.</h1>
+        <p class="intro">A small gallery of arrivals, with the world itself just one step away.</p>
+        <div class="gallery-head">
+          <h2>At home</h2><p>3 residents · no rush to add more</p>
+        </div>
+        <div class="gallery">
+          <article class="artwork"><small>Arrived · Oct 12</small><strong>Lanternfall</strong></article>
+          <article class="artwork"><small>Arrived · Sep 28</small><strong>Mosslight</strong></article>
+          <article class="artwork"><small>Arrived · Sep 04</small><strong>Quiet Harbor</strong></article>
+        </div>
+        <div class="peek surface">
+          <figure class="scene">
+            <svg viewBox="0 0 480 180" role="img" aria-label="A small preview of the connected treehouse world">
+              <rect width="480" height="180" fill="#193139"/>
+              <path d="M225 205V65m0 85L97 91m128 41 153-59" fill="none" stroke="#718a72" stroke-width="18" stroke-linecap="round"/>
+              <g fill="#355b4c"><circle cx="98" cy="53" r="49"/><circle cx="193" cy="34" r="46"/><circle cx="300" cy="44" r="52"/><circle cx="397" cy="61" r="54"/></g>
+              <g fill="#f0b46a"><path d="M114 80h64v48h-64z"/><path d="m107 81 39-30 39 30z"/><path d="M284 46h64v48h-64z"/><path d="m277 47 39-30 39 30z"/></g>
+            </svg>
+          </figure>
+          <div><h2>A world that grows with your play.</h2><p>Open the settlement when you want to wander. Nothing here needs tending.</p></div>
+        </div>
+        <p class="archive-link">Keepsakes from games set aside · 1</p>
+      </section>
+
+      <section class="view" data-view="C" aria-labelledby="heading-c">
+        <h1 id="heading-c">Your play, gathered over time.</h1>
+        <p class="intro">A gentle record of what found a place in your world. No streaks, scores, or invented moments.</p>
+        <figure class="scene">
+          <svg viewBox="0 0 960 240" role="img" aria-labelledby="timeline-title timeline-desc">
+            <title id="timeline-title">The home world in the evening</title>
+            <desc id="timeline-desc">Three warmly lit homes sit among broad branches.</desc>
+            <rect width="960" height="240" fill="#193139"/>
+            <circle cx="816" cy="58" r="28" fill="#f0d7a8"/>
+            <path d="M480 270V115m0 50L230 83m250 78 245-82m-245 99-150 27m150-46 192 41" fill="none" stroke="#718a72" stroke-width="28" stroke-linecap="round"/>
+            <g fill="#355b4c"><circle cx="163" cy="56" r="73"/><circle cx="304" cy="30" r="70"/><circle cx="449" cy="58" r="74"/><circle cx="604" cy="31" r="68"/><circle cx="760" cy="73" r="77"/></g>
+            <g fill="#f0b46a"><path d="M208 83h91v62h-91z"/><path d="m198 85 55-42 56 42z"/><path d="M432 123h91v62h-91z"/><path d="m422 125 55-42 56 42z"/><path d="M654 78h91v62h-91z"/><path d="m644 80 55-42 56 42z"/></g>
+          </svg>
+        </figure>
+        <div class="timeline" aria-label="Recent arrivals">
+          <article class="moment">
+            <time datetime="2026-10-12">October 12</time>
+            <strong>Lanternfall</strong>
+            <p><span class="arrival-label">Arrived at your home</span> · Your chosen playtime stamp was reached.</p>
+          </article>
+          <article class="moment">
+            <time datetime="2026-09-28">September 28</time>
+            <strong>Mosslight</strong>
+            <p><span class="arrival-label">Arrived at your home</span> · A place made through play.</p>
+          </article>
+          <article class="moment">
+            <time datetime="2026-09-04">September 4</time>
+            <strong>Quiet Harbor</strong>
+            <p><span class="arrival-label">Arrived at your home</span> · Still here whenever you return.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <nav class="nav shell" aria-label="Main navigation">
+      <span>Deck</span><span>Now Playing</span><span class="current" aria-current="page">Home</span><span>Progress</span>
+    </nav>
+
+    <aside class="switcher" aria-label="Home prototype variations">
+      <button type="button" id="previous" aria-label="Previous Home design">←</button>
+      <span class="variant-name" id="variant-name" aria-live="polite">A · World first</span>
+      <button type="button" id="next" aria-label="Next Home design">→</button>
+    </aside>
+    <script>
+      const variants = [
+        { id: "A", name: "World first" },
+        { id: "B", name: "Resident gallery" },
+        { id: "C", name: "Arrival timeline" },
+      ]
+      let current = Math.max(0, variants.findIndex((variant) => variant.id === new URLSearchParams(location.search).get("variant")))
+      const views = [...document.querySelectorAll("[data-view]")]
+      const name = document.querySelector("#variant-name")
+      function show(index, syncUrl = true) {
+        current = (index + variants.length) % variants.length
+        const selected = variants[current]
+        for (const view of views) {
+          const active = view.dataset.view === selected.id
+          view.classList.toggle("active", active)
+          view.setAttribute("aria-hidden", String(!active))
+        }
+        name.textContent = `${selected.id} · ${selected.name}`
+        if (syncUrl) {
+          const url = new URL(location.href)
+          url.searchParams.set("variant", selected.id)
+          history.replaceState(null, "", url)
+        }
+      }
+      document.querySelector("#previous").addEventListener("click", () => show(current - 1))
+      document.querySelector("#next").addEventListener("click", () => show(current + 1))
+      document.addEventListener("keydown", (event) => {
+        if (event.altKey || event.ctrlKey || event.metaKey) return
+        const target = event.target
+        if (target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"))) return
+        if (event.key === "ArrowLeft") { event.preventDefault(); show(current - 1) }
+        if (event.key === "ArrowRight") { event.preventDefault(); show(current + 1) }
+      })
+      show(current, false)
+    </script>
+  </body>
+</html>
