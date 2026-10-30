@@ -46,7 +46,7 @@ export function DeckMap({ residents, saved = [] }: DeckMapProps & { saved?: Save
               className="w-full rounded-2xl border border-border bg-card p-3"
             >
               <ul className="grid grid-cols-3 gap-2">
-                {Array.from({ length: DECK_CAPACITY }, (_, slot) => {
+                {Array.from({ length: placed.reduce((count, home) => Math.max(count, home.slot + 1), DECK_CAPACITY) }, (_, slot) => {
                   const placement = placed.find((p) => p.slot === slot)
                   if (!placement) {
                     return (
@@ -131,7 +131,7 @@ export function SettlementView({ residents, pieces = [], savedLayout = [], fulls
   }
   const [selected, setSelected] = useState<Resident["game_id"] | null>(null)
   const [hints, setHints] = useState<SpotHints | undefined>(undefined)
-  const sound = useSyncExternalStore(subscribeSound, soundOn, () => true)
+  const sound = useSyncExternalStore(subscribeSound, soundOn, () => false)
   const [arriving, setArriving] = useState<string[]>(() => newcomers(residents))
   const [reaction, setReaction] = useState<{ gameId: string; emote: string; nonce: number } | null>(null)
   const [said, setSaid] = useState<{ name: string; line: string } | null>(null)

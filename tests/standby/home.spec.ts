@@ -12,7 +12,7 @@ test("Home shows a calm empty state when nothing lives here yet", async ({ page 
 test("With no homes, the settlement shows a first home plot and a way back", async ({ page }) => {
   await page.goto("/?app-shell")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "See your settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const layer = page.getByRole("dialog", { name: "Your settlement" })
   await expect(layer).toBeVisible()
   await expect(layer.getByRole("heading", { name: "Your first home goes here" })).toBeVisible()
@@ -26,6 +26,7 @@ test("Home tab is announced as the current page and Progress no longer lists res
   const home = page.getByRole("button", { name: "Home" })
   await home.click()
   await expect(home).toHaveAttribute("aria-current", "page")
+  await page.getByText("Residents & archive", { exact: true }).click()
   await expect(page.getByRole("heading", { name: "Lives here" })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Archived" })).toBeVisible()
 
@@ -49,29 +50,27 @@ test("Home says how many homes sit on how many decks", async ({ page }) => {
   await expect(page.getByText(/^\d+ homes? on \d+ decks?$/)).toBeVisible()
 })
 
-test("Settlement toggle draws the 3D settlement and returns to the list", async ({ page }) => {
+test("Home embeds the world and expanding it returns to the same Home", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  const list = page.getByRole("button", { name: "List" })
-  const settlement = page.getByRole("button", { name: "Settlement" })
-  await expect(list).toHaveAttribute("aria-pressed", "true")
+  const settlement = page.getByRole("button", { name: "Expand world" })
+  await expect(page.getByRole("region", { name: "Your home", exact: true })).toBeVisible()
 
   await settlement.click()
-  await expect(settlement).toHaveAttribute("aria-pressed", "true")
+
   const scene = page.getByRole("group", { name: /^Settlement with 7 homes on 2 decks/ })
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await expect(scene.locator("canvas")).toHaveCount(1)
 
   await page.getByRole("button", { name: "Back to Home" }).click()
-  await expect(page.getByTestId("settlement-3d")).toHaveCount(0)
-  await expect(list).toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByTestId("settlement-3d")).toHaveCount(1)
   await expect(settlement).toBeFocused()
 })
 
 test("Settlement takes the whole screen, with a way back", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const layer = page.getByRole("dialog", { name: "Your settlement" })
   await expect(layer).toBeVisible()
   const viewport = page.viewportSize()!
@@ -92,13 +91,13 @@ test("Settlement takes the whole screen, with a way back", async ({ page }) => {
 
   await page.keyboard.press("Escape")
   await expect(layer).toHaveCount(0)
-  await expect(page.getByRole("button", { name: "Settlement" })).toBeFocused()
+  await expect(page.getByRole("button", { name: "Expand world" })).toBeFocused()
 })
 
 test("Settlement header shows whose it is, and a hint shows once", async ({ page }) => {
   await page.goto("/?app-shell&residents-many&card-filled")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const layer = page.getByRole("dialog", { name: "Your settlement" })
   await expect(layer.getByText("Slow games, long evenings")).toBeVisible()
   const hint = layer.getByText("Tap a home to see who lives there. Drag to look around.")
@@ -107,7 +106,7 @@ test("Settlement header shows whose it is, and a hint shows once", async ({ page
   await expect(hint).toHaveCount(0)
 
   await page.getByRole("button", { name: "Back to Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   await expect(layer).toBeVisible()
   await expect(hint).toHaveCount(0)
 })
@@ -115,7 +114,7 @@ test("Settlement header shows whose it is, and a hint shows once", async ({ page
 test("Picking a home also clears the hint", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const hint = page.getByText("Tap a home to see who lives there. Drag to look around.")
   await expect(hint).toBeVisible()
   await page.getByRole("list", { name: "Homes" }).getByRole("button", { name: "Home 3" }).click()
@@ -127,7 +126,7 @@ test("The 2D fallback scrolls inside the full-screen layer", async ({ page }) =>
   await page.setViewportSize({ width: 390, height: 500 })
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const deck2 = page.getByRole("region", { name: "Deck 2" })
   await deck2.scrollIntoViewIfNeeded()
   await expect(deck2).toBeInViewport()
@@ -137,7 +136,7 @@ test("Settlement falls back to the 2D deck map when the art cannot load", async 
   await page.route("**/canopy/hearth-deck-*.glb", (route) => route.abort())
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   await expect(page.getByRole("region", { name: "Deck 1" })).toBeVisible()
   await expect(page.getByRole("region", { name: "Deck 2" })).toBeVisible()
   await expect(page.getByTestId("settlement-view")).toBeVisible()
@@ -147,7 +146,7 @@ test("Settlement falls back to the 2D deck map when the art cannot load", async 
 test("Settlement view can be moved and zoomed from the keyboard", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await scene.focus()
@@ -169,7 +168,7 @@ test("Settlement view can be moved and zoomed from the keyboard", async ({ page 
 test("Settlement view keeps filling its card when the window resizes", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   for (const size of [{ width: 390, height: 800 }, { width: 1100, height: 700 }]) {
@@ -187,7 +186,7 @@ test("Settlement view keeps filling its card when the window resizes", async ({ 
 test("Settlement homes can be picked from the list and show who lives there", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const chip = page.getByRole("list", { name: "Homes" }).getByRole("button", { name: "Home 3" })
   await chip.click()
   await expect(chip).toHaveAttribute("aria-pressed", "true")
@@ -199,7 +198,7 @@ test("Settlement homes can be picked from the list and show who lives there", as
 test("Tapping a home in the 3D settlement shows who lives there, dragging does not", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   const box = (await scene.boundingBox())!
@@ -222,10 +221,11 @@ test("Tapping a home in the 3D settlement shows who lives there, dragging does n
 test("Deeper play adds companions to the settlement and a quiet line to the portrait", async ({ page }) => {
   await page.goto("/?app-shell&residents-tiers")
   await page.getByRole("button", { name: "Home" }).click()
+  await page.getByText("Residents & archive", { exact: true }).click()
   await expect(page.getByText("Settled", { exact: true })).toHaveCount(1)
   await expect(page.getByText("At home", { exact: true })).toHaveCount(1)
   await expect(page.getByText("Elder", { exact: true })).toHaveCount(1)
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await expect(scene).toHaveAttribute("data-companions", "6")
@@ -234,7 +234,7 @@ test("Deeper play adds companions to the settlement and a quiet line to the port
 test("Placed lofts are drawn on their rim spots, and ones for missing decks are skipped", async ({ page }) => {
   await page.goto("/?app-shell&residents-many&pieces")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await expect(scene).toHaveAttribute("data-pieces", "2")
@@ -243,7 +243,7 @@ test("Placed lofts are drawn on their rim spots, and ones for missing decks are 
 test("An Elder home can place, move and take back its loft", async ({ page }) => {
   await page.goto("/?app-shell&residents-many&elder&pieces")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   await page.getByRole("button", { name: "Home 4", exact: true }).click()
   const loft = page.getByTestId("loft-section")
   await expect(loft).toContainText("Has a loft to place")
@@ -263,7 +263,7 @@ test("An Elder home can place, move and take back its loft", async ({ page }) =>
 test("A loft that can't be placed says so quietly", async ({ page }) => {
   await page.goto("/?app-shell&residents-many&elder&pieces&piece-fail")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   await page.getByRole("button", { name: "Home 4", exact: true }).click()
   await page.getByRole("button", { name: /Place the loft/ }).click()
   await page.getByRole("button", { name: "Deck 1, spot 1" }).click()
@@ -274,7 +274,7 @@ test("A loft that can't be placed says so quietly", async ({ page }) => {
 test("Choosing a spot shows its free rings in the 3D scene and clears them after", async ({ page }) => {
   await page.goto("/?app-shell&residents-many&elder&pieces")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await page.getByRole("button", { name: "Home 4", exact: true }).click()
@@ -288,7 +288,7 @@ test("Choosing a spot shows its free rings in the 3D scene and clears them after
 test("Picking a spot shows a see-through loft there, and tapping a ring in the scene changes it", async ({ page }) => {
   await page.goto("/?app-shell&residents-many&elder&pieces")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await page.getByRole("button", { name: "Home 4", exact: true }).click()
@@ -310,7 +310,7 @@ test("Picking a spot shows a see-through loft there, and tapping a ring in the s
 test("New pieces are added to the live scene without rebuilding it or moving the camera", async ({ page }) => {
   await page.goto("/?app-shell&residents-many&pieces")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await expect(scene).toHaveAttribute("data-pieces", "2")
@@ -331,7 +331,7 @@ test("New pieces are added to the live scene without rebuilding it or moving the
 test("A real tap on a glowing ring in the scene picks that spot", async ({ page }) => {
   await page.goto("/?app-shell&residents-many&elder&pieces")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await page.getByRole("button", { name: "Home 4", exact: true }).click()
@@ -358,13 +358,13 @@ test("A real tap on a glowing ring in the scene picks that spot", async ({ page 
 test("With more than one deck the scene labels each deck, a single deck has no labels", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-state", "ready", { timeout: 15000 })
   await expect(scene).toHaveAttribute("data-labels", "2")
   await page.goto("/?app-shell&residents")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-labels", "0")
 })
 
@@ -374,7 +374,7 @@ const layoutCalls = (page: import("@playwright/test").Page) =>
 async function openArrange(page: import("@playwright/test").Page, query = "") {
   await page.goto(`/?app-shell&residents-many${query}`)
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   await page.getByRole("button", { name: "Arrange" }).click()
 }
 
@@ -496,7 +496,7 @@ test("Arrange: Turn and the R key turn a home a quarter, and Done saves the turn
 test("Settlement: every resident stands beside their home", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-figures", "7")
   await expect(page.getByTestId("settlement-3d")).toHaveAttribute("data-seats", "7")
 })
@@ -504,7 +504,7 @@ test("Settlement: every resident stands beside their home", async ({ page }) => 
 test("Saying hi makes that resident hop and emote in the scene, then settle back", async ({ page }) => {
   await page.goto("/?app-shell&residents-many")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-figures", "7")
   await page.getByRole("button", { name: "Home 3", exact: true }).click()
@@ -517,11 +517,11 @@ test("Saying hi makes that resident hop and emote in the scene, then settle back
 test("A newcomer drops in once, then is just there on the next visit", async ({ page }) => {
   await page.goto("/?app-shell&residents")
   await page.getByRole("button", { name: "Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   const scene = page.getByTestId("settlement-3d")
   await expect(scene).toHaveAttribute("data-arriving", "1")
   await expect.poll(() => page.evaluate(() => localStorage.getItem("jp-seen-arrivals"))).toContain("test-game")
   await page.getByRole("button", { name: "Back to Home" }).click()
-  await page.getByRole("button", { name: "Settlement" }).click()
+  await page.getByRole("button", { name: "Expand world" }).click()
   await expect(page.getByTestId("settlement-3d")).not.toHaveAttribute("data-arriving", /./)
 })

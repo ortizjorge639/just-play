@@ -1,0 +1,45 @@
+import { test, expect } from "./native-visibility-fixture"
+
+test("native background tab stops the world loop and foreground resumes it", async ({ nativePage: page, baseURL }) => {
+  const context = page.context()
+  await page.addInitScript(() => {
+    const request = window.requestAnimationFrame.bind(window)
+    Object.assign(window, { worldRafReceipts: { delivered: 0, visibility: [] as string[] } })
+    const receipts = (window as unknown as { worldRafReceipts: { delivered: number; visibility: string[] } }).worldRafReceipts
+    window.requestAnimationFrame = callback => request(timestamp => {
+      receipts.delivered++
+      callback(timestamp)
+    })
+    document.addEventListener("visibilitychange", () => receipts.visibility.push(document.visibilityState))
+  })
+  const delivered = () => page.evaluate(() => (window as unknown as { worldRafReceipts: { delivered: number } }).worldRafReceipts.delivered)
+  await page.goto(new URL("/?app-shell&residents&elder", baseURL).href)
+  await page.getByRole("button", { name: /Enter StandBy/ }).click()
+  const scene = page.getByTestId("settlement-3d")
+  await expect(scene).toHaveAttribute("data-state", "ready")
+  await expect(scene).toHaveAttribute("data-render-state", "running")
+  const cover = await context.newPage()
+  await cover.goto("about:blank")
+  await cover.bringToFront()
+  // Browser-generated visibility, not an overridden document.hidden getter or event.
+  await expect.poll(() => page.evaluate(() => document.visibilityState)).toBe("hidden")
+  await expect(scene).toHaveAttribute("data-render-state", "hidden")
+  const hidden = await delivered()
+  await page.waitForTimeout(500)
+  expect(await delivered()).toBe(hidden)
+  await page.bringToFront()
+  await expect.poll(() => page.evaluate(() => document.visibilityState)).toBe("visible")
+  await expect(scene).toHaveAttribute("data-render-state", "running")
+  await expect.poll(delivered).toBeGreaterThan(hidden)
+  const transitions = await page.evaluate(() => (window as unknown as { worldRafReceipts: { visibility: string[] } }).worldRafReceipts.visibility)
+  expect(transitions).toEqual(expect.arrayContaining(["hidden", "visible"]))
+  await cover.close()
+  const exit = page.getByRole("button", { name: "Exit StandBy", exact: true })
+  await exit.focus()
+  await exit.press("Enter")
+  await expect(page.locator("canvas")).toHaveCount(0)
+  await page.waitForTimeout(300)
+  const exited = await delivered()
+  await page.waitForTimeout(300)
+  expect(await delivered()).toBe(exited)
+})

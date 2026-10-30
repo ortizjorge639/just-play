@@ -5,6 +5,7 @@ import {
 } from "three"
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"
 import { createRoom } from "./room"
+import { RenderBudget } from "./render-budget"
 import manifest from "@/art/canopy/robot-motion-v001/manifest.json"
 
 export const R1_URL = "/canopy/r1-4f33b632.glb"
@@ -34,8 +35,12 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
   let renderer: WebGLRenderer | undefined
   let mixer: AnimationMixer | undefined
   let observer: ResizeObserver | undefined
-  let frame = 0, disposed = false, lastFrame = 0
-  let animationTime: number | null = null
+  let frame = 0, disposed = false
+  const budget = new RenderBudget()
+  let baseRatio = 1, appliedQuality = 1
+  let rendered = false
+  let sun: DirectionalLight | undefined
+
   let terminalFailure: unknown
   const motion = matchMedia("(prefers-reduced-motion: reduce)")
   const request = new AbortController()
@@ -74,16 +79,32 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
   camera.lookAt(0, 1.25, -.3)
   function render() {
     if (disposed || document.visibilityState === "hidden") return
-    try { renderer?.render(scene, camera) }
+    try {
+      if (!renderer) return
+      const began = performance.now()
+      if (appliedQuality !== budget.quality) {
+        appliedQuality = budget.quality
+        renderer.setPixelRatio(baseRatio * appliedQuality)
+        if (sun) {
+          sun.shadow.map?.dispose()
+          sun.shadow.map = null
+          const size = appliedQuality < .5 ? 256 : 512
+          sun.shadow.mapSize.set(size, size)
+        }
+      }
+      renderer.render(scene, camera)
+      rendered = true
+      const completedAt = performance.now()
+      budget.observe(completedAt - began, completedAt)
+    }
     catch (cause) { fail(cause) }
   }
   function tick(time: number) {
     if (disposed) return
     frame = requestAnimationFrame(tick)
-    if (time - lastFrame < 1000 / 24) return
-    const delta = animationTime === null ? 0 : Math.max(0, Math.min((time - animationTime) / 1000, .08))
-    lastFrame = time
-    animationTime = time
+    budget.delivered(performance.now())
+    if (!budget.ready(time)) return
+    const delta = budget.animationDelta(time)
     mixer?.update(delta * 1.25)
     render()
   }
@@ -92,14 +113,14 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
     if (disposed || !renderer) return
     const hidden = document.visibilityState === "hidden"
     renderer.domElement.dataset.renderState = hidden ? "hidden" : motion.matches ? "reduced-motion" : "running"
-    animationTime = null
-    lastFrame = 0
+    budget.resetAnimation()
     if (hidden) return
     render()
     if (!motion.matches) frame = requestAnimationFrame(tick)
   }
   try {
     assertActive()
+
     renderer = new WebGLRenderer({ antialias: true, alpha: false, powerPreference: "low-power" })
     renderer.outputColorSpace = SRGBColorSpace
     renderer.toneMapping = ACESFilmicToneMapping
@@ -113,7 +134,7 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
     scene.background = new Color("#cdd9c4")
     scene.fog = new Fog("#cdd9c4", 18, 42)
     scene.add(new HemisphereLight("#fff0d5", "#716451", 2.1))
-    const sun = new DirectionalLight("#ffe1a3", 2.6)
+    sun = new DirectionalLight("#ffe1a3", 2.6)
     sun.position.set(-3, 8, 4)
     sun.castShadow = true
     sun.shadow.mapSize.set(1024, 1024)
@@ -124,14 +145,17 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
     sun.shadow.radius = 3
     scene.add(sun)
     scene.add(createRoom())
+
     const response = await fetch(R1_URL, { signal: request.signal })
     if (!response.ok) throw new Error(`R1 could not load (HTTP ${response.status}).`)
     const bytes = await response.arrayBuffer()
+
     assertActive()
     const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), value => value.toString(16).padStart(2, "0")).join("")
     if (bytes.byteLength !== manifest.asset.bytes || hash !== manifest.asset.sha256) throw new Error("R1 art verification failed.")
     assertActive()
     const gltf = await new GLTFLoader().parseAsync(bytes, "")
+
     if (disposed || signal.aborted) {
       disposeTree(gltf.scene)
       assertActive()
@@ -149,24 +173,32 @@ export async function mountNook(host: HTMLElement, signal: AbortSignal, onError:
       mixer.clipAction(clip).play()
     }
     mixer.update(.75)
+    let viewportWidth = 0, viewportHeight = 0
     const resize = () => {
       if (disposed || !renderer) return
       const { width, height } = host.getBoundingClientRect()
       if (!width || !height) return
+      if (width === viewportWidth && height === viewportHeight) return
+      viewportWidth = width; viewportHeight = height
       const aspect = width / height
       const halfHeight = Math.max(3.5, 4.25 / aspect)
       camera.left = -halfHeight * aspect; camera.right = halfHeight * aspect
       camera.top = halfHeight; camera.bottom = -halfHeight
       camera.updateProjectionMatrix()
-      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5, Math.sqrt(1_700_000 / (width * height))))
+      baseRatio = Math.min(devicePixelRatio || 1, 1.5, Math.sqrt(1_700_000 / (width * height)))
+      renderer.setPixelRatio(baseRatio * budget.quality)
       renderer.setSize(width, height)
-      render()
+      // Initial sizing, visibility and ResizeObserver used to draw the same
+      // scene three times before input could run. Visibility owns the first
+      // draw; the observer only redraws when dimensions actually change.
+      if (rendered) render()
     }
     observer = new ResizeObserver(resize)
     observer.observe(host)
     motion.addEventListener("change", visibility)
     document.addEventListener("visibilitychange", visibility)
     resize()
+
     visibility()
     assertActive()
     return dispose

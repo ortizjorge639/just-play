@@ -46,11 +46,20 @@ export function SettlementScene({ layout, residentCount, fallback, onSelect, pie
     const element = host.current
     if (!element) return
     const controller = new AbortController()
+    const fail = () => {
+      if (controller.signal.aborted) return
+      controller.abort()
+      setState("failed")
+    }
+    element.addEventListener("settlement-error", fail)
     void import("./renderer")
       .then(({ mountSettlement }) => mountSettlement(element, layout, controller.signal, (id) => select.current?.(id), latestPieces.current))
       .then(() => { if (!controller.signal.aborted) { setState("ready"); setMounts((n) => n + 1) } })
-      .catch(() => { if (!controller.signal.aborted) setState("failed") })
-    return () => controller.abort()
+      .catch(fail)
+    return () => {
+      element.removeEventListener("settlement-error", fail)
+      controller.abort()
+    }
   }, [layout])
 
   useEffect(() => {

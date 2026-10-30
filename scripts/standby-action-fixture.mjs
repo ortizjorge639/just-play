@@ -18,6 +18,8 @@ export function loadActions(client, source, invalidations) {
     }).outputText
     compileFunction(output, ["require", "module", "exports"], { filename })((specifier) => {
       if (specifier === "@/lib/supabase/server") return { createClient: async () => client }
+      // Interruption tests must never construct a real privileged/network client.
+      if (specifier === "@/lib/supabase/admin") return { createAdminClient: () => { throw new Error("Admin client is outside the interruption fixture") } }
       if (specifier === "next/cache") return { revalidatePath: url => invalidations.push(url) }
       if (specifier.startsWith("@/")) return load(path.join(root, `${specifier.slice(2)}.ts`))
       if (specifier.startsWith(".")) return load(path.resolve(path.dirname(filename), `${specifier}.ts`))
