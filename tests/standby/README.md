@@ -3,6 +3,22 @@
 Use the worktree root as the working directory. These tests use isolated local
 fixtures and actual bundled art; they do not access the production database.
 
+## Now Playing artwork stage
+
+```sh
+pnpm exec playwright test --config tests/standby/playwright.config.ts now-playing.spec.ts standby.spec.ts notes.spec.ts --project=chromium
+pnpm exec playwright test --config tests/standby/playwright.config.ts now-playing.spec.ts --project=webkit --project=firefox
+```
+
+Now Playing uses full-width artwork above a wrapping session-control strip.
+Goals, notes, time preferences, and prior-play context sit below the controls.
+The layout cases cover desktop, tablet, small phones, short landscape screens,
+long titles, and 200% text. They also check stale-time labeling, disabled
+actions during verification failures, and untracked-session presentation.
+StandBy and note-save cases exercise the existing actions with mocked
+account data. The image replacement is schematic, so these checks do not
+verify real cover-art crops, physical devices, or a deployed account session.
+
 ## Shared-world regression and motion preferences
 
 ```sh

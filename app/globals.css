@@ -74,6 +74,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  .session-stage :is(button, summary, input, textarea):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 4px;
+  }
   body {
     @apply bg-background text-foreground;
     background: var(--background-gradient);
