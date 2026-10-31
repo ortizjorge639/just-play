@@ -20,7 +20,7 @@ import { clearPersistedDeck } from "@/hooks/use-persisted-deck"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
 import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
-import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, SettlementPiece, SavedSpot, Postcard, StampRule, NameCard } from "@/lib/types"
+import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, Postcard, StampRule, NameCard } from "@/lib/types"
 
 type Tab = "deck" | "session" | "home" | "progress"
 
@@ -32,8 +32,6 @@ interface AppShellProps {
   sessionHistory: (Session & { games: Game })[]
   playerStats: PlayerStats | null
   residents?: Resident[]
-  pieces?: SettlementPiece[]
-  savedLayout?: SavedSpot[]
   postcards?: Postcard[]
   stampRules?: StampRule[]
   nameCard?: NameCard | null
@@ -50,8 +48,6 @@ export function AppShell({
   sessionHistory: initialHistory,
   playerStats,
   residents,
-  pieces,
-  savedLayout,
   postcards,
   stampRules: initialStampRules,
   nameCard: initialNameCard,
@@ -266,7 +262,6 @@ export function AppShell({
             {activeSession ? (
               <ActiveSession
                 key={activeSession.id}
-                world={{ residents: residents ?? [], pieces, savedLayout }}
                 session={activeSession}
                 onFinished={handleSessionFinished}
                 onSessionUpdated={handleSessionUpdated}
@@ -331,12 +326,8 @@ export function AppShell({
             className="flex flex-1 flex-col"
           >
             <HomeView
-              displayName={cardName}
               residents={residents ?? []}
-              pieces={pieces ?? []}
-              savedLayout={savedLayout ?? []}
               postcards={postcards ?? []}
-              nameCard={nameCard}
               invitedGame={activeGame && !(residents ?? []).some(r => r.game_id === activeGame.game_id) ? activeGame.game : null}
             />
           </motion.div>

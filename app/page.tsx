@@ -9,8 +9,6 @@ import {
   getBoosterPackStatus,
   backfillXP,
   getResidents,
-  getSettlementPieces,
-  getSettlementLayout,
   getStampRules,
   getPostcards,
   getNameCard,
@@ -59,8 +57,6 @@ export default async function HomePage({
     getPostcards(),
     getStampRules(),
     getNameCard(),
-    getSettlementPieces(),
-    getSettlementLayout(),
   ])
   profile = results[0]
   activeSession = results[1]
@@ -71,8 +67,6 @@ export default async function HomePage({
   const postcards = results[6]
   const stampRules = results[7]
   const nameCard = results[8]
-  const pieces = results[9]
-  const savedLayout = results[10]
 
   if (!profile) {
     redirect("/auth/login")
@@ -102,8 +96,6 @@ export default async function HomePage({
       sessionHistory={sessionHistory}
       playerStats={playerStats}
       residents={residents}
-      pieces={pieces}
-      savedLayout={savedLayout}
       postcards={postcards}
       stampRules={stampRules}
       nameCard={nameCard}

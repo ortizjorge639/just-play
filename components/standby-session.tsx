@@ -6,16 +6,14 @@ import * as Dialog from "@radix-ui/react-dialog"
 import type { Game, Session, StandbyPreferences } from "@/lib/types"
 import { useStandbyWakeLock } from "@/hooks/use-standby-display"
 import { CanopyNook } from "./canopy/nook"
-import { WorldView, type WorldInputs } from "./world/world-view"
 import "./canopy/nook.css"
 
 const control = "min-h-11 rounded-xl border border-white/20 px-4 py-2 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:opacity-40"
 
 export function StandbySession({
-  session, world, notesStatus, elapsed, elapsedSeconds, preferences, pending, syncError, error, onRetry, onTransition, onExit,
+  session, notesStatus, elapsed, elapsedSeconds, preferences, pending, syncError, error, onRetry, onTransition, onExit,
 }: {
   session: Session & { games: Game }
-  world?: WorldInputs
   notesStatus: string | null
   elapsed: string
   elapsedSeconds: number
@@ -32,9 +30,9 @@ export function StandbySession({
   const [displayMessage, setDisplayMessage] = useState<string | null>(null)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [reminderDismissed, setReminderDismissed] = useState(false)
-  const [view, setView] = useState<"world" | "artwork" | "canopy">(world ? "world" : "artwork")
+  const [view, setView] = useState<"artwork" | "canopy">("artwork")
   const nook = view === "canopy"
-  const ambient = nook || view === "world"
+  const ambient = nook
   const [details, setDetails] = useState(false)
   const focusDetails = useCallback((element: HTMLDivElement | null) => { element?.focus({ preventScroll: true }) }, [])
   const wakeState = useStandbyWakeLock(preferences.keep_awake)
@@ -85,7 +83,6 @@ export function StandbySession({
           <p className={nook ? "canopy-brand" : "text-xs uppercase tracking-[0.3em] text-white/60"}>{nook ? "Canopy" : "Just Play / StandBy"}</p>
           <div className="flex flex-wrap gap-2">
             <select aria-label="StandBy view" value={view} className={`${control} max-w-36 bg-[#171f1c]`} onChange={event => { setView(event.target.value as typeof view); setDetails(false) }}>
-              {world ? <option value="world">Your home</option> : null}
               <option value="artwork">Artwork</option>
               <option value="canopy">Canopy nook</option>
             </select>
@@ -93,16 +90,7 @@ export function StandbySession({
           </div>
         </header>
         <main className={ambient ? "canopy-main" : "m-auto grid w-full max-w-6xl items-center gap-6 py-6 landscape:grid-cols-[2fr_3fr] landscape:py-3 sm:gap-12"}>
-          {view === "world" && world ? <div className="canopy-scene">
-            <div className="h-full" inert={details && !confirmEnd}><WorldView {...world} immersive /></div>
-            {details && !confirmEnd ? <div ref={focusDetails} id="canopy-session-details" className="canopy-details" tabIndex={0} role="region" aria-label="Session context">
-              <p className="canopy-context-game">{session.games.name}</p>
-              {goal || <p>No session goal set.</p>}
-              <p className="canopy-notes"><span>Session notes</span>{session.notes || "No notes yet. You can write in your notepad after leaving StandBy."}</p>
-              {notesStatus ? <p role="status">{notesStatus}</p> : null}
-              <p>{recordingLabel}. {wakeState}. Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press.</p>
-            </div> : null}
-          </div> : nook ? <div className="canopy-scene">
+          {nook ? <div className="canopy-scene">
             <div inert={details && !confirmEnd}>
               <CanopyNook artwork={session.games.header_image} />
             </div>

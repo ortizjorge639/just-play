@@ -1,45 +1,19 @@
 "use client"
 
 import Image from "next/image"
-import { useCallback, useRef, useState } from "react"
-import type { Game, NameCard, Postcard, Resident, SettlementPiece, SavedSpot } from "@/lib/types"
-import { ResidentPortrait } from "./resident-portrait"
-import { SettlementView } from "./settlement-view"
-import { WorldView } from "./world/world-view"
-import { EmptyPlot } from "./empty-plot"
+import type { Game, Postcard, Resident } from "@/lib/types"
 import { PostcardsList } from "./postcards-list"
-import { layoutSettlement } from "@/lib/settlement/layout"
 
 interface HomeViewProps {
-  displayName: string | null
   residents: Resident[]
-  pieces?: SettlementPiece[]
-  savedLayout?: SavedSpot[]
   postcards: Postcard[]
   invitedGame: Game | null
-  nameCard?: NameCard | null
 }
 
-export function HomeView({ displayName, residents, pieces = [], savedLayout = [], postcards, invitedGame, nameCard }: HomeViewProps) {
-  const [expanded, setExpanded] = useState(false)
-  const [showWorld, setShowWorld] = useState(false)
-  const expandButton = useRef<HTMLButtonElement>(null)
-  const leaveSettlement = useCallback(() => {
-    setExpanded(false)
-    requestAnimationFrame(() => expandButton.current?.focus())
-  }, [])
-  const deckCount = layoutSettlement(residents, savedLayout).decks.length
+export function HomeView({ residents, postcards, invitedGame }: HomeViewProps) {
   const orderedResidents = [...residents].sort(
     (a, b) => Date.parse(b.arrived_at) - Date.parse(a.arrived_at)
   )
-
-  if (expanded) {
-    return residents.length ? (
-      <SettlementView residents={residents} pieces={pieces} savedLayout={savedLayout} fullscreen onBack={leaveSettlement} ownerName={displayName} tagline={nameCard?.tagline} />
-    ) : (
-      <EmptyPlot onBack={leaveSettlement} />
-    )
-  }
 
   return (
     <div className="flex min-h-dvh min-w-0 flex-col px-4 pb-24 sm:px-6">
@@ -98,27 +72,6 @@ export function HomeView({ displayName, residents, pieces = [], savedLayout = []
           </div>
         </section>
       ) : null}
-
-      <details className="mb-7 rounded-xl border border-border bg-card/50 p-4" onToggle={(event) => setShowWorld(event.currentTarget.open)}>
-        <summary className="flex min-h-11 cursor-pointer items-center font-medium text-foreground">
-          Explore your world
-        </summary>
-        {showWorld ? (
-          <>
-            <div className="mt-3">
-              <WorldView residents={residents} pieces={pieces} savedLayout={savedLayout} />
-            </div>
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">
-                {residents.length} {residents.length === 1 ? "home" : "homes"} on {deckCount} {deckCount === 1 ? "deck" : "decks"}
-              </p>
-              <button ref={expandButton} type="button" className="min-h-11 rounded-full border border-border px-4 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" onClick={() => setExpanded(true)}>
-                Expand world
-              </button>
-            </div>
-          </>
-        ) : null}
-      </details>
 
       {orderedResidents.length ? (
         <section aria-labelledby="home-arrivals" className="mb-7">

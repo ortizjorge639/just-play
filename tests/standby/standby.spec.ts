@@ -1,5 +1,15 @@
 import { test, expect } from "@playwright/test"
 
+test("production StandBy defaults to artwork without a settlement view", async ({ page }) => {
+  await page.goto("/?app-shell")
+  await page.getByRole("button", { name: "Now Playing", exact: true }).click()
+  await page.getByRole("button", { name: /Enter StandBy/ }).click()
+  const view = page.getByRole("combobox", { name: "StandBy view" })
+  await expect(view).toHaveValue("artwork")
+  await expect(view.locator("option")).toHaveText(["Artwork", "Canopy nook"])
+  await expect(page.locator('[data-testid="settlement-3d"]')).toHaveCount(0)
+})
+
 test("StandBy traps focus, hides discovery, exits with Escape and restores entry focus", async ({ page }) => {
   await page.goto("/")
   const enter = page.getByRole("button", { name: /Enter StandBy/ })

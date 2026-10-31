@@ -17,7 +17,6 @@ import { useXPToast } from "./xp-toast"
 import { StillPlayingModal } from "./still-playing-modal"
 import * as Dialog from "@radix-ui/react-dialog"
 import { StandbySession } from "./standby-session"
-import type { WorldInputs } from "./world/world-view"
 import { StandbyPreferencesForm } from "./standby-preferences"
 import type { StandbyPreferences } from "@/lib/types"
 import { getSessionElapsedSeconds } from "@/lib/session-time"
@@ -27,7 +26,6 @@ type NudgeStage = "none" | "first" | "second"
 const DEFAULT_ESTIMATED_MINUTES = 60
 
 interface ActiveSessionProps {
-  world?: WorldInputs
   session: Session & { games: Game; progress: { total_sessions: number; total_time_minutes: number } | null }
   onFinished: () => void
   onSessionUpdated?: (updates: Partial<Session>) => void
@@ -55,7 +53,7 @@ export function ActiveSession(props: ActiveSessionProps) {
   return <ActiveSessionContent key={props.session.id} {...props} />
 }
 
-function ActiveSessionContent({ session, world, onFinished, onSessionUpdated, onArrived, standbyPreferences, onPreferencesSaved, syncError, onRetry, onMutationStart, onMutationEnd, notesController }: ActiveSessionProps) {
+function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived, standbyPreferences, onPreferencesSaved, syncError, onRetry, onMutationStart, onMutationEnd, notesController }: ActiveSessionProps) {
   const [status, setStatus] = useState<SessionStatus>(session.status)
   const [isPending, startTransition] = useTransition()
   const [elapsed, setElapsed] = useState(0)
@@ -650,7 +648,6 @@ function ActiveSessionContent({ session, world, onFinished, onSessionUpdated, on
       </AnimatePresence>
     </div>
     {standby && (isPlaying || isPaused) ? <StandbySession
-      world={world}
       session={{ ...session, status, notes }}
       notesStatus={notesSaveState === "saved" ? null : notesMessage}
       elapsed={formatTime(elapsed)}
