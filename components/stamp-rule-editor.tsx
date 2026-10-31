@@ -89,7 +89,7 @@ export function StampRuleEditor({ gameId, rule, onSaved }: StampRuleEditorProps)
         {gameId ? "When does this game count as done?" : "When does a game count as done?"}
       </legend>
       <p className="mb-2 text-sm text-muted-foreground">
-        A game that counts as done moves into your settlement as a resident. You will find it on the Home tab.
+        A game that counts as done joins your gallery on the Home tab.
       </p>
       {option("none", noneLabel, gameId ? "Follows what you set for all games." : "Nothing moves in until you say it is beaten.")}
       {option("hours", "After a set number of hours", "It moves in once you have played this long.")}

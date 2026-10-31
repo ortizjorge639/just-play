@@ -31,7 +31,6 @@ function resident(id: string, name: string, arrivedAt: string): Resident {
 function renderHome(residents: Resident[], postcards: Postcard[] = []) {
   return renderToStaticMarkup(
     <HomeView
-      displayName="Player"
       residents={residents}
       postcards={postcards}
       invitedGame={null}
@@ -50,6 +49,7 @@ test("Home shows game artwork and orders every resident by original arrival", ()
   assert.doesNotMatch(html, /Your home, with the world close by/)
   assert.doesNotMatch(html, /Player(?:&#x27;|&#39;|')s home/)
   assert.doesNotMatch(html, /\b\d+ residents?\b/)
+  assert.doesNotMatch(html, /Explore your world|Expand world|settlement/)
   assert.match(html, /url=%2Fimages%2Folder\.jpg/)
   assert.ok(timeline.indexOf("Mosslight") < timeline.indexOf("Quiet Harbor"))
   assert.match(timeline, /October 12, 2026/)

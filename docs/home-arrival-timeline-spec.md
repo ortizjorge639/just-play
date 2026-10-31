@@ -3,6 +3,15 @@
 **Status:** User-approved implementation verified locally; the database
 privacy/read-only criterion remains unverified.
 
+**Production scope update:** Settlement/world entry points are withdrawn from
+Home and StandBy. The gallery, Arrivals, and resident data remain unchanged.
+The experimental implementation is preserved on the pushed
+`ortizjorge639-review-latest-pr` branch at `defda32`. Settlement modules and
+database records are retained but no longer wired into the production UI.
+StandBy defaults to Artwork; Canopy is unchanged pending a separate UX review.
+The optional-world criteria below describe the original approved slice, not
+the current production scope.
+
 ## Problem Statement
 
 Home should feel like a quiet personal gallery of the games that have found a

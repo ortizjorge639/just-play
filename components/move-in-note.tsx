@@ -17,7 +17,7 @@ export function MoveInNote() {
   }
   return (
     <div data-testid="move-in-note" className="mb-4 w-full max-w-[320px] rounded-xl border border-border bg-card/60 p-4 text-sm">
-      <p className="text-foreground">When you finish a game, it moves into your settlement as a resident. You can see them on the Home tab. Change when a game counts as done in Settings.</p>
+      <p className="text-foreground">When you finish a game, it joins your Home gallery. Change when a game counts as done in Settings.</p>
       <button onClick={dismiss} className="mt-3 min-h-[44px] rounded-lg bg-secondary px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted">
         Got it
       </button>
