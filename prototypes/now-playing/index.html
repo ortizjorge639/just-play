@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f1a1f">
+  <title>Just Play - Now Playing layout prototype</title>
+  <!-- Three isolated layouts ask: how can artwork lead while session controls remain easy to reach? No account access or persistence. -->
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1a1f;
+      --surface: #1a2e38;
+      --ink: #fcf7e9;
+      --muted: #a9bcc0;
+      --gold: #f0b46a;
+      --gold-ink: #2a1a08;
+      --line: #344951;
+      font-family: Geist, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, select, textarea, input { font: inherit; }
+    button, select, summary { cursor: pointer; }
+    button { color: inherit; }
+    button, select { min-height: 44px; }
+    button:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--gold); outline-offset: 4px;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    [hidden] { display: none !important; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 2rem; line-height: 1.15; letter-spacing: -.025em; text-wrap: balance; }
+    h2 { font-size: 1rem; }
+    .app { max-width: 1440px; margin: auto; padding: 0 32px 150px; }
+    .header { height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { font-size: 18px; font-weight: 700; }
+    .sample { color: var(--muted); font-size: 12px; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .art { position: relative; isolation: isolate; overflow: hidden; background: #10242e; }
+    .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(transparent 55%, #071015e6); pointer-events: none; }
+    .caption { position: absolute; z-index: 1; inset: auto 28px 28px; }
+    .caption p { color: var(--muted); margin-top: 10px; font-size: 14px; }
+    .state { display: inline-flex; align-items: center; gap: 8px; color: #b7d9ee; font-size: 14px; }
+    .state::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    body[data-state="playing"] .state { color: #8fcaa3; }
+    body[data-state="ended"] .state { color: var(--muted); }
+    .clock { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; white-space: nowrap; }
+    .session-line { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .primary { background: var(--gold); color: var(--gold-ink); border: 0; border-radius: 8px; padding: 12px 24px; font-weight: 650; }
+    .primary:hover:not(:disabled) { background: #ffd9a8; }
+    .text-button { background: transparent; border: 0; padding: 10px 4px; color: var(--muted); font-size: 14px; }
+    .text-button:hover:not(:disabled) { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+    .outline { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 10px 16px; font-size: 14px; }
+    .outline:hover:not(:disabled) { background: var(--surface); }
+    .standby { display: flex; width: 100%; align-items: center; justify-content: space-between; text-align: left; }
+    .standby span { font-size: 20px; }
+    .secondary { border-top: 1px solid var(--line); padding-top: 16px; }
+    details { border-bottom: 1px solid var(--line); }
+    summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; font-size: 14px; list-style: none; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--muted); font-size: 18px; }
+    details[open] > summary::after { content: "-"; }
+    details > .detail-content { padding: 4px 0 20px; }
+    .detail-content p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+    textarea { resize: vertical; width: 100%; min-height: 96px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 12px; font-size: 14px; }
+    textarea::placeholder { color: var(--muted); }
+    label { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: 14px; }
+    input { accent-color: var(--gold); width: 18px; height: 18px; }
+    .notice { margin-bottom: 18px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+    .notice.error { color: #ffb4a2; }
+    .ending { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 16px; }
+    .ending p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 8px; }
+    .end-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .nav { display: flex; justify-content: center; gap: 48px; padding: 24px 0; font-size: 13px; color: var(--muted); }
+    .nav .selected { color: var(--gold); }
+    .rail { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; min-height: min(680px, calc(100dvh - 200px)); }
+    .rail .art { border-radius: 12px; min-height: 530px; }
+    .rail aside { padding: 36px 0; }
+    .rail .primary { width: 100%; margin-top: 20px; }
+    .rail .end { width: 100%; margin-top: 4px; }
+    .rail .secondary { margin-top: 32px; }
+    .rail .standby { margin-top: 20px; }
+    .stage { position: relative; }
+    .stage .art { height: min(650px, calc(100dvh - 260px)); min-height: 420px; border-radius: 12px 12px 0 0; }
+    .stage .caption { inset: auto 32px 32px; }
+    .stage .caption h1 { font-size: 2.5rem; }
+    .stage-controls { display: flex; align-items: center; gap: 24px; padding: 18px 24px; background: #13262f; border-radius: 0 0 12px 12px; }
+    .stage-controls .session-line { margin-right: auto; }
+    .stage-controls .standby { width: auto; gap: 24px; }
+    .stage-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 24px; }
+    .stage .notice { padding: 0 24px; margin-top: 16px; }
+    .stage .ending { padding: 16px 24px; }
+    .dock { padding-top: 16px; }
+    .dock .art { width: min(100%, 860px); aspect-ratio: 16 / 9; border-radius: 12px; margin: auto; }
+    .dock-row { width: min(100%, 860px); margin: 24px auto 0; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 24px; }
+    .dock-row h1 { font-size: 1.5rem; margin-bottom: 10px; }
+    .dock-actions { display: flex; align-items: center; gap: 16px; }
+    .dock .secondary { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; width: min(100%, 860px); margin: 24px auto 0; }
+    .dock .standby { width: auto; }
+    .dock .notice, .dock .ending { width: min(100%, 860px); margin: 16px auto; }
+    .prototype-bar { position: fixed; z-index: 10; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(700px, calc(100% - 24px)); background: #fcf7e9; color: #172329; border: 1px solid #fff; border-radius: 12px; box-shadow: 0 8px 28px #0006; padding: 8px 12px; }
+    .switch-row { display: flex; gap: 12px; align-items: center; }
+    .switch-row button { background: transparent; color: #172329; border: 0; min-width: 44px; font-size: 20px; border-radius: 6px; }
+    .switch-row button:hover { background: #e6decf; }
+    .variant-label { flex: 1; font-size: 14px; font-weight: 700; }
+    .switch-row select { border: 1px solid #b8b0a0; background: #fcf7e9; color: #172329; border-radius: 6px; padding: 6px; font-size: 12px; max-width: 180px; }
+    .prototype-help { display: block; font-size: 11px; line-height: 1.5; padding: 0 8px 4px; }
+    .prototype-bar button:focus-visible, .prototype-bar select:focus-visible { outline-color: #172329; }
+    .exit-standby { display: none; }
+    body.ambient .header, body.ambient .nav, body.ambient .prototype-bar, body.ambient .secondary, body.ambient .stage-tools { display: none; }
+    body.ambient .app { padding-top: 32px; padding-bottom: 32px; }
+    body.ambient .exit-standby { display: block; margin-bottom: 20px; }
+    @media (max-width: 850px) {
+      .app { padding-inline: 20px; }
+      .rail { grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; }
+      .stage-controls { flex-wrap: wrap; gap: 12px 20px; }
+      .stage-controls .session-line { width: 100%; }
+      .stage-tools { gap: 20px; }
+    }
+    @media (max-width: 600px) {
+      .app { padding-inline: 16px; padding-bottom: 160px; }
+      .header { height: 64px; }
+      .sample { max-width: 160px; text-align: right; line-height: 1.4; }
+      h1 { font-size: 1.75rem; }
+      .rail { grid-template-columns: 1fr; gap: 0; }
+      .rail .art { min-height: 0; height: 42dvh; }
+      .caption { inset: auto 20px 20px; }
+      .rail aside { padding: 24px 0 0; }
+      .rail .secondary { margin-top: 24px; }
+      .rail .primary { margin-top: 16px; }
+      .rail .standby { margin-top: 16px; }
+      .stage .art { height: 52dvh; min-height: 300px; }
+      .stage .caption { inset: auto 20px 24px; }
+      .stage .caption h1 { font-size: 2rem; }
+      .stage-controls { padding: 16px; }
+      .stage-controls .primary { flex: 1; }
+      .stage-controls .standby { width: 100%; justify-content: flex-start; border: 0; padding-left: 0; }
+      .stage-tools { grid-template-columns: 1fr; gap: 0; margin-top: 16px; }
+      .dock { padding-top: 0; }
+      .dock .art { aspect-ratio: 4 / 5; }
+      .dock-row { grid-template-columns: 1fr; gap: 16px; margin-top: 20px; }
+      .dock-actions { flex-wrap: wrap; }
+      .dock-actions .primary { flex: 1; }
+      .dock .secondary { grid-template-columns: 1fr; margin-top: 24px; }
+      .dock .standby { width: 100%; }
+      .switch-row { gap: 2px; flex-wrap: wrap; }
+      .variant-label { font-size: 12px; }
+      .switch-row select { max-width: 118px; }
+      .nav { gap: 36px; }
+    }
+    @media (max-width: 340px) {
+      .switch-row select { flex-basis: 100%; max-width: none; }
+      .variant-label { min-width: 0; }
+      .prototype-help { font-size: 10px; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      button { transition: background-color 150ms, color 150ms; }
+    }
+  </style>
+</head>
+<body data-state="paused">
+  <div class="app">
+    <button class="outline exit-standby" data-action="exit">Exit StandBy preview</button>
+    <header class="header"><span class="brand">Just Play</span><span class="sample">Layout study / sample game<br>No account connected</span></header>
+    <main id="views">
+      <section class="view active" data-variant="A" aria-label="Companion rail">
+        <div class="rail">
+          <div class="art"><img src="/artwork.jpg" alt="Hollow Knight sample artwork"><div class="caption"><h1>Hollow Knight</h1></div></div>
+          <aside>
+            <div class="notice" hidden></div>
+            <div class="session-line"><span class="state">Paused</span><span class="clock">4:22 played</span></div>
+            <button class="primary" data-action="toggle">Resume</button>
+            <button class="text-button end" data-action="end">End session</button>
+            <div class="ending" hidden></div>
+            <button class="outline standby" data-action="standby">Enter StandBy <span aria-hidden="true">&#8599;</span></button>
+            <div class="secondary" data-tools></div>
+          </aside>
+        </div>
+      </section>
+      <section class="view" data-variant="B" aria-label="Artwork stage">
+        <div class="stage">
+          <div class="art"><img src="/artwork.jpg" alt="Hollow Knight sample artwork"><div class="caption"><h1>Hollow Knight</h1></div></div>
+          <div class="stage-controls">
+            <div class="session-line"><span class="state">Paused</span><span class="clock">4:22 played</span></div>
+            <button class="primary" data-action="toggle">Resume</button>
+            <button class="text-button" data-action="end">End session</button>
+            <button class="outline standby" data-action="standby">StandBy <span aria-hidden="true">&#8599;</span></button>
+          </div>
+          <div class="notice" hidden></div>
+          <div class="ending" hidden></div>
+          <div class="stage-tools" data-tools></div>
+        </div>
+      </section>
+      <section class="view" data-variant="C" aria-label="Session dock">
+        <div class="dock">
+          <div class="art"><img src="/artwork.jpg" alt="Hollow Knight sample artwork"></div>
+          <div class="dock-row">
+            <div><h1>Hollow Knight</h1><div class="session-line"><span class="state">Paused</span><span class="clock">4:22 played</span></div></div>
+            <div class="dock-actions"><button class="primary" data-action="toggle">Resume</button><button class="text-button" data-action="end">End session</button></div>
+          </div>
+          <div class="notice" hidden></div>
+          <div class="ending" hidden></div>
+          <div class="secondary">
+            <button class="outline standby" data-action="standby">Enter StandBy <span aria-hidden="true">&#8599;</span></button>
+            <div data-tools></div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <nav class="nav" aria-label="App context, not interactive in this prototype"><span class="selected" aria-current="page">Now Playing</span><span>Home</span><span>Progress</span></nav>
+  </div>
+  <aside class="prototype-bar" aria-label="Prototype controls">
+    <div class="switch-row">
+      <button data-action="previous" aria-label="Previous layout">&#8592;</button>
+      <span class="variant-label" id="variant-label">A / Companion rail</span>
+      <button data-action="next" aria-label="Next layout">&#8594;</button>
+      <select id="scenario" aria-label="Simulated session state">
+        <option value="paused">Paused</option><option value="playing">Playing</option><option value="checking">Checking</option><option value="offline">Offline</option><option value="ended">Session finished</option>
+      </select>
+    </div>
+    <span class="prototype-help" id="prototype-help">Prototype only. Actions and notes stay in memory. Arrow keys switch layouts.</span>
+  </aside>
+  <template id="tools-template">
+    <details><summary>Session notes</summary><div class="detail-content"><p>Optional. Keep a thought for next time.</p><textarea aria-label="Sample session notes" placeholder="Where did you leave off?"></textarea><p class="notes-status">Nothing written. This prototype never saves to your account.</p></div></details>
+    <details><summary>Session goal</summary><div class="detail-content"><p>No goal set. Playing without one is fine.</p><textarea aria-label="Sample session goal" placeholder="An optional intention for this session"></textarea></div></details>
+    <details><summary>Time &amp; StandBy</summary><div class="detail-content"><label><input type="checkbox" data-clock checked>Show elapsed time</label><p>Hiding the clock only changes the display. All session behavior here is simulated.</p></div></details>
+  </template>
+  <template id="ending-template">
+    <p>Done for today? Finishing this session keeps the game available to continue later.</p>
+    <div class="end-actions"><button class="outline" data-action="finish">Finish sample session</button><button class="text-button" data-action="cancel">Keep session</button></div>
+  </template>
+  <script>
+    const variants = ["A", "B", "C"];
+    const names = { A: "Companion rail", B: "Artwork stage", C: "Session dock" };
+    const state = { variant: "A", status: "paused", elapsed: 262, clock: true, notes: "", goal: "" };
+    let standbyTrigger = null;
+    document.querySelectorAll("[data-tools]").forEach(container => {
+      container.append(document.querySelector("#tools-template").content.cloneNode(true));
+    });
+    document.querySelectorAll(".ending").forEach(container => {
+      container.append(document.querySelector("#ending-template").content.cloneNode(true));
+    });
+    function showVariant(variant, updateUrl = true) {
+      state.variant = variants.includes(variant) ? variant : "A";
+      document.querySelectorAll(".view").forEach(view => {
+        const active = view.dataset.variant === state.variant;
+        view.classList.toggle("active", active);
+        view.hidden = !active;
+      });
+      document.querySelector("#variant-label").textContent = `${state.variant} / ${names[state.variant]}`;
+      if (updateUrl) {
+        const url = new URL(location.href);
+        url.searchParams.set("variant", state.variant);
+        history.replaceState(null, "", url);
+      }
+      render();
+    }
+    function cycle(offset) {
+      showVariant(variants[(variants.indexOf(state.variant) + offset + variants.length) % variants.length]);
+    }
+    function render() {
+      document.body.dataset.state = state.status;
+      const blocked = state.status === "checking" || state.status === "offline";
+      const ended = state.status === "ended";
+      const labels = { paused: "Paused", playing: "Playing", checking: "Checking session", offline: "Offline", ended: "Session finished" };
+      document.querySelectorAll(".state").forEach(node => { node.textContent = labels[state.status]; });
+      const minutes = Math.floor(state.elapsed / 60);
+      const seconds = String(state.elapsed % 60).padStart(2, "0");
+      document.querySelectorAll(".clock").forEach(node => {
+        node.hidden = !state.clock;
+        node.textContent = `${minutes}:${seconds} ${blocked ? "last known" : "played"}`;
+      });
+      document.querySelectorAll('[data-action="toggle"]').forEach(button => {
+        button.textContent = state.status === "playing" ? "Pause" : ended ? "Session finished" : blocked ? "Controls unavailable" : "Resume";
+        button.disabled = blocked || ended;
+      });
+      document.querySelectorAll('[data-action="end"]').forEach(button => {
+        button.disabled = blocked || ended;
+      });
+      document.querySelectorAll(".notice").forEach(node => {
+        node.hidden = !blocked;
+        node.classList.toggle("error", state.status === "offline");
+        node.replaceChildren(document.createTextNode(state.status === "checking"
+          ? "Verifying your session before enabling controls. Displayed time is last known."
+          : "Cannot verify your session while offline. Controls are disabled; displayed time may be stale. "));
+        if (state.status === "offline") {
+          const retry = document.createElement("button");
+          retry.className = "text-button";
+          retry.dataset.action = "retry";
+          retry.textContent = "Simulate reconnection";
+          node.append(retry);
+        }
+      });
+      document.querySelectorAll("textarea").forEach(input => { input.disabled = blocked || ended; });
+      document.querySelector("#scenario").value = state.status;
+      document.querySelector("#prototype-help").textContent = `Prototype / ${names[state.variant]} / ${labels[state.status]} / Clock ${state.clock ? "visible" : "hidden"}. No account writes. Arrow keys switch layouts.`;
+    }
+    document.addEventListener("click", event => {
+      const button = event.target.closest("button[data-action]");
+      if (!button || button.disabled) return;
+      const action = button.dataset.action;
+      if (action === "previous") cycle(-1);
+      if (action === "next") cycle(1);
+      if (action === "toggle") state.status = state.status === "playing" ? "paused" : "playing";
+      if (action === "retry") state.status = "paused";
+      if (action === "end") button.closest(".view").querySelector(".ending").hidden = false;
+      if (action === "cancel" || action === "finish") {
+        button.closest(".ending").hidden = true;
+        if (action === "finish") state.status = "ended";
+      }
+      if (action === "standby") {
+        standbyTrigger = button;
+        document.body.classList.add("ambient");
+        document.querySelector(".exit-standby").focus();
+      }
+      if (action === "exit") exitStandby();
+      render();
+    });
+    function exitStandby() {
+      document.body.classList.remove("ambient");
+      standbyTrigger?.focus();
+    }
+    document.querySelector("#scenario").addEventListener("change", event => {
+      state.status = event.target.value;
+      document.querySelectorAll(".ending").forEach(node => { node.hidden = true; });
+      render();
+    });
+    document.addEventListener("change", event => {
+      if (!event.target.matches("[data-clock]")) return;
+      state.clock = event.target.checked;
+      document.querySelectorAll("[data-clock]").forEach(input => { input.checked = state.clock; });
+      render();
+    });
+    document.addEventListener("input", event => {
+      if (!event.target.matches("textarea")) return;
+      const notes = event.target.getAttribute("aria-label") === "Sample session notes";
+      state[notes ? "notes" : "goal"] = event.target.value;
+      document.querySelectorAll(`textarea[aria-label="${event.target.getAttribute("aria-label")}"]`).forEach(input => {
+        if (input !== event.target) input.value = event.target.value;
+      });
+      if (notes) document.querySelectorAll(".notes-status").forEach(node => {
+        node.textContent = state.notes ? "Draft in memory only. Not saved to your account." : "Nothing written. This prototype never saves to your account.";
+      });
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && document.body.classList.contains("ambient")) exitStandby();
+      if (event.target.closest("input, textarea, select, [contenteditable]") || event.altKey || event.ctrlKey || event.metaKey || document.body.classList.contains("ambient")) return;
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault();
+        cycle(event.key === "ArrowLeft" ? -1 : 1);
+      }
+    });
+    window.addEventListener("popstate", () => showVariant(new URL(location.href).searchParams.get("variant"), false));
+    setInterval(() => {
+      if (state.status === "playing") { state.elapsed++; render(); }
+    }, 1000);
+    showVariant(new URL(location.href).searchParams.get("variant"), false);
+  </script>
+</body>
+</html>

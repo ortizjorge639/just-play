@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useId } from "react"
 import { motion, AnimatePresence, type PanInfo } from "framer-motion"
 
 interface SessionNotepadProps {
@@ -48,6 +48,8 @@ export function SessionNotepad({
   const [goalDraft, setGoalDraft] = useState(goal)
   const [direction, setDirection] = useState(0)
   const constraintsRef = useRef(null)
+  const goalId = useId()
+  const notesId = useId()
 
   const flipPage = useCallback((dir: number) => {
     setCurrentPage(p => {
@@ -95,19 +97,19 @@ export function SessionNotepad({
   const usedPages = pages.filter(p => p.trim()).length
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Goal pill */}
+    <div className="flex min-w-0 flex-col">
       <div>
         <button
           onClick={() => setGoalOpen(o => !o)}
-          className="flex items-center gap-2 w-full px-4 py-3 rounded-xl glass-card transition-all active:scale-[0.98] min-h-[44px]"
+          aria-expanded={goalOpen}
+          aria-controls={goalOpen ? goalId : undefined}
+          className="flex min-h-13 w-full items-center gap-3 border-b border-border py-3 text-left transition-colors hover:text-primary"
         >
-          <span className="text-sm">🎯</span>
           <span className="text-sm font-medium text-foreground flex-1 text-left truncate">
             {goal || "Set a Goal"}
           </span>
           {goal && !goalOpen && (
-            <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full font-medium">
+            <span className="text-xs text-muted-foreground">
               set
             </span>
           )}
@@ -125,13 +127,14 @@ export function SessionNotepad({
         <AnimatePresence>
           {goalOpen && (
             <motion.div
+              id={goalId}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="glass-card p-4 rounded-xl mt-2">
+              <div className="py-4">
                 {editingGoal || !goal ? (
                   <div className="flex flex-col gap-3">
                     {/* Preset bubbles — only when no goal is set */}
@@ -197,7 +200,8 @@ export function SessionNotepad({
                         setEditingGoal(true)
                         setGoalDraft(goal)
                       }}
-                      className="p-2 text-muted-foreground hover:text-foreground min-h-[36px] min-w-[36px] flex items-center justify-center shrink-0"
+                      aria-label="Edit session goal"
+                      className="p-2 text-muted-foreground hover:text-foreground min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -211,19 +215,19 @@ export function SessionNotepad({
         </AnimatePresence>
       </div>
 
-      {/* Notes pill */}
       <div>
         <button
           onClick={() => setNotesOpen(o => !o)}
-          className="flex items-center gap-2 w-full px-4 py-3 rounded-xl glass-card transition-all active:scale-[0.98] min-h-[44px]"
+          aria-expanded={notesOpen}
+          aria-controls={notesOpen ? notesId : undefined}
+          className="flex min-h-13 w-full items-center gap-3 border-b border-border py-3 text-left transition-colors hover:text-primary"
         >
-          <span className="text-sm">📝</span>
           <span className="text-sm font-medium text-foreground flex-1 text-left">
             Notes
           </span>
           {!notesOpen && (
-            <span className="text-[10px] text-muted-foreground tabular-nums bg-secondary/80 px-1.5 py-0.5 rounded-full">
-              {usedPages > 0 ? `${usedPages} pg` : "empty"}
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {usedPages > 0 ? `${usedPages} pg` : ""}
             </span>
           )}
           <svg
@@ -240,24 +244,21 @@ export function SessionNotepad({
         <AnimatePresence>
           {notesOpen && (
             <motion.div
+              id={notesId}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="relative pb-1.5 mt-2">
-                {/* Stacked page edges */}
-                <div className="absolute bottom-0.5 left-1.5 right-1.5 top-1 rounded-xl border border-border/30 bg-card/40" />
-                <div className="absolute bottom-0 left-3 right-3 top-2 rounded-xl border border-border/15 bg-card/20" />
-
-                <div className="relative glass-card rounded-xl p-4 flex flex-col overflow-hidden">
+              <div className="relative mt-2">
+                <div className="relative flex flex-col overflow-hidden py-4">
                   {/* Page header */}
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                       Page {currentPage + 1}
                     </span>
-                    <span className="text-[10px] text-muted-foreground/60 tabular-nums">
+                    <span className="text-xs text-muted-foreground tabular-nums">
                       {currentPage + 1}/10
                     </span>
                   </div>
@@ -284,7 +285,7 @@ export function SessionNotepad({
                             value={pages[currentPage]}
                             onChange={e => handlePageEdit(e.target.value)}
                             placeholder="Write something..."
-                            className="w-full h-[100px] bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none resize-none leading-relaxed"
+                            className="w-full min-h-[100px] rounded-lg border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring resize-y leading-relaxed"
                           />
                         </motion.div>
                       </AnimatePresence>
