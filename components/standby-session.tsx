@@ -124,7 +124,7 @@ export function StandbySession({
           <Image src={session.games.header_image} alt="" fill sizes="100vw" className="object-cover opacity-60 saturate-75" priority />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/80" />
         </div> : null}
-        <header className={`z-10 flex flex-wrap items-center justify-between gap-3 ${nook ? "relative" : "sticky top-0 rounded-xl bg-black/50 backdrop-blur-sm"}`}>
+        <header className={`z-20 flex flex-wrap items-center justify-between gap-3 ${nook ? "relative" : "sticky top-0 rounded-xl bg-black/50 backdrop-blur-sm"}`}>
           <p className={nook ? "canopy-brand" : "text-xs uppercase tracking-[0.3em] text-white/60"}>{nook ? "Canopy" : "Just Play / StandBy"}</p>
           <div className="flex flex-wrap gap-2">
             <select aria-label="StandBy view" value={view} className={`${control} max-w-36 bg-[#171f1c]`} onChange={event => { setView(event.target.value as typeof view); setDetails(false) }}>

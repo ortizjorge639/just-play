@@ -73,3 +73,32 @@ test("Escape still exits Quiet field after a mouse click on the field and restor
   await expect(dialog).toHaveCount(0)
   await expect(enter).toBeFocused()
 })
+
+
+test("Quiet field keeps sticky Exit clickable over enlarged scrolling content", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/")
+  await expect(page.getByRole("button", { name: "Enter StandBy" })).toBeVisible()
+  await page.addStyleTag({ content: "html{font-size:200%!important}" })
+  await page.evaluate(() => {
+    const session = window.standbyFixture.session
+    if (!session?.games) throw new Error("Fixture session missing")
+    const game = session.games
+    session.games = {
+      ...game,
+      name: "The Legend of Zelda: Tears of the Kingdom - A very long library title",
+    }
+    session.session_goal = "Explore the mountains. ".repeat(20)
+    window.dispatchEvent(new Event("focus"))
+  })
+  await page.getByRole("button", { name: "Enter StandBy" }).click()
+  const dialog = page.getByRole("dialog")
+  await dialog.evaluate((element) => { element.scrollTop = 300 })
+  await expect.poll(() => page.getByRole("button", { name: "Exit StandBy", exact: true }).evaluate((button) => {
+    const rect = button.getBoundingClientRect()
+    const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+    return hit === button || button.contains(hit)
+  })).toBe(true)
+  await page.getByRole("button", { name: "Exit StandBy", exact: true }).click()
+  await expect(dialog).not.toBeVisible()
+})
