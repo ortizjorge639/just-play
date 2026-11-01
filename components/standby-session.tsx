@@ -70,6 +70,47 @@ export function StandbySession({
   const goal = session.session_goal ? <p className="break-words border-l-2 border-white/20 pl-4 text-base text-white/80">{session.session_goal}</p> : null
   const recordingLabel = session.record_time === false ? "Time recording off" : preferences.show_clock ? "Time recording on" : "Clock hidden; time recording on"
   const nookWakeMessage = preferences.keep_awake && !wakeState.startsWith("Keep-awake active") ? wakeState : null
+  const titleBlock = (
+    <>
+      {!ambient ? <p className="text-sm text-white/70 [@media(max-height:500px)]:hidden">{session.status === "Paused" ? "Taking a breath" : "Your game is waiting for you"}</p> : null}
+      <Dialog.Title title={ambient ? session.games.name : undefined} className={ambient ? "canopy-game" : "break-words font-serif text-4xl font-medium leading-tight sm:text-6xl [@media(max-height:500px)]:text-3xl"}>{session.games.name}</Dialog.Title>
+      <Dialog.Description className={ambient ? "sr-only" : "text-white/70"}>
+        {nook ? "Your real play session, in a quiet Canopy nook. The room does not award residents or progress." : "Leave this screen beside your game."}
+      </Dialog.Description>
+      {preferences.show_clock && session.record_time !== false ? (
+        <p className={ambient ? "canopy-clock" : "font-mono text-5xl tabular-nums sm:text-7xl [@media(max-height:500px)]:text-4xl"} aria-label={syncError ? "Unverified elapsed time" : `${session.status} elapsed time`}>{elapsed}{syncError ? <span className="mt-2 block font-sans text-sm text-amber-200">not verified</span> : null}</p>
+      ) : null}
+    </>
+  )
+  const controlsBlock = (
+    <>
+      <p className="text-sm text-white/70">{session.status}{!ambient || session.record_time === false || !preferences.show_clock ? ` · ${recordingLabel}` : ""}</p>
+      {ambient && !confirmEnd ? <button className={`${control} canopy-details-toggle`} aria-expanded={details} aria-controls="canopy-session-details" onClick={event => {
+        if (details) event.currentTarget.focus({ preventScroll: true })
+        setDetails(value => !value)
+      }}>{details ? "Hide session details" : "Session details"}</button> : null}
+      {!ambient ? goal : null}
+      {preferences.reminders && !reminderDismissed && session.status === "Playing" && session.record_time !== false && elapsedSeconds >= 3600 ? (
+        <div role="status" className="text-sm text-amber-200">
+          A good moment to stretch or rest your eyes. Your session will keep running.
+          <button className={`${control} ml-2`} onClick={() => setReminderDismissed(true)}>Dismiss</button>
+        </div>
+      ) : null}
+      {syncError || error ? <p role="alert" className="text-sm text-amber-200">{syncError || error}</p> : null}
+      {syncError ? <button className={control} onClick={onRetry}>Reconnect / retry</button> : null}
+      {!ambient || !confirmEnd ? <div className="flex flex-wrap justify-center gap-3">
+        <button className={control} disabled={pending || !!syncError} onClick={() => onTransition(session.status === "Paused" ? "Playing" : "Paused")}>{pending ? "Saving..." : session.status === "Paused" ? "Resume" : "Pause"}</button>
+        <button className={control} disabled={pending || !!syncError} onClick={() => setConfirmEnd(true)}>End session</button>
+        <button className={control} onClick={() => void toggleFullscreen()}>{fullscreen ? "Exit fullscreen" : "Fullscreen"}</button>
+      </div> : null}
+      {displayMessage ? <p role="status" className="text-sm text-white/70">{displayMessage}</p> : null}
+      {confirmEnd ? <div className="canopy-confirm space-y-2 rounded-xl border border-white/20 p-4">
+        <p>Done for today? Your game stays available to continue later.</p>
+        <button className={control} disabled={pending || !!syncError} onClick={() => onTransition("Finished")}>Finish session</button>{" "}
+        <button className={control} onClick={() => setConfirmEnd(false)}>Keep playing</button>
+      </div> : null}
+    </>
+  )
   return (
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-[70] bg-black" />
@@ -79,7 +120,11 @@ export function StandbySession({
         className={`fixed inset-0 z-[71] flex h-dvh w-screen flex-col overflow-y-auto bg-[#090c10] text-white outline-none${ambient ? " canopy-standby" : ""}`}
         style={{ padding: "max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))" }}
       >
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        {!nook ? <div data-testid="standby-field" aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+          <Image src={session.games.header_image} alt="" fill sizes="100vw" className="object-cover opacity-60 saturate-75" priority />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/80" />
+        </div> : null}
+        <header className={`z-10 flex flex-wrap items-center justify-between gap-3 ${nook ? "relative" : "sticky top-0 rounded-xl bg-black/50 backdrop-blur-sm"}`}>
           <p className={nook ? "canopy-brand" : "text-xs uppercase tracking-[0.3em] text-white/60"}>{nook ? "Canopy" : "Just Play / StandBy"}</p>
           <div className="flex flex-wrap gap-2">
             <select aria-label="StandBy view" value={view} className={`${control} max-w-36 bg-[#171f1c]`} onChange={event => { setView(event.target.value as typeof view); setDetails(false) }}>
@@ -89,7 +134,7 @@ export function StandbySession({
             <button className={control} onClick={exit}>Exit StandBy</button>
           </div>
         </header>
-        <main className={ambient ? "canopy-main" : "m-auto grid w-full max-w-6xl items-center gap-6 py-6 landscape:grid-cols-[2fr_3fr] landscape:py-3 sm:gap-12"}>
+        <main className={ambient ? "canopy-main" : "relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 py-6 text-center [@media(max-height:500px)]:flex-row [@media(max-height:500px)]:items-center [@media(max-height:500px)]:gap-4 [@media(max-height:500px)]:py-2"}>
           {nook ? <div className="canopy-scene">
             <div inert={details && !confirmEnd}>
               <CanopyNook artwork={session.games.header_image} />
@@ -102,49 +147,15 @@ export function StandbySession({
               <p className="canopy-boundary">R1 is your neutral starter companion, not an earned game resident. This room is a visual preview; no arrivals, rewards, or memories are created here.</p>
               <p>{recordingLabel}. {wakeState}. Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press.</p>
             </div> : null}
-          </div> : <div className="relative mx-auto aspect-[16/9] w-full max-w-md overflow-hidden rounded-2xl border border-white/10 shadow-2xl landscape:aspect-[3/4] landscape:max-h-[55dvh]">
-            <Image src={session.games.header_image} alt="" fill sizes="(orientation: landscape) 40vw, 80vw" className="object-cover opacity-80" priority />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          </div>}
-          <div className={ambient ? "canopy-session-panel" : "space-y-5 text-center landscape:text-left [@media(max-height:500px)]:space-y-2"}>
-            {!ambient ? <p className="text-sm text-white/60 [@media(max-height:500px)]:hidden">{session.status === "Paused" ? "Taking a breath" : "Your game is waiting for you"}</p> : null}
-            <Dialog.Title title={ambient ? session.games.name : undefined} className={ambient ? "canopy-game" : "break-words text-3xl font-semibold leading-tight sm:text-5xl [@media(max-height:500px)]:text-2xl"}>{session.games.name}</Dialog.Title>
-            <Dialog.Description className={ambient ? "sr-only" : "text-white/60"}>
-              {nook ? "Your real play session, in a quiet Canopy nook. The room does not award residents or progress." : "Leave this screen beside your game."}
-            </Dialog.Description>
-            {preferences.show_clock && session.record_time !== false ? (
-              <p className={ambient ? "canopy-clock" : "font-mono text-5xl tabular-nums sm:text-7xl [@media(max-height:500px)]:text-4xl"} aria-label={`${session.status} elapsed time`}>{elapsed}</p>
-            ) : null}
-            <p className="text-sm text-white/60">{session.status}{!ambient || session.record_time === false || !preferences.show_clock ? ` · ${recordingLabel}` : ""}</p>
-            {ambient && !confirmEnd ? <button className={`${control} canopy-details-toggle`} aria-expanded={details} aria-controls="canopy-session-details" onClick={event => {
-              if (details) event.currentTarget.focus({ preventScroll: true })
-              setDetails(value => !value)
-            }}>{details ? "Hide session details" : "Session details"}</button> : null}
-            {!ambient ? goal : null}
-            {preferences.reminders && !reminderDismissed && session.status === "Playing" && session.record_time !== false && elapsedSeconds >= 3600 ? (
-              <div role="status" className="text-sm text-amber-200">
-                A good moment to stretch or rest your eyes. Your session will keep running.
-                <button className={`${control} ml-2`} onClick={() => setReminderDismissed(true)}>Dismiss</button>
-              </div>
-            ) : null}
-            {syncError || error ? <p role="alert" className="text-sm text-amber-200">{syncError || error}</p> : null}
-            {syncError ? <button className={control} onClick={onRetry}>Reconnect / retry</button> : null}
-            {!ambient || !confirmEnd ? <div className="flex flex-wrap justify-center gap-3 landscape:justify-start">
-              <button className={control} disabled={pending || !!syncError} onClick={() => onTransition(session.status === "Paused" ? "Playing" : "Paused")}>{pending ? "Saving..." : session.status === "Paused" ? "Resume" : "Pause"}</button>
-              <button className={control} disabled={pending || !!syncError} onClick={() => setConfirmEnd(true)}>End session</button>
-              <button className={control} onClick={() => void toggleFullscreen()}>{fullscreen ? "Exit fullscreen" : "Fullscreen"}</button>
-            </div> : null}
-            {displayMessage ? <p role="status" className="text-sm text-white/70">{displayMessage}</p> : null}
-            {confirmEnd ? <div className="canopy-confirm space-y-2 rounded-xl border border-white/20 p-4">
-              <p>Done for today? Your game stays available to continue later.</p>
-              <button className={control} disabled={pending || !!syncError} onClick={() => onTransition("Finished")}>Finish session</button>{" "}
-              <button className={control} onClick={() => setConfirmEnd(false)}>Keep playing</button>
-            </div> : null}
-          </div>
+          </div> : null}
+          {nook ? <div className="canopy-session-panel">{titleBlock}{controlsBlock}</div> : <>
+            <div className="my-auto space-y-3 py-2 [@media(max-height:500px)]:my-0 [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:space-y-1">{titleBlock}</div>
+            <div data-testid="standby-controls" className="mx-auto w-full max-w-xl space-y-3 [@media(max-height:500px)]:flex-1 rounded-2xl border border-white/15 bg-black/60 p-4 backdrop-blur-sm [@media(max-height:500px)]:space-y-2 [@media(max-height:500px)]:p-3">{controlsBlock}</div>
+          </>}
         </main>
         {ambient ? nookWakeMessage ? <footer role="status">
           <p>{nookWakeMessage}</p>
-        </footer> : null : <footer className="space-y-1 text-center text-xs text-white/50" role="status">
+        </footer> : null : <footer className="relative z-10 space-y-1 text-center text-xs text-white/70" role="status">
           <p>{wakeState}</p>
           <p>{"Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press."}</p>
         </footer>}
