@@ -160,89 +160,83 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
     : currentBarWidth
 
   return (
-    <div className="flex flex-col min-h-dvh px-6">
-      {/* Greeting — centered hero */}
+    <div className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col px-4 sm:px-6">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="pt-2 pb-6 text-center"
+        className="pt-5 pb-6"
       >
         <NameCard displayName={displayName} card={nameCard} library={library} onEdit={onEditCard} />
       </motion.div>
 
-      {/* Level + XP — centered Duolingo-style */}
       {playerStats && (
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="flex flex-col items-center gap-4 pb-8"
+          className="grid gap-4 border-y border-border py-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center"
         >
-          {/* Level badge — big, centered */}
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-amber-500/30 to-amber-500/10 border-2 border-amber-500/25">
-            <span className="text-4xl font-black text-amber-400">
-              {animatedLevel}
-            </span>
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
-              level
-            </span>
+          <div className="flex items-center gap-1 sm:gap-3">
+            <div className="flex size-14 items-center justify-center rounded-full border border-primary/40 bg-primary/10">
+              <span aria-hidden="true" className="text-2xl font-semibold tabular-nums text-primary">
+                {animatedLevel}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Level {animatedLevel}</p>
+              <p className="text-sm text-muted-foreground">Player progress</p>
+            </div>
           </div>
 
-          {/* Chunky XP progress bar */}
-          <div className="flex w-full flex-col items-center gap-2">
-            <div ref={barRef} className="relative h-4 w-full rounded-full bg-white/10 overflow-hidden">
+          <div className="flex w-full flex-col gap-2">
+            <div ref={barRef} className="relative h-2.5 w-full overflow-hidden rounded-full bg-secondary">
               <motion.div
-                className="absolute inset-y-0 left-0 rounded-full bg-amber-500"
+                className="absolute inset-y-0 left-0 rounded-full bg-primary"
                 initial={{ width: `${hasPending ? prevBarWidth : currentBarWidth}%` }}
                 animate={{ width: `${currentBarWidth}%` }}
                 transition={{ duration: hasPending ? 1.4 : 0.7, ease: "easeOut", delay: hasPending ? 0.5 : 0 }}
               />
             </div>
-            <span className="text-sm font-semibold text-muted-foreground">
+            <span className="text-sm text-muted-foreground">
               {animatedXP}
-              <span className="text-muted-foreground/60"> / {playerStats.xpToNextLevel} XP</span>
+              <span> / {playerStats.xpToNextLevel} XP</span>
             </span>
           </div>
         </motion.div>
       )}
 
-      {/* Combo — centered with weekly dots */}
       {playerStats && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass-card p-5 mb-5"
+          className="mb-6 border-b border-border py-5"
         >
-          <div className="flex flex-col items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">
-                {(localStreak?.consecutive ?? playerStats.streak) >= 2 ? "🔥" : "📅"}
-              </span>
-              <span className="text-base font-bold text-foreground">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+              <span className="text-base font-semibold text-foreground">
                 {(localStreak?.consecutive ?? playerStats.streak) > 0
-                  ? `${(localStreak?.consecutive ?? playerStats.streak)}-day combo`
+                  ? `${(localStreak?.consecutive ?? playerStats.streak)}-day streak`
                   : (localStreak?.weeklyDays ?? playerStats.weeklyDays).some(Boolean)
                     ? "Played this week"
                     : "No sessions this week"}
               </span>
               {(localStreak?.bestStreak ?? playerStats.bestStreak) > 0 && (
-                <span className="text-xs text-muted-foreground ml-1">
-                  · Best combo: {(localStreak?.bestStreak ?? playerStats.bestStreak)}
+                <span className="text-sm text-muted-foreground">
+                  Best: {(localStreak?.bestStreak ?? playerStats.bestStreak)} days
                 </span>
               )}
             </div>
 
-            {/* Weekly dots — evenly spaced */}
-            <div className="flex items-center justify-center gap-3 w-full">
+            <div className="flex items-center gap-3">
               {WEEKDAY_LABELS.map((label, i) => {
                 const played = (localStreak?.weeklyDays ?? playerStats.weeklyDays)[i]
                 return (
-                  <div key={i} className="flex flex-col items-center gap-1">
+                  <div key={i} className="flex flex-col items-center gap-1.5">
                     <div
-                      className={`h-9 w-9 rounded-full flex items-center justify-center transition-colors ${
+                      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors sm:h-9 sm:w-9 ${
                         played
-                          ? "bg-chart-1 text-white"
+                          ? "bg-primary text-primary-foreground"
                           : "bg-secondary text-muted-foreground"
                       }`}
                     >
@@ -263,38 +257,35 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
         </motion.div>
       )}
 
-      {/* Stats row — centered tiles */}
-      <div className="grid grid-cols-3 gap-3 pb-6">
+      <div className="mb-6 grid grid-cols-3 divide-x divide-border border-y border-border py-5">
         {[
-          { emoji: "🎮", value: sessions.length, label: "Sessions", delay: 0.15 },
+          { value: sessions.length, label: "Sessions", delay: 0.15 },
           {
-            emoji: "⏱️",
             value: totalHours > 0
               ? `${totalHours}h${remainingMinutes > 0 ? ` ${remainingMinutes}m` : ""}`
               : `${totalMinutes}m`,
             label: "Play Time",
             delay: 0.2,
           },
-          { emoji: "🕹️", value: uniqueGames, label: "Games", delay: 0.25 },
-        ].map(({ emoji, value, label, delay }) => (
+          { value: uniqueGames, label: "Games", delay: 0.25 },
+        ].map(({ value, label, delay }) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay }}
-            className="glass-card flex flex-col items-center justify-center gap-1 p-4 text-center"
+            className="flex min-w-0 flex-col gap-1 px-3 first:pl-0 last:pr-0 sm:px-5"
           >
-            <span className="text-lg">{emoji}</span>
-            <span className="text-xl font-bold text-foreground leading-tight">
+            <span className="text-xl font-semibold tabular-nums text-foreground leading-tight sm:text-2xl">
               {value}
             </span>
-            <span className="text-[11px] text-muted-foreground">{label}</span>
+            <span className="text-xs text-muted-foreground sm:text-sm">{label}</span>
           </motion.div>
         ))}
       </div>
       {/* Session history */}
       <div className="pb-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h2 className="text-lg font-semibold text-foreground">
           Recent Sessions
         </h2>
       </div>
@@ -314,7 +305,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 * Math.min(i, 8) }}
-                className="glass-card flex items-center gap-3 p-3"
+                className="flex items-center gap-3 border-b border-border py-3"
               >
                 <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
                   <Image
@@ -342,7 +333,7 @@ export function Progress({ sessions, displayName, playerStats, nameCard, library
                   </span>
                 </div>
                 {session.xp_awarded > 0 && (
-                  <span className="shrink-0 rounded-full bg-chart-1/15 px-2 py-0.5 text-xs font-semibold text-chart-1">
+                  <span className="shrink-0 rounded-md bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
                     +{session.xp_awarded}
                   </span>
                 )}

@@ -560,9 +560,35 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
     const preflight = await db.exec(approval020SQL)
     assert.equal(preflight.flatMap((r) => r.rows ?? []).filter((r) => r.new020 && r.present).length, 0)
     await db.exec(migration("020_atomic_standby_game_completion.sql"))
+    assert.deepEqual(await one(`select count(*) as sessions,sum(xp_awarded) as ledger,
+      (select sum(total_xp) from public.users) as profile_xp from public.sessions`), before020)
     const postflight = await db.exec(approval020SQL)
     assert.equal(postflight.flatMap((r) => r.rows ?? []).filter((r) => r.new020 && r.present).length, 5)
     creationRPC = "create_standby_session_with_progress"
+    await db.exec("reset role")
+    await db.exec(migration("032_start_on_intent.sql"))
+    rpcSignatures.push("public.start_standby_session_with_progress(text,integer)")
+    await assertRestrictedRPCs()
+    await t.test("032 starts only after intent, with progress and XP in the same transaction", async () => {
+      const f = await fixture()
+      const started = await one(
+        "select * from public.start_standby_session_with_progress($1,25)",
+        [f.game],
+      )
+      assert.equal(started.status, "Playing")
+      assert.equal(started.active, true)
+      assert.equal(started.record_time, true)
+      assert.ok(Date.parse(started.started_at) > Date.now() - 10_000)
+      assert.equal(started.xp_awarded, 25)
+      assert.equal((await one("select total_xp from public.users where id=$1", [f.user])).total_xp, 25)
+      assert.deepEqual(await one(
+        "select status,total_sessions,total_time_minutes from public.game_progress where user_id=$1 and game_id=$2",
+        [f.user, f.game],
+      ), { status: "playing", total_sessions: 1, total_time_minutes: 0 })
+      assert.equal((await db.query("select id from public.sessions where user_id=$1 and active=true", [f.user])).rows.length, 1)
+    })
+    const after032 = await one(`select count(*) as sessions,sum(xp_awarded) as ledger,
+      (select sum(total_xp) from public.users) as profile_xp from public.sessions`)
     const complete = (game, status, expected, notes) => db.query(
       notes === undefined ? "select * from public.complete_standby_game($1,$2,$3::jsonb)"
         : "select * from public.complete_standby_game($1,$2,$3::jsonb,$4)",
@@ -582,7 +608,7 @@ test("StandBy migration, RLS and transactional XP contracts", async (t) => {
 
     await t.test("020 upgrades populated018+019 without changing history or seven018 function bodies/ACLs", async () => {
       assert.deepEqual(await one(`select count(*) as sessions,sum(xp_awarded) as ledger,
-        (select sum(total_xp) from public.users) as profile_xp from public.sessions`), before020)
+        (select sum(total_xp) from public.users) as profile_xp from public.sessions`), after032)
       assert.deepEqual((await db.query(
         "select oid::regprocedure::text as signature,pg_get_functiondef(oid) as definition,proacl::text as acl from pg_proc where oid=any($1::regprocedure[]) order by 1",
         [baselineSignatures],

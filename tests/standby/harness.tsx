@@ -119,7 +119,13 @@ function Harness() {
   /> : <p role="status">Session ended on another device.</p>
 }
 const deckGames = params.has("deck")
-  ? ["A", "B"].map(k => ({ ...game, id: `deck-${k}`, name: `Deck ${k}` }))
+  ? ["A", "B"].map(k => ({
+    ...game,
+    id: `deck-${k}`,
+    name: params.has("long-deck") && k === "A"
+      ? "The Legend of Zelda: Tears of the Kingdom - A very long library title"
+      : `Deck ${k}`,
+  }))
   : []
 const app = params.has("app-shell")
   ? <AppShell user={{
@@ -129,6 +135,6 @@ const app = params.has("app-shell")
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
   }} isAnonymous={params.has("anon")} recommendations={deckGames} activeSession={fixture.session} activeGame={null}
     sessionHistory={libraryHistory} nameCard={fixture.nameCard} playerStats={null} residents={fixture.residents} postcards={fixture.postcards} stampRules={fixture.stampRules} isBoosterPack={false}
-    boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: 0 }} />
+    boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: params.has("packs") ? 2 : 0 }} />
   : <Harness />
 createRoot(document.getElementById("root")!).render(params.has("strict") ? <StrictMode>{app}</StrictMode> : app)

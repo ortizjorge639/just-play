@@ -1,39 +1,39 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* Just Play - Lantern Pastel dark theme. No light mode. */
+/* Just Play — dark ink, warm ivory, and a restrained amber action color. */
 :root {
-  --background: #0f1a1f;
-  --background-gradient: linear-gradient(to bottom, #0f1a1f, #183241);
-  --foreground: #fcf7e9;
-  --card: #1a2e38;
-  --card-gradient: linear-gradient(to bottom, #233c49, #1a2e38);
-  --card-foreground: #fcf7e9;
-  --popover: #1e1f22;
-  --popover-foreground: #fcf7e9;
-  --primary: #f0b46a;
-  --primary-highlight: #ffd9a8;
-  --primary-foreground: #2a1a08;
-  --secondary: #1e1f22;
-  --secondary-foreground: #fcf7e9;
-  --muted: #2b2d31;
-  --muted-foreground: #a9bcc0;
-  --accent: #f0b46a;
-  --accent-foreground: #2a1a08;
-  --destructive: #ffb4a2;
-  --destructive-foreground: #1a0b07;
-  --success: #8fcaa3;
-  --success-highlight: #bfe3c9;
-  --success-foreground: #10251a;
-  --info: #b7d9ee;
-  --info-foreground: #1a3344;
-  --emote: #c3b3e6;
-  --emote-highlight: #ddd2f5;
-  --emote-foreground: #2a1a38;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.08);
-  --ring: #f0b46a;
-  --radius: 1.25rem;
+  --background: #141714;
+  --background-gradient: linear-gradient(180deg, #141714, #191c18);
+  --foreground: #f3efe3;
+  --card: #1d211d;
+  --card-gradient: #1d211d;
+  --card-foreground: #f3efe3;
+  --popover: #20241f;
+  --popover-foreground: #f3efe3;
+  --primary: #e2b56c;
+  --primary-highlight: #efc985;
+  --primary-foreground: #20180d;
+  --secondary: #252a24;
+  --secondary-foreground: #f3efe3;
+  --muted: #242823;
+  --muted-foreground: #b7b5aa;
+  --accent: #e2b56c;
+  --accent-foreground: #20180d;
+  --destructive: #f0a08d;
+  --destructive-foreground: #24120d;
+  --success: #a7c7ad;
+  --success-highlight: #bed6c2;
+  --success-foreground: #172019;
+  --info: #b8c5c7;
+  --info-foreground: #1d2526;
+  --emote: #b9b3c5;
+  --emote-highlight: #d3ccdf;
+  --emote-foreground: #211d27;
+  --border: #3a3d35;
+  --input: #3a3d35;
+  --ring: #e2b56c;
+  --radius: 0.75rem;
 }
 
 @theme inline {
@@ -85,17 +85,60 @@
   }
 }
 
-/* Frosted glass card utility with form styling */
+@keyframes cover-wash-drift {
+  0% { transform: translate(-2%, 1%) scale(1.03); }
+  100% { transform: translate(2%, -1%) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-art::before {
+    animation: none;
+  }
+}
+
+@layer components {
+  .game-art {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .game-art::before {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    opacity: 0.24;
+    background:
+      radial-gradient(ellipse at 25% 35%, #d3944c80, transparent 48%),
+      radial-gradient(ellipse at 78% 30%, #6f806480, transparent 46%),
+      radial-gradient(ellipse at 54% 92%, #b26d4960, transparent 52%);
+    mix-blend-mode: soft-light;
+    animation: cover-wash-drift 24s ease-in-out infinite alternate;
+  }
+
+  .game-art-dither {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.34;
+    object-fit: cover;
+    image-rendering: pixelated;
+    mix-blend-mode: soft-light;
+  }
+}
+
+/* Solid, tactile surface utility; avoid decorative glass blur. */
 @layer utilities {
   .glass-card {
-    background: var(--card-gradient);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--card);
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: 
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   }
 
   /* Form control styling: gradient with inner edge highlighting */

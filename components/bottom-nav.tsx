@@ -13,7 +13,7 @@ interface BottomNavProps {
 
 export function BottomNav({ active, onChange, hasActiveSession, xpPending }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background/90 backdrop-blur-lg px-4 pb-[env(safe-area-inset-bottom)]"
+    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background px-4 pb-[env(safe-area-inset-bottom)]"
       style={{ minHeight: 64 }}
     >
       {/* Only show Deck when no active session - forces focus on current game */}
@@ -85,7 +85,7 @@ function NavItem({
     <button
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className="relative flex min-h-[44px] min-w-[64px] flex-col items-center justify-center gap-1 py-2"
+      className="relative flex min-h-11 min-w-16 flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       <div className="relative">
         <span

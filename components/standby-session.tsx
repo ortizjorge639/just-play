@@ -1,14 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import Image from "next/image"
 import * as Dialog from "@radix-ui/react-dialog"
 import type { Game, Session, StandbyPreferences } from "@/lib/types"
 import { useStandbyWakeLock } from "@/hooks/use-standby-display"
 import { CanopyNook } from "./canopy/nook"
+import { GameArtwork } from "./game-artwork"
 import "./canopy/nook.css"
 
-const control = "min-h-11 rounded-xl border border-white/20 px-4 py-2 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:opacity-40"
+const control = "min-h-11 rounded-lg border border-white/20 px-4 py-2 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:opacity-40"
 
 export function StandbySession({
   session, notesStatus, elapsed, elapsedSeconds, preferences, pending, syncError, error, onRetry, onTransition, onExit,
@@ -30,7 +30,7 @@ export function StandbySession({
   const [displayMessage, setDisplayMessage] = useState<string | null>(null)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [reminderDismissed, setReminderDismissed] = useState(false)
-  const [view, setView] = useState<"artwork" | "canopy">("artwork")
+  const [view] = useState<"artwork" | "canopy">("artwork")
   const nook = view === "canopy"
   const ambient = nook
   const [details, setDetails] = useState(false)
@@ -72,7 +72,6 @@ export function StandbySession({
   const nookWakeMessage = preferences.keep_awake && !wakeState.startsWith("Keep-awake active") ? wakeState : null
   const titleBlock = (
     <>
-      {!ambient ? <p className="text-sm text-white/70 [@media(max-height:500px)]:hidden">{session.status === "Paused" ? "Taking a breath" : "Your game is waiting for you"}</p> : null}
       <Dialog.Title title={ambient ? session.games.name : undefined} className={ambient ? "canopy-game" : "break-words font-serif text-4xl font-medium leading-tight sm:text-6xl [@media(max-height:500px)]:text-3xl"}>{session.games.name}</Dialog.Title>
       <Dialog.Description className={ambient ? "sr-only" : "text-white/70"}>
         {nook ? "Your real play session, in a quiet Canopy nook. The room does not award residents or progress." : "Leave this screen beside your game."}
@@ -121,16 +120,16 @@ export function StandbySession({
         style={{ padding: "max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))" }}
       >
         {!nook ? <div data-testid="standby-field" aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-          <Image src={session.games.header_image} alt="" fill sizes="100vw" className="object-cover opacity-60 saturate-75" priority />
+          <GameArtwork src={session.games.header_image} alt="" sizes="100vw" className="absolute inset-0 opacity-60 saturate-75" priority />
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/80" />
         </div> : null}
-        <header className={`z-20 flex flex-wrap items-center justify-between gap-3 ${nook ? "relative" : "sticky top-0 rounded-xl bg-black/50 backdrop-blur-sm"}`}>
-          <p className={nook ? "canopy-brand" : "text-xs uppercase tracking-[0.3em] text-white/60"}>{nook ? "Canopy" : "Just Play / StandBy"}</p>
+        <header className={`z-20 flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-white/15 py-2 ${nook ? "relative" : "sticky top-0"}`}>
+          <div className="flex min-w-0 items-center gap-3">
+            <p className="text-base font-semibold tracking-tight text-white">Just Play</p>
+            <span aria-hidden="true" className="h-4 w-px bg-white/25" />
+            <p className="text-sm text-white/70">StandBy</p>
+          </div>
           <div className="flex flex-wrap gap-2">
-            <select aria-label="StandBy view" value={view} className={`${control} max-w-36 bg-[#171f1c]`} onChange={event => { setView(event.target.value as typeof view); setDetails(false) }}>
-              <option value="artwork">Artwork</option>
-              <option value="canopy">Canopy nook</option>
-            </select>
             <button className={control} onClick={exit}>Exit StandBy</button>
           </div>
         </header>
