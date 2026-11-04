@@ -4,9 +4,9 @@ test("production StandBy defaults to artwork without a settlement view", async (
   await page.goto("/?app-shell")
   await page.getByRole("button", { name: "Now Playing", exact: true }).click()
   await page.getByRole("button", { name: /Enter StandBy/ }).click()
-  const view = page.getByRole("combobox", { name: "StandBy view" })
-  await expect(view).toHaveValue("artwork")
-  await expect(view.locator("option")).toHaveText(["Artwork", "Canopy nook"])
+  await expect(page.getByRole("combobox", { name: "StandBy view" })).toHaveCount(0)
+  await expect(page.getByTestId("standby-field").locator("img")).toBeVisible()
+  await expect(page.getByTestId("standby-field").locator(".standby-color-form")).toHaveCount(3)
   await expect(page.locator('[data-testid="settlement-3d"]')).toHaveCount(0)
 })
 

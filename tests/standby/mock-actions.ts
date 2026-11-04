@@ -2,7 +2,7 @@ import type { Game, Session, SessionStatus, StandbyPreferences, Resident, Postca
 
 export const game: Game = {
   id: "test-game", name: "A Short Hike", genres: ["Adventure"],
-  estimated_session_length: 60, header_image: "/fixture-art", description: "Explore at your own pace.",
+  estimated_session_length: 60, header_image: "/fixture-art.svg", description: "Explore at your own pace.",
   featured: true, source: "test", created_at: "2026-10-01T00:00:00Z",
 }
 export type FixtureSession = Session & { games: Game; progress: null }
