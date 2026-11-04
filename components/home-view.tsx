@@ -1,8 +1,8 @@
 "use client"
 
-import Image from "next/image"
 import type { Game, Postcard, Resident } from "@/lib/types"
 import { PostcardsList } from "./postcards-list"
+import { GameArtwork } from "./game-artwork"
 
 interface HomeViewProps {
   residents: Resident[]
@@ -29,13 +29,7 @@ export function HomeView({ residents, postcards, invitedGame }: HomeViewProps) {
                 <article className="relative isolate flex min-h-32 overflow-hidden rounded-xl border border-border bg-card">
                   {resident.game ? (
                     <>
-                      <Image
-                        src={resident.game.header_image}
-                        alt=""
-                        fill
-                        sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
-                        className="z-0 object-cover saturate-75"
-                      />
+                      <GameArtwork src={resident.game.header_image} alt="" sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" className="absolute inset-0 z-0 saturate-75" />
                       <div aria-hidden="true" className="absolute inset-0 z-10 bg-gradient-to-br from-primary/35 via-background/20 to-info/35" />
                       <div aria-hidden="true" className="absolute inset-0 z-10 bg-gradient-to-t from-background/95 via-background/25 to-transparent" />
                     </>
@@ -67,7 +61,9 @@ export function HomeView({ residents, postcards, invitedGame }: HomeViewProps) {
         <section aria-labelledby="home-on-the-way" className="mb-7">
           <h2 id="home-on-the-way" className="mb-3 text-lg font-semibold text-foreground">On the way</h2>
           <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-            <Image src={invitedGame.header_image} alt="" width={72} height={48} className="rounded object-cover" />
+            <div className="relative h-12 w-[72px] shrink-0 overflow-hidden rounded">
+              <GameArtwork src={invitedGame.header_image} alt="" sizes="72px" className="absolute inset-0" />
+            </div>
             <p className="min-w-0 flex-1 font-medium text-foreground line-clamp-2">{invitedGame.name}</p>
           </div>
         </section>

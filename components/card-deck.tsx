@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useTransition, useCallback } from "react"
-import { AnimatePresence, motion } from "framer-motion"
-import { GameCard } from "./game-card"
+import { AnimatePresence } from "framer-motion"
 import { GameSearch } from "./game-search"
 import { QuickFilters } from "./quick-filters"
 import { BoosterPack } from "./booster-pack"
 import { createSession, markNotForMe } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
 import { usePersistedDeck } from "@/hooks/use-persisted-deck"
+import { GameArtwork } from "./game-artwork"
 import type { Game, UserPreferences } from "@/lib/types"
 
 interface CardDeckProps {
@@ -24,6 +24,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
   const [deck, setDeck] = usePersistedDeck(games)
   const [rejectedStack, setRejectedStack] = useState<Game[]>([])
   const [lockedGame, setLockedGame] = useState<Game | null>(null)
+  const [focusedGameId, setFocusedGameId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [skipPending, startSkip] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -38,47 +39,42 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     setShowBoosterPack(false)
   }, [setDeck])
 
-  // Add a searched game to the top of the deck, then auto-show lock-in
+  // A searched game becomes a local selection; no session is written until play starts.
   const addSearchedGame = useCallback((game: Game) => {
-    setDeck((prev) => {
-      // Remove if already in deck to avoid duplicates
-      const filtered = prev.filter((g) => g.id !== game.id)
-      return [...filtered, game]
-    })
-    // Brief delay before auto-showing lock-in confirmation
-    setTimeout(() => setLockedGame(game), 600)
+    setDeck((prev) => [game, ...prev.filter((g) => g.id !== game.id)])
+    setFocusedGameId(game.id)
+    setLockedGame(game)
   }, [setDeck])
-
-  const handleReject = useCallback(
-    (game: Game) => {
-      setDeck((prev) => prev.filter((g) => g.id !== game.id))
-      setRejectedStack((prev) => [...prev, game])
-    },
-    [setDeck]
-  )
 
   const handleUndo = useCallback(() => {
     if (rejectedStack.length === 0) return
     const lastRejected = rejectedStack[rejectedStack.length - 1]
     setRejectedStack((prev) => prev.slice(0, -1))
     setDeck((prev) => [...prev, lastRejected])
+    setFocusedGameId(lastRejected.id)
   }, [rejectedStack, setDeck])
 
-  const handleNotForMe = useCallback(() => {
-    const top = deck[deck.length - 1]
-    if (!top) return
+  const handleSkip = useCallback((game: Game) => {
+    setDeck((prev) => prev.filter((candidate) => candidate.id !== game.id))
+    setRejectedStack((prev) => [...prev, game])
+    setLockedGame((current) => current?.id === game.id ? null : current)
+  }, [setDeck])
+
+  const handleNotForMe = useCallback((game: Game) => {
     setError(null)
     startSkip(async () => {
-      const result = await markNotForMe(top.id)
+      const result = await markNotForMe(game.id)
       if (!result.ok) {
         setError(result.error ?? "That did not go through. Try again.")
         return
       }
-      setDeck((prev) => prev.filter((g) => g.id !== top.id))
+      setDeck((prev) => prev.filter((g) => g.id !== game.id))
+      setLockedGame((current) => current?.id === game.id ? null : current)
     })
-  }, [deck, setDeck])
+  }, [setDeck])
 
   const handleLockIn = useCallback((game: Game) => {
+    setFocusedGameId(game.id)
     setLockedGame(game)
   }, [])
 
@@ -92,7 +88,6 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
         onSessionCreated()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")
-        setLockedGame(null)
       }
     })
   }, [lockedGame, onSessionCreated, showXPToast])
@@ -100,9 +95,11 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
   const cancelLockIn = useCallback(() => {
     setLockedGame(null)
   }, [])
+  const focusedGame = deck.find((game) => game.id === focusedGameId) ?? deck[0]
+  const displayGame = lockedGame ?? focusedGame
 
   // Show booster pack overlay only after onboarding is complete and when explicitly triggered
-  if (onboardingComplete && ((isBoosterPack && !packOpened && deck.length === 0) || showBoosterPack)) {
+  if (!lockedGame && onboardingComplete && ((isBoosterPack && !packOpened && deck.length === 0) || showBoosterPack)) {
     return (
       <>
         <BoosterPack
@@ -112,39 +109,6 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
         />
         {/* Search FAB still available */}
         <GameSearch onGameSelected={addSearchedGame} />
-        {/* Lock-in confirmation for searched games */}
-        <AnimatePresence>
-          {lockedGame && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm"
-              onClick={cancelLockIn}
-            >
-              <motion.div
-                initial={{ y: 200 }}
-                animate={{ y: 0 }}
-                exit={{ y: 200 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="w-full max-w-md glass-card rounded-t-3xl p-6 pb-10 flex flex-col gap-5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30" />
-                <div className="text-center flex flex-col gap-2">
-                  <h3 className="text-lg font-bold text-foreground">Lock in {lockedGame.name}?</h3>
-                  <p className="text-sm text-muted-foreground">{"This becomes your current game."}</p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <button onClick={confirmLockIn} disabled={isPending} className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]">
-                    {isPending ? "Starting session..." : "Lock In"}
-                  </button>
-                  <button onClick={cancelLockIn} className="h-12 w-full rounded-xl bg-secondary text-base font-medium text-foreground transition-colors hover:bg-muted min-h-[44px]">Go back</button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </>
     )
   }
@@ -160,7 +124,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
           </div>
           <h2 className="text-xl font-bold text-foreground">No more games</h2>
           <p className="text-muted-foreground text-base max-w-xs">
-            You swiped through all your picks. Open another pack or update your filters.
+            No games are showing right now. Undo a skip, open another pack, or update your filters.
           </p>
           <div className="flex flex-col gap-3 w-full max-w-xs mt-2">
             {rejectedStack.length > 0 && (
@@ -217,206 +181,125 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
         {/* Search FAB + overlay (available even when deck is empty) */}
         <GameSearch onGameSelected={addSearchedGame} />
 
-        {/* Lock-in confirmation modal (for searched games added to empty deck) */}
-        <AnimatePresence>
-          {lockedGame && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm"
-              onClick={cancelLockIn}
-            >
-              <motion.div
-                initial={{ y: 200 }}
-                animate={{ y: 0 }}
-                exit={{ y: 200 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="w-full max-w-md glass-card rounded-t-3xl p-6 pb-10 flex flex-col gap-5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30" />
-                <div className="text-center flex flex-col gap-2">
-                  <h3 className="text-lg font-bold text-foreground">
-                    Lock in {lockedGame.name}?
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {"This becomes your current game."}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={confirmLockIn}
-                    disabled={isPending}
-                    className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
-                  >
-                    {isPending ? "Starting session..." : "Lock In"}
-                  </button>
-                  <button
-                    onClick={cancelLockIn}
-                    className="h-12 w-full rounded-xl bg-secondary text-base font-medium text-foreground transition-colors hover:bg-muted min-h-[44px]"
-                  >
-                    Go back
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </>
     )
   }
 
+  if (!displayGame) return null
+
   return (
     <>
-      <div className="relative flex flex-1 items-center justify-center px-6">
-        {/* Gesture hints */}
-        <div className="absolute top-4 left-0 right-0 flex justify-center">
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <svg className="h-3 w-3 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              Swipe up to lock in
-            </span>
-            <span className="flex items-center gap-1">
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              Swipe down to skip
-            </span>
-          </div>
-        </div>
-
-        {/* Card stack */}
-        <div className="relative w-full max-w-[320px]" style={{ aspectRatio: "3/4" }}>
-          <AnimatePresence>
-            {deck.map((game, i) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                index={i}
-                total={deck.length}
-                isTop={i === deck.length - 1}
-                onLockIn={handleLockIn}
-                onReject={handleReject}
-              />
+      <main className="mx-auto grid w-full max-w-[1440px] flex-1 gap-5 px-4 pb-8 pt-5 sm:px-6 lg:grid-cols-[minmax(220px,.68fr)_minmax(0,1.32fr)] lg:gap-8 lg:px-8">
+        <section aria-labelledby="recommendations-title" className="min-w-0">
+          <header className="mb-4">
+            <h1 id="recommendations-title" className="text-2xl font-semibold tracking-tight text-foreground">Choose a game</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Select a game to see its details.</p>
+          </header>
+          <ul className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
+            {deck.map((game) => (
+              <li key={game.id}>
+                <button
+                  type="button"
+                  aria-pressed={displayGame.id === game.id}
+                  onClick={() => { setFocusedGameId(game.id); if (lockedGame) setLockedGame(game) }}
+                  className="flex min-h-[76px] w-full items-center gap-3 rounded-lg border border-border bg-card p-2 text-left transition-colors hover:bg-secondary aria-pressed:border-primary/70 aria-pressed:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  <GameArtwork src={game.header_image} alt="" sizes="72px" className="relative h-14 w-[72px] shrink-0 rounded-md" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block line-clamp-2 font-medium text-foreground">{game.name}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">{game.estimated_session_length} min · {(game.genres ?? []).slice(0, 2).join(" · ") || "Game"}</span>
+                  </span>
+                </button>
+              </li>
             ))}
-          </AnimatePresence>
-        </div>
-
-        {/* Card count indicator */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5">
-          {games.map((g) => (
-            <div
-              key={g.id}
-              className="h-1.5 w-3 rounded-full transition-colors"
-              style={{
-                backgroundColor: deck.find((d) => d.id === g.id)
-                  ? "var(--primary)"
-                  : "rgba(255,255,255,0.08)",
-              }}
-            />
-          ))}
-        </div>
-      </div>
-
-      {deck.length > 0 && (
-        <div className="flex justify-center px-6 pb-2">
-          <button
-            type="button"
-            onClick={handleNotForMe}
-            disabled={skipPending}
-            className="min-h-[44px] rounded-full px-5 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-          >
-            Not for me. Don&apos;t suggest this again
-          </button>
-        </div>
-      )}
-
-      {/* Undo button - positioned below the card area */}
-      <AnimatePresence>
-        {rejectedStack.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="flex justify-center px-6 pb-2"
-          >
+          </ul>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {rejectedStack.length > 0 ? (
+              <button onClick={handleUndo} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-foreground hover:bg-secondary">
+                <span aria-hidden="true">↶</span> Undo skip
+              </button>
+            ) : null}
             <button
-              onClick={handleUndo}
-              className="flex items-center gap-2 rounded-full glass-card px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted active:scale-95 min-h-[44px]"
+              type="button"
+              onClick={() => handleSkip(displayGame)}
+              disabled={!!lockedGame}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.25v13.5L19.5 12 5.25 5.25z" />
               </svg>
-              Undo
+              Skip for now
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Error banner */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="fixed bottom-20 left-4 right-4 z-50 rounded-xl bg-destructive/20 p-4 text-center text-sm text-destructive"
-        >
-          {error}
-        </motion.div>
-      )}
-
-      {/* Search FAB + overlay */}
-      <GameSearch onGameSelected={addSearchedGame} />
-
-      {/* Lock-in confirmation modal */}
-      <AnimatePresence>
-        {lockedGame && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 backdrop-blur-sm"
-            onClick={cancelLockIn}
-          >
-            <motion.div
-              initial={{ y: 200 }}
-              animate={{ y: 0 }}
-              exit={{ y: 200 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="w-full max-w-md glass-card rounded-t-3xl p-6 pb-10 flex flex-col gap-5"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              onClick={() => handleNotForMe(displayGame)}
+              disabled={skipPending || !!lockedGame}
+              className="min-h-11 rounded-lg px-3 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50"
             >
-              <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30" />
-              <div className="text-center flex flex-col gap-2">
-                <h3 className="text-lg font-bold text-foreground">
-                  Lock in {lockedGame.name}?
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {"This becomes your current game."}
-                </p>
-              </div>
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={confirmLockIn}
-                  disabled={isPending}
-                  className="h-14 w-full rounded-xl bg-success text-base font-semibold text-success-foreground transition-all hover:bg-success/90 active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
-                >
-                  {isPending ? "Starting session..." : "Lock In"}
+              Don&apos;t suggest this game
+            </button>
+            {boosterPackStatus && boosterPackStatus.packsRemaining > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowBoosterPack(true)}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                </svg>
+                Booster pack ({boosterPackStatus.packsRemaining} left)
+              </button>
+            )}
+          </div>
+        </section>
+
+        <section aria-label={lockedGame ? `${displayGame.name} selected` : `${displayGame.name} details`} className="relative isolate flex min-h-[22rem] min-w-0 flex-col justify-end overflow-hidden rounded-xl border border-border bg-card sm:min-h-[32rem] lg:min-h-[min(70dvh,44rem)]">
+          <GameArtwork
+            src={displayGame.header_image}
+            alt=""
+            sizes="(max-width: 1023px) 100vw, 68vw"
+            priority
+            className="absolute inset-0"
+          />
+          <div aria-hidden="true" className="absolute inset-0 z-[3] bg-gradient-to-t from-[#10130f]/95 via-[#10130f]/40 to-transparent" />
+          <div className="relative z-[4] grid gap-3 p-5 sm:p-7 lg:p-9">
+            <p className="text-sm font-medium text-primary">{lockedGame ? "Ready to play" : `${displayGame.estimated_session_length} min · ${(displayGame.genres ?? []).slice(0, 3).join(" · ")}`}</p>
+            <h2 className="max-w-[18ch] break-words text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">{displayGame.name}</h2>
+            {displayGame.description ? <p className="max-w-[58ch] text-sm leading-relaxed text-white/85 sm:text-base">{displayGame.description}</p> : null}
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              {lockedGame ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={confirmLockIn}
+                    disabled={isPending}
+                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {isPending ? "Starting…" : <><svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor" /></svg>Start Playing</>}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelLockIn}
+                    disabled={isPending}
+                    className="inline-flex min-h-12 items-center gap-2 rounded-lg border border-white/35 px-5 font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+                  >
+                    Change game
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={() => handleLockIn(displayGame)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight">
+                  <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 10V7.5a4.5 4.5 0 019 0V10m-11.25 0h13.5A1.5 1.5 0 0120.25 11.5v8A1.5 1.5 0 0118.75 21h-13.5a1.5 1.5 0 01-1.5-1.5v-8A1.5 1.5 0 015.25 10z" />
+                  </svg>
+                  Lock in game
                 </button>
-                <button
-                  onClick={cancelLockIn}
-                  className="h-12 w-full rounded-xl bg-secondary text-base font-medium text-foreground transition-colors hover:bg-muted min-h-[44px]"
-                >
-                  Go back
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              )}
+            </div>
+            {error ? <p role="alert" className="max-w-xl rounded-lg border border-destructive/50 bg-background/80 px-3 py-2 text-sm text-destructive">{error}</p> : null}
+          </div>
+        </section>
+      </main>
+      <GameSearch onGameSelected={addSearchedGame} />
     </>
   )
 }

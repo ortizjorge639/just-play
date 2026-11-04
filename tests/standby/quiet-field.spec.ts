@@ -14,7 +14,7 @@ for (const viewport of viewports) {
     await expect(field).toBeVisible()
     const fieldBox = await field.boundingBox()
     expect(fieldBox).toMatchObject({ x: 0, y: 0, width: viewport.width, height: viewport.height })
-    expect(await field.locator("svg").count()).toBeGreaterThan(0)
+    expect(await field.locator("img").count()).toBeGreaterThan(0)
     const title = await dialog.getByRole("heading", { name: "A Short Hike" }).boundingBox()
     const panel = await dialog.getByTestId("standby-controls").boundingBox()
     expect(title && panel).toBeTruthy()
@@ -50,17 +50,16 @@ test("Quiet field stays usable with a long title at 200% text and keeps the fiel
   await expect(dialog.getByRole("button", { name: "Exit StandBy" })).toBeInViewport()
 })
 
-test("Quiet field honours reduced motion and the Canopy view still switches back", async ({ page }) => {
+test("Quiet field honours reduced motion and keeps the Canopy switch out of this release", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   await page.getByRole("button", { name: /Enter StandBy/ }).click()
   const dialog = page.getByRole("dialog")
   expect(await dialog.evaluate(element => element.getAnimations({ subtree: true }).length)).toBe(0)
-  const view = dialog.getByRole("combobox", { name: "StandBy view" })
-  await view.selectOption("canopy")
-  await expect(dialog.getByTestId("standby-field")).toHaveCount(0)
-  await view.selectOption("artwork")
+  await expect(dialog.getByRole("combobox", { name: "StandBy view" })).toHaveCount(0)
   await expect(dialog.getByTestId("standby-field")).toBeVisible()
+  await expect(dialog.getByText("Taking a breath")).toHaveCount(0)
+  await expect(dialog.getByText("Your game is waiting for you")).toHaveCount(0)
 })
 
 test("Escape still exits Quiet field after a mouse click on the field and restores entry focus", async ({ page }) => {

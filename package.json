@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
     "prototype:now-playing": "node prototypes/now-playing/server.mjs",
+    "prototype:core-flow": "node prototypes/core-flow/server.mjs",
     "test:standby": "playwright test --config tests/standby/playwright.config.ts",
     "seed:igdb": "tsx scripts/seed-igdb.ts"
   },

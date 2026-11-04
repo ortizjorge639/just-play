@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-03T22:57:34Z",
+  "title": "Design System: Just Play",
+  "extensions": {
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "Geist interface text for descriptions, controls, and supporting content."
+      },
+      "label": {
+        "displayName": "Interface label",
+        "purpose": "Compact labels for controls, navigation, genres, and status."
+      }
+    },
+    "shadows": [
+      {
+        "name": "solid-card",
+        "value": "0 8px 24px rgba(0, 0, 0, 0.18)",
+        "purpose": "Subtle separation for solid charcoal cards; not a glass effect."
+      }
+    ],
+    "motion": [
+      {
+        "name": "cover-wash-drift",
+        "value": "24s ease-in-out infinite alternate",
+        "purpose": "Slow radial artwork wash; disabled for prefers-reduced-motion."
+      },
+      {
+        "name": "control-transition",
+        "value": "color 150ms ease",
+        "purpose": "Quiet hover and focus changes for interface controls."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Amber action button with an optional inline play icon.",
+      "html": "<button class=\"ds-button-primary\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M5.25 5.65c0-.85.92-1.4 1.67-.98l11.54 6.35a1.13 1.13 0 0 1 0 1.97l-11.54 6.35a1.13 1.13 0 0 1-1.67-.99z\" fill=\"currentColor\"/></svg><span>Start Playing</span></button>",
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border:0;border-radius:var(--radius);background:var(--primary);color:var(--primary-foreground);font:600 14px/1.25 Geist,system-ui,sans-serif;transition:background-color 150ms ease,transform 150ms ease}.ds-button-primary svg{width:16px;height:16px}.ds-button-primary:hover{background:var(--primary-highlight)}.ds-button-primary:active{transform:scale(.98)}.ds-button-primary:focus-visible{outline:2px solid var(--ring);outline-offset:4px}"
+    },
+    {
+      "name": "Secondary action",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet bordered control for reversible or supporting actions.",
+      "html": "<button class=\"ds-button-secondary\">Change game</button>",
+      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 20px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);color:var(--foreground);font:500 14px/1.25 Geist,system-ui,sans-serif;transition:background-color 150ms ease}.ds-button-secondary:hover{background:var(--secondary)}.ds-button-secondary:focus-visible{outline:2px solid var(--ring);outline-offset:4px}"
+    },
+    {
+      "name": "Recommendation row",
+      "kind": "button",
+      "refersTo": "game-row",
+      "description": "Selectable compact list row with title, thumbnail, and short metadata.",
+      "html": "<button class=\"ds-game-row\" aria-pressed=\"true\"><span class=\"ds-game-thumb\" aria-hidden=\"true\"></span><span><strong>Game title</strong><small>60 min · Adventure</small></span></button>",
+      "css": ".ds-game-row{display:flex;align-items:center;gap:12px;width:100%;min-height:76px;padding:8px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--foreground);text-align:left;font:400 14px/1.4 Geist,system-ui,sans-serif;transition:background-color 150ms ease,border-color 150ms ease}.ds-game-row:hover{background:var(--secondary)}.ds-game-row[aria-pressed=true]{border-color:var(--primary);background:var(--secondary)}.ds-game-row:focus-visible{outline:2px solid var(--ring);outline-offset:3px}.ds-game-row strong,.ds-game-row small{display:block}.ds-game-row small{margin-top:2px;color:var(--muted-foreground);font-size:12px}.ds-game-thumb{width:72px;height:56px;flex:none;border-radius:6px;background:var(--secondary)}"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Search input inside a solid, icon-led panel.",
+      "html": "<label class=\"ds-search\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><circle cx=\"10.5\" cy=\"10.5\" r=\"7.5\"/><path d=\"m16 16 5 5\"/></svg><input type=\"search\" placeholder=\"Search any game…\"/></label>",
+      "css": ".ds-search{display:flex;align-items:center;gap:12px;min-height:48px;padding:8px 16px;border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--muted-foreground)}.ds-search svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2}.ds-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--foreground);font:400 14px/1.4 Geist,system-ui,sans-serif}.ds-search input::placeholder{color:var(--muted-foreground)}.ds-search:focus-within{outline:2px solid var(--ring);outline-offset:3px}"
+    },
+    {
+      "name": "Bottom navigation item",
+      "kind": "nav",
+      "refersTo": "navigation-item",
+      "description": "Icon-over-label destination with a quiet active state.",
+      "html": "<button class=\"ds-nav-item\" aria-current=\"page\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"3\"/></svg><span>Deck</span></button>",
+      "css": ".ds-nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:64px;min-height:44px;padding:8px;border:0;border-radius:8px;background:transparent;color:var(--muted-foreground);font:500 10px/1.2 Geist,system-ui,sans-serif}.ds-nav-item svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5}.ds-nav-item:hover{background:var(--secondary);color:var(--foreground)}.ds-nav-item[aria-current=page]{color:var(--primary)}.ds-nav-item:focus-visible{outline:2px solid var(--ring);outline-offset:3px}"
+    },
+    {
+      "name": "Playing status chip",
+      "kind": "chip",
+      "description": "Compact semantic status using the success color only when a game is playing.",
+      "html": "<span class=\"ds-status\"><span aria-hidden=\"true\"></span>Playing</span>",
+      "css": ".ds-status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid color-mix(in srgb,var(--success) 30%,transparent);border-radius:999px;background:color-mix(in srgb,var(--success) 20%,transparent);color:var(--success);font:600 10px/1.2 Geist,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em}.ds-status span{width:6px;height:6px;border-radius:50%;background:var(--success)}"
+    },
+    {
+      "name": "Artwork feature surface",
+      "kind": "custom",
+      "description": "Real game artwork with a readable dark gradient and subtle wash/dither overlays; the snippet shows only the structural surface.",
+      "html": "<figure class=\"ds-feature\"><div class=\"ds-feature-art\" aria-hidden=\"true\"></div><figcaption><small>60 min · Adventure</small><h2>Game title</h2><button class=\"ds-button-primary\">Start Playing</button></figcaption></figure>",
+      "css": ".ds-feature{position:relative;display:flex;min-height:320px;align-items:flex-end;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--card);color:var(--foreground)}.ds-feature-art{position:absolute;inset:0;background:radial-gradient(ellipse at 25% 35%,#d3944c80,transparent 48%),linear-gradient(145deg,#243b55,#141714 72%)}.ds-feature figcaption{position:relative;z-index:1;display:grid;gap:12px;width:100%;padding:24px;background:linear-gradient(to top,#10130f 0%,transparent 100%)}.ds-feature small{color:var(--primary);font:500 14px/1.25 Geist,system-ui,sans-serif}.ds-feature h2{margin:0;color:#fff;font:600 32px/1.15 Geist,system-ui,sans-serif}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Focused Play",
+    "overview": "Just Play is an operate-first interface for people choosing what to play. Treat it as a focused game shelf: artwork leads, the surrounding controls stay quiet and legible, and a single amber action clarifies the next step.\n\nThe dark ink, warm ivory, and restrained amber palette carries across Discover, Now Playing, Home, Progress, and StandBy. Use Geist for the interface, solid surfaces for controls, and a subtle wash plus dither on game artwork. Canopy is not part of current navigation; preserve its separate implementation without exposing the toggle.",
+    "keyCharacteristics": [
+      "Artwork-first Split Focus layout: recommendation list beside a large game image on wide screens, stacked on phones.",
+      "Amber identifies selection, primary actions, and the active navigation item; semantic status colors remain separate.",
+      "Solid, bordered surfaces and icon-plus-label controls.",
+      "Selection is reversible; only Start Playing begins a session."
+    ],
+    "rules": [
+      {
+        "name": "The Amber Action Rule",
+        "body": "Amber marks actions and current selection; success, destructive, and informational colors communicate state rather than decoration.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do keep amber for the primary action, current selection, and active navigation.",
+      "Do pair an icon with a concise label for primary actions and navigation.",
+      "Do keep game titles readable at narrow widths and enlarged text sizes.",
+      "Do preserve a visible focus indicator and reduced-motion behavior.",
+      "Do keep session, timer, and status wording honest about what the app has verified."
+    ],
+    "donts": [
+      "Don't restore “Your game is waiting for you” or “Taking a breath” style filler copy.",
+      "Don't expose the Artwork/Canopy toggle in current production navigation.",
+      "Don't use decorative blur, extra accent colors, or busy motion to compete with the game art.",
+      "Don't treat selecting a game as starting a session; only explicit play intent may do so."
+    ]
+  }
+}

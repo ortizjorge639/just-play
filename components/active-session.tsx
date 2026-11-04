@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useTransition, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import Image from "next/image"
 import { 
   updateSessionStatus, 
   updateSessionGoal,
@@ -21,6 +20,7 @@ import { StandbyPreferencesForm } from "./standby-preferences"
 import type { StandbyPreferences } from "@/lib/types"
 import { getSessionElapsedSeconds } from "@/lib/session-time"
 import { SessionNotesSaveError, type SessionNotesController } from "@/hooks/use-session-notes"
+import { GameArtwork } from "./game-artwork"
 
 type NudgeStage = "none" | "first" | "second"
 const DEFAULT_ESTIMATED_MINUTES = 60
@@ -287,12 +287,11 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
     <Dialog.Root open={standby} onOpenChange={setStandby}>
     <div className="session-stage mx-auto w-full max-w-[1440px] px-4 pb-8 md:px-8">
       <div className="relative h-[48dvh] min-h-56 max-h-[650px] overflow-hidden rounded-t-xl">
-        <Image
+        <GameArtwork
           src={game.header_image}
           alt={game.name}
-          fill
-          className="object-cover"
           sizes="(min-width: 1440px) 1376px, 100vw"
+          className="absolute inset-0"
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
@@ -376,8 +375,9 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
             <button
               onClick={() => transition("Playing")}
               disabled={isPending}
-              className="min-h-11 flex-1 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight disabled:opacity-50"
             >
+              <svg aria-hidden="true" className="size-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
               {isPending ? "Starting..." : "Start Playing"}
             </button>
           )}

@@ -132,8 +132,8 @@ test("StandBy save requires authenticated full booleans and updates only its ded
   await assert.rejects(unauthenticated.actions.saveStandbyPreferences(prefs), /Not authenticated/)
 })
 
-test("both creation actions use the gated RPC; the database snapshots recording at insertion", async () => {
-  const created = { ...session, status: "LockedIn", record_time: false }
+test("start actions use one gated RPC that creates and starts the session atomically", async () => {
+  const created = { ...session, status: "Playing", record_time: false }
   const start = fixture([ok(null), ok(created)])
   assert.deepEqual(await start.actions.startSessionForGame("game"), created)
   const create = fixture([
@@ -142,7 +142,7 @@ test("both creation actions use the gated RPC; the database snapshots recording 
   ])
   assert.deepEqual((await create.actions.createSession("game")).session, created)
   for (const [f, startXP] of [[start, 0], [create, 25]]) {
-    const inserted = f.calls.find((call) => call.rpc === "create_standby_session_with_progress")
+    const inserted = f.calls.find((call) => call.rpc === "start_standby_session_with_progress")
     assert.deepEqual(inserted.args, { p_game_id: "game", p_start_xp: startXP })
     assert.equal(f.calls.some((call) => call.table === "game_progress" && payload(call)), false)
     assert.equal(f.calls.some((call) => call.table === "users" && payload(call)), false)
@@ -150,16 +150,16 @@ test("both creation actions use the gated RPC; the database snapshots recording 
   }
 })
 
-test("new creation actions on018/019 report missing020 RPC before any writes, streak update or fallback", async () => {
+test("start actions report a missing atomic start RPC before any writes, streak update or fallback", async () => {
   for (const code of ["PGRST202", "42883"]) {
     const missing = { data: null, error: { code,
-      message: "Could not find the function public.create_standby_session_with_progress in the schema cache" } }
+      message: "Could not find the function public.start_standby_session_with_progress in the schema cache" } }
     for (const action of ["startSessionForGame", "createSession"]) {
       const f = fixture(action === "createSession"
         ? [ok(null), ok(null), ok({ last_session_date: null }), missing]
         : [ok(null), missing])
-      await assert.rejects(f.actions[action]("game"), /unavailable.*migration 020.*schema cache/)
-      assert.deepEqual(f.calls.filter((call) => call.rpc).map((call) => call.rpc), ["create_standby_session_with_progress"])
+      await assert.rejects(f.actions[action]("game"), /unavailable.*migration 032.*schema cache/)
+      assert.deepEqual(f.calls.filter((call) => call.rpc).map((call) => call.rpc), ["start_standby_session_with_progress"])
       assert.equal(f.calls.some((call) => call.methods.some(([method]) => ["insert", "update"].includes(method))), false)
       assert.deepEqual(f.invalidations, [])
       f.done()

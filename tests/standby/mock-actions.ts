@@ -43,6 +43,7 @@ export const fixture: {
   schema020: boolean
   finalDrafts: string[]
   creationError: string | null
+  sessionCreateCalls: string[]
   completionError: string | null
   notesWrites: string[]
   finishedNotes: string[]
@@ -66,7 +67,7 @@ export const fixture: {
   releaseNextNote: () => { fixture.noteReleases.shift()?.() },
   holdNoteAcks: false, noteAckReleases: [], noteAckError: null,
   releaseNextNoteAck: () => { fixture.noteAckReleases.shift()?.() },
-  creationError: null, completionError: null,
+  creationError: null, completionError: null, sessionCreateCalls: [],
   notesErrorMode: "before-commit", deferredNotes: [], settleLateOnFinish: true,
   settleLateNotes: settleLateNotes, rejectedLateNotes: 0, schema020: true,
   finalDrafts: [],
@@ -327,7 +328,10 @@ export async function removePiece(gameId: string): Promise<{ ok: boolean; error?
 // These surfaces are bundled only for the real AppShell remount test, not exercised.
 function outsideHarness(): never { throw new Error("Action outside the StandBy harness contract") }
 export const signout = outsideHarness
-export const createSession = outsideHarness
+export async function createSession(gameId: string): Promise<never> {
+  fixture.sessionCreateCalls.push(gameId)
+  throw new Error("createSession called in a test that expects no session writes")
+}
 export const markTutorialComplete = outsideHarness
 export const getBoosterPack = outsideHarness
 export const getRecommendations = outsideHarness

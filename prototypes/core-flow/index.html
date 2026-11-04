@@ -1,0 +1,549 @@
+<!doctype html>
+<!--
+THESIS: Just Play turns a crowded library into one clear next choice, not another swipe deck.
+OWN-WORLD: Ink, warm ivory, and restrained amber frame a compact, artwork-first interface with quiet borders.
+STORY: Compare a few recommendations, inspect one, lock it reversibly, and begin only when ready.
+FIRST VIEWPORT: Desktop pairs a narrow game list with a large artwork panel; mobile stacks them, with the primary action on the detail panel.
+FORM: Split Focus (Layout C, selected by the user from three prototype alternatives); no script-generated seed key or staging was used.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#141714">
+  <title>Just Play — Core flow prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #141714;
+      --surface: #1d211d;
+      --surface-raised: #252a24;
+      --ink: #f3efe3;
+      --muted: #b7b5aa;
+      --line: #3a3d35;
+      --accent: #e2b56c;
+      --accent-ink: #20180d;
+      --success: #a7c7ad;
+      font: 16px/1.5 Geist, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100dvh; padding-bottom: 24px; }
+    button, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .5; }
+    button:focus-visible, a:focus-visible, select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+    [hidden] { display: none !important; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.12; letter-spacing: -.025em; overflow-wrap: anywhere; }
+    h2 { font-size: 1.2rem; line-height: 1.25; overflow-wrap: anywhere; }
+    p { color: var(--muted); }
+    .shell { max-width: 1440px; margin: auto; padding: 0 32px 36px; }
+    .topbar {
+      min-height: 76px; display: flex; align-items: center; justify-content: space-between;
+      gap: 20px; border-bottom: 1px solid var(--line);
+    }
+    .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-size: 18px; font-weight: 700; white-space: nowrap; }
+    .brand:hover { color: var(--accent); }
+    .brand-mark { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid #6c604b; border-radius: 9px; color: var(--accent); }
+    .main-nav { display: flex; align-items: center; gap: 8px; }
+    .nav-link {
+      min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+      border: 0; border-radius: 8px; color: var(--muted); background: transparent; font-size: 14px;
+    }
+    .nav-link[aria-current="page"] { color: var(--ink); background: var(--surface-raised); }
+    .prototype-label { color: var(--muted); font-size: 12px; }
+    .content { padding-top: 26px; }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .section-heading > div { display: grid; gap: 5px; }
+    .section-heading p { font-size: 14px; }
+    .icon { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .button {
+      min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      padding: 10px 16px; border: 1px solid var(--line); border-radius: 9px;
+      background: transparent; color: var(--ink); font-size: 14px; font-weight: 600;
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+    .button:hover:not(:disabled) { background: var(--surface-raised); border-color: #67695f; }
+    .button.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+    .button.primary:hover:not(:disabled) { background: #efc985; border-color: #efc985; }
+    .button.quiet { color: var(--muted); }
+    .button.small { min-height: 42px; padding: 8px 12px; }
+    .art {
+      position: relative; isolation: isolate; overflow: hidden; min-width: 0;
+      background: #242a24; border-radius: 12px;
+    }
+    .art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .art::after {
+      position: absolute; z-index: 1; inset: 0; content: "";
+      background: linear-gradient(180deg, #0d100e14 30%, #0d100e9c 100%);
+      pointer-events: none;
+    }
+    .art::before { position: absolute; z-index: 1; inset: 0; content: ""; opacity: 0; pointer-events: none; }
+    .art-canvas { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; pointer-events: none; }
+    body[data-art="wash"] .art::before {
+      opacity: .42;
+      background:
+        radial-gradient(ellipse at 25% 35%, #d3944c80, transparent 48%),
+        radial-gradient(ellipse at 78% 30%, #6f806480, transparent 46%),
+        radial-gradient(ellipse at 54% 92%, #b26d4960, transparent 52%);
+      mix-blend-mode: soft-light;
+      animation: color-drift 24s ease-in-out infinite alternate;
+    }
+    body[data-art="combined"] .art::before {
+      opacity: .24;
+      background:
+        radial-gradient(ellipse at 25% 35%, #d3944c80, transparent 48%),
+        radial-gradient(ellipse at 78% 30%, #6f806480, transparent 46%),
+        radial-gradient(ellipse at 54% 92%, #b26d4960, transparent 52%);
+      mix-blend-mode: soft-light;
+      animation: color-drift 24s ease-in-out infinite alternate;
+    }
+    body[data-art="dither"] .art-canvas { opacity: .82; mix-blend-mode: screen; }
+    body[data-art="combined"] .art-canvas { opacity: .34; mix-blend-mode: soft-light; }
+    @keyframes color-drift {
+      0% { transform: translate(-2%, 1%) scale(1.03); }
+      100% { transform: translate(2%, -1%) scale(1.08); }
+    }
+    .feature-layout { display: grid; gap: 24px; }
+    .feature-hero { position: relative; min-height: clamp(320px, 42vw, 500px); }
+    .feature-hero .art { position: absolute; inset: 0; }
+    .feature-hero .art img { filter: brightness(.86) saturate(.83); }
+    .feature-caption { position: absolute; z-index: 3; inset: auto 28px 26px; display: grid; gap: 12px; }
+    .feature-caption p { color: #efeee6; max-width: 56ch; }
+    .feature-caption h2 { font-size: clamp(1.8rem, 4vw, 3rem); max-width: 24ch; }
+    .feature-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .recommendations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .recommendation {
+      min-width: 0; display: grid; grid-template-columns: minmax(90px, 160px) minmax(0, 1fr);
+      min-height: 118px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+    }
+    .recommendation .art { min-height: 118px; border-radius: 0; }
+    .recommendation-copy { display: flex; flex-direction: column; justify-content: center; gap: 12px; min-width: 0; padding: 14px; }
+    .recommendation-copy .button { align-self: flex-start; }
+    .recommendation-copy h3 { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+    .queue-layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 36px; align-items: start; }
+    .queue-list { display: grid; }
+    .queue-item {
+      display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; gap: 16px;
+      min-width: 0; padding: 14px 0; border-bottom: 1px solid var(--line);
+    }
+    .queue-item:first-child { padding-top: 0; }
+    .queue-item .art { width: 84px; height: 70px; border-radius: 8px; }
+    .queue-copy { min-width: 0; display: grid; gap: 3px; }
+    .queue-copy h3 { font-size: 15px; overflow-wrap: anywhere; }
+    .queue-copy p { font-size: 13px; }
+    .queue-feature { position: sticky; top: 20px; }
+    .queue-feature .art { height: 300px; margin-bottom: 16px; }
+    .queue-feature-copy { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .queue-feature-copy > div { display: grid; gap: 4px; min-width: 0; }
+    .split-layout { display: grid; grid-template-columns: minmax(220px, .65fr) minmax(0, 1.35fr); gap: 24px; min-height: min(680px, calc(100dvh - 220px)); }
+    .pick-rail { display: grid; align-content: start; border-top: 1px solid var(--line); }
+    .pick-row {
+      min-height: 94px; display: grid; grid-template-columns: 82px minmax(0, 1fr); align-items: center; gap: 13px;
+      padding: 10px 8px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+      background: transparent; text-align: left;
+    }
+    .pick-row[aria-pressed="true"] { background: #232820; }
+    .pick-row .art { height: 68px; border-radius: 7px; }
+    .pick-row strong { overflow-wrap: anywhere; }
+    .focus-panel { display: grid; grid-template-rows: minmax(300px, 1fr) auto; min-width: 0; }
+    .focus-panel .art { min-height: 330px; }
+    .focus-caption { position: absolute; z-index: 3; inset: auto 24px 24px; display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+    .focus-caption > div { display: grid; gap: 5px; }
+    .selection-note { min-height: 24px; margin-top: 8px; font-size: 13px; }
+    .session-feature { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); min-height: min(620px, calc(100dvh - 190px)); gap: 28px; }
+    .session-feature > .art { min-height: 420px; }
+    .session-copy { align-self: center; display: grid; justify-items: start; gap: 16px; min-width: 0; }
+    .session-copy .button { margin-top: 4px; }
+    .session-copy .session-state { color: var(--accent); font-size: 14px; font-weight: 600; }
+    .session-copy h1 { font-size: clamp(2rem, 4vw, 3.2rem); }
+    .session-copy .session-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .session-copy .note { max-width: 42ch; font-size: 14px; }
+    .session-queue { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 36px; }
+    .session-queue > .art { min-height: 320px; }
+    .session-queue-copy { align-self: center; display: grid; justify-items: start; gap: 14px; min-width: 0; }
+    .session-queue-copy .session-state { color: var(--accent); font-weight: 600; }
+    .session-queue-copy h1 { font-size: clamp(1.8rem, 3vw, 2.8rem); }
+    .session-dock { padding-bottom: 112px; }
+    .session-dock > .art { height: min(57dvh, 500px); min-height: 260px; }
+    .session-bar {
+      position: sticky; bottom: 92px; z-index: 4; display: flex; align-items: center; gap: 18px;
+      max-width: 900px; margin: -1px auto 0; padding: 16px 18px;
+      border: 1px solid var(--line); border-top-color: transparent; border-radius: 0 0 12px 12px;
+      background: #1d211df2;
+    }
+    .session-bar-copy { display: grid; gap: 3px; min-width: 0; margin-right: auto; }
+    .session-bar-copy h1 { font-size: 1.35rem; }
+    .session-bar-copy p { font-size: 13px; }
+    .session-bar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .toast { margin-top: 16px; color: var(--success); font-size: 14px; }
+    .prototype-bar {
+      display: grid; gap: 5px; width: min(680px, calc(100% - 24px)); margin: 14px auto 0; padding: 9px 12px;
+      border: 1px solid #6a6b60; border-radius: 12px; background: #f3efe3; color: #1d211d;
+      box-shadow: 0 9px 28px #0008;
+    }
+    .switch-row { display: flex; align-items: center; gap: 9px; }
+    .switch-row button { min-width: 42px; min-height: 42px; border: 0; border-radius: 7px; background: transparent; color: inherit; font-size: 19px; }
+    .switch-row button:hover { background: #e3dece; }
+    .switch-row label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+    .switch-row select { max-width: 180px; min-height: 36px; padding: 5px 8px; border: 1px solid #9c988b; border-radius: 6px; background: #fffdf6; color: #1d211d; font-size: 12px; }
+    .variant-label { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; }
+    .prototype-help { font-size: 11px; line-height: 1.4; color: #4a4b43; }
+    .prototype-bar button:focus-visible, .prototype-bar select:focus-visible { outline-color: #1d211d; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 900px) {
+      .shell { padding-inline: 22px; }
+      .queue-layout { grid-template-columns: minmax(0, 1fr) minmax(270px, .9fr); gap: 22px; }
+      .queue-item { grid-template-columns: 68px minmax(0, 1fr); }
+      .queue-item .button { grid-column: 2; justify-self: start; }
+      .queue-item .art { width: 68px; height: 62px; grid-row: span 2; }
+      .session-feature { gap: 20px; grid-template-columns: minmax(0, 1fr) minmax(260px, .85fr); }
+    }
+    @media (max-width: 650px) {
+      body { padding-bottom: 32px; }
+      .shell { padding: 0 16px 26px; }
+      .topbar { min-height: 64px; gap: 8px; }
+      .brand { font-size: 16px; gap: 7px; }
+      .brand-mark { width: 28px; height: 28px; }
+      .main-nav { gap: 2px; }
+      .nav-link { gap: 5px; padding: 7px 9px; font-size: 12px; }
+      .nav-link .icon { width: 16px; height: 16px; }
+      .prototype-label { display: none; }
+      .content { padding-top: 20px; }
+      .section-heading { align-items: start; margin-bottom: 14px; }
+      .section-heading p { font-size: 13px; }
+      .feature-layout { gap: 16px; }
+      .feature-hero { min-height: 350px; }
+      .feature-caption { inset: auto 18px 18px; }
+      .feature-caption h2 { font-size: 1.85rem; }
+      .recommendations { grid-template-columns: 1fr; gap: 10px; }
+      .recommendation { grid-template-columns: 104px minmax(0, 1fr); min-height: 100px; }
+      .recommendation .art { min-height: 100px; }
+      .recommendation-copy { gap: 7px; padding: 10px 12px; }
+      .queue-layout { grid-template-columns: 1fr; gap: 22px; }
+      .queue-feature { position: static; grid-row: 1; }
+      .queue-feature .art { height: 230px; margin-bottom: 12px; }
+      .queue-item { grid-template-columns: 68px minmax(0, 1fr) auto; gap: 12px; }
+      .queue-item .button { grid-column: auto; }
+      .queue-item .art { grid-row: auto; }
+      .split-layout { grid-template-columns: 1fr; gap: 16px; }
+      .pick-rail { grid-template-columns: repeat(3, minmax(0, 1fr)); overflow-x: auto; border-top: 0; gap: 8px; }
+      .pick-row { grid-template-columns: 1fr; align-content: start; gap: 6px; min-width: 100px; min-height: 0; padding: 5px; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; }
+      .pick-row .art { width: 100%; height: 78px; }
+      .focus-panel { grid-template-rows: minmax(260px, 1fr) auto; }
+      .focus-panel .art { min-height: 270px; }
+      .focus-caption { inset: auto 15px 15px; align-items: start; flex-direction: column; gap: 12px; }
+      .session-feature { display: flex; flex-direction: column; min-height: auto; gap: 16px; }
+      .session-feature > .art { min-height: 260px; height: 40dvh; }
+      .session-copy { gap: 11px; }
+      .session-copy .button { margin-top: 0; }
+      .session-queue { display: flex; flex-direction: column; gap: 18px; }
+      .session-queue > .art { height: 30dvh; min-height: 210px; }
+      .session-dock { padding-bottom: 70px; }
+      .session-dock > .art { height: 40dvh; min-height: 250px; }
+      .session-bar { bottom: 132px; align-items: start; flex-wrap: wrap; gap: 12px; padding: 13px; }
+      .session-bar-copy { width: 100%; }
+      .session-bar-actions { width: 100%; }
+      .session-bar-actions .button { flex: 1; }
+      .prototype-bar { bottom: 8px; width: calc(100% - 16px); }
+      .switch-row { flex-wrap: wrap; gap: 4px; }
+      .switch-row button { min-width: 36px; }
+      .variant-label { flex-basis: calc(100% - 90px); }
+      .switch-row label { margin-left: auto; }
+      .switch-row select { max-width: 126px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body data-art="static">
+  <!--
+    THESIS: Make moving from recommendation to play feel like one reversible, low-friction path; refuse an endless card stack.
+    OWN-WORLD: Ink and charcoal surfaces, warm ivory type, one restrained amber action color, familiar icon-plus-label controls.
+    STORY: Compare three structures while choosing a game, backing out before play, then starting a simulated session.
+    FIRST VIEWPORT: A consistent compact Just Play header leads into the recommended game; artwork is large enough to recognize, actions remain separate and legible.
+    FORM: Three structural studies (feature, queue, split); variants share the same content and in-memory interactions.
+  -->
+  <header class="shell topbar">
+    <div class="brand" aria-label="Just Play">
+      <span class="brand-mark" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M7 5.8c0-1.1 1.2-1.8 2.2-1.2l10 5.9c1 .6 1 2 0 2.6l-10 5.9c-1 .6-2.2-.1-2.2-1.2z"/></svg>
+      </span>
+      <span>Just Play</span>
+    </div>
+    <nav class="main-nav" aria-label="Prototype navigation">
+      <button class="nav-link" data-action="discover" id="discover-nav">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+        Discover
+      </button>
+      <button class="nav-link" data-action="now-playing" id="playing-nav">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M6 5.5c0-1 1.1-1.6 2-.9l10 6.5a1.1 1.1 0 0 1 0 1.8l-10 6.5c-.9.6-2 .1-2-.9z"/></svg>
+        Now Playing
+      </button>
+    </nav>
+    <span class="prototype-label">Design prototype · no account data</span>
+  </header>
+  <aside class="prototype-bar" aria-label="Prototype controls">
+    <div class="switch-row">
+      <button data-action="previous" aria-label="Previous layout">←</button>
+      <span id="variant-label" class="variant-label">A / Feature</span>
+      <button data-action="next" aria-label="Next layout">→</button>
+      <label for="art-treatment">Cover</label>
+      <select id="art-treatment" aria-label="Cover treatment">
+        <option value="combined">Color wash + dither</option>
+        <option value="static">Static</option>
+        <option value="wash">Color wash</option>
+        <option value="dither">Dither study</option>
+      </select>
+    </div>
+    <p id="prototype-help" class="prototype-help">Prototype only: state is in memory; no session, XP, notes, or account data is written.</p>
+  </aside>
+  <main id="prototype-content" class="shell content" aria-live="polite"></main>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <script>
+    const games = [
+      { id: "hollow-knight", name: "Hollow Knight", genre: "Action · Adventure", image: "hollow-knight.jpg", detail: "Explore a quiet, connected world." },
+      { id: "hades", name: "Hades", genre: "Action · Roguelike", image: "hades.jpg", detail: "Choose a short run or keep going." },
+      { id: "celeste", name: "Celeste", genre: "Platformer · Story", image: "celeste.jpg", detail: "A focused climb, one screen at a time." },
+    ];
+    const variants = ["feature", "queue", "split"];
+    const variantNames = { feature: "Feature", queue: "Queue", split: "Split focus" };
+    const state = {
+      variant: "split", stage: "discover", focusId: games[0].id,
+      selectedId: null, status: "Ready", elapsed: 0, art: "combined",
+    };
+    const content = document.querySelector("#prototype-content");
+    const gameById = id => games.find(game => game.id === id) || games[0];
+    const icon = (name) => {
+      const paths = {
+        lock: '<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+        back: '<path d="m14 18-6-6 6-6"/><path d="M20 12H8"/>',
+        play: '<path d="M6 5.5c0-1 1.1-1.6 2-.9l10 6.5a1.1 1.1 0 0 1 0 1.8l-10 6.5c-.9.6-2 .1-2-.9z"/>',
+        pause: '<path d="M8 5v14M16 5v14"/>',
+        check: '<path d="m5 12 4 4L19 6"/>',
+        clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+      };
+      return `<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">${paths[name]}</svg>`;
+    };
+    const button = (label, action, kind = "", symbol = "") =>
+      `<button class="button ${kind}" data-action="${action}">${symbol ? icon(symbol) : ""}<span>${label}</span></button>`;
+    const artwork = (game, className = "") =>
+      `<div class="art ${className}"><img src="/art/${game.image}" alt="${game.name} cover art"><canvas class="art-canvas" aria-hidden="true" hidden></canvas></div>`;
+    const optionRow = game => `
+      <article class="recommendation">
+        ${artwork(game)}
+        <div class="recommendation-copy"><h3>${game.name}</h3><p>${game.genre}</p>${button("Lock in", `lock:${game.id}`, "small", "lock")}</div>
+      </article>`;
+    const queueRow = game => `
+      <article class="queue-item">
+        ${artwork(game)}
+        <div class="queue-copy"><h3>${game.name}</h3><p>${game.genre}</p></div>
+        ${button("Lock in", `lock:${game.id}`, "small", "lock")}
+      </article>`;
+    const sectionHeading = (title, subtitle) => `
+      <div class="section-heading"><div><h1>${title}</h1><p>${subtitle}</p></div></div>`;
+
+    function renderDiscover() {
+      const focused = gameById(state.focusId);
+      if (state.variant === "feature") {
+        const [hero, ...others] = games;
+        return `${sectionHeading("Choose a game", "A few good options. Pick one to make it current.")}<div class="feature-layout">
+          <section class="feature-hero">${artwork(hero)}<div class="feature-caption"><h2>${hero.name}</h2><p>${hero.genre} · ${hero.detail}</p><div class="feature-actions">${button("Lock in game", `lock:${hero.id}`, "primary", "lock")}</div></div></section>
+          <section aria-label="More recommendations" class="recommendations">${others.map(optionRow).join("")}</section>
+        </div>`;
+      }
+      if (state.variant === "queue") {
+        return `${sectionHeading("Choose a game", "Select one recommendation to make it current.")}<div class="queue-layout">
+          <section class="queue-list" aria-label="Recommendations">${games.map(queueRow).join("")}</section>
+          <aside class="queue-feature">${artwork(focused)}<div class="queue-feature-copy"><div><h2>${focused.name}</h2><p>${focused.genre}</p></div>${button("Lock in game", `lock:${focused.id}`, "primary", "lock")}</div></aside>
+        </div>`;
+      }
+      return `${sectionHeading("Choose a game", "Browse the options, then confirm your choice.")}<div class="split-layout">
+        <section class="pick-rail" aria-label="Recommendations">${games.map(game => `
+          <button class="pick-row" data-action="focus:${game.id}" aria-pressed="${game.id === state.focusId}">
+            ${artwork(game)}<strong>${game.name}</strong>
+          </button>`).join("")}
+        </section>
+        <section class="focus-panel">${artwork(focused)}<div class="focus-caption"><div><h2>${focused.name}</h2><p>${focused.genre}</p></div>${button("Lock in game", `lock:${focused.id}`, "primary", "lock")}</div></section>
+      </div>`;
+    }
+
+    function renderSession() {
+      const game = gameById(state.selectedId);
+      if (state.variant === "feature") {
+        return `<section class="session-feature">${artwork(game)}<div class="session-copy"><p class="session-state">${state.stage === "locked" ? "Ready" : state.status}</p><h1>${game.name}</h1><p>${game.genre}</p>${state.stage === "locked" ? `<p class="note">This game is selected. You can change your choice before starting.</p>` : `<p class="note">Timer and controls are simulated in this prototype.</p>`}
+          <div class="session-actions">${state.stage === "locked" ? button("Start Playing", "start", "primary", "play") : button(state.status === "Playing" ? "Pause" : "Resume", "toggle", "primary", state.status === "Playing" ? "pause" : "play")}${state.stage === "locked" ? button("Change game", "cancel-lock", "quiet", "back") : ""}</div>
+        </div></section>`;
+      }
+      if (state.variant === "queue") {
+        return `<section class="session-queue">${artwork(game)}<div class="session-queue-copy"><p class="session-state">${state.stage === "locked" ? "Ready" : state.status}${state.stage === "playing" ? ` · ${Math.floor(state.elapsed / 60)}:${String(state.elapsed % 60).padStart(2, "0")}` : ""}</p><h1>${game.name}</h1><p>${game.genre}</p>
+          ${state.stage === "locked" ? `<p>This game is selected. You can change your choice before starting.</p>` : `<p>Timer and controls are simulated in this prototype.</p>`}
+          <div class="session-actions">${state.stage === "locked" ? button("Start Playing", "start", "primary", "play") : button(state.status === "Playing" ? "Pause" : "Resume", "toggle", "primary", state.status === "Playing" ? "pause" : "play")}${state.stage === "locked" ? button("Change game", "cancel-lock", "quiet", "back") : ""}</div>
+        </div></section>`;
+      }
+      return `<section class="session-dock">${artwork(game)}<div class="session-bar"><div class="session-bar-copy"><h1>${game.name}</h1><p>${state.stage === "locked" ? "Ready to start" : `${state.status} · ${Math.floor(state.elapsed / 60)}:${String(state.elapsed % 60).padStart(2, "0")} elapsed`}</p></div><div class="session-bar-actions">${state.stage === "locked" ? button("Start Playing", "start", "primary", "play") : button(state.status === "Playing" ? "Pause" : "Resume", "toggle", "primary", state.status === "Playing" ? "pause" : "play")}${state.stage === "locked" ? button("Change game", "cancel-lock", "quiet", "back") : ""}</div></div></section>`;
+    }
+
+    function drawDither(art) {
+      const img = art.querySelector("img");
+      const canvas = art.querySelector("canvas");
+      const showsDither = state.art === "dither" || state.art === "combined";
+      canvas.hidden = !showsDither;
+      if (!showsDither || !img.complete || !img.naturalWidth) return;
+      const combined = state.art === "combined";
+      const width = Math.min(combined ? 900 : 420, Math.max(180, Math.round(art.clientWidth * (combined ? .78 : .42))));
+      const height = Math.max(100, Math.round(width * art.clientHeight / Math.max(1, art.clientWidth)));
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      if (!context) return;
+      const sourceRatio = img.naturalWidth / img.naturalHeight;
+      const targetRatio = width / height;
+      let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+      if (sourceRatio > targetRatio) {
+        sw = img.naturalHeight * targetRatio;
+        sx = (img.naturalWidth - sw) / 2;
+      } else {
+        sh = img.naturalWidth / targetRatio;
+        sy = (img.naturalHeight - sh) / 2;
+      }
+      context.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
+      const pixels = context.getImageData(0, 0, width, height);
+      const matrix = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+        const offset = (y * width + x) * 4;
+        const threshold = (matrix[y % 4][x % 4] / 16 - .5) * (combined ? 24 : 52);
+        for (let channel = 0; channel < 3; channel++) {
+          const value = Math.max(0, Math.min(255, pixels.data[offset + channel] + threshold));
+          const quantum = combined ? 32 : 64;
+          pixels.data[offset + channel] = Math.round(value / quantum) * quantum;
+        }
+      }
+      context.putImageData(pixels, 0, 0);
+    }
+
+    function render() {
+      document.body.dataset.art = state.art;
+      const onDiscover = state.stage === "discover";
+      document.querySelector("#discover-nav").setAttribute("aria-current", onDiscover ? "page" : "false");
+      document.querySelector("#discover-nav").disabled = state.stage === "playing";
+      document.querySelector("#playing-nav").setAttribute("aria-current", onDiscover ? "false" : "page");
+      content.innerHTML = onDiscover ? renderDiscover() : renderSession();
+      content.querySelectorAll("h1").forEach(heading => heading.tabIndex = -1);
+      document.querySelector("#variant-label").textContent = `${String.fromCharCode(65 + variants.indexOf(state.variant))} / ${variantNames[state.variant]}`;
+      const artDescription = {
+        static: "original cover",
+        wash: "slow color wash",
+        dither: "ordered-dither study",
+        combined: "color wash + ordered dither",
+      }[state.art];
+      document.querySelector("#prototype-help").textContent = `${variantNames[state.variant]} layout · ${artDescription} · simulated state only; no account writes.`;
+      document.querySelector("#art-treatment").value = state.art;
+      content.querySelectorAll(".art").forEach(art => {
+        const img = art.querySelector("img");
+        img.addEventListener("load", () => drawDither(art), { once: true });
+        drawDither(art);
+      });
+    }
+
+    function updateUrl() {
+      const url = new URL(location.href);
+      url.searchParams.set("variant", state.variant);
+      history.replaceState(null, "", url);
+    }
+    function cycle(direction) {
+      const index = variants.indexOf(state.variant);
+      state.variant = variants[(index + direction + variants.length) % variants.length];
+      updateUrl();
+      render();
+    }
+    document.addEventListener("click", event => {
+      const target = event.target.closest("[data-action]");
+      if (!target) return;
+      const action = target.dataset.action;
+      if (action === "previous") return cycle(-1);
+      if (action === "next") return cycle(1);
+      if (action === "discover") {
+        if (state.stage === "locked") {
+          state.stage = "discover";
+          state.selectedId = null;
+          state.status = "Ready";
+          document.querySelector("#announcement").textContent = "Selection cleared. No session was started.";
+        }
+      } else if (action === "now-playing") {
+        if (state.stage === "discover" && state.selectedId) state.stage = "locked";
+      } else if (action.startsWith("focus:")) {
+        state.focusId = action.slice(6);
+      } else if (action.startsWith("lock:")) {
+        state.selectedId = action.slice(5);
+        state.focusId = state.selectedId;
+        state.stage = "locked";
+        state.status = "Ready";
+        state.elapsed = 0;
+        document.querySelector("#announcement").textContent = `${gameById(state.selectedId).name} selected. No play has been recorded.`;
+      } else if (action === "cancel-lock") {
+        state.stage = "discover";
+        state.selectedId = null;
+        state.status = "Ready";
+        state.elapsed = 0;
+        document.querySelector("#announcement").textContent = "Selection cleared. No session was started.";
+      } else if (action === "start") {
+        state.stage = "playing";
+        state.status = "Playing";
+        document.querySelector("#announcement").textContent = `${gameById(state.selectedId).name} session started.`;
+      } else if (action === "toggle") {
+        state.status = state.status === "Playing" ? "Paused" : "Playing";
+      }
+      render();
+      if (action.startsWith("focus:")) {
+        content.querySelector(`[data-action="focus:${state.focusId}"]`)?.focus({ preventScroll: true });
+      } else if (action === "discover" || action === "cancel-lock") {
+        content.querySelector(`[data-action="lock:${state.focusId}"]`)?.focus({ preventScroll: true });
+      } else if (action.startsWith("lock:") || action === "start") {
+        content.querySelector("h1")?.focus({ preventScroll: true });
+      }
+    });
+    document.querySelector("#art-treatment").addEventListener("change", event => {
+      state.art = event.target.value;
+      render();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.target.closest("input, textarea, select, [contenteditable]")) return;
+      if (event.key === "ArrowLeft") { event.preventDefault(); cycle(-1); }
+      if (event.key === "ArrowRight") { event.preventDefault(); cycle(1); }
+      if (event.key === "Escape" && state.stage === "locked") {
+        state.stage = "discover";
+        state.selectedId = null;
+        state.status = "Ready";
+        document.querySelector("#announcement").textContent = "Selection cleared. No session was started.";
+        render();
+        content.querySelector(`[data-action="lock:${state.focusId}"]`)?.focus({ preventScroll: true });
+      }
+    });
+    window.addEventListener("resize", () => {
+      if (state.art === "dither") content.querySelectorAll(".art").forEach(drawDither);
+    });
+    window.addEventListener("popstate", () => {
+      const value = new URL(location.href).searchParams.get("variant");
+      state.variant = variants.includes(value) ? value : "feature";
+      render();
+    });
+    setInterval(() => {
+      if (state.stage === "playing" && state.status === "Playing") {
+        state.elapsed++;
+        const sessionState = content.querySelector(".session-state, .session-bar-copy p");
+        if (sessionState) sessionState.textContent = `Playing · ${Math.floor(state.elapsed / 60)}:${String(state.elapsed % 60).padStart(2, "0")} elapsed`;
+      }
+    }, 1000);
+    const requestedVariant = new URL(location.href).searchParams.get("variant");
+    state.variant = variants.includes(requestedVariant) ? requestedVariant : "feature";
+    render();
+  </script>
+</body>
+</html>

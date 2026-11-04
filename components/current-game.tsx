@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useRef, useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import Image from "next/image"
 import { startSessionForGame, markGameBeaten, abandonGame } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
 import { StampPanel } from "./stamp-panel"
 import { MoveInNote } from "./move-in-note"
 import type { GameProgress, Game, StampRule } from "@/lib/types"
+import { GameArtwork } from "./game-artwork"
 
 interface CurrentGameProps {
   gameProgress: GameProgress & { game: Game }
@@ -27,11 +27,20 @@ export function CurrentGame({
   const [showOptions, setShowOptions] = useState(false)
   const [flipped, setFlipped] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const frontFlipButtonRef = useRef<HTMLButtonElement>(null)
+  const backFlipButtonRef = useRef<HTMLButtonElement>(null)
   const showXPToast = useXPToast()
 
   const game = gameProgress.game
   const ownRule = stampRules.find(r => r.game_id === game.id) ?? null
   const defaultRule = stampRules.find(r => r.game_id === null) ?? null
+  const flipCard = () => {
+    const nextFlipped = !flipped
+    setFlipped(nextFlipped)
+    requestAnimationFrame(() => {
+      (nextFlipped ? backFlipButtonRef : frontFlipButtonRef).current?.focus()
+    })
+  }
 
   const handleStartSession = () => {
     if (syncError || isPending) return
@@ -85,9 +94,8 @@ export function CurrentGame({
       </div> : null}
       {/* Flippable card */}
       <div
-        className="relative w-full max-w-[320px] cursor-pointer mb-6"
+        className="relative mb-6 w-full max-w-[320px]"
         style={{ aspectRatio: "3/4", perspective: "1200px" }}
-        onClick={() => setFlipped((f) => !f)}
       >
         <motion.div
           className="relative h-full w-full"
@@ -97,26 +105,13 @@ export function CurrentGame({
         >
           {/* ── Front face ── */}
           <div
-            className="absolute inset-0 overflow-hidden rounded-2xl"
-            style={{
-              backfaceVisibility: "hidden",
-              background: "rgba(15,15,20,0.85)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-            }}
+            aria-hidden={flipped}
+            className="absolute inset-0 overflow-hidden rounded-xl glass-card"
+            style={{ backfaceVisibility: "hidden" }}
           >
             {/* Game image */}
             <div className="relative h-[55%] w-full overflow-hidden">
-              <Image
-                src={game.header_image}
-                alt={game.name}
-                fill
-                className="object-cover"
-                sizes="320px"
-                priority
-              />
+              <GameArtwork src={game.header_image} alt="" sizes="320px" className="absolute inset-0" priority />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
             </div>
 
@@ -155,33 +150,34 @@ export function CurrentGame({
               </div>
             </div>
 
-            {/* Tap hint */}
-            <div className="absolute bottom-2 right-3 text-[10px] text-foreground/30">tap to flip</div>
+            {/* Details action */}
+            <button
+              ref={frontFlipButtonRef}
+              type="button"
+              tabIndex={flipped ? -1 : 0}
+              onClick={flipCard}
+              className="absolute bottom-2 right-3 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              <span>View details</span>
+              <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h10v10M7 17 17 7" />
+              </svg>
+            </button>
           </div>
 
           {/* ── Back face ── */}
           <div
-            className="absolute inset-0 overflow-hidden rounded-2xl overflow-y-auto"
+            aria-hidden={!flipped}
+            className="absolute inset-0 overflow-y-auto rounded-xl glass-card"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
-              background: "rgba(15,15,20,0.92)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
             }}
           >
             <div className="flex flex-col gap-4 p-5 h-full">
               {/* Small header image */}
               <div className="relative aspect-video w-full overflow-hidden rounded-xl shrink-0">
-                <Image
-                  src={game.header_image}
-                  alt={game.name}
-                  fill
-                  className="object-cover"
-                  sizes="320px"
-                />
+                <GameArtwork src={game.header_image} alt="" sizes="320px" className="absolute inset-0" />
               </div>
 
               <h3 className="text-lg font-bold text-foreground">{game.name}</h3>
@@ -239,8 +235,18 @@ export function CurrentGame({
                 </div>
               </div>
 
-              {/* Tap hint */}
-              <div className="text-center text-[10px] text-foreground/30 shrink-0">tap to flip back</div>
+              <button
+                ref={backFlipButtonRef}
+                type="button"
+                tabIndex={flipped ? 0 : -1}
+                onClick={flipCard}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <svg aria-hidden="true" className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 7H7v10m10-10L7 17" />
+                </svg>
+                <span>Back to cover</span>
+              </button>
             </div>
           </div>
         </motion.div>
@@ -276,15 +282,27 @@ export function CurrentGame({
         <button
           onClick={handleStartSession}
           disabled={isPending || !!syncError}
-          className="h-14 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+          className="inline-flex min-h-[44px] h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all active:scale-[0.98] disabled:opacity-50"
         >
-          {isPending ? "Starting..." : "Start Today's Session"}
+          {isPending ? "Starting..." : (
+            <>
+              <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+              </svg>
+              Start Today&apos;s Session
+            </>
+          )}
         </button>
 
         <button
           onClick={() => setShowOptions(true)}
-          className="h-12 w-full rounded-xl glass-card text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted min-h-[44px]"
+          className="inline-flex min-h-[44px] h-12 w-full items-center justify-center gap-2 rounded-xl glass-card text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted"
         >
+          <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <circle cx="5" cy="12" r="1" fill="currentColor" stroke="none" />
+            <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+            <circle cx="19" cy="12" r="1" fill="currentColor" stroke="none" />
+          </svg>
           More options
         </button>
       </div>

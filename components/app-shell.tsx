@@ -162,16 +162,20 @@ export function AppShell({
     <XPToastProvider playerStats={playerStats}>
     <div className="flex min-h-dvh flex-col pb-16">
       {/* Top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between px-6 pt-6 pb-2 bg-background/80 backdrop-blur-lg">
-        <div className="flex flex-col">
-          <h1 className="text-lg font-bold text-foreground">Just Play</h1>
+      <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-background px-4 py-2 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <p className="text-base font-semibold tracking-tight text-foreground">Just Play</p>
+          <span aria-hidden="true" className="h-4 w-px bg-border" />
+          <p className="truncate text-sm text-muted-foreground">
+            {visibleTab === "deck" ? "Discover" : visibleTab === "session" ? "Now Playing" : visibleTab === "home" ? "Home" : "Progress"}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           {visibleTab === "deck" && !activeSession && (
             filterTipDismissed ? (
               <button
                 onClick={() => setShowFilters(true)}
-                className="flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px] min-w-[44px]"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 aria-label="Update filters"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -182,7 +186,7 @@ export function AppShell({
               <FilterTip onDismiss={() => setFilterTipDismissed(true)}>
                 <button
                   onClick={() => setShowFilters(true)}
-                  className="flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px] min-w-[44px]"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   aria-label="Update filters"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -195,7 +199,7 @@ export function AppShell({
           {visibleTab === "progress" && (
             <button
               onClick={() => setShowSettings(true)}
-              className="flex items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px] min-w-[44px]"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               aria-label="Settings"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -207,7 +211,7 @@ export function AppShell({
           <form action={signout} onSubmit={clearPersistedDeck}>
             <button
               type="submit"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary min-h-[44px]"
+              className="flex min-h-11 items-center gap-1.5 rounded-lg border border-transparent px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <svg
                 className="h-4 w-4"

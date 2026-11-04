@@ -429,6 +429,15 @@ function standbyMutationError(error: { code?: string; message: string }) {
   return new Error(error.message)
 }
 
+function standbyStartError(error: { code?: string; message: string }) {
+  if (isMissingStandbyFunction(error)) {
+    return new Error(
+      "Atomic session start is unavailable. Database migration 032 and an up-to-date API schema cache are required. No session or progress changes were made."
+    )
+  }
+  return standbyMutationError(error)
+}
+
 export async function createSession(gameId: string) {
   const supabase = await createClient()
   const {
@@ -464,13 +473,13 @@ export async function createSession(gameId: string) {
   })
   const startXP = xp.base + xp.newGameBonus + xp.comebackBonus
   const { data, error } = await supabase
-    .rpc("create_standby_session_with_progress", { p_game_id: gameId, p_start_xp: startXP })
+    .rpc("start_standby_session_with_progress", { p_game_id: gameId, p_start_xp: startXP })
     .returns<Session[]>()
     .single()
 
-  if (error) throw standbyMutationError(error)
+  if (error) throw standbyStartError(error)
 
-  // Migration 020 commits session, start XP and progress bookkeeping together.
+  // Migration 032 commits the session start, start XP, and progress bookkeeping together.
 
   // Update streak
   await updateUserStreak(user.id)
@@ -656,11 +665,11 @@ export async function startSessionForGame(gameId: string) {
 
   // Create new session for existing game
   const { data, error } = await supabase
-    .rpc("create_standby_session_with_progress", { p_game_id: gameId, p_start_xp: 0 })
+    .rpc("start_standby_session_with_progress", { p_game_id: gameId, p_start_xp: 0 })
     .returns<Session[]>()
     .single()
 
-  if (error) throw standbyMutationError(error)
+  if (error) throw standbyStartError(error)
   revalidatePath("/")
   return data
 }
