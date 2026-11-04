@@ -118,6 +118,12 @@ discovery navigation or reward popups. Pause, resume and finish use the same ses
 as the normal screen. Exit StandBy (or press Escape) to return; exiting does not
 pause or end play. This is a browser view, not native Apple StandBy or game telemetry.
 
+Artwork stays primary beneath a slow, artwork-colored lava-lamp atmosphere.
+Its CSS transform/opacity loops are independent of session status, recording and
+the clock. They pause while the document is hidden; reduced motion uses a static
+composition. Dither remains a separate texture: blocked canvas readback removes
+only that texture, not the artwork or ambient motion.
+
 **Time & StandBy preferences** are available before and during a session and in
 Settings. They are saved to the account separately from discovery filters:
 

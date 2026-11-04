@@ -5,7 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog"
 import type { Game, Session, StandbyPreferences } from "@/lib/types"
 import { useStandbyWakeLock } from "@/hooks/use-standby-display"
 import { CanopyNook } from "./canopy/nook"
-import { GameArtwork } from "./game-artwork"
+import { StandbyArtwork } from "./standby-artwork"
 import "./canopy/nook.css"
 
 const control = "min-h-11 rounded-lg border border-white/20 px-4 py-2 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:opacity-40"
@@ -119,10 +119,7 @@ export function StandbySession({
         className={`fixed inset-0 z-[71] flex h-dvh w-screen flex-col overflow-y-auto bg-[#090c10] text-white outline-none${ambient ? " canopy-standby" : ""}`}
         style={{ padding: "max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))" }}
       >
-        {!nook ? <div data-testid="standby-field" aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-          <GameArtwork src={session.games.header_image} alt="" sizes="100vw" className="absolute inset-0 opacity-60 saturate-75" priority />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/80" />
-        </div> : null}
+        {!nook ? <StandbyArtwork artwork={session.games.header_image} /> : null}
         <header className={`z-20 flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-white/15 py-2 ${nook ? "relative" : "sticky top-0"}`}>
           <div className="flex min-w-0 items-center gap-3">
             <p className="text-base font-semibold tracking-tight text-white">Just Play</p>
