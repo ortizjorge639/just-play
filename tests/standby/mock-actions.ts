@@ -44,6 +44,8 @@ export const fixture: {
   finalDrafts: string[]
   creationError: string | null
   sessionCreateCalls: string[]
+  boosterPackOpenCalls: number
+  boosterPackFetchCalls: number
   completionError: string | null
   notesWrites: string[]
   finishedNotes: string[]
@@ -68,6 +70,7 @@ export const fixture: {
   holdNoteAcks: false, noteAckReleases: [], noteAckError: null,
   releaseNextNoteAck: () => { fixture.noteAckReleases.shift()?.() },
   creationError: null, completionError: null, sessionCreateCalls: [],
+  boosterPackOpenCalls: 0, boosterPackFetchCalls: 0,
   notesErrorMode: "before-commit", deferredNotes: [], settleLateOnFinish: true,
   settleLateNotes: settleLateNotes, rejectedLateNotes: 0, schema020: true,
   finalDrafts: [],
@@ -333,7 +336,19 @@ export async function createSession(gameId: string): Promise<never> {
   throw new Error("createSession called in a test that expects no session writes")
 }
 export const markTutorialComplete = outsideHarness
-export const getBoosterPack = outsideHarness
-export const getRecommendations = outsideHarness
-export const recordBoosterPackOpen = outsideHarness
+const boosterGames = ["Pack A", "Pack B", "Pack C"].map((name, index) => ({
+  ...game,
+  id: `booster-${index}`,
+  name,
+}))
+export async function getBoosterPack() {
+  fixture.boosterPackFetchCalls++
+  const params = new URLSearchParams(window.location.search)
+  if (params.has("booster-error")) throw new Error("Recommendation fetch failed")
+  return params.has("empty-pack") ? [] : boosterGames
+}
+export const getRecommendations = getBoosterPack
+export async function recordBoosterPackOpen() {
+  fixture.boosterPackOpenCalls++
+}
 export const savePreferences = outsideHarness
