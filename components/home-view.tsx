@@ -1,59 +1,106 @@
 "use client"
 
-import type { Game, Postcard, Resident } from "@/lib/types"
+import { Check, House } from "lucide-react"
+import type { CompletedGame, Game, Postcard, Resident } from "@/lib/types"
 import { PostcardsList } from "./postcards-list"
 import { GameArtwork } from "./game-artwork"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "./ui/carousel"
 
 interface HomeViewProps {
   residents: Resident[]
+  completedGames: CompletedGame[]
   postcards: Postcard[]
   invitedGame: Game | null
 }
 
-export function HomeView({ residents, postcards, invitedGame }: HomeViewProps) {
+function HolographicStamp({ kind }: { kind: "completed" | "arrived" }) {
+  const isCompleted = kind === "completed"
+  const background = isCompleted
+    ? "linear-gradient(115deg, color-mix(in srgb, var(--primary) 38%, var(--card)), color-mix(in srgb, var(--info) 24%, var(--card)), color-mix(in srgb, var(--emote) 30%, var(--card)))"
+    : "linear-gradient(115deg, color-mix(in srgb, var(--info) 42%, var(--card)), color-mix(in srgb, var(--emote) 32%, var(--card)), color-mix(in srgb, var(--primary) 24%, var(--card)))"
+  const label = isCompleted ? "Completed" : "Arrived"
+  const Icon = isCompleted ? Check : House
+
+  return (
+    <span
+      className={`group/stamp relative isolate inline-flex min-h-7 items-center gap-1.5 overflow-hidden rounded-md border px-2.5 py-1 text-xs font-bold uppercase tracking-[0.08em] text-foreground shadow-sm ${
+        isCompleted ? "rotate-[-2deg] border-primary/55" : "rotate-[2deg] border-info/55"
+      }`}
+      style={{ background }}
+    >
+      <span aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/25 via-transparent to-black/20" />
+      <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 group-hover/stamp:translate-x-[400%] motion-reduce:transition-none" />
+      <Icon aria-hidden="true" className="relative size-3" />
+      <span className="relative">{label}</span>
+    </span>
+  )
+}
+
+export function HomeView({ residents, completedGames, postcards, invitedGame }: HomeViewProps) {
   const orderedResidents = [...residents].sort(
     (a, b) => Date.parse(b.arrived_at) - Date.parse(a.arrived_at)
   )
+  const orderedCompletedGames = [...completedGames].sort(
+    (a, b) => Date.parse(b.completed_at ?? b.created_at) - Date.parse(a.completed_at ?? a.created_at)
+  )
+  const residentGameIds = new Set(residents.map((resident) => resident.game_id))
 
   return (
     <div className="flex min-h-dvh min-w-0 flex-col px-4 pb-24 sm:px-6">
-      <header className="pb-5 pt-2">
-        <h1 id="home-title" className="text-2xl font-bold text-foreground">The games you made room for.</h1>
-      </header>
-
-      <section aria-labelledby="home-title" className="mb-7">
-        {orderedResidents.length ? (
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {orderedResidents.map((resident) => (
-              <li key={`${resident.user_id}-${resident.game_id}`}>
-                <article className="relative isolate flex min-h-32 overflow-hidden rounded-xl border border-border bg-card">
-                  {resident.game ? (
-                    <>
-                      <GameArtwork src={resident.game.header_image} alt="" sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" className="absolute inset-0 z-0 saturate-75" />
-                      <div aria-hidden="true" className="absolute inset-0 z-10 bg-gradient-to-br from-primary/35 via-background/20 to-info/35" />
-                      <div aria-hidden="true" className="absolute inset-0 z-10 bg-gradient-to-t from-background/95 via-background/25 to-transparent" />
-                    </>
-                  ) : null}
-                  <div className="relative z-20 mt-auto w-full p-4">
-                    <h3 className="line-clamp-2 font-semibold text-white">
-                      {resident.game?.name ?? "Game details unavailable"}
-                    </h3>
-                    <p className="mt-1 text-sm text-white/85">
-                      Arrived {new Date(resident.arrived_at).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </article>
-              </li>
-            ))}
-          </ul>
+      <section aria-labelledby="home-title" className="mb-7 pt-2">
+        {orderedCompletedGames.length ? (
+          <Carousel
+            opts={{ align: "start", containScroll: "trimSnaps" }}
+            aria-label="Completed game cards"
+          >
+            <header className="mb-4 flex items-center justify-between gap-4">
+              <h1 id="home-title" className="text-2xl font-bold text-foreground">Completed games</h1>
+              {orderedCompletedGames.length > 1 ? (
+                <div className="flex shrink-0 gap-2">
+                  <CarouselPrevious className="static size-11 translate-y-0" />
+                  <CarouselNext className="static size-11 translate-y-0" />
+                </div>
+              ) : null}
+            </header>
+            <CarouselContent className="-ml-3">
+              {orderedCompletedGames.map((completed) => (
+                <CarouselItem
+                  key={completed.game_id}
+                  className="basis-[84%] pl-3 sm:basis-1/2 lg:basis-1/3 2xl:basis-1/4"
+                >
+                  <article className="relative isolate flex aspect-[4/3] flex-col overflow-hidden rounded-xl border border-border bg-card">
+                    <GameArtwork
+                      src={completed.game.header_image}
+                      alt=""
+                      sizes="(max-width: 639px) 84vw, (max-width: 1023px) 50vw, (max-width: 1535px) 33vw, 25vw"
+                      className="absolute inset-0 z-0"
+                    />
+                    <div aria-hidden="true" className="absolute inset-0 z-10 bg-gradient-to-t from-background/95 via-background/30 to-background/5" />
+                    <div className="absolute right-3 top-3 z-20 flex flex-col items-end gap-2">
+                      <HolographicStamp kind="completed" />
+                      {residentGameIds.has(completed.game_id) ? <HolographicStamp kind="arrived" /> : null}
+                    </div>
+                    <div className="relative z-20 mt-auto p-4 pt-16">
+                      <h2 className="line-clamp-2 font-semibold text-foreground">{completed.game.name}</h2>
+                    </div>
+                  </article>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
         ) : (
-          <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-            No residents yet. There is no rush.
-          </p>
+          <>
+            <h1 id="home-title" className="text-2xl font-bold text-foreground">Completed games</h1>
+            <p className="mt-4 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+              No completed games yet.
+            </p>
+          </>
         )}
       </section>
 

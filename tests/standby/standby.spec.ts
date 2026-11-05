@@ -143,6 +143,40 @@ test("the existing current-game screen starts a session and enters StandBy", asy
   await expect(page.getByRole("dialog").getByRole("heading", { name: "A Short Hike" })).toBeVisible()
 })
 
+test("beating the current game opens Home instead of resetting to the deck", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.addEventListener("standby-test-router-refresh", () => {
+      sessionStorage.setItem("standby-test-router-refreshed", "true")
+    })
+  })
+  await page.goto("/?app-shell&active-game&deck")
+  await expect(page.getByRole("button", { name: "Now Playing" })).toHaveAttribute("aria-current", "page")
+
+  await page.getByRole("button", { name: "More options", exact: true }).click()
+  await page.getByRole("button", { name: "I Beat This Game!", exact: true }).click()
+
+  await expect(page.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page")
+  expect(await page.evaluate(() => sessionStorage.getItem("standby-test-router-refreshed"))).toBe("true")
+})
+
+test("game options stay compact and use the app action palette", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto("/?current-game")
+  await page.getByRole("button", { name: "More options", exact: true }).click()
+
+  const sheet = page.getByRole("heading", { name: "Game options" }).locator("..")
+  const bounds = await sheet.boundingBox()
+  expect(bounds).not.toBeNull()
+  expect(bounds!.width).toBeLessThanOrEqual(520)
+  expect(bounds!.x).toBeGreaterThan(300)
+  await expect(page.getByRole("button", { name: "I Beat This Game!", exact: true })).toHaveCSS(
+    "background-color", "rgb(226, 181, 108)",
+  )
+  await expect(page.getByRole("button", { name: "Abandon Game", exact: true })).toHaveCSS(
+    "color", "rgb(240, 160, 141)",
+  )
+})
+
 test("the current-game screen blocks unsafe actions while offline", async ({ page, context }) => {
   await page.goto("/?current-game")
   await expect(page.getByRole("button", { name: "Start Today's Session", exact: true })).toBeEnabled()

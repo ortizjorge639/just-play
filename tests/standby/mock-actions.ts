@@ -167,6 +167,9 @@ export async function markGameBeaten(gameId: string, expected?: ExpectedSession 
   if (fixture.completionError) throw new Error(fixture.completionError)
   if (fixture.delay) await new Promise(resolve => setTimeout(resolve, fixture.delay))
   if (fixture.finalizationDelay) await new Promise(resolve => setTimeout(resolve, fixture.finalizationDelay))
+  if (new URL(globalThis.location?.href || "").searchParams.has("active-game")) {
+    sessionStorage.setItem("standby-test-game-beaten", "true")
+  }
   const beatenGame = fixture.session?.games
   finishGame("beaten", finalNotes)
   // Stands in for the migration 023 trigger, which only adds a resident the first time.

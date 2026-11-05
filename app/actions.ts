@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, PlayerStats, Resident, Postcard, SettlementPiece, SavedSpot, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
+import type { UserPreferences, SessionStatus, Session, SessionTimingSnapshot, SessionMutationSnapshot, SessionFinishOptions, StandbyPreferences, Game, CompletedGame, PlayerStats, Resident, Postcard, SettlementPiece, SavedSpot, StampRule, StampRuleInput, NameCard, NameCardInput } from "@/lib/types"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/lib/types"
 import { getSessionTransitionTiming } from "@/lib/session-time"
 import { calculateSessionXP, levelFromXP, isComeback } from "@/lib/xp"
@@ -641,6 +641,34 @@ export async function getActiveGame() {
     total_sessions,
     total_time_minutes,
   }
+}
+
+export async function getCompletedGames(): Promise<CompletedGame[]> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data, error } = await supabase
+    .from("game_progress")
+    .select("*, game:games(*)")
+    .eq("user_id", user.id)
+    .eq("status", "beaten")
+    .order("completed_at", { ascending: false })
+
+  if (error) throw new Error(`Failed to load completed games: ${error.message}`)
+
+  const rows = (data ?? []) as Array<
+    Omit<CompletedGame, "game"> & { game: Game | Game[] | null }
+  >
+  return rows.map((row) => {
+    const game = Array.isArray(row.game) ? row.game[0] : row.game
+    if (!game) {
+      throw new Error(`Failed to load completed game details for ${row.game_id}`)
+    }
+    return { ...row, game }
+  })
 }
 
 export async function startSessionForGame(gameId: string) {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { renderToStaticMarkup } from "react-dom/server"
-import type { Game, Postcard, Resident } from "@/lib/types"
+import type { CompletedGame, Game, Postcard, Resident } from "@/lib/types"
 import { HomeView } from "./home-view"
 
 function game(id: string, name: string): Game {
@@ -28,29 +28,58 @@ function resident(id: string, name: string, arrivedAt: string): Resident {
   }
 }
 
-function renderHome(residents: Resident[], postcards: Postcard[] = []) {
+function completedGame(id: string, name: string, completedAt: string): CompletedGame {
+  return {
+    id: `progress-${id}`,
+    user_id: "player",
+    game_id: id,
+    status: "beaten",
+    total_sessions: 3,
+    total_time_minutes: 120,
+    started_at: "2026-01-01T00:00:00.000Z",
+    completed_at: completedAt,
+    created_at: "2026-01-01T00:00:00.000Z",
+    game: game(id, name),
+  }
+}
+
+function renderHome(
+  residents: Resident[],
+  postcards: Postcard[] = [],
+  completedGames: CompletedGame[] = [],
+) {
   return renderToStaticMarkup(
     <HomeView
       residents={residents}
+      completedGames={completedGames}
       postcards={postcards}
       invitedGame={null}
     />,
   )
 }
 
-test("Home shows game artwork and orders every resident by original arrival", () => {
+test("Home shows completed games and orders arrivals by original arrival", () => {
   const html = renderHome([
     resident("older", "Quiet Harbor", "2026-09-04T12:00:00.000Z"),
     resident("later-set-aside", "Mosslight", "2026-10-12T12:00:00.000Z"),
+  ], [], [
+    completedGame("older", "Quiet Harbor", "2026-09-04T12:00:00.000Z"),
+    completedGame("later-set-aside", "Mosslight", "2026-10-12T12:00:00.000Z"),
   ])
   const timeline = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"))
 
-  assert.match(html, /The games you made room for\./)
+  assert.match(html, /Completed games/)
   assert.doesNotMatch(html, /Your home, with the world close by/)
   assert.doesNotMatch(html, /Player(?:&#x27;|&#39;|')s home/)
   assert.doesNotMatch(html, /\b\d+ residents?\b/)
   assert.doesNotMatch(html, /Explore your world|Expand world|settlement/)
-  assert.match(html, /url=%2Fimages%2Folder\.jpg/)
+  assert.match(html, /aria-label="Completed game cards"/)
+  assert.match(html, /aria-roledescription="carousel"/)
+  assert.match(html, /aspect-\[4\/3\]/)
+  assert.match(html, /url=%2Fimages%2Flater-set-aside\.jpg/)
+  assert.ok(html.indexOf("Mosslight") < html.indexOf("Quiet Harbor"))
+  assert.match(html, /Completed/)
+  assert.match(html, /Arrived/)
   assert.ok(timeline.indexOf("Mosslight") < timeline.indexOf("Quiet Harbor"))
   assert.match(timeline, /October 12, 2026/)
   assert.match(timeline, /September 4, 2026/)
@@ -74,7 +103,7 @@ test("a postcard without a resident stays out of the arrival timeline", () => {
 test("Home has a calm empty state without an arrival timeline", () => {
   const html = renderHome([])
 
-  assert.match(html, /No residents yet\. There is no rush\./)
+  assert.match(html, /No completed games yet\./)
   assert.doesNotMatch(html, /Arrivals/)
   assert.doesNotMatch(html, /<ol/)
 })

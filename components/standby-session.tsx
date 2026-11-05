@@ -8,7 +8,7 @@ import { CanopyNook } from "./canopy/nook"
 import { StandbyArtwork } from "./standby-artwork"
 import "./canopy/nook.css"
 
-const control = "min-h-11 rounded-lg border border-white/20 px-4 py-2 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:opacity-40"
+const control = "min-h-11 rounded-lg border border-border/70 px-4 py-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary disabled:opacity-40"
 
 export function StandbySession({
   session, notesStatus, elapsed, elapsedSeconds, preferences, pending, syncError, error, onRetry, onTransition, onExit,
@@ -67,42 +67,41 @@ export function StandbySession({
     }
     onExit()
   }
-  const goal = session.session_goal ? <p className="break-words border-l-2 border-white/20 pl-4 text-base text-white/80">{session.session_goal}</p> : null
-  const recordingLabel = session.record_time === false ? "Time recording off" : preferences.show_clock ? "Time recording on" : "Clock hidden; time recording on"
+  const goal = session.session_goal ? <p className="break-words text-base text-foreground/80">{session.session_goal}</p> : null
+  const recordingLabel = session.record_time === false ? "Time recording off" : preferences.show_clock ? null : "Clock hidden; time recording on"
   const nookWakeMessage = preferences.keep_awake && !wakeState.startsWith("Keep-awake active") ? wakeState : null
   const titleBlock = (
     <>
-      <Dialog.Title title={ambient ? session.games.name : undefined} className={ambient ? "canopy-game" : "break-words font-serif text-4xl font-medium leading-tight sm:text-6xl [@media(max-height:500px)]:text-3xl"}>{session.games.name}</Dialog.Title>
-      <Dialog.Description className={ambient ? "sr-only" : "text-white/70"}>
+      {ambient ? <Dialog.Title title={session.games.name} className="canopy-game">{session.games.name}</Dialog.Title> : null}
+      <Dialog.Description className="sr-only">
         {nook ? "Your real play session, in a quiet Canopy nook. The room does not award residents or progress." : "Leave this screen beside your game."}
       </Dialog.Description>
       {preferences.show_clock && session.record_time !== false ? (
-        <p className={ambient ? "canopy-clock" : "font-mono text-5xl tabular-nums sm:text-7xl [@media(max-height:500px)]:text-4xl"} aria-label={syncError ? "Unverified elapsed time" : `${session.status} elapsed time`}>{elapsed}{syncError ? <span className="mt-2 block font-sans text-sm text-amber-200">not verified</span> : null}</p>
+        <p className={ambient ? "canopy-clock" : "font-mono text-5xl tabular-nums sm:text-6xl [@media(max-height:500px)]:text-4xl"} aria-label={syncError ? "Unverified elapsed time" : `${session.status} elapsed time`}>{elapsed}{syncError ? <span className="mt-2 block font-sans text-sm text-primary">not verified</span> : null}</p>
       ) : null}
     </>
   )
   const controlsBlock = (
     <>
-      <p className="text-sm text-white/70">{session.status}{!ambient || session.record_time === false || !preferences.show_clock ? ` · ${recordingLabel}` : ""}</p>
+      {recordingLabel ? <p className="text-sm text-white/70">{recordingLabel}</p> : null}
       {ambient && !confirmEnd ? <button className={`${control} canopy-details-toggle`} aria-expanded={details} aria-controls="canopy-session-details" onClick={event => {
         if (details) event.currentTarget.focus({ preventScroll: true })
         setDetails(value => !value)
       }}>{details ? "Hide session details" : "Session details"}</button> : null}
-      {!ambient ? goal : null}
       {preferences.reminders && !reminderDismissed && session.status === "Playing" && session.record_time !== false && elapsedSeconds >= 3600 ? (
-        <div role="status" className="text-sm text-amber-200">
+        <div role="status" className="text-sm text-primary">
           A good moment to stretch or rest your eyes. Your session will keep running.
           <button className={`${control} ml-2`} onClick={() => setReminderDismissed(true)}>Dismiss</button>
         </div>
       ) : null}
-      {syncError || error ? <p role="alert" className="text-sm text-amber-200">{syncError || error}</p> : null}
+      {syncError || error ? <p role="alert" className="text-sm text-primary">{syncError || error}</p> : null}
       {syncError ? <button className={control} onClick={onRetry}>Reconnect / retry</button> : null}
       {!ambient || !confirmEnd ? <div className="flex flex-wrap justify-center gap-3">
         <button className={control} disabled={pending || !!syncError} onClick={() => onTransition(session.status === "Paused" ? "Playing" : "Paused")}>{pending ? "Saving..." : session.status === "Paused" ? "Resume" : "Pause"}</button>
         <button className={control} disabled={pending || !!syncError} onClick={() => setConfirmEnd(true)}>End session</button>
         <button className={control} onClick={() => void toggleFullscreen()}>{fullscreen ? "Exit fullscreen" : "Fullscreen"}</button>
       </div> : null}
-      {displayMessage ? <p role="status" className="text-sm text-white/70">{displayMessage}</p> : null}
+      {displayMessage ? <p role="status" className="text-sm text-foreground/70">{displayMessage}</p> : null}
       {confirmEnd ? <div className="canopy-confirm space-y-2 rounded-xl border border-white/20 p-4">
         <p>Done for today? Your game stays available to continue later.</p>
         <button className={control} disabled={pending || !!syncError} onClick={() => onTransition("Finished")}>Finish session</button>{" "}
@@ -116,21 +115,31 @@ export function StandbySession({
       <Dialog.Content
         ref={setContainer}
         onEscapeKeyDown={(event) => { event.preventDefault(); exit() }}
-        className={`fixed inset-0 z-[71] flex h-dvh w-screen flex-col overflow-y-auto bg-[#090c10] text-white outline-none${ambient ? " canopy-standby" : ""}`}
+        onPointerMove={(event) => {
+          if (event.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+          const bounds = event.currentTarget.getBoundingClientRect()
+          const x = event.clientX - bounds.left
+          const y = event.clientY - bounds.top
+          const hue = 105 - Math.min(1, Math.max(0, x / bounds.width)) * 63
+          event.currentTarget.style.setProperty("--pointer-x", `${x}px`)
+          event.currentTarget.style.setProperty("--pointer-y", `${y}px`)
+          event.currentTarget.style.setProperty("--pointer-hue", `${hue}`)
+        }}
+        className={`fixed inset-0 z-[71] flex h-dvh w-screen flex-col overflow-y-auto bg-background text-foreground outline-none${ambient ? " canopy-standby" : ""}`}
         style={{ padding: "max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))" }}
       >
         {!nook ? <StandbyArtwork artwork={session.games.header_image} /> : null}
-        <header className={`z-20 flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-white/15 py-2 ${nook ? "relative" : "sticky top-0"}`}>
+        <header className={`z-20 flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-border/50 py-2 ${nook ? "relative" : "sticky top-0"}`}>
           <div className="flex min-w-0 items-center gap-3">
-            <p className="text-base font-semibold tracking-tight text-white">Just Play</p>
-            <span aria-hidden="true" className="h-4 w-px bg-white/25" />
-            <p className="text-sm text-white/70">StandBy</p>
+            <p className="text-base font-semibold tracking-tight text-foreground">Just Play</p>
+            <span aria-hidden="true" className="h-4 w-px bg-border" />
+            <p className="text-sm text-muted-foreground">StandBy</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button className={control} onClick={exit}>Exit StandBy</button>
           </div>
         </header>
-        <main className={ambient ? "canopy-main" : "relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 py-6 text-center [@media(max-height:500px)]:flex-row [@media(max-height:500px)]:items-center [@media(max-height:500px)]:gap-4 [@media(max-height:500px)]:py-2"}>
+        <main className={ambient ? "canopy-main" : "relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-8 py-8 text-center"}>
           {nook ? <div className="canopy-scene">
             <div inert={details && !confirmEnd}>
               <CanopyNook artwork={session.games.header_image} />
@@ -145,15 +154,23 @@ export function StandbySession({
             </div> : null}
           </div> : null}
           {nook ? <div className="canopy-session-panel">{titleBlock}{controlsBlock}</div> : <>
-            <div className="my-auto space-y-3 py-2 [@media(max-height:500px)]:my-0 [@media(max-height:500px)]:flex-1 [@media(max-height:500px)]:space-y-1">{titleBlock}</div>
-            <div data-testid="standby-controls" className="mx-auto w-full max-w-xl space-y-3 [@media(max-height:500px)]:flex-1 rounded-2xl border border-white/15 bg-black/60 p-4 backdrop-blur-sm [@media(max-height:500px)]:space-y-2 [@media(max-height:500px)]:p-3">{controlsBlock}</div>
+            <section className="relative z-10 my-auto flex w-full flex-col items-center gap-4">
+              <Dialog.Title className="max-w-full break-words text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+                {session.games.name}
+              </Dialog.Title>
+              <p className="text-sm text-white/75">{session.status}</p>
+              {titleBlock}
+              {goal}
+            </section>
+            <div data-testid="standby-controls" className="relative z-10 mx-auto w-full max-w-xl space-y-3 rounded-2xl border border-border/70 bg-background/80 p-4">
+              {controlsBlock}
+            </div>
           </>}
         </main>
         {ambient ? nookWakeMessage ? <footer role="status">
           <p>{nookWakeMessage}</p>
-        </footer> : null : <footer className="relative z-10 space-y-1 text-center text-xs text-white/70" role="status">
+        </footer> : null : <footer className="relative z-10 space-y-1 text-center text-xs text-muted-foreground" role="status">
           <p>{wakeState}</p>
-          <p>{"Screen may sleep when locked or backgrounded. Escape exits StandBy; fullscreen may need a second press."}</p>
         </footer>}
       </Dialog.Content>
     </Dialog.Portal>

@@ -20,6 +20,7 @@ async function main() {
     alias: {
       "@/app/actions": path.resolve("tests", "standby", "mock-actions.ts"),
       "@/app/auth/actions": path.resolve("tests", "standby", "mock-actions.ts"),
+      "next/navigation": path.resolve("tests", "standby", "mock-navigation.ts"),
       "next/image": path.resolve("tests", "standby", "mock-image.tsx"),
       "three/addons/loaders/GLTFLoader.js": path.resolve("tests", "standby", "gated-gltf-loader.ts"),
     },

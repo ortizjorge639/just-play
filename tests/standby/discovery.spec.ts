@@ -11,6 +11,10 @@ for (const viewport of [
     await page.goto("/?app-shell&deck&current-game")
 
     await expect(page.getByRole("heading", { name: "Choose a game" })).toBeVisible()
+    await expect(page.getByTestId("recommendation-art-overlay")).toHaveCSS(
+      "background-image",
+      /linear-gradient.*linear-gradient/,
+    )
     if (viewport.width >= 390 && viewport.height >= 844) {
       await expect(page.getByRole("button", { name: /Lock in game/ })).toBeInViewport()
     }
@@ -55,6 +59,9 @@ test("Split focus keeps a long game title readable at 200% text size", async ({ 
 
 test("the current game details card is keyboard operable and restores focus after flipping", async ({ page }) => {
   await page.goto("/?current-game")
+  const flipContainer = page.getByTestId("game-flip-container")
+  await expect.poll(() => flipContainer.evaluate((element) => getComputedStyle(element).transform)).not.toBe("none")
+
   const viewDetails = page.getByRole("button", { name: "View details" })
   await viewDetails.focus()
   await page.keyboard.press("Enter")

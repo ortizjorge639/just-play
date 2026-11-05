@@ -89,14 +89,14 @@ export function XPToastProvider({ children, playerStats }: { children: ReactNode
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             className="fixed top-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
           >
-            <div className="rounded-xl bg-chart-1/20 border border-chart-1/30 backdrop-blur-lg px-4 py-2 shadow-lg shadow-chart-1/10">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 shadow-lg shadow-black/20">
               <div className="text-center">
                 {isLevelUp && (
-                  <div className="text-xs font-bold text-amber-300 tracking-wider uppercase mb-0.5">
+                <div className="text-xs font-bold text-primary tracking-wider uppercase mb-0.5">
                     ⬆ Level Up!
                   </div>
                 )}
-                <span className="text-lg font-bold text-chart-1">
+                <span className="text-lg font-bold text-primary">
                   +{toast.total} XP
                 </span>
                 {toast.bonuses.length > 0 && (
