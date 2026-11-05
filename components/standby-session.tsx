@@ -1,14 +1,35 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import * as Dialog from "@radix-ui/react-dialog"
+import { Check, LogOut, Maximize, Minimize, Palette, Pause, Play, Square } from "lucide-react"
 import type { Game, Session, StandbyPreferences } from "@/lib/types"
 import { useStandbyWakeLock } from "@/hooks/use-standby-display"
 import { CanopyNook } from "./canopy/nook"
-import { StandbyArtwork } from "./standby-artwork"
+import { DEFAULT_STANDBY_APPEARANCE, StandbyArtwork, type StandbyAppearance } from "./standby-artwork"
 import "./canopy/nook.css"
 
 const control = "min-h-11 rounded-lg border border-border/70 px-4 py-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary disabled:opacity-40"
+const appearanceKey = "just-play-standby-appearance"
+
+function readAppearance(): StandbyAppearance {
+  if (typeof window === "undefined") return DEFAULT_STANDBY_APPEARANCE
+  try {
+    const stored = window.localStorage.getItem(appearanceKey)
+    if (!stored) return DEFAULT_STANDBY_APPEARANCE
+    const value: unknown = JSON.parse(stored)
+    if (value && typeof value === "object" &&
+        "effect" in value && (value.effect === "dither" || value.effect === "ascii" || value.effect === "artwork") &&
+        "color" in value && (value.color === "original" || value.color === "amber" || value.color === "mint" || value.color === "mono") &&
+        "motion" in value && typeof value.motion === "boolean") {
+      return { effect: value.effect, color: value.color, motion: value.motion }
+    }
+    console.warn("[standby-appearance] Invalid saved appearance; using defaults.")
+  } catch (error) {
+    console.warn("[standby-appearance] Could not read saved appearance.", error)
+  }
+  return DEFAULT_STANDBY_APPEARANCE
+}
 
 export function StandbySession({
   session, notesStatus, elapsed, elapsedSeconds, preferences, pending, syncError, error, onRetry, onTransition, onExit,
@@ -28,6 +49,22 @@ export function StandbySession({
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   const [fullscreen, setFullscreen] = useState(false)
   const [displayMessage, setDisplayMessage] = useState<string | null>(null)
+  const [appearance, setAppearance] = useState(readAppearance)
+  const [showAppearance, setShowAppearance] = useState(false)
+  const appearanceButton = useRef<HTMLButtonElement>(null)
+  const closeAppearance = () => {
+    setShowAppearance(false)
+    appearanceButton.current?.focus()
+  }
+  const changeAppearance = (next: StandbyAppearance) => {
+    setAppearance(next)
+    try {
+      window.localStorage.setItem(appearanceKey, JSON.stringify(next))
+    } catch (error) {
+      console.warn("[standby-appearance] Could not save appearance.", error)
+      setDisplayMessage("Appearance changed for this visit, but could not be saved on this device.")
+    }
+  }
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [reminderDismissed, setReminderDismissed] = useState(false)
   const [view] = useState<"artwork" | "canopy">("artwork")
@@ -96,10 +133,18 @@ export function StandbySession({
       ) : null}
       {syncError || error ? <p role="alert" className="text-sm text-primary">{syncError || error}</p> : null}
       {syncError ? <button className={control} onClick={onRetry}>Reconnect / retry</button> : null}
-      {!ambient || !confirmEnd ? <div className="flex flex-wrap justify-center gap-3">
-        <button className={control} disabled={pending || !!syncError} onClick={() => onTransition(session.status === "Paused" ? "Playing" : "Paused")}>{pending ? "Saving..." : session.status === "Paused" ? "Resume" : "Pause"}</button>
-        <button className={control} disabled={pending || !!syncError} onClick={() => setConfirmEnd(true)}>End session</button>
-        <button className={control} onClick={() => void toggleFullscreen()}>{fullscreen ? "Exit fullscreen" : "Fullscreen"}</button>
+      {!ambient || !confirmEnd ? <div className="standby-action-row flex flex-wrap justify-center gap-3">
+        <button className={`${control} standby-icon-control`} aria-label={pending ? "Saving..." : session.status === "Paused" ? "Resume" : "Pause"} disabled={pending || !!syncError} onClick={() => onTransition(session.status === "Paused" ? "Playing" : "Paused")}>
+          {session.status === "Paused" ? <Play aria-hidden="true" size={20} /> : <Pause aria-hidden="true" size={20} />}
+          <span>{pending ? "Saving..." : session.status === "Paused" ? "Resume" : "Pause"}</span>
+        </button>
+        <button className={`${control} standby-icon-control`} aria-label="End session" disabled={pending || !!syncError} onClick={() => setConfirmEnd(true)}>
+          <Square aria-hidden="true" size={20} /><span>End session</span>
+        </button>
+        <button className={`${control} standby-icon-control`} aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"} onClick={() => void toggleFullscreen()}>
+          {fullscreen ? <Minimize aria-hidden="true" size={20} /> : <Maximize aria-hidden="true" size={20} />}
+          <span>{fullscreen ? "Exit fullscreen" : "Fullscreen"}</span>
+        </button>
       </div> : null}
       {displayMessage ? <p role="status" className="text-sm text-foreground/70">{displayMessage}</p> : null}
       {confirmEnd ? <div className="canopy-confirm space-y-2 rounded-xl border border-white/20 p-4">
@@ -114,9 +159,13 @@ export function StandbySession({
       <Dialog.Overlay className="fixed inset-0 z-[70] bg-black" />
       <Dialog.Content
         ref={setContainer}
-        onEscapeKeyDown={(event) => { event.preventDefault(); exit() }}
+        onEscapeKeyDown={(event) => {
+          event.preventDefault()
+          if (showAppearance) closeAppearance()
+          else exit()
+        }}
         onPointerMove={(event) => {
-          if (event.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+          if (!appearance.motion || event.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
           const bounds = event.currentTarget.getBoundingClientRect()
           const x = event.clientX - bounds.left
           const y = event.clientY - bounds.top
@@ -125,21 +174,52 @@ export function StandbySession({
           event.currentTarget.style.setProperty("--pointer-y", `${y}px`)
           event.currentTarget.style.setProperty("--pointer-hue", `${hue}`)
         }}
-        className={`fixed inset-0 z-[71] flex h-dvh w-screen flex-col overflow-y-auto bg-background text-foreground outline-none${ambient ? " canopy-standby" : ""}`}
+        className={`fixed inset-0 z-[71] flex h-dvh w-screen flex-col overflow-y-auto bg-background text-foreground outline-none${ambient ? " canopy-standby" : " standby-screen"}`}
         style={{ padding: "max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left))" }}
       >
-        {!nook ? <StandbyArtwork artwork={session.games.header_image} /> : null}
-        <header className={`z-20 flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-border/50 py-2 ${nook ? "relative" : "sticky top-0"}`}>
+        {!nook ? <StandbyArtwork artwork={session.games.header_image} appearance={appearance} /> : null}
+        <header className={`standby-header z-20 flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-border/50 py-2 ${nook ? "relative" : "sticky top-0"}`}>
           <div className="flex min-w-0 items-center gap-3">
             <p className="text-base font-semibold tracking-tight text-foreground">Just Play</p>
-            <span aria-hidden="true" className="h-4 w-px bg-border" />
-            <p className="text-sm text-muted-foreground">StandBy</p>
+            <span aria-hidden="true" className="standby-header-divider h-4 w-px bg-border" />
+            <p className="standby-header-label text-sm text-muted-foreground">StandBy</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button className={control} onClick={exit}>Exit StandBy</button>
+            {!nook ? <button ref={appearanceButton} className={`${control} standby-icon-control`} aria-label="Appearance" aria-expanded={showAppearance} aria-controls="standby-appearance" onClick={() => setShowAppearance(value => !value)}><Palette aria-hidden="true" size={20} /><span>Appearance</span></button> : null}
+            <button className={`${control} standby-icon-control`} aria-label="Exit StandBy" onClick={exit}><LogOut aria-hidden="true" size={20} /><span>Exit StandBy</span></button>
           </div>
         </header>
-        <main className={ambient ? "canopy-main" : "relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-8 py-8 text-center"}>
+        {showAppearance && !nook ? <section id="standby-appearance" aria-label="StandBy appearance" className="standby-appearance z-30 flex flex-wrap items-end gap-4 rounded-xl border border-border bg-background p-4">
+          <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            <label htmlFor="standby-style">Style</label>
+            <select id="standby-style" className={`${control} bg-background`} value={appearance.effect} onChange={event => {
+              const effect = event.target.value
+              if (effect === "dither" || effect === "ascii" || effect === "artwork") changeAppearance({ ...appearance, effect })
+            }}>
+              <option value="dither">Dither</option>
+              <option value="ascii">ASCII</option>
+              <option value="artwork">Artwork</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            <label htmlFor="standby-color">Color</label>
+            <select id="standby-color" className={`${control} bg-background`} value={appearance.color} onChange={event => {
+              const color = event.target.value
+              if (color === "original" || color === "amber" || color === "mint" || color === "mono") changeAppearance({ ...appearance, color })
+            }}>
+              <option value="original">Game colors</option>
+              <option value="amber">Amber</option>
+              <option value="mint">Mint</option>
+              <option value="mono">Monochrome</option>
+            </select>
+          </div>
+          <label className="flex min-h-11 items-center gap-2 text-sm">
+            <input type="checkbox" className="size-4 accent-primary" checked={appearance.motion} onChange={event => changeAppearance({ ...appearance, motion: event.target.checked })} />
+            Background motion
+          </label>
+          <button className={`${control} standby-icon-control`} aria-label="Done" onClick={closeAppearance}><Check aria-hidden="true" size={20} /><span>Done</span></button>
+        </section> : null}
+        <main className={ambient ? "canopy-main" : "standby-main relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center gap-8 py-8 text-center"}>
           {nook ? <div className="canopy-scene">
             <div inert={details && !confirmEnd}>
               <CanopyNook artwork={session.games.header_image} />
@@ -154,7 +234,7 @@ export function StandbySession({
             </div> : null}
           </div> : null}
           {nook ? <div className="canopy-session-panel">{titleBlock}{controlsBlock}</div> : <>
-            <section className="relative z-10 my-auto flex w-full flex-col items-center gap-4">
+            <section className="standby-session-summary relative z-10 my-auto flex w-full flex-col items-center gap-4">
               <Dialog.Title className="max-w-full break-words text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
                 {session.games.name}
               </Dialog.Title>

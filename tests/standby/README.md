@@ -19,6 +19,25 @@ StandBy and note-save cases exercise the existing actions with mocked
 account data. The image replacement is schematic, so these checks do not
 verify real cover-art crops, physical devices, or a deployed account session.
 
+## StandBy appearance
+
+```sh
+pnpm exec playwright test --config tests/standby/playwright.config.ts artwork-motion.spec.ts
+```
+
+StandBy defaults to ordered dither, with ASCII and unfiltered artwork alternatives.
+Appearance controls store style, color, and background-motion choices on the
+current device; they do not change session recording. The cached texture pans
+as one image rather than deforming individual rows. Tests cover visible motion,
+static reduced-motion rendering, simulated visibility changes, blocked-canvas
+fallback, responsive controls, and saved appearance choices. These lifecycle
+fixtures simulate visibility; they are not native background-tab certification.
+Mobile cases use touch input at portrait and short-landscape sizes (down to
+568 by 320), verify 44px targets, rotate during StandBy, and exercise the
+Appearance overlay and pause/resume controls. Compact layouts retain accessible
+names on icon buttons. Physical iOS/Android browser chrome still needs a device
+check; viewport tests cannot certify it.
+
 ## Shared-world regression and motion preferences
 
 ```sh

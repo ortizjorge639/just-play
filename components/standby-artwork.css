@@ -1,3 +1,107 @@
+.standby-icon-control {
+  display: inline-flex;
+  min-width: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.standby-screen .standby-header,
+.standby-screen > footer,
+.standby-session-summary,
+.standby-screen [data-testid="standby-controls"] {
+  flex-shrink: 0;
+}
+
+.standby-main {
+  flex: 1 0 auto;
+}
+
+.standby-appearance {
+  position: absolute;
+  top: calc(max(1rem, env(safe-area-inset-top)) + 4.5rem);
+  right: max(1rem, env(safe-area-inset-right));
+  max-width: calc(100% - max(1rem, env(safe-area-inset-left)) - max(1rem, env(safe-area-inset-right)));
+  max-height: calc(100dvh - max(1rem, env(safe-area-inset-top)) - max(1rem, env(safe-area-inset-bottom)) - 5rem);
+  overflow-y: auto;
+}
+
+.standby-appearance select {
+  min-height: 44px;
+  font-size: 1rem;
+}
+
+@media (max-width: 639px), (max-height: 500px) {
+  .standby-screen .standby-icon-control {
+    padding: 0.625rem;
+  }
+
+  .standby-screen .standby-icon-control > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .standby-screen .standby-header {
+    flex-wrap: nowrap;
+    min-height: 60px;
+    gap: 0.5rem;
+  }
+
+  .standby-main {
+    min-height: 0;
+    gap: 1rem;
+    padding-block: 1rem;
+  }
+
+  .standby-screen [data-testid="standby-controls"] {
+    width: auto;
+    min-width: 184px;
+    max-width: 100%;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 359px) {
+  .standby-header-divider,
+  .standby-header-label {
+    display: none;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .standby-main {
+    gap: 0.5rem;
+    padding-block: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .standby-session-summary {
+    gap: 0.375rem;
+  }
+
+  .standby-session-summary h2 {
+    font-size: 1.5rem;
+  }
+
+  .standby-session-summary > p {
+    max-width: 65ch;
+  }
+
+  .standby-screen > footer {
+    font-size: 0.75rem;
+  }
+}
+
+.standby-field {
+  --standby-amber: var(--primary);
+  --standby-mint: var(--success);
+  --standby-mono: var(--foreground);
+}
+
 .standby-field .standby-artwork::before {
   animation: none;
   display: none;
@@ -6,6 +110,52 @@
 .standby-ascii {
   image-rendering: pixelated;
   opacity: 0.78;
+}
+
+.standby-field[data-effect="artwork"] .standby-ascii {
+  display: none;
+}
+
+.standby-field[data-rendered="true"]:not([data-effect="artwork"]) .standby-artwork {
+  opacity: 0.08;
+}
+
+.standby-field[data-color="mono"] .standby-artwork {
+  filter: grayscale(1);
+}
+
+.standby-field[data-color="amber"] .standby-artwork {
+  filter: sepia(1) saturate(0.8);
+}
+
+.standby-field[data-color="mint"] .standby-artwork {
+  filter: sepia(1) hue-rotate(70deg) saturate(0.65);
+}
+
+.standby-field .standby-artwork,
+.standby-ascii {
+  animation: standby-art-drift 24s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.standby-field[data-motion="paused"] .standby-artwork,
+.standby-field[data-motion="paused"] .standby-ascii {
+  animation-play-state: paused;
+}
+
+@keyframes standby-art-drift {
+  from { transform: scale(1.1) translate(-1.5%, -1%); }
+  to { transform: scale(1.14) translate(1.5%, 1%); }
+}
+
+.standby-field[data-animate="false"] .standby-artwork,
+.standby-field[data-animate="false"] .standby-ascii {
+  animation: none;
+  will-change: auto;
+}
+
+.standby-field[data-animate="false"] .standby-pointer-glow {
+  display: none;
 }
 
 .standby-pointer-glow {
@@ -18,6 +168,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .standby-field .standby-artwork,
+  .standby-ascii {
+    animation: none;
+    will-change: auto;
+  }
+
   .standby-pointer-glow {
     display: none;
   }
