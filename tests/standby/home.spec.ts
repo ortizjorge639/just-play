@@ -1,14 +1,127 @@
 import { test, expect } from "@playwright/test"
 
+test("Home stamps explain completion and arrival on hover and keyboard focus", async ({ page }) => {
+  await page.goto("/?app-shell&completed-games&residents")
+  await page.getByRole("button", { name: "Home", exact: true }).click()
+  const completed = page.getByRole("button", { name: "Completed stamp", exact: true }).first()
+  await completed.hover()
+  await expect(page.getByRole("tooltip")).toHaveText("You marked this game as beaten.")
+  await page.getByRole("heading", { name: "Completed games (5)", exact: true }).hover()
+  await page.mouse.move(20, 90, { steps: 5 })
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
+  const arrived = page.getByRole("button", { name: "Arrived stamp", exact: true })
+  await arrived.focus()
+  await expect(page.getByRole("tooltip")).toContainText("It can arrive before you finish it.")
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
+  const scrollY = await page.evaluate(() => window.scrollY)
+  await page.keyboard.press("Enter")
+  await expect(page.getByRole("dialog", { name: "Arrived stamp", exact: true })).toContainText("meeting your arrival rule")
+  await expect(arrived).toBeFocused()
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollY)
+  expect(await page.locator('[data-slot="carousel-content"]').evaluate(element => element.parentElement!.scrollLeft)).toBe(0)
+  await page.keyboard.press("Escape")
+  await expect(arrived).toBeFocused()
+})
+
+test("Home stamps open explanations on touch in short landscape", async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, viewport: { width: 568, height: 320 }, hasTouch: true })
+  const page = await context.newPage()
+  try {
+    await page.goto("/?app-shell&completed-games&residents")
+    await page.getByRole("button", { name: "Home", exact: true }).tap()
+    await page.getByRole("button", { name: "Arrived stamp", exact: true }).tap()
+    const help = page.getByRole("dialog", { name: "Arrived stamp", exact: true })
+    await expect(help).toContainText("It can arrive before you finish it.")
+    const box = await help.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.x).toBeGreaterThanOrEqual(0)
+    expect(box!.x + box!.width).toBeLessThanOrEqual(568)
+    await page.getByRole("heading", { name: "Completed games (5)", exact: true }).tap()
+    await expect(help).toHaveCount(0)
+  } finally {
+    await context.close()
+  }
+})
+
+test("Home stamp setting explains both stamps and persists without changing games", async ({ page }) => {
+  await page.goto("/?app-shell&completed-games&residents")
+  await page.getByRole("button", { name: "Progress", exact: true }).click()
+  await page.getByRole("button", { name: "Settings", exact: true }).click()
+  const toggle = page.getByRole("switch", { name: "Show stamps on game cards", exact: true })
+  await expect(toggle).toBeChecked()
+  await expect(page.getByText("You marked this game as beaten.", { exact: true })).toBeVisible()
+  await expect(page.getByText(/It can arrive before you finish it\./)).toBeVisible()
+  await toggle.click()
+  await expect(toggle).not.toBeChecked()
+  await page.getByRole("button", { name: "Back", exact: true }).click()
+  await page.getByRole("button", { name: "Home", exact: true }).click()
+  await expect(page.getByRole("heading", { name: "Completed games (5)", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Completed stamp", exact: true })).toHaveCount(0)
+  await page.getByRole("button", { name: "See all", exact: true }).click()
+  await expect(page.getByRole("region", { name: "All completed games" }).locator("article")).toHaveCount(5)
+  await expect(page.getByRole("button", { name: "Arrived stamp", exact: true })).toHaveCount(0)
+  await page.reload()
+  await page.getByRole("button", { name: "Progress", exact: true }).click()
+  await page.getByRole("button", { name: "Settings", exact: true }).click()
+  await expect(toggle).not.toBeChecked()
+  await toggle.click()
+  await page.getByRole("button", { name: "Back", exact: true }).click()
+  await page.getByRole("button", { name: "Home", exact: true }).click()
+  await expect(page.getByRole("button", { name: "Completed stamp", exact: true })).toHaveCount(5)
+  await expect(page.getByRole("button", { name: "Arrived stamp", exact: true })).toHaveCount(1)
+})
+
+test("Home stamp setting reports a save failure", async ({ page }) => {
+  await page.goto("/?app-shell&completed-games")
+  await page.getByRole("button", { name: "Progress", exact: true }).click()
+  await page.getByRole("button", { name: "Settings", exact: true }).click()
+  await page.evaluate(() => {
+    Storage.prototype.setItem = () => { throw new Error("Storage blocked") }
+  })
+  const toggle = page.getByRole("switch", { name: "Show stamps on game cards", exact: true })
+  await toggle.click()
+  await expect(page.getByRole("alert")).toHaveText("Could not save your stamp setting on this device. Please try again.")
+  await expect(toggle).toBeChecked()
+})
+
 test("Home shows a calm empty state when nothing lives here yet", async ({ page }) => {
   await page.goto("/?app-shell")
   await page.getByRole("button", { name: "Home" }).click()
 
-  await expect(page.getByRole("heading", { name: "Completed games" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Completed games (0)", exact: true })).toBeVisible()
+  await expect(page.getByRole("button", { name: "See all", exact: true })).toHaveCount(0)
   await expect(page.getByText("No completed games yet.")).toBeVisible()
   await expect(page.getByRole("heading", { name: "Lives here" })).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "Archived" })).toHaveCount(0)
 })
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
+  test(`completed games expand into a gallery at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.goto("/?app-shell&completed-games&residents")
+    await page.getByRole("button", { name: "Home", exact: true }).click()
+    await expect(page.getByRole("heading", { name: "Completed games (5)", exact: true })).toBeVisible()
+    const expand = page.getByRole("button", { name: "See all", exact: true })
+    await expand.focus()
+    await page.keyboard.press("Enter")
+    const gallery = page.getByRole("region", { name: "All completed games", exact: true })
+    await expect(gallery.locator("article")).toHaveCount(5)
+    for (const card of await gallery.locator("article").all()) {
+      await expect(card).toHaveCSS("aspect-ratio", "4 / 3")
+    }
+    await expect(gallery.getByText("Arrived", { exact: true })).toHaveCount(1)
+    await expect(page.getByRole("button", { name: "Next slide" })).toHaveCount(0)
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    const collapse = page.getByRole("button", { name: "Back to carousel", exact: true })
+    await expect(collapse).toHaveAttribute("aria-expanded", "true")
+    await collapse.focus()
+    await page.keyboard.press("Enter")
+    await expect(gallery).toHaveCount(0)
+    await expect(expand).toBeFocused()
+    await expect(page.getByRole("button", { name: "Next slide" })).toBeEnabled()
+  })
+}
 
 test("Completed games use a 4:3 carousel with separate completion and arrival stamps", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })

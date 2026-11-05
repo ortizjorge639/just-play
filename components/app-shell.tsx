@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { getActiveSession } from "@/app/actions"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
 import { useSessionNotes } from "@/hooks/use-session-notes"
+import { useHomeStamps } from "@/hooks/use-home-stamps"
 import { AnimatePresence, motion } from "framer-motion"
 import { CardDeck } from "./card-deck"
 import { ActiveSession } from "./active-session"
@@ -71,6 +72,7 @@ export function AppShell({
   const [needsRefresh, setNeedsRefresh] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const homeStamps = useHomeStamps()
   const [filterTipDismissed, setFilterTipDismissed] = useState(user.tutorial_complete)
   const [standbyPreferences, setStandbyPreferences] = useState({
     ...DEFAULT_STANDBY_PREFERENCES, ...user.standby_preferences,
@@ -364,6 +366,7 @@ export function AppShell({
             className="flex flex-1 flex-col"
           >
             <HomeView
+              showStamps={homeStamps.enabled}
               residents={residents ?? []}
               completedGames={completedGames}
               postcards={postcards ?? []}
@@ -418,6 +421,9 @@ export function AppShell({
       <AnimatePresence>
         {showSettings && (
           <Settings
+            showHomeStamps={homeStamps.enabled}
+            onShowHomeStampsChange={homeStamps.setEnabled}
+            homeStampsError={homeStamps.error}
             displayName={cardName}
             isAnonymous={isAnonymous}
             onEditCard={() => {

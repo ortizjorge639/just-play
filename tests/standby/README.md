@@ -3,6 +3,20 @@
 Use the worktree root as the working directory. These tests use isolated local
 fixtures and actual bundled art; they do not access the production database.
 
+## Home completed-game gallery
+
+```sh
+STANDBY_TEST_PORT=4492 node_modules/.bin/playwright test --config tests/standby/playwright.config.ts home.spec.ts --grep "calm empty state|4:3 carousel|expand into a gallery|Home stamp"
+```
+
+Home shows the completed-game count and a See all gallery with 4:3 artwork.
+Completed means the player marked a game beaten; Arrived means it met the
+player's arrival rule, which may happen before completion. Stamp help opens on
+hover, keyboard focus, or tap. Settings can hide both visual stamps without
+changing game records; this preference is saved on the current device.
+Cases cover touch help, keyboard dismissal, responsive expansion, saved
+visibility, and storage-save errors.
+
 ## Now Playing artwork stage
 
 ```sh

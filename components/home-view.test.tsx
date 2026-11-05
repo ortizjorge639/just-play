@@ -69,6 +69,9 @@ test("Home shows completed games and orders arrivals by original arrival", () =>
   const timeline = html.slice(html.indexOf("<ol"), html.indexOf("</ol>"))
 
   assert.match(html, /Completed games/)
+  assert.match(html, /\(2\)/)
+  assert.match(html, /aria-expanded="false"/)
+  assert.match(html, />See all<\/button>/)
   assert.doesNotMatch(html, /Your home, with the world close by/)
   assert.doesNotMatch(html, /Player(?:&#x27;|&#39;|')s home/)
   assert.doesNotMatch(html, /\b\d+ residents?\b/)
@@ -104,6 +107,8 @@ test("Home has a calm empty state without an arrival timeline", () => {
   const html = renderHome([])
 
   assert.match(html, /No completed games yet\./)
+  assert.match(html, /\(0\)/)
+  assert.doesNotMatch(html, />See all<\/button>/)
   assert.doesNotMatch(html, /Arrivals/)
   assert.doesNotMatch(html, /<ol/)
 })
