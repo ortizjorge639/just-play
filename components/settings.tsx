@@ -8,6 +8,8 @@ import { clearNotForMe } from "@/app/actions"
 import type { StandbyPreferences, StampRule } from "@/lib/types"
 import { StampRuleEditor } from "./stamp-rule-editor"
 import { StandbyPreferencesForm } from "./standby-preferences"
+import { HOME_STAMP_EXPLANATIONS } from "@/lib/home-stamps"
+import { Switch } from "./ui/switch"
 
 interface SettingsProps {
   displayName: string | null
@@ -19,6 +21,9 @@ interface SettingsProps {
   onPreferencesSaved: (preferences: StandbyPreferences) => void
   stampRules: StampRule[]
   onStampRuleSaved: (gameId: string | null, rule: StampRule | null) => void
+  showHomeStamps: boolean
+  onShowHomeStampsChange: (enabled: boolean) => void
+  homeStampsError: string | null
 }
 
 export function Settings({ 
@@ -31,6 +36,9 @@ export function Settings({
   onPreferencesSaved,
   stampRules,
   onStampRuleSaved,
+  showHomeStamps,
+  onShowHomeStampsChange,
+  homeStampsError,
 }: SettingsProps) {
   const [clearing, startClear] = useTransition()
   const [clearMessage, setClearMessage] = useState<string | null>(null)
@@ -105,6 +113,32 @@ export function Settings({
       </div>
       <div className="border-b border-border px-6 py-6">
         <StandbyPreferencesForm value={standbyPreferences} onSaved={onPreferencesSaved} />
+      </div>
+      <div className="border-b border-border px-6 py-6">
+        <h2 className="text-base font-semibold text-foreground">Home stamps</h2>
+        <label htmlFor="show-home-stamps" className="mt-2 flex min-h-11 cursor-pointer items-center justify-between gap-4">
+          <span className="text-sm font-medium text-foreground">Show stamps on game cards</span>
+          <Switch
+            id="show-home-stamps"
+            checked={showHomeStamps}
+            onCheckedChange={onShowHomeStampsChange}
+            aria-describedby="home-stamps-description"
+          />
+        </label>
+        <p id="home-stamps-description" className="mt-1 text-sm text-muted-foreground">
+          Saved on this device. Hiding stamps does not change your completions or arrivals.
+        </p>
+        <dl className="mt-4 space-y-3 text-sm">
+          <div>
+            <dt className="font-medium text-foreground">Completed</dt>
+            <dd className="mt-1 text-muted-foreground">{HOME_STAMP_EXPLANATIONS.completed}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-foreground">Arrived</dt>
+            <dd className="mt-1 text-muted-foreground">{HOME_STAMP_EXPLANATIONS.arrived}</dd>
+          </div>
+        </dl>
+        {homeStampsError ? <p role="alert" className="mt-3 text-sm text-destructive">{homeStampsError}</p> : null}
       </div>
       <div className="border-b border-border px-6 py-6">
         <StampRuleEditor
