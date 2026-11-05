@@ -12,6 +12,7 @@ import { GameArtwork } from "./game-artwork"
 interface CurrentGameProps {
   gameProgress: GameProgress & { game: Game }
   onSessionStarted: () => void
+  onGameBeaten: () => void
   syncError: string | null
   onRetry: () => void
   stampRules: StampRule[]
@@ -20,7 +21,7 @@ interface CurrentGameProps {
 }
 
 export function CurrentGame({
-  gameProgress, onSessionStarted, syncError, onRetry,
+  gameProgress, onSessionStarted, onGameBeaten, syncError, onRetry,
   stampRules, isResident, onArrived,
 }: CurrentGameProps) {
   const [isPending, startTransition] = useTransition()
@@ -62,7 +63,7 @@ export function CurrentGame({
       try {
         await markGameBeaten(game.id, null)
         showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
-        window.location.reload()
+        onGameBeaten()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")
         onRetry()
@@ -89,7 +90,7 @@ export function CurrentGame({
 
   return (
     <div className="flex flex-1 flex-col items-center px-6 py-4">
-      {syncError ? <div role="alert" className="mb-4 rounded-lg border border-amber-400/40 p-3 text-sm">
+      {syncError ? <div role="alert" className="mb-4 rounded-lg border border-primary/40 p-3 text-sm text-primary">
         {syncError} <button className="min-h-11 underline" onClick={onRetry}>Retry</button>
       </div> : null}
       {/* Flippable card */}
@@ -98,9 +99,13 @@ export function CurrentGame({
         style={{ aspectRatio: "3/4", perspective: "1200px" }}
       >
         <motion.div
+          data-testid="game-flip-container"
           className="relative h-full w-full"
           style={{ transformStyle: "preserve-3d" }}
           animate={{ rotateY: flipped ? 180 : 0 }}
+          transformTemplate={(_, generatedTransform) =>
+            generatedTransform ? generatedTransform : "rotateY(0deg)"
+          }
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           {/* ── Front face ── */}
@@ -118,7 +123,7 @@ export function CurrentGame({
             {/* Currently playing badge */}
             <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: "color-mix(in srgb, var(--success) 20%, transparent)", borderWidth: "1px", borderStyle: "solid", borderColor: "color-mix(in srgb, var(--success) 30%, transparent)" }}>
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)]" style={{ animation: "pulse 2s infinite" }} />
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--success)]">Playing</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-success">Playing</span>
             </div>
 
             {/* Game info */}
@@ -134,8 +139,7 @@ export function CurrentGame({
                 {game.genres?.slice(0, 3).map((genre) => (
                   <span
                     key={genre}
-                    className="rounded-lg px-2.5 py-1 text-xs font-medium text-foreground"
-                    style={{ background: "rgba(255,255,255,0.12)" }}
+                    className="rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium text-foreground"
                   >
                     {genre.replace("-", " ")}
                   </span>
@@ -191,8 +195,7 @@ export function CurrentGame({
                 {game.genres?.map((genre) => (
                   <span
                     key={genre}
-                    className="rounded-lg px-2.5 py-1 text-xs font-medium text-foreground/80"
-                    style={{ background: "rgba(255,255,255,0.08)" }}
+                    className="rounded-lg bg-secondary px-2.5 py-1 text-xs font-medium text-foreground/80"
                   >
                     {genre.replace("-", " ")}
                   </span>
@@ -323,9 +326,9 @@ export function CurrentGame({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 glass-card rounded-t-3xl p-6 pb-10"
+              className="fixed bottom-0 left-1/2 z-50 max-h-[calc(100dvh-1rem)] w-full max-w-lg -translate-x-1/2 overflow-y-auto glass-card rounded-t-2xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:bottom-6 sm:rounded-2xl"
             >
-              <div className="mx-auto mb-6 h-1 w-12 rounded-full bg-muted-foreground/30" />
+              <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-muted-foreground/30" />
               
               <h3 className="text-lg font-semibold text-foreground mb-4">
                 Game options
@@ -335,8 +338,7 @@ export function CurrentGame({
                 <button
                   onClick={handleMarkBeaten}
                   disabled={isPending || !!syncError}
-                  className="h-14 w-full rounded-xl text-base font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
-                  style={{ backgroundColor: "var(--success)" }}
+                  className="min-h-12 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all hover:bg-primary-highlight active:scale-[0.98] disabled:opacity-50"
                 >
                   I Beat This Game!
                 </button>
@@ -344,14 +346,14 @@ export function CurrentGame({
                 <button
                   onClick={handleAbandon}
                   disabled={isPending || !!syncError}
-                  className="h-14 w-full rounded-xl bg-destructive text-base font-semibold text-destructive-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                  className="min-h-12 w-full rounded-xl border border-destructive/50 text-base font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-[0.98] disabled:opacity-50"
                 >
                   Abandon Game
                 </button>
 
                 <button
                   onClick={() => setShowOptions(false)}
-                  className="h-12 w-full rounded-xl glass-card text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted min-h-[44px]"
+                  className="min-h-12 w-full rounded-xl border border-border text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   Cancel
                 </button>

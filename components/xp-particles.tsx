@@ -28,7 +28,7 @@ interface XPParticlesProps {
   onComplete?: () => void
 }
 
-const DEFAULT_COLORS = ["#F59E0B", "#FBBF24", "#FCD34D", "#F97316", "#FDE68A"]
+const DEFAULT_COLORS = ["#e2b56c", "#efc985", "#f3efe3"]
 
 export function XPParticles({
   originX,

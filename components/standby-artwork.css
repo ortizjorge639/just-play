@@ -3,68 +3,22 @@
   display: none;
 }
 
-.standby-atmosphere {
-  position: absolute;
-  inset: 0;
-  isolation: isolate;
+.standby-ascii {
+  image-rendering: pixelated;
+  opacity: 0.78;
 }
 
-.standby-color-form {
-  position: absolute;
-  width: min(72vw, 900px);
-  height: min(78vh, 800px);
-  left: -12%;
-  top: -18%;
-  border-radius: 48% 52% 64% 36% / 62% 38% 62% 38%;
-  background-size: cover;
-  background-position: 20% 25%;
-  filter: blur(48px) saturate(1.35);
-  opacity: 0.3;
-  transform: translate(-4%, 4%) rotate(-12deg) scale(1.05, 0.9);
-  animation: standby-color-drift 38s ease-in-out -11s infinite alternate;
-  animation-play-state: paused;
-}
-
-.standby-color-form:nth-child(2) {
-  left: 48%;
-  top: 8%;
-  background-position: 85% 30%;
-  border-radius: 62% 38% 42% 58% / 38% 62% 38% 62%;
-  animation-duration: 47s;
-  animation-delay: -29s;
-  animation-direction: alternate-reverse;
-}
-
-.standby-color-form:nth-child(3) {
-  left: 12%;
-  top: 52%;
-  background-position: 45% 85%;
-  border-radius: 38% 62% 54% 46% / 56% 44% 56% 44%;
-  animation-duration: 57s;
-  animation-delay: -43s;
-}
-
-.standby-field[data-motion="running"] .standby-color-form {
-  animation-play-state: running;
-}
-
-@keyframes standby-color-drift {
-  0% {
-    transform: translate(-4%, 4%) rotate(-12deg) scale(1.05, 0.9);
-    opacity: 0.24;
-  }
-  50% {
-    transform: translate(12%, -8%) rotate(9deg) scale(0.9, 1.12);
-    opacity: 0.4;
-  }
-  100% {
-    transform: translate(24%, 12%) rotate(-4deg) scale(1.16, 0.98);
-    opacity: 0.28;
-  }
+.standby-pointer-glow {
+  background:
+    radial-gradient(
+      ellipse 32rem 28rem at var(--pointer-x, 50%) var(--pointer-y, 45%),
+      hsl(var(--pointer-hue, 105) 68% 52% / 0.14),
+      transparent 72%
+    );
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .standby-color-form {
-    animation: none;
+  .standby-pointer-glow {
+    display: none;
   }
 }

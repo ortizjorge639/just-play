@@ -75,6 +75,10 @@ export interface GameProgress {
   game?: Game
 }
 
+export interface CompletedGame extends GameProgress {
+  game: Game
+}
+
 export interface UserProfile {
   id: string
   display_name: string | null

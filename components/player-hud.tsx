@@ -37,7 +37,7 @@ export function PlayerHUD({ stats }: PlayerHUDProps) {
           </span>
           <div className="relative h-2 flex-1 rounded-full bg-secondary overflow-hidden">
             <motion.div
-              className="absolute inset-y-0 left-0 rounded-full bg-chart-1"
+              className="absolute inset-y-0 left-0 rounded-full bg-primary"
               initial={{ width: 0 }}
               animate={{ width: `${Math.max(stats.progress * 100, 2)}%` }}
               transition={{ duration: 0.8, ease: "easeOut" }}

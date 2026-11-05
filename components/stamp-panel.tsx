@@ -65,7 +65,7 @@ export function StampPanel({ game, playedMinutes, rule, onArrived }: StampPanelP
         type="button"
         onClick={confirm}
         disabled={isPending}
-        className="mt-3 min-h-11 w-full rounded-xl bg-success px-4 text-sm font-semibold text-success-foreground disabled:opacity-50"
+        className="mt-3 min-h-11 w-full rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight disabled:opacity-50"
       >
         {isPending ? "Moving in..." : "Let it move in"}
       </button>

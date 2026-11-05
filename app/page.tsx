@@ -6,6 +6,7 @@ import {
   getActiveGame,
   getSessionHistory,
   getPlayerStats,
+  getCompletedGames,
   getBoosterPackStatus,
   backfillXP,
   getResidents,
@@ -54,6 +55,7 @@ export default async function HomePage({
     getSessionHistory(),
     getPlayerStats(),
     getResidents(),
+    getCompletedGames(),
     getPostcards(),
     getStampRules(),
     getNameCard(),
@@ -64,9 +66,10 @@ export default async function HomePage({
   sessionHistory = results[3]
   playerStats = results[4]
   const residents = results[5]
-  const postcards = results[6]
-  const stampRules = results[7]
-  const nameCard = results[8]
+  const completedGames = results[6]
+  const postcards = results[7]
+  const stampRules = results[8]
+  const nameCard = results[9]
 
   if (!profile) {
     redirect("/auth/login")
@@ -96,6 +99,7 @@ export default async function HomePage({
       sessionHistory={sessionHistory}
       playerStats={playerStats}
       residents={residents}
+      completedGames={completedGames}
       postcards={postcards}
       stampRules={stampRules}
       nameCard={nameCard}

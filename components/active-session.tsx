@@ -7,7 +7,6 @@ import {
   updateSessionGoal,
   markGameBeaten,
   abandonGame,
-  saveStandbyPreferences,
   getResidents,
 } from "@/app/actions"
 import type { Session, Game, SessionStatus, Resident } from "@/lib/types"
@@ -16,7 +15,6 @@ import { useXPToast } from "./xp-toast"
 import { StillPlayingModal } from "./still-playing-modal"
 import * as Dialog from "@radix-ui/react-dialog"
 import { StandbySession } from "./standby-session"
-import { StandbyPreferencesForm } from "./standby-preferences"
 import type { StandbyPreferences } from "@/lib/types"
 import { getSessionElapsedSeconds } from "@/lib/session-time"
 import { SessionNotesSaveError, type SessionNotesController } from "@/hooks/use-session-notes"
@@ -31,7 +29,6 @@ interface ActiveSessionProps {
   onSessionUpdated?: (updates: Partial<Session>) => void
   onArrived?: (game: Game) => void
   standbyPreferences: StandbyPreferences
-  onPreferencesSaved: (preferences: StandbyPreferences) => void
   syncError: string | null
   onRetry: () => void
   onMutationStart: () => void
@@ -53,14 +50,20 @@ export function ActiveSession(props: ActiveSessionProps) {
   return <ActiveSessionContent key={props.session.id} {...props} />
 }
 
-function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived, standbyPreferences, onPreferencesSaved, syncError, onRetry, onMutationStart, onMutationEnd, notesController }: ActiveSessionProps) {
+function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived, standbyPreferences, syncError, onRetry, onMutationStart, onMutationEnd, notesController }: ActiveSessionProps) {
   const [status, setStatus] = useState<SessionStatus>(session.status)
   const [isPending, startTransition] = useTransition()
   const [elapsed, setElapsed] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [residents, setResidents] = useState<Resident[]>([])
   const { draft: notes, error: notesError, saveState: notesSaveState, flush: flushNotes, getDraft } = notesController
-  const notesMessage = notesSaveState === "saved" ? "Notes saved." : notesSaveState === "acknowledged" ? "Notes acknowledged. The final draft will be saved again when finishing." : notesSaveState === "saving" ? "Saving notes..." : notesSaveState === "error" ? "Notes not saved. Your draft is still here." : "Notes not saved yet."
+  const notesMessage = notesSaveState === "acknowledged"
+    ? "Notes acknowledged. The final draft will be saved again when finishing."
+    : notesSaveState === "saving"
+      ? "Saving notes..."
+      : notesSaveState === "error"
+        ? "Notes not saved. Your draft is still here."
+        : null
   const showTimer = standbyPreferences.show_clock && session.record_time !== false
   const [standby, setStandby] = useState(false)
   const [sessionGoal, setSessionGoal] = useState(session.session_goal || "")
@@ -286,21 +289,20 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
   return (
     <Dialog.Root open={standby} onOpenChange={setStandby}>
     <div className="session-stage mx-auto w-full max-w-[1440px] px-4 pb-8 md:px-8">
-      <div className="relative h-[48dvh] min-h-56 max-h-[650px] overflow-hidden rounded-t-xl">
+      <div data-testid="now-playing-artwork" className="relative mx-auto aspect-video w-full max-w-[960px] overflow-hidden rounded-xl">
         <GameArtwork
           src={game.header_image}
           alt={game.name}
-          sizes="(min-width: 1440px) 1376px, 100vw"
+          sizes="(min-width: 960px) 960px, calc(100vw - 2rem)"
           className="absolute inset-0"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
 
-        {/* Resume shimmer — a light sweep across the cover art */}
         <AnimatePresence>
           {shimmer && (
             <motion.div
-              className="absolute inset-0 pointer-events-none"
+              className="pointer-events-none absolute inset-0"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -309,7 +311,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
               <motion.div
                 className="absolute inset-y-0 w-1/3"
                 style={{
-                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
+                  background: "linear-gradient(90deg, transparent, color-mix(in srgb, var(--foreground) 8%, transparent), transparent)",
                 }}
                 initial={{ left: "-33%" }}
                 animate={{ left: "133%" }}
@@ -319,58 +321,60 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
           )}
         </AnimatePresence>
 
-        <div className="absolute bottom-4 left-6 right-6 flex items-end justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <h1 className="break-words text-3xl font-semibold text-foreground leading-tight md:text-4xl">
-              {game.name}
-            </h1>
-          </div>
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-end p-3 sm:p-6">
+          <h1 className="hidden min-w-0 flex-1 break-words text-3xl font-semibold leading-tight text-white lg:block">
+            {game.name}
+          </h1>
+          {!isLockedIn ? (
+            <Dialog.Trigger asChild>
+              <button
+                className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-white/25 bg-black/70 px-3 text-sm font-medium text-white transition-colors hover:bg-black/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-4"
+                onClick={() => setShowNudge(false)}
+              >
+                Enter StandBy
+                <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 17 17 7M7 7h10v10" />
+                </svg>
+              </button>
+            </Dialog.Trigger>
+          ) : null}
         </div>
       </div>
+      <h1 className="mx-auto mt-3 w-full max-w-[960px] break-words text-2xl font-semibold leading-tight text-foreground lg:hidden">
+        {game.name}
+      </h1>
 
-      <div className="flex min-w-0 flex-col">
-        <div role="group" aria-label="Session controls" className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-b-xl bg-card px-4 py-4 md:px-6">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 max-sm:w-full sm:mr-auto">
-          <span className={`inline-flex items-center gap-2 text-sm ${isPaused ? "text-info" : isPlaying ? "text-success" : "text-primary"}`}>
-            <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-current" />
-            {isPaused ? "Paused" : isPlaying ? "Playing" : "Ready"}
-          </span>
-          <span className="text-sm tabular-nums text-muted-foreground" aria-label={syncError ? "Last known session time" : "Session time"}>
-            {showTimer
-              ? isLockedIn
-                ? `~${game.time_to_beat_minutes ?? game.estimated_session_length ?? DEFAULT_ESTIMATED_MINUTES}m estimated`
-                : `${formatTime(elapsed)} ${syncError ? "last known" : "played"}`
-              : session.record_time === false ? "Untracked" : "Clock hidden"}
-          </span>
-          <button
-            onClick={() => {
-              const next = { ...standbyPreferences, show_clock: !standbyPreferences.show_clock }
-              startTransition(async () => {
-                try {
-                  await saveStandbyPreferences(next)
-                  onPreferencesSaved(next)
-                } catch (cause) {
-                  setError(cause instanceof Error ? cause.message : "Could not save clock preference.")
-                }
-              })
-            }}
-            disabled={isPending || session.record_time === false}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
-            aria-label={showTimer ? "Hide timer" : "Show timer"}
-          >
-            {showTimer && session.record_time !== false ? (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-              </svg>
+      <div className="mt-4 flex min-w-0 flex-col">
+        <div
+          role="group"
+          aria-label={`Session controls, ${status.toLowerCase()}`}
+          className="grid min-w-0 gap-4 rounded-xl border border-border bg-card px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center md:px-6"
+        >
+          <div className="min-w-0">
+            {showTimer ? (
+              isLockedIn ? (
+                <p className="text-lg tabular-nums text-muted-foreground">
+                  ~{game.time_to_beat_minutes ?? game.estimated_session_length ?? DEFAULT_ESTIMATED_MINUTES}m estimated
+                </p>
+              ) : (
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <time
+                    dateTime={`PT${elapsed}S`}
+                    aria-label={syncError ? "Last known elapsed session time" : "Elapsed session time"}
+                    className="text-4xl font-semibold leading-none tracking-tight tabular-nums text-foreground sm:text-5xl"
+                  >
+                    {formatTime(elapsed)}
+                  </time>
+                  {syncError ? <span className="text-sm text-muted-foreground">Last known</span> : null}
+                </div>
+              )
             ) : (
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              <p className="text-sm text-muted-foreground">
+                {session.record_time === false ? "Untracked" : "Clock hidden"}
+              </p>
             )}
-          </button>
-        </div>
-        <fieldset disabled={isPending || !!syncError} className="flex min-w-0 flex-wrap items-center gap-3 max-sm:flex-1">
+          </div>
+          <fieldset disabled={isPending || !!syncError} className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap">
           {isLockedIn && (
             <button
               onClick={() => transition("Playing")}
@@ -429,12 +433,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
               </button>
             </>
           )}
-        </fieldset>
-        {!isLockedIn ? <Dialog.Trigger asChild>
-          <button className="flex min-h-11 items-center justify-between gap-6 rounded-lg border border-border px-4 py-3 text-sm transition-colors hover:bg-background max-sm:w-full" onClick={() => setShowNudge(false)}>
-            Enter StandBy <span aria-hidden="true">&#8599;</span>
-          </button>
-        </Dialog.Trigger> : null}
+          </fieldset>
         </div>
 
         {syncError ? <div role="alert" className="px-4 py-3 text-sm text-muted-foreground md:px-6">
@@ -443,7 +442,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
         {autoPaused && isPaused ? <p role="status" className="px-4 py-3 text-sm text-info md:px-6">Auto-paused after inactivity</p> : null}
         {(error || notesError) ? <p role="alert" className="px-4 py-3 text-sm text-destructive md:px-6">{error || notesError}</p> : null}
 
-        <div className="mt-6 grid min-w-0 gap-6 md:grid-cols-2">
+        <div className="mt-6 grid min-w-0 gap-6">
           {(isLockedIn || isPlaying || isPaused) && (
             <fieldset disabled={isPending || !!syncError} className="flex min-w-0 flex-col gap-2">
               <SessionNotepad
@@ -452,31 +451,18 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
                 onGoalSave={handleGoalSave}
                 onNotesChange={handleNotesChange}
               />
-              <p role="status" className="text-xs text-muted-foreground">{notesMessage}</p>
+              {notesMessage ? <p role="status" className="text-xs text-muted-foreground">{notesMessage}</p> : null}
             </fieldset>
           )}
-          <div className="min-w-0">
-            <details className="group border-b border-border">
-              <summary className="flex min-h-13 cursor-pointer items-center justify-between gap-3 text-sm">
-                <span>Time &amp; StandBy preferences</span>
-                <span aria-hidden="true" className="text-muted-foreground group-open:hidden">+</span>
-                <span aria-hidden="true" className="hidden text-muted-foreground group-open:inline">-</span>
-              </summary>
-              <div className="pb-4">
-                <StandbyPreferencesForm value={standbyPreferences} onSaved={onPreferencesSaved} />
-                <p className="mt-2 text-xs text-muted-foreground">This session: time recording {session.record_time === false ? "off" : "on"}. Recording changes apply to the next session.</p>
-              </div>
-            </details>
-            {residents.some(r => r.game_id === game.id) ? <p className="mt-4 text-sm text-muted-foreground">This game has moved into your home.</p> : null}
-            {session.progress && session.progress.total_sessions > 0 ? (
-              <p className="mt-4 text-sm text-muted-foreground">
-                {session.progress.total_sessions} {session.progress.total_sessions === 1 ? "session" : "sessions"}
-                {session.progress.total_time_minutes > 0 ? ` · ${session.progress.total_time_minutes >= 60
-                  ? `${Math.floor(session.progress.total_time_minutes / 60)}h ${session.progress.total_time_minutes % 60}m`
-                  : `${session.progress.total_time_minutes}m`} played` : ""}
-              </p>
-            ) : null}
-          </div>
+          {residents.some(r => r.game_id === game.id) ? <p className="text-sm text-muted-foreground">This game has moved into your home.</p> : null}
+          {session.progress && session.progress.total_sessions > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {session.progress.total_sessions} {session.progress.total_sessions === 1 ? "session" : "sessions"}
+              {session.progress.total_time_minutes > 0 ? ` · ${session.progress.total_time_minutes >= 60
+                ? `${Math.floor(session.progress.total_time_minutes / 60)}h ${session.progress.total_time_minutes % 60}m`
+                : `${session.progress.total_time_minutes}m`} played` : ""}
+            </p>
+          ) : null}
         </div>
       </div>
 

@@ -4,9 +4,29 @@ test("Home shows a calm empty state when nothing lives here yet", async ({ page 
   await page.goto("/?app-shell")
   await page.getByRole("button", { name: "Home" }).click()
 
-  await expect(page.getByText("Games you finish will live here.")).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Completed games" })).toBeVisible()
+  await expect(page.getByText("No completed games yet.")).toBeVisible()
   await expect(page.getByRole("heading", { name: "Lives here" })).toHaveCount(0)
   await expect(page.getByRole("heading", { name: "Archived" })).toHaveCount(0)
+})
+
+test("Completed games use a 4:3 carousel with separate completion and arrival stamps", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto("/?app-shell&completed-games&residents")
+  await page.getByRole("button", { name: "Home" }).click()
+
+  const carousel = page.getByRole("region", { name: "Completed game cards" })
+  await expect(carousel).toBeVisible()
+  await expect(carousel.getByText("Completed", { exact: true }).first()).toBeVisible()
+  await expect(carousel.getByText("Arrived", { exact: true })).toHaveCount(1)
+
+  const card = carousel.locator('[data-slot="carousel-item"] article').first()
+  await expect(card).toHaveCSS("aspect-ratio", "4 / 3")
+
+  const next = carousel.getByRole("button", { name: "Next slide" })
+  await expect(next).toBeEnabled()
+  await next.click()
+  await expect(carousel.getByRole("button", { name: "Previous slide" })).toBeEnabled()
 })
 
 test("With no homes, the settlement shows a first home plot and a way back", async ({ page }) => {

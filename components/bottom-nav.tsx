@@ -90,7 +90,7 @@ function NavItem({
       <div className="relative">
         <span
           className={`transition-colors ${
-            active ? "text-primary" : glow ? "text-amber-400" : "text-muted-foreground"
+            active ? "text-primary" : glow ? "text-primary" : "text-muted-foreground"
           }`}
         >
           {icon}
@@ -108,13 +108,13 @@ function NavItem({
             animate={{ scale: [1, 1.6, 1], opacity: [0.6, 0, 0.6] }}
             transition={{ repeat: 3, duration: 1.2 }}
             className="absolute inset-0 rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(245,158,11,0.4) 0%, transparent 70%)" }}
+            style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--primary) 40%, transparent) 0%, transparent 70%)" }}
           />
         )}
       </div>
       <span
-        className={`text-[10px] font-medium transition-colors ${
-          active ? "text-primary" : glow ? "text-amber-400" : "text-muted-foreground"
+        className={`text-xs font-medium transition-colors ${
+          active ? "text-primary" : glow ? "text-primary" : "text-muted-foreground"
         }`}
       >
         {label}

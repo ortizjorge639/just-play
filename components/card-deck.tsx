@@ -273,7 +273,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
             priority
             className="absolute inset-0"
           />
-          <div aria-hidden="true" className="absolute inset-0 z-[3] bg-gradient-to-t from-[#10130f]/95 via-[#10130f]/40 to-transparent" />
+          <div aria-hidden="true" data-testid="recommendation-art-overlay" className="recommendation-art-overlay absolute inset-0 z-[3]" />
           <div className="relative z-[4] grid gap-3 p-5 sm:p-7 lg:p-9">
             <p className="text-sm font-medium text-primary">{lockedGame ? "Ready to play" : `${displayGame.estimated_session_length} min · ${(displayGame.genres ?? []).slice(0, 3).join(" · ")}`}</p>
             <h2 className="max-w-[18ch] break-words text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">{displayGame.name}</h2>

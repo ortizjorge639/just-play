@@ -40,8 +40,8 @@ export function SessionNotepad({
   onGoalSave,
   onNotesChange,
 }: SessionNotepadProps) {
-  const [goalOpen, setGoalOpen] = useState(false)
-  const [notesOpen, setNotesOpen] = useState(false)
+  const [goalOpen, setGoalOpen] = useState(true)
+  const [notesOpen, setNotesOpen] = useState(true)
   const [currentPage, setCurrentPage] = useState(0)
   const pages = parsePages(notes)
   const [editingGoal, setEditingGoal] = useState(false)
@@ -94,25 +94,19 @@ export function SessionNotepad({
     setEditingGoal(true)
   }, [])
 
-  const usedPages = pages.filter(p => p.trim()).length
-
   return (
-    <div className="flex min-w-0 flex-col">
-      <div>
+    <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <section className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
         <button
           onClick={() => setGoalOpen(o => !o)}
           aria-expanded={goalOpen}
           aria-controls={goalOpen ? goalId : undefined}
-          className="flex min-h-13 w-full items-center gap-3 border-b border-border py-3 text-left transition-colors hover:text-primary"
+          className="flex min-h-11 w-full items-center gap-3 text-left transition-colors hover:text-primary"
         >
-          <span className="text-sm font-medium text-foreground flex-1 text-left truncate">
-            {goal || "Set a Goal"}
+          <span className="flex min-w-0 flex-1 items-baseline gap-3">
+            <span className="shrink-0 text-sm font-semibold text-foreground">Session goal</span>
+            {goal && !goalOpen ? <span className="truncate text-sm text-muted-foreground">{goal}</span> : null}
           </span>
-          {goal && !goalOpen && (
-            <span className="text-xs text-muted-foreground">
-              set
-            </span>
-          )}
           <svg
             className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${goalOpen ? "rotate-180" : ""}`}
             fill="none"
@@ -134,10 +128,9 @@ export function SessionNotepad({
               transition={{ duration: 0.2, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="py-4">
+              <div className="pt-4">
                 {editingGoal || !goal ? (
                   <div className="flex flex-col gap-3">
-                    {/* Preset bubbles — only when no goal is set */}
                     {!goal && !editingGoal && (
                       <div className="flex flex-wrap gap-2">
                         {GOAL_PRESETS.map(preset => (
@@ -152,14 +145,14 @@ export function SessionNotepad({
                       </div>
                     )}
 
-                    {/* Custom input — shown when editing or after picking a preset */}
                     {(editingGoal || goal) ? (
                       <>
                         <input
                           type="text"
                           value={goalDraft}
                           onChange={e => setGoalDraft(e.target.value)}
-                          placeholder="Type your goal..."
+                          aria-label="Session goal"
+                          placeholder="Set an intention for this session"
                           className="w-full bg-secondary/50 rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary min-h-[44px]"
                           onKeyDown={e => e.key === "Enter" && handleGoalSubmit()}
                           autoFocus
@@ -213,23 +206,16 @@ export function SessionNotepad({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </section>
 
-      <div>
+      <section className="min-w-0 rounded-xl border border-border bg-card p-4 sm:p-5">
         <button
           onClick={() => setNotesOpen(o => !o)}
           aria-expanded={notesOpen}
           aria-controls={notesOpen ? notesId : undefined}
-          className="flex min-h-13 w-full items-center gap-3 border-b border-border py-3 text-left transition-colors hover:text-primary"
+          className="flex min-h-11 w-full items-center gap-3 text-left transition-colors hover:text-primary"
         >
-          <span className="text-sm font-medium text-foreground flex-1 text-left">
-            Notes
-          </span>
-          {!notesOpen && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {usedPages > 0 ? `${usedPages} pg` : ""}
-            </span>
-          )}
+          <span className="flex-1 text-sm font-semibold text-foreground">Notes</span>
           <svg
             className={`h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 ${notesOpen ? "rotate-180" : ""}`}
             fill="none"
@@ -251,16 +237,10 @@ export function SessionNotepad({
               transition={{ duration: 0.2, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="relative mt-2">
-                <div className="relative flex flex-col overflow-hidden py-4">
-                  {/* Page header */}
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      Page {currentPage + 1}
-                    </span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {currentPage + 1}/10
-                    </span>
+              <div className="relative pt-4">
+                <div className="relative flex flex-col overflow-hidden">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs tabular-nums text-muted-foreground">{currentPage + 1}/10</span>
                   </div>
 
                   {/* Swipeable page area */}
@@ -284,7 +264,7 @@ export function SessionNotepad({
                             aria-label={`Session notes, page ${currentPage + 1}`}
                             value={pages[currentPage]}
                             onChange={e => handlePageEdit(e.target.value)}
-                            placeholder="Write something..."
+                            placeholder="Add a note for next time"
                             className="w-full min-h-[100px] rounded-lg border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring resize-y leading-relaxed"
                           />
                         </motion.div>
@@ -292,7 +272,6 @@ export function SessionNotepad({
                     </motion.div>
                   </div>
 
-                  {/* Page dots */}
                   <div className="flex items-center justify-center gap-1 pt-2 border-t border-border/20 mt-1">
                     <button
                       onClick={() => flipPage(-1)}
@@ -335,7 +314,7 @@ export function SessionNotepad({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </section>
     </div>
   )
 }

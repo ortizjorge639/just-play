@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { getActiveSession } from "@/app/actions"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
 import { useSessionNotes } from "@/hooks/use-session-notes"
@@ -19,8 +20,9 @@ import { ResidentArrivalCard } from "./resident-arrival-card"
 import { clearPersistedDeck } from "@/hooks/use-persisted-deck"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
-import { DEFAULT_STANDBY_PREFERENCES } from "./standby-preferences"
-import type { UserProfile, Game, Session, GameProgress, PlayerStats, Resident, Postcard, StampRule, NameCard } from "@/lib/types"
+import { DEFAULT_STANDBY_PREFERENCES, StandbyPreferencesForm } from "./standby-preferences"
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
+import type { UserProfile, Game, Session, GameProgress, CompletedGame, PlayerStats, Resident, Postcard, StampRule, NameCard } from "@/lib/types"
 
 type Tab = "deck" | "session" | "home" | "progress"
 
@@ -32,6 +34,7 @@ interface AppShellProps {
   sessionHistory: (Session & { games: Game })[]
   playerStats: PlayerStats | null
   residents?: Resident[]
+  completedGames?: CompletedGame[]
   postcards?: Postcard[]
   stampRules?: StampRule[]
   nameCard?: NameCard | null
@@ -48,6 +51,7 @@ export function AppShell({
   sessionHistory: initialHistory,
   playerStats,
   residents,
+  completedGames = [],
   postcards,
   stampRules: initialStampRules,
   nameCard: initialNameCard,
@@ -55,6 +59,7 @@ export function AppShell({
   isBoosterPack,
   boosterPackStatus,
 }: AppShellProps) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<Tab>(
     initialSession || activeGame ? "session" : "deck"
   )
@@ -119,6 +124,11 @@ export function AppShell({
     // Full reload to get updated history
     window.location.reload()
   }, [setActiveSession])
+
+  const handleGameBeaten = useCallback(() => {
+    setActiveTab("home")
+    router.refresh()
+  }, [router])
 
   // Finishing a game reloads the page, so the arrival is handed over through sessionStorage.
   const handleArrived = useCallback((game: Game) => {
@@ -208,9 +218,33 @@ export function AppShell({
               </svg>
             </button>
           )}
+          {visibleTab === "session" && activeSession ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  aria-label="Session preferences"
+                  title="Session preferences"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                  </svg>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" sideOffset={8} className="w-[min(24rem,calc(100vw-2rem))]">
+                <StandbyPreferencesForm value={standbyPreferences} onSaved={setStandbyPreferences} />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  This session&apos;s time recording is {activeSession.record_time === false ? "off" : "on"}.
+                  Changes apply to the next session.
+                </p>
+              </PopoverContent>
+            </Popover>
+          ) : null}
           <form action={signout} onSubmit={clearPersistedDeck}>
             <button
               type="submit"
+              aria-label="Sign out"
               className="flex min-h-11 items-center gap-1.5 rounded-lg border border-transparent px-3 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <svg
@@ -226,7 +260,7 @@ export function AppShell({
                   d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"
                 />
               </svg>
-              Sign out
+              <span className="hidden sm:inline">Sign out</span>
             </button>
           </form>
         </div>
@@ -271,7 +305,6 @@ export function AppShell({
                 onSessionUpdated={handleSessionUpdated}
                 onArrived={handleArrived}
                 standbyPreferences={standbyPreferences}
-                onPreferencesSaved={setStandbyPreferences}
                 syncError={syncError}
                 onRetry={refreshSession}
                 onMutationStart={beginMutation}
@@ -282,6 +315,7 @@ export function AppShell({
               <CurrentGame
                 gameProgress={activeGame}
                 onSessionStarted={handleSessionCreated}
+                onGameBeaten={handleGameBeaten}
                 syncError={syncError}
                 onRetry={refreshSession}
                 stampRules={stampRules}
@@ -331,6 +365,7 @@ export function AppShell({
           >
             <HomeView
               residents={residents ?? []}
+              completedGames={completedGames}
               postcards={postcards ?? []}
               invitedGame={activeGame && !(residents ?? []).some(r => r.game_id === activeGame.game_id) ? activeGame.game : null}
             />
