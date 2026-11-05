@@ -30,11 +30,19 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
   const [error, setError] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(!onboardingComplete)
   const [packOpened, setPackOpened] = useState(false)
+  const [boosterDismissed, setBoosterDismissed] = useState(false)
   const [showBoosterPack, setShowBoosterPack] = useState(false)
+  const [currentBoosterStatus, setCurrentBoosterStatus] = useState(boosterPackStatus)
   const showXPToast = useXPToast()
 
-  const handleBoosterPackOpened = useCallback((newGames: Game[]) => {
+  const dismissBoosterPack = useCallback(() => {
+    setShowBoosterPack(false)
+    setBoosterDismissed(true)
+  }, [])
+
+  const handleBoosterPackOpened = useCallback((newGames: Game[], nextStatus: { packsOpenedToday: number; packsRemaining: number }) => {
     setDeck(newGames)
+    setCurrentBoosterStatus(nextStatus)
     setPackOpened(true)
     setShowBoosterPack(false)
   }, [setDeck])
@@ -92,20 +100,18 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     })
   }, [lockedGame, onSessionCreated, showXPToast])
 
-  const cancelLockIn = useCallback(() => {
-    setLockedGame(null)
-  }, [])
   const focusedGame = deck.find((game) => game.id === focusedGameId) ?? deck[0]
   const displayGame = lockedGame ?? focusedGame
 
   // Show booster pack overlay only after onboarding is complete and when explicitly triggered
-  if (!lockedGame && onboardingComplete && ((isBoosterPack && !packOpened && deck.length === 0) || showBoosterPack)) {
+  if (!lockedGame && onboardingComplete && ((isBoosterPack && !packOpened && !boosterDismissed && deck.length === 0) || showBoosterPack)) {
     return (
       <>
         <BoosterPack
-          boosterPackStatus={boosterPackStatus || { packsOpenedToday: 0, packsRemaining: 3 }}
+          boosterPackStatus={currentBoosterStatus || { packsOpenedToday: 0, packsRemaining: 3 }}
           preferences={preferences}
           onPackOpened={handleBoosterPackOpened}
+          onCancel={dismissBoosterPack}
         />
         {/* Search FAB still available */}
         <GameSearch onGameSelected={addSearchedGame} />
@@ -138,7 +144,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                 Bring Back Last Card
               </button>
             )}
-            {boosterPackStatus && boosterPackStatus.packsRemaining > 0 && (
+            {currentBoosterStatus && currentBoosterStatus.packsRemaining > 0 && (
               <button
                 onClick={() => setShowBoosterPack(true)}
                 className={`h-12 rounded-xl px-8 text-sm font-semibold transition-colors active:scale-[0.98] min-h-[44px] flex items-center justify-center gap-2 ${
@@ -150,7 +156,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
                 </svg>
-                Open Booster Pack ({boosterPackStatus.packsRemaining} left)
+                Open Booster Pack ({currentBoosterStatus.packsRemaining} left)
               </button>
             )}
             <button
@@ -213,17 +219,20 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
               </li>
             ))}
           </ul>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {rejectedStack.length > 0 ? (
-              <button onClick={handleUndo} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-foreground hover:bg-secondary">
-                <span aria-hidden="true">↶</span> Undo skip
-              </button>
-            ) : null}
+          <div role="group" aria-label="Game recommendation actions" className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={rejectedStack.length === 0 || !!lockedGame}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span aria-hidden="true">↶</span> Undo skip
+            </button>
             <button
               type="button"
               onClick={() => handleSkip(displayGame)}
               disabled={!!lockedGame}
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
             >
               <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.25v13.5L19.5 12 5.25 5.25z" />
@@ -234,22 +243,25 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
               type="button"
               onClick={() => handleNotForMe(displayGame)}
               disabled={skipPending || !!lockedGame}
-              className="min-h-11 rounded-lg px-3 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50"
+              className="min-h-11 w-full rounded-lg px-3 text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50"
             >
               Don&apos;t suggest this game
             </button>
-            {boosterPackStatus && boosterPackStatus.packsRemaining > 0 && (
+            {currentBoosterStatus ? (
               <button
                 type="button"
                 onClick={() => setShowBoosterPack(true)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                disabled={currentBoosterStatus.packsRemaining <= 0}
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
                 </svg>
-                Booster pack ({boosterPackStatus.packsRemaining} left)
+                {currentBoosterStatus.packsRemaining > 0
+                  ? `Booster pack (${currentBoosterStatus.packsRemaining} left)`
+                  : "No packs left today"}
               </button>
-            )}
+            ) : <span aria-hidden="true" />}
           </div>
         </section>
 
@@ -276,14 +288,6 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
                     className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight disabled:cursor-wait disabled:opacity-60"
                   >
                     {isPending ? "Starting…" : <><svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor" /></svg>Start Playing</>}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cancelLockIn}
-                    disabled={isPending}
-                    className="inline-flex min-h-12 items-center gap-2 rounded-lg border border-white/35 px-5 font-medium text-white transition-colors hover:bg-white/10 disabled:opacity-50"
-                  >
-                    Change game
                   </button>
                 </>
               ) : (

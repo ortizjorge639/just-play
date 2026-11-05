@@ -1,20 +1,22 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { getBoosterPack, getRecommendations, recordBoosterPackOpen } from "@/app/actions"
 import type { Game, UserPreferences } from "@/lib/types"
 
 interface BoosterPackProps {
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
   preferences?: UserPreferences
-  onPackOpened: (games: Game[]) => void
+  onPackOpened: (games: Game[], status: { packsOpenedToday: number; packsRemaining: number }) => void
+  onCancel: () => void
 }
 
 type PackPhase = "idle" | "shaking" | "opening" | "revealing" | "done"
 
-export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: BoosterPackProps) {
+export function BoosterPack({ boosterPackStatus, preferences, onPackOpened, onCancel }: BoosterPackProps) {
   const hasPreferences = preferences && Object.keys(preferences).length > 0
+  const prefersReducedMotion = useReducedMotion()
   const [phase, setPhase] = useState<PackPhase>("idle")
   const [games, setGames] = useState<Game[]>([])
   const [revealedCount, setRevealedCount] = useState(0)
@@ -29,18 +31,24 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
       // Phase 1: Shaking
       setPhase("shaking")
 
-      // Record the opening and fetch games in parallel
-      // Users with preferences get personalized recommendations; others get featured games
-      const [, fetchedGames] = await Promise.all([
-        recordBoosterPackOpen(),
-        hasPreferences ? getRecommendations(preferences!) : getBoosterPack(),
-      ])
+      // Fetch first so a recommendation failure does not consume an opening.
+      const fetchedGames = hasPreferences && preferences
+        ? await getRecommendations(preferences)
+        : await getBoosterPack()
+      if (fetchedGames.length === 0) {
+        setError("No games are available for this pack. Your pack wasn't used.")
+        setPhase("idle")
+        return
+      }
+
+      await recordBoosterPackOpen()
 
       setGames(fetchedGames)
-      setStatus(prev => ({
-        packsOpenedToday: prev.packsOpenedToday + 1,
-        packsRemaining: prev.packsRemaining - 1,
-      }))
+      const nextStatus = {
+        packsOpenedToday: status.packsOpenedToday + 1,
+        packsRemaining: status.packsRemaining - 1,
+      }
+      setStatus(nextStatus)
 
       // Phase 2: Opening (tear open)
       setPhase("opening")
@@ -56,12 +64,12 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
       // Phase 4: Done — brief pause then send games to deck
       await new Promise(r => setTimeout(r, 600))
       setPhase("done")
-      onPackOpened(fetchedGames)
+      onPackOpened(fetchedGames, nextStatus)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to open pack")
       setPhase("idle")
     }
-  }, [status.packsRemaining, hasPreferences, preferences, onPackOpened])
+  }, [status, hasPreferences, preferences, onPackOpened])
 
   const isDisabled = status.packsRemaining <= 0
 
@@ -71,35 +79,21 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
         {phase === "idle" && (
           <motion.div
             key="idle"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+            animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
+            transition={prefersReducedMotion ? { duration: 0 } : undefined}
             className="flex flex-col items-center gap-6"
           >
             {/* Pack visual */}
             <motion.div
-             className="relative flex h-48 w-36 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/10 to-primary/30 border-2 border-primary/40 shadow-lg"
-              animate={{
-                boxShadow: [
-                 "0 0 20px rgba(0, 0, 0, 0.15)",
-                 "0 0 40px rgba(0, 0, 0, 0.25)",
-                 "0 0 20px rgba(0, 0, 0, 0.15)",
-                ],
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
+              aria-hidden="true"
+              data-testid="booster-pack-art"
+              className="relative flex h-48 w-36 items-center justify-center rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/30 via-primary/10 to-primary/30 shadow-lg"
             >
-              {/* Pack icon */}
               <svg className="h-16 w-16 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
               </svg>
-              {/* Sparkle decoration */}
-              <motion.div
-                className="absolute -top-2 -right-2 text-primary"
-                animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              >
-                ✦
-              </motion.div>
             </motion.div>
 
             <div className="text-center">
@@ -115,7 +109,7 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
               <motion.button
                 onClick={openPack}
                 disabled={isDisabled}
-                whileTap={isDisabled ? {} : { scale: 0.96 }}
+                whileTap={isDisabled || prefersReducedMotion ? {} : { scale: 0.96 }}
                 className={`h-14 w-full rounded-2xl text-base font-semibold transition-all min-h-[56px] ${
                   isDisabled
                     ? "bg-secondary text-muted-foreground cursor-not-allowed"
@@ -124,6 +118,14 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
               >
                 {isDisabled ? "No Packs Left Today" : "Open Booster Pack"}
               </motion.button>
+
+              <button
+                type="button"
+                onClick={onCancel}
+                className="min-h-11 w-full rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                Back to recommendations
+              </button>
 
               <span className="text-xs text-muted-foreground">
                 {status.packsRemaining} pack{status.packsRemaining !== 1 ? "s" : ""} remaining today
@@ -134,6 +136,7 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                role="alert"
                 className="text-sm text-destructive text-center"
               >
                 {error}
@@ -148,12 +151,16 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={prefersReducedMotion ? { duration: 0 } : undefined}
             className="flex flex-col items-center gap-6"
           >
             <motion.div
-              className="relative flex h-48 w-36 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 via-primary/10 to-primary/30 border-2 border-primary/40"
+              aria-hidden="true"
+              className="relative flex h-48 w-36 items-center justify-center rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/30 via-primary/10 to-primary/30"
               animate={
-                phase === "shaking"
+                prefersReducedMotion
+                  ? { opacity: phase === "opening" ? 0 : 1 }
+                  : phase === "shaking"
                   ? {
                       rotate: [-2, 2, -2, 2, -3, 3, -1, 1, 0],
                       scale: [1, 1.02, 1, 1.03, 1, 1.05, 1],
@@ -165,7 +172,9 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
                     }
               }
               transition={
-                phase === "shaking"
+                prefersReducedMotion
+                  ? { duration: 0 }
+                  : phase === "shaking"
                   ? { duration: 1.5, repeat: Infinity }
                   : { duration: 0.6 }
               }
@@ -174,7 +183,7 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
               </svg>
             </motion.div>
-            <p className="text-sm text-muted-foreground animate-pulse">
+            <p role="status" aria-live="polite" aria-atomic="true" className={`text-sm text-muted-foreground${prefersReducedMotion ? "" : " animate-pulse"}`}>
               {phase === "shaking" ? "Opening pack..." : "Revealing games..."}
             </p>
           </motion.div>
@@ -187,22 +196,22 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
             animate={{ opacity: 1 }}
             className="flex flex-col items-center gap-4"
           >
-            <div className="grid grid-cols-5 gap-2 max-w-xs">
+            <div className="grid w-full max-w-sm grid-cols-3 gap-3">
               {games.map((game, i) => (
-                <motion.div
+                <motion.figure
                   key={game.id}
-                  initial={{ rotateY: 180, scale: 0.5, opacity: 0 }}
+                  initial={prefersReducedMotion ? { opacity: 0 } : { rotateY: 180, scale: 0.5, opacity: 0 }}
                   animate={
                     i < revealedCount
-                      ? { rotateY: 0, scale: 1, opacity: 1 }
-                      : { rotateY: 180, scale: 0.5, opacity: 0 }
+                      ? prefersReducedMotion ? { opacity: 1 } : { rotateY: 0, scale: 1, opacity: 1 }
+                      : prefersReducedMotion ? { opacity: 0 } : { rotateY: 180, scale: 0.5, opacity: 0 }
                   }
                   transition={{
-                    type: "spring",
-                    stiffness: 260,
-                    damping: 20,
+                    ...(prefersReducedMotion
+                      ? { duration: 0 }
+                      : { type: "spring" as const, stiffness: 260, damping: 20 }),
                   }}
-                  className="aspect-[3/4] rounded-lg overflow-hidden border border-border/50 bg-secondary"
+                  className="min-w-0 overflow-hidden rounded-lg border border-border/50 bg-secondary"
                 >
                   {game.header_image && (
                     // next.config sets images.unoptimized, so next/image adds nothing here
@@ -210,15 +219,21 @@ export function BoosterPack({ boosterPackStatus, preferences, onPackOpened }: Bo
                     <img
                       src={game.header_image}
                       alt={game.name}
-                      className="w-full h-full object-cover"
+                      className="aspect-[3/4] w-full object-cover"
                     />
                   )}
-                </motion.div>
+                  <figcaption className="line-clamp-2 min-h-10 px-2 py-1.5 text-center text-xs font-medium text-foreground">
+                    {game.name}
+                  </figcaption>
+                </motion.figure>
               ))}
             </div>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
               className="text-sm text-muted-foreground"
             >
               {revealedCount} of {games.length} games revealed
