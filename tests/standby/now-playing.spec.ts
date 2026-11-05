@@ -77,7 +77,7 @@ test("untracked sessions never display an elapsed measurement in the action stri
   await expect(controls.getByRole("button", { name: /timer/i })).toHaveCount(0)
 })
 
-test("StandBy renders full-screen ASCII game art behind the session controls", async ({ page }) => {
+test("StandBy renders full-screen dithered game art behind the session controls", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/")
   await page.getByRole("button", { name: "Enter StandBy" }).click()
@@ -93,7 +93,7 @@ test("StandBy renders full-screen ASCII game art behind the session controls", a
   })).toBe(true)
 })
 
-test("StandBy keeps its ASCII art while honoring reduced motion", async ({ page }) => {
+test("StandBy keeps its dithered art while honoring reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
   await page.getByRole("button", { name: "Enter StandBy" }).click()
