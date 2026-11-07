@@ -37,6 +37,7 @@ function StampGameHarness(props: {
   </>
 }
 const params = new URLSearchParams(window.location.search)
+if (params.has("remote-art")) game.header_image = "https://artwork-fixture.invalid/cover.svg"
 if (params.has("untracked")) fixture.session = { ...initialSession, record_time: false }
 if (params.has("locked")) fixture.session = { ...initialSession, status: "LockedIn" }
 if (params.has("active-game")) fixture.session = null
