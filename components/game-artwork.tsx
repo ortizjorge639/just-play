@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useCallback, useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 interface GameArtworkProps {
   src: string
@@ -23,6 +23,7 @@ export function GameArtwork({
   const imageRef = useRef<HTMLImageElement>(null)
   const artRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [corsFailedSrc, setCorsFailedSrc] = useState<string | null>(null)
 
   const renderDither = useCallback(() => {
     const image = imageRef.current
@@ -107,12 +108,18 @@ export function GameArtwork({
       <Image
         ref={imageRef}
         src={src}
+        crossOrigin={corsFailedSrc === src ? undefined : "anonymous"}
         alt={alt}
         fill
         sizes={sizes}
         priority={priority}
         className={`object-cover ${imageClassName}`}
         onLoad={renderDither}
+        onError={() => {
+          if (corsFailedSrc === src) return
+          console.warn("[game-artwork] Canvas-safe image loading failed; retrying without the overlay.", src)
+          setCorsFailedSrc(src)
+        }}
       />
       <canvas ref={canvasRef} aria-hidden="true" className="game-art-dither" />
     </div>

@@ -52,6 +52,14 @@ Appearance overlay and pause/resume controls. Compact layouts retain accessible
 names on icon buttons. Physical iOS/Android browser chrome still needs a device
 check; viewport tests cannot certify it.
 
+Remote-art fixtures also exercise native CORS image loading for both artwork
+renderers. Production IGDB covers permit anonymous CORS requests; images load
+with `crossOrigin="anonymous"` so canvas readback can create the effects.
+Hosts that do not allow CORS fall back to visible plain artwork with a warning
+rather than breaking the image. Remote fixtures use the real Next Image
+component with the app's unoptimized loading mode; they do not certify deployment
+network behavior or image optimization.
+
 ## Shared-world regression and motion preferences
 
 ```sh

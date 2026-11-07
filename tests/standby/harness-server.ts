@@ -16,7 +16,7 @@ async function main() {
     outdir: path.resolve("tests", "standby", "build"),
     platform: "browser",
     jsx: "automatic",
-    define: { "process.env.NODE_ENV": '"development"' },
+    define: { "process.env.NODE_ENV": '"development"', "process.env": "{}" },
     alias: {
       "@/app/actions": path.resolve("tests", "standby", "mock-actions.ts"),
       "@/app/auth/actions": path.resolve("tests", "standby", "mock-actions.ts"),

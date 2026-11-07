@@ -1,5 +1,53 @@
 import { test, expect } from "@playwright/test"
 
+test("remote artwork renders dither and ASCII without tainting either canvas", async ({ page }) => {
+  await page.route("https://artwork-fixture.invalid/cover.svg", route => route.fulfill({
+    contentType: "image/svg+xml",
+    headers: { "Access-Control-Allow-Origin": "*" },
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#507050"/><circle cx="400" cy="300" r="180" fill="#e9be78"/></svg>',
+  }))
+  await page.goto("/?remote-art")
+  await page.getByRole("button", { name: /Enter StandBy/ }).click()
+  const field = page.getByTestId("standby-field")
+  const texture = page.getByTestId("standby-ascii")
+  await expect(texture).toHaveAttribute("data-rendered", "true")
+  await expect(field.locator("img")).toHaveAttribute("crossorigin", "anonymous")
+  await expect(field.locator(".game-art-dither")).toBeVisible()
+  const nonempty = () => texture.evaluate((canvas: HTMLCanvasElement) =>
+    canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data.some(value => value > 0))
+  expect(await nonempty()).toBe(true)
+  const checksum = () => texture.evaluate((canvas: HTMLCanvasElement) =>
+    canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data
+      .reduce((hash, value) => (hash * 31 + value) | 0, 0))
+  const dither = await checksum()
+  await page.getByRole("button", { name: "Appearance", exact: true }).click()
+  await page.getByLabel("Style", { exact: true }).selectOption("ascii")
+  await expect(field).toHaveAttribute("data-effect", "ascii")
+  await expect.poll(checksum).not.toBe(dither)
+  await expect.poll(nonempty).toBe(true)
+})
+
+test("remote artwork without CORS retains the image and reports unavailable effects", async ({ page }) => {
+  const warnings: string[] = []
+  page.on("console", message => {
+    if (message.type() === "warning") warnings.push(message.text())
+  })
+  await page.route("https://artwork-fixture.invalid/cover.svg", route => route.fulfill({
+    contentType: "image/svg+xml",
+    headers: { "Access-Control-Allow-Origin": "https://not-allowed.invalid" },
+    body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#507050"/></svg>',
+  }))
+  await page.goto("/?remote-art")
+  await page.getByRole("button", { name: /Enter StandBy/ }).click()
+  const field = page.getByTestId("standby-field")
+  await expect.poll(() => field.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true)
+  await expect(field.locator("img")).not.toHaveAttribute("crossorigin")
+  await expect(field.locator("img")).toBeVisible()
+  await expect(page.getByTestId("standby-ascii")).toBeHidden()
+  await expect.poll(() => warnings.some(message => message.includes("Canvas-safe image loading failed"))).toBe(true)
+  await expect.poll(() => warnings.some(message => message.includes("treatment unavailable"))).toBe(true)
+})
+
 test("artwork atmosphere survives blocked dither without depending on the clock or session status", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" })
   await page.addInitScript(() => {
