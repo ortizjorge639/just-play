@@ -21,7 +21,7 @@
 .landing-small { font-size: 12px; line-height: 1.7; color: #b7b5aa; max-width: 50ch; margin-top: 18px; }
 .landing-hero-art { position: relative; height: 460px; margin-left: 20px; }
 .landing-cover { position: absolute; aspect-ratio: 4/3; width: 95%; border: 1px solid #3a3d35; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 55px #0006; }
-.landing-cover img { object-fit: cover; }
+.landing-cover img { object-fit: contain; background: #141714; }
 .landing-cover-back { top: 0; left: 14%; transform: rotate(9deg); opacity: .7; }
 .landing-cover-front { top: 80px; left: 0; transform: rotate(-5deg); }
 .landing-cover-front > div { position: absolute; inset: 0; padding: 24px; display: flex; flex-direction: column; justify-content: end; background: linear-gradient(transparent 40%, #101b18ed); }

@@ -51,8 +51,8 @@ if (params.has("marketing")) {
     fixture.session = {
       ...fixture.session,
       started_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-      session_goal: "Build a small settlement",
-      notes: JSON.stringify(["Established the first settlement. Explore beyond the hills next time.", ...Array(9).fill("")]),
+      session_goal: "Try another escape",
+      notes: JSON.stringify(["Try a different weapon on the next escape attempt.", ...Array(9).fill("")]),
     }
   }
   if (params.has("discovery")) fixture.session = null
@@ -137,10 +137,13 @@ if (params.has("postcards")) {
 }
 const completedGames: CompletedGame[] = params.has("completed-games")
   ? Array.from({ length: params.has("marketing") ? marketingArtwork.length : 5 }, (_, i) => {
-    const completedGame = i === 0
+    const artwork = marketingArtwork[(i + 3) % marketingArtwork.length]
+    const completedGame = params.has("marketing")
+      ? { ...game, id: `completed-${artwork.id}`, name: artwork.name, header_image: artwork.image,
+        genres: artwork.genres, estimated_session_length: artwork.minutes, description: artwork.description }
+      : i === 0
       ? game
-      : { ...game, id: `completed-${i}`, name: params.has("marketing") ? demoNames[i] : `Completed game ${i + 1}`,
-        header_image: params.has("marketing") ? marketingArtwork[i].image : game.header_image }
+      : { ...game, id: `completed-${i}`, name: `Completed game ${i + 1}`, header_image: game.header_image }
     return {
       id: `progress-${completedGame.id}`,
       user_id: "test-user",
@@ -177,15 +180,15 @@ function Harness() {
   /> : <p role="status">Session ended on another device.</p>
 }
 const deckGames = params.has("deck")
-  ? ["A", "B"].map(k => ({
+  ? (params.has("marketing") ? ["A", "B", "C"] : ["A", "B"]).map((k, index) => ({
     ...game,
     id: `deck-${k}`,
     name: params.has("long-deck") && k === "A"
       ? "The Legend of Zelda: Tears of the Kingdom - A very long library title"
-      : params.has("marketing") ? (k === "A" ? demoNames[0] : demoNames[2]) : `Deck ${k}`,
-    header_image: params.has("marketing") ? marketingArtwork[k === "A" ? 0 : 2].image : game.header_image,
-    genres: params.has("marketing") ? marketingArtwork[k === "A" ? 0 : 2].genres : game.genres,
-    estimated_session_length: params.has("marketing") ? marketingArtwork[k === "A" ? 0 : 2].minutes : game.estimated_session_length,
+      : params.has("marketing") ? demoNames[index] : `Deck ${k}`,
+    header_image: params.has("marketing") ? marketingArtwork[index].image : game.header_image,
+    genres: params.has("marketing") ? marketingArtwork[index].genres : game.genres,
+    estimated_session_length: params.has("marketing") ? marketingArtwork[index].minutes : game.estimated_session_length,
   }))
   : []
 const app = params.has("app-shell")

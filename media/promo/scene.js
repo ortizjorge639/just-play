@@ -2,7 +2,7 @@ import * as THREE from "three"
 import marketingArtwork from "../../public/media/game-art/artwork.json"
 
 // THESIS: A crowded shelf becomes one invitation, not a feature-grid slideshow.
-// OWN-WORLD: Just Play's forest ink, amber, ivory, licensed real-game artwork.
+// OWN-WORLD: Just Play's forest ink, amber, ivory, recognizable catalog covers.
 // STORY: Too many choices → mood/energy/time → one game → a remembered session.
 // FIRST VIEWPORT: Large silent-readable hook; a physical river of game cards.
 // FORM: Brief-pinned 20-second cinematic flow; portrait and landscape reframing.
@@ -27,23 +27,15 @@ await document.fonts.ready
 const textures = await Promise.all(marketingArtwork.map(async artwork => {
   const source = await loader.loadAsync(artwork.image)
   const canvas = document.createElement("canvas")
-  canvas.width = 800
+  canvas.width = 400
   canvas.height = 600
   const context = canvas.getContext("2d")
   if (!context) throw new Error("Cover composition requires a 2D canvas")
   const image = source.image
-  const scale = Math.max(canvas.width / image.width, canvas.height / image.height)
+  const scale = Math.min(canvas.width / image.width, canvas.height / image.height)
   context.fillStyle = "#141714"
-  context.fillRect(0, 0, 800, 600)
-  context.drawImage(image, (800 - image.width * scale) / 2, (600 - image.height * scale) / 2, image.width * scale, image.height * scale)
-  const shade = context.createLinearGradient(0, 360, 0, 600)
-  shade.addColorStop(0, "transparent")
-  shade.addColorStop(1, "#141714")
-  context.fillStyle = shade
-  context.fillRect(0, 360, 800, 240)
-  context.fillStyle = "#f3efe3"
-  context.font = "700 60px system-ui"
-  context.fillText(artwork.name, 36, 552)
+  context.fillRect(0, 0, 400, 600)
+  context.drawImage(image, (400 - image.width * scale) / 2, (600 - image.height * scale) / 2, image.width * scale, image.height * scale)
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   source.dispose()
@@ -54,14 +46,14 @@ const screenTextures = await Promise.all(["now-playing", "standby", "home"].map(
   texture.colorSpace = THREE.SRGBColorSpace
   return texture
 }))
-const cards = Array.from({ length: 28 }, (_, i) => {
+const cards = Array.from({ length: 12 }, (_, i) => {
   const group = new THREE.Group()
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(2.08, 1.58, .065),
+    new THREE.BoxGeometry(1.08, 1.58, .065),
     new THREE.MeshStandardMaterial({ color: i % 4 === 0 ? "#e2b56c" : "#3a3d35", roughness: .6, metalness: .12 }),
   )
   const coverIndex = i === 1 ? 0 : i === 0 ? 1 : i % textures.length
-  const image = new THREE.Mesh(new THREE.PlaneGeometry(2, 1.5), new THREE.MeshBasicMaterial({ map: textures[coverIndex] }))
+  const image = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.5), new THREE.MeshBasicMaterial({ map: textures[coverIndex] }))
   image.position.z = .038
   group.add(body, image)
   scene.add(group)
@@ -102,7 +94,7 @@ window.renderFrame = time => {
   document.body.dataset.beat = String(beat)
   footer.style.opacity = time >= 17 ? "1" : "0"
   caption.textContent = time >= 10 && time < 17 ? "Actual app · staged demo data" : time >= 17
-    ? "Art: Wildfire Games · Endless Sky · Freedoom\nCC BY-SA 4.0 media · credits: /media/artwork-credits.txt"
+    ? "Covers: IGDB · respective game owners\nNo publisher endorsement · /media/artwork-credits.txt"
     : "Real-game artwork · no publisher endorsement"
 
   const converge = ease((time - 3.5) / 2.8)

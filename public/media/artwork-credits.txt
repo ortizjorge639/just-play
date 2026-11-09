@@ -1,48 +1,36 @@
-JUST PLAY — REAL-GAME DEMONSTRATION ARTWORK
+Just Play - catalog cover artwork
 
-The titles below identify the artwork's source. They do not imply partnership,
-endorsement, inclusion in the live curated catalog, or a connected game library.
-The app screenshots use staged demo records, not production player data.
+Game data and cover images sourced from IGDB: https://www.igdb.com/
+The six source URLs and catalog IDs are recorded in game-art/artwork.json.
 
-0 A.D. — Hellenes main-menu background
-Copyright (C) 2009 Wildfire Games.
-Original author: Wildfire Games — https://www.wildfiregames.com/
-Source:
-https://github.com/0ad/0ad/blob/61a3b9507d974084e6badb88a0826bd89a6d5b8b/binaries/data/mods/public/art/textures/ui/pregame/backgrounds/hellenes1-1.png
-License: Creative Commons Attribution-ShareAlike 3.0 Unported.
-https://creativecommons.org/licenses/by-sa/3.0/
-Source license notice: /media/game-art/zero-ad-license.txt
+Hades - Supergiant Games
+Stardew Valley - ConcernedApe
+Hollow Knight - Team Cherry
+Portal 2 - Valve
+Elden Ring - FromSoftware / Bandai Namco Entertainment
+Disco Elysium - ZA/UM
 
-Endless Sky — Plasma scene
-Author: 1010todd. Derived from works by Becca Tommaso, Darcy Manoel, and
-Michael Zahniser; incorporates a JSPlacement texture by WindMillArt.
-Source:
-https://github.com/endless-sky/endless-sky/blob/2d561107a62ae36301787c0d646b96a0baf59c57/images/scene/plasma%20scene.png
-Licensing record:
-https://github.com/endless-sky/endless-sky/blob/2d561107a62ae36301787c0d646b96a0baf59c57/copyright
-License: Creative Commons Attribution-ShareAlike 4.0 International.
-https://creativecommons.org/licenses/by-sa/4.0/
+Game artwork and trademarks belong to their respective rights holders.
+These covers identify games in staged demonstrations of Just Play's
+recommendation, session and history interfaces. No publisher endorsement,
+partnership, included game license, or game-launching capability is implied.
+The fixture records do not prove live database availability.
 
-FreeDM — title-screen template
-Copyright (C) 2001-2024 Contributors to the Freedoom project.
-Source:
-https://github.com/freedoom/freedoom/blob/ebe74f20bed2f4924f6bb72a7e5235e88ad7ecfa/graphics/titlepic/freedm_titlepic.png
-License: BSD-3-Clause. The complete copyright notice, conditions, and
-disclaimer accompany this distribution in /media/game-art/freedoom-license.txt.
-No contributor or project endorsement is implied.
+Source terms checked:
+https://api-docs.igdb.com/
+https://www.igdb.com/api
+https://www.twitch.tv/p/legal/developer-agreement/
 
-MODIFICATIONS AND ADAPTED MEDIA
-The original downloaded artwork files retain their source licenses above.
-Just Play crops/reframes these images, adds game-title text to reel cards,
-and displays them beneath the app's wash/dither treatment.
-The resulting screenshots, reel poster, social image, and both MP4 films are
-adapted media licensed under CC BY-SA 4.0. This is not a license change to
-Just Play's application code or a grant of rights in game trademarks.
-Credit the original authors above and Just Play contributors for these
-adaptations; retain this notice and links when sharing or adapting the media.
-https://creativecommons.org/licenses/by-sa/4.0/
+IGDB documents non-commercial API use and local caching. Its FAQ describes
+commercial partnerships and visible IGDB attribution. Just Play is currently
+non-commercial. These terms are not a blanket publisher copyright license
+or an explicit clearance for paid advertising or standalone promotional films.
+Recheck applicable terms before monetization, paid campaigns or other reuse.
 
-The movie's end credit references:
-v0-just-play-app.vercel.app/media/artwork-credits.txt
-Until deployed, distribute this file and the source license notices alongside
-the local video exports. The landing page exposes these credits next to the film.
+The screenshots and reel crop and frame source covers to demonstrate the app.
+The replacement media is NOT licensed CC BY-SA or represented as public domain.
+Attribution does not grant redistribution rights to the underlying covers.
+The application-code license is unchanged.
+
+Earlier open-license assets remain in game-art/ with their original notices,
+but are not used in this version of the landing screenshots or reel.

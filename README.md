@@ -82,18 +82,19 @@ private routes retain their auth guard. `/media/` contains public-only exports;
 never put player data or private uploads there.
 
 The landing uses a curated-catalog promise, not Steam/library sync or game
-launching. It includes real app screenshots staged with demo records for 0 A.D.,
-Endless Sky, and FreeDM. These titles identify openly licensed artwork, not
-live-catalog availability or publisher endorsement. No production account or
+launching. It includes real app screenshots staged with demo records for Hades,
+Stardew Valley, Hollow Knight, Portal 2, Elden Ring, and Disco Elysium. Covers
+come from the existing IGDB seed catalog; fixtures do not prove live-catalog
+availability or publisher endorsement. No production account or
 licensed music was used. The prior original SVG illustrations remain source
 assets but are no longer used by the landing or film.
 
-`public/media/game-art/artwork.json` pins image sources, creators, and licenses.
-The downloaded 0 A.D. artwork is CC BY-SA 3.0, Endless Sky artwork CC BY-SA 4.0,
-and FreeDM artwork BSD-3-Clause. Source notices accompany the assets. Cropped,
-title-overlaid, and dithered adaptations (screenshots, share images, both films)
-are CC BY-SA 4.0; this does not change the application-code license or confer
-rights to game trademarks. Full attribution and redistribution terms are in
+`public/media/game-art/artwork.json` records source URLs, catalog IDs, and owners.
+IGDB documents non-commercial API use and caching; Just Play is currently
+non-commercial. This is not an explicit publisher license for promotional films
+or paid advertising. Recheck terms before monetization or other reuse.
+Replacement covers, screenshots and films are not CC BY-SA or public domain;
+the application-code license is unchanged. Source context and attribution are in
 `public/media/artwork-credits.txt`, linked on the page, shown in film end credits,
 and embedded in MP4 metadata. Keep these notices with exported videos.
 

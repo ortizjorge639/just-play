@@ -15,10 +15,7 @@ const fps = 30
 const duration = 20
 const composition = await build({ entryPoints: ["media/promo/scene.js"], bundle: true, write: false, format: "esm", minify: true })
 const html = await readFile("media/promo/index.html")
-const artworkCredits = [
-  await readFile(path.join(media, "artwork-credits.txt"), "utf8"),
-  await readFile(path.join(media, "game-art/freedoom-license.txt"), "utf8"),
-].join("\n\n")
+const artworkCredits = await readFile(path.join(media, "artwork-credits.txt"), "utf8")
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url, "http://localhost")
@@ -28,7 +25,7 @@ const server = createServer(async (request, response) => {
     const isArtwork = marketingArtwork.some(artwork => artwork.image === url.pathname)
     if (!url.pathname.startsWith("/media/") || (!isArtwork && name.includes("/")) || name.includes("..")) { response.writeHead(404).end(); return }
     const content = await readFile(path.join(media, name))
-    response.setHeader("Content-Type", name.endsWith(".svg") ? "image/svg+xml" : "image/png")
+    response.setHeader("Content-Type", name.endsWith(".svg") ? "image/svg+xml" : name.endsWith(".jpg") ? "image/jpeg" : "image/png")
     response.end(content)
   } catch (error) {
     console.error(error)
@@ -68,7 +65,7 @@ async function encode(width, height, name) {
     await page.screenshot({ path: path.join(frames, `${String(frame).padStart(5, "0")}.jpg`), type: "jpeg", quality: 92 })
     if (frame % 150 === 0) console.log(`${name}: ${frame}/${fps * duration} frames`)
   }
-  const ffmpeg = spawn("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", "-framerate", String(fps), "-i", path.join(frames, "%05d.jpg"), "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p", "-metadata", `comment=${artworkCredits}`, "-metadata", "copyright=Adapted media: CC BY-SA 4.0; source artwork licenses and credits in comment", "-movflags", "+faststart", path.join(media, `just-play-${name}.mp4`)], { stdio: "inherit" })
+  const ffmpeg = spawn("ffmpeg", ["-y", "-hide_banner", "-loglevel", "error", "-framerate", String(fps), "-i", path.join(frames, "%05d.jpg"), "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p", "-metadata", `comment=${artworkCredits}`, "-metadata", "copyright=Game artwork belongs to respective rights holders; IGDB sources and context in comment", "-movflags", "+faststart", path.join(media, `just-play-${name}.mp4`)], { stdio: "inherit" })
   const [code] = await once(ffmpeg, "exit")
   assert.equal(code, 0, "Video encoding failed")
   if (name === "wide") {

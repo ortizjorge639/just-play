@@ -48,7 +48,7 @@ async function main() {
     const url = request.url || "/"
     const asset = assets.get(url) ?? marketingAssets.get(url) ?? (url === "/fixture-art.svg" ? fixtureArt : url === "/canopy/r1-4f33b632.glb" ? robot : url === "/style.css" ? css.css : canopyAssets.get(url) ?? html)
     response.setHeader("Content-Type", url.endsWith(".js") ? "application/javascript"
-      : url.endsWith(".css") ? "text/css" : url.endsWith(".glb") ? "model/gltf-binary" : url.endsWith(".svg") ? "image/svg+xml" : url.endsWith(".png") ? "image/png" : "text/html")
+      : url.endsWith(".css") ? "text/css" : url.endsWith(".glb") ? "model/gltf-binary" : url.endsWith(".svg") ? "image/svg+xml" : url.endsWith(".png") ? "image/png" : url.endsWith(".jpg") ? "image/jpeg" : "text/html")
     response.end(asset)
   }).listen(Number(process.env.STANDBY_TEST_PORT || "4387"), "127.0.0.1")
 }

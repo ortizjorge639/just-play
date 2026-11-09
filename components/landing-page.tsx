@@ -5,13 +5,13 @@ import "./landing-page.css"
 import marketingArtwork from "../public/media/game-art/artwork.json"
 
 const screenshots = [
-  { id: "discover", title: "Find your kind of tonight.", description: "Choose your mood, energy, and time. Get a small set of games from a curated catalog—not another endless list.", image: "discovery", alt: "Staged Discovery screen with a 0 A.D. recommendation and skip and lock-in controls" },
+  { id: "discover", title: "Find your kind of tonight.", description: "Choose your mood, energy, and time. Get a small set of games from a curated catalog—not another endless list.", image: "discovery", alt: "Staged Discovery screen with Hades, Stardew Valley and Hollow Knight recommendations" },
   { id: "playing", title: "One game. Your pace.", description: "Lock in a choice, set a session goal, and leave a note for next time. Just Play helps you choose; you launch and play the game yourself.", image: "now-playing", alt: "Demo Now Playing screen with session timer, goal, and notes" },
-  { id: "standby", title: "Make room for the moment.", description: "Leave StandBy beside your game. Dithered artwork, color choices, and optional motion give your session a little atmosphere.", image: "standby", alt: "Staged StandBy screen with dithered 0 A.D. artwork and session controls" },
+  { id: "standby", title: "Make room for the moment.", description: "Leave StandBy beside your game. Dithered artwork, color choices, and optional motion give your session a little atmosphere.", image: "standby", alt: "Staged StandBy screen with dithered Hades artwork and session controls" },
   { id: "home", title: "See how far you've wandered.", description: "Keep session history and a gallery of games you've marked beaten. No race to finish everything.", image: "home", alt: "Demo Home screen showing completed games as artwork cards" },
 ]
 
-const visualContract = "<!-- THESIS: A shelf becomes one invitation, not a feature-grid pitch. OWN-WORLD: Forest ink, ivory, amber, licensed real-game artwork, solid native controls. STORY: Understand the curated-catalog recommendation loop, inspect the real app, then choose a game. FIRST VIEWPORT: Large left-hand backlog headline and signup action; two right-hand covers resolve to one choice. FORM: Brief-pinned cinematic flow, followed by alternating product evidence; static mobile reflow and user-controlled film. -->"
+const visualContract = "<!-- THESIS: A shelf becomes one invitation, not a feature-grid pitch. OWN-WORLD: Forest ink, ivory, amber, recognizable catalog covers, solid native controls. STORY: Understand the curated-catalog recommendation loop, inspect the real app, then choose a game. FIRST VIEWPORT: Large left-hand backlog headline and signup action; two right-hand covers resolve to one choice. FORM: Brief-pinned cinematic flow, followed by alternating product evidence; static mobile reflow and user-controlled film. -->"
 
 export function LandingPage() {
   return (
@@ -41,7 +41,7 @@ export function LandingPage() {
         <div className="landing-hero-art">
           <div className="landing-cover landing-cover-back"><Image src={marketingArtwork[1].image} alt="" fill sizes="35vw" /></div>
           <div className="landing-cover landing-cover-front">
-            <Image src={marketingArtwork[0].image} alt="0 A.D. artwork showing an ancient temple above a mountain valley" fill sizes="(max-width: 800px) 80vw, 40vw" priority />
+            <Image src={marketingArtwork[0].image} alt="Hades game cover" fill sizes="(max-width: 800px) 80vw, 40vw" priority />
             <div><span>Tonight, not someday.</span><strong>Just one good choice.</strong></div>
           </div>
           <a className="landing-art-note" href="/media/artwork-credits.txt">Real game artwork · credits</a>
@@ -58,13 +58,13 @@ export function LandingPage() {
           <track kind="captions" src="/media/reel.vtt" srcLang="en" label="English" default />
           Your browser cannot play the film. <a href="/media/just-play-wide.mp4">Download the MP4</a>.
         </video>
-        <details className="landing-transcript"><summary>Read the film transcript and artwork credits</summary><p>So many games. What fits tonight? Mood. Energy. Time. One good choice. Settle in. Keep your journey. Just Play. Flow through your backlog. Find your next game from a curated catalog.</p><p>Artwork: Wildfire Games; Endless Sky contributors; Freedoom contributors. Adapted media: CC BY-SA 4.0. <a href="/media/artwork-credits.txt">Full credits, sources, licenses, and sharing terms</a>.</p></details>
+        <details className="landing-transcript"><summary>Read the film transcript and artwork credits</summary><p>So many games. What fits tonight? Mood. Energy. Time. One good choice. Settle in. Keep your journey. Just Play. Flow through your backlog. Find your next game from a curated catalog.</p><p>Game data and covers from <a href="https://www.igdb.com/">IGDB</a>. Artwork belongs to the respective game owners; no publisher endorsement is implied. <a href="/media/artwork-credits.txt">Full credits and source terms</a>.</p></details>
       </section>
 
       <section id="how-it-works" className="landing-product" aria-labelledby="product-title">
         <div className="landing-section-head">
           <h2 id="product-title">Here&apos;s what<br />you&apos;re getting into.</h2>
-          <p>Actual app screens, staged with demo data<br />and openly licensed real-game artwork.</p>
+          <p>Actual app screens, staged with demo data<br />and covers from our curated catalog.</p>
         </div>
         {screenshots.map((screen, index) => (
           <article key={screen.id} id={screen.id} className={`landing-feature ${index % 2 ? "landing-feature-reverse" : ""}`}>
@@ -79,7 +79,7 @@ export function LandingPage() {
         ))}
       </section>
 
-      <p className="landing-demo-disclaimer">These demo titles illustrate the interface, not live catalog availability or publisher endorsement. <a href="/media/artwork-credits.txt">Artwork credits and media license</a>.</p>
+      <p className="landing-demo-disclaimer">These demo titles illustrate the interface, not live catalog availability or publisher endorsement. Game data and covers: <a href="https://www.igdb.com/">IGDB</a>. <a href="/media/artwork-credits.txt">Artwork credits and source terms</a>.</p>
 
       <section className="landing-faq" aria-labelledby="faq-title">
         <h2 id="faq-title">Before you jump in.</h2>

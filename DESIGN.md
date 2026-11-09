@@ -157,9 +157,10 @@ for this new surface, not changes to the product UI ramp.
 
 The signature composition is a pair of 4:3 artwork covers becoming one
 invitation, followed by a user-controlled film and actual staged app screens.
-The current real-game artwork uses verified open licenses and visible credits;
+The current real-game covers come from the existing IGDB catalog with visible credits;
 it demonstrates the UI without implying publisher endorsement or catalog
-availability. Source and adapted-media terms live in `/media/artwork-credits.txt`.
+availability. Source terms live in `/media/artwork-credits.txt`; replacement
+media does not inherit the earlier open-license artwork's CC BY-SA terms.
 Media does not autoplay or load Three.js on the landing page. The editable
 Three.js film uses the same palette and the system sans-serif fallback for
 offline deterministic capture; its two exports are reframed, not cropped.
