@@ -95,7 +95,7 @@ non-commercial. This is not an explicit publisher license for promotional films
 or paid advertising. Recheck terms before monetization or other reuse.
 Replacement covers, screenshots and films are not CC BY-SA or public domain;
 the application-code license is unchanged. Source context and attribution are in
-`public/media/artwork-credits.txt`, linked on the page, shown in film end credits,
+`public/media/artwork-credits.txt`, linked in the footer, shown in film end credits,
 and embedded in MP4 metadata. Keep these notices with exported videos.
 
 The 20-second silent-first Three.js film lives in `media/promo/`. Its H.264

@@ -165,8 +165,10 @@ Media does not autoplay or load Three.js on the landing page. The editable
 Three.js film uses the same palette and the system sans-serif fallback for
 offline deterministic capture; its two exports are reframed, not cropped.
 
-On phones, hero covers retain their portrait 2:3 shape, with a reserved credit
-row instead of letterboxed landscapes. The headline scales down to 40px on
+On phones, hero covers retain their portrait 2:3 shape instead of letterboxed
+landscapes. Attribution belongs in the footer, not the hero or repeated captions.
+Reel exports remain available as media assets, not a player-facing download CTA.
+The headline scales down to 40px on
 320px screens; the narrow wordmark is 20px and compact navigation is 12px
 inside 44px-tall targets. Mobile supporting notes use 14px; screenshot captions include
 an explicit 44px-tall full-size link. Navigation and footer respect safe areas.

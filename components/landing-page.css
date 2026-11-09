@@ -26,7 +26,6 @@
 .landing-cover-front > div { position: absolute; inset: 0; padding: 24px; display: flex; flex-direction: column; justify-content: end; background: linear-gradient(transparent 40%, #101b18ed); }
 .landing-cover-front span { font-size: 14px; color: #cbd6c5; }
 .landing-cover-front strong { font-size: clamp(20px, 2.5vw, 34px); letter-spacing: -.02em; }
-.landing-art-note { position: absolute; bottom: -28px; left: 10px; color: #b7b5aa; font-size: 12px; }
 .landing-film { background: #252a24; padding: 80px max(5%, calc((100vw - 1296px)/2)); }
 .landing-section-head { display: flex; justify-content: space-between; align-items: end; gap: 32px; margin-bottom: 38px; }
 .landing h2 { font-size: clamp(34px, 4vw, 56px); font-weight: 750; line-height: 1.08; letter-spacing: -.035em; }
@@ -36,7 +35,6 @@
 .landing-transcript { margin-top: 20px; color: #b7b5aa; font-size: 14px; }
 .landing-transcript summary { cursor: pointer; min-height: 44px; }
 .landing-transcript p { max-width: 70ch; line-height: 1.7; }
-.landing-demo-disclaimer { max-width: 850px; margin: 0 auto 65px; padding-inline: 5%; font-size: 12px; line-height: 1.7; color: #b7b5aa; }
 .landing-product { max-width: 1440px; margin: auto; padding: 110px 5% 0; scroll-margin-top: 30px; }
 .landing-feature { display: grid; grid-template-columns: .7fr 1.3fr; align-items: center; gap: 64px; margin: 90px 0 120px; }
 .landing-feature h3 { font-size: clamp(28px, 3vw, 42px); font-weight: 700; letter-spacing: -.03em; line-height: 1.1; max-width: 14ch; }
@@ -45,7 +43,6 @@
 .landing-feature figure img { display: block; width: 100%; height: auto; border: 1px solid #3a3d35; border-radius: 12px; box-shadow: 0 16px 40px #0003; }
 .landing-feature figcaption { color: #b7b5aa; font-size: 12px; margin-top: 12px; }
 .landing-feature figcaption a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; }
-.landing-feature figcaption span { display: block; }
 .landing-feature-reverse { grid-template-columns: 1.3fr .7fr; }
 .landing-feature-reverse figure { grid-column: 1; grid-row: 1; }
 .landing-feature-reverse .landing-feature-copy { grid-column: 2; }
@@ -61,7 +58,7 @@
 .landing-outro p { font-size: 14px; margin-top: 20px; }
 .landing-outro p a { text-decoration: underline; }
 .landing-footer { font-size: 12px; color: #b7b5aa; padding-bottom: max(28px, env(safe-area-inset-bottom, 0px)); }
-.landing-footer > a { display: inline-flex; align-items: center; min-height: 44px; }
+.landing-footer > a { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
 @media (max-width: 800px) {
   .landing-nav { padding: max(16px, env(safe-area-inset-top, 0px)) 5% 16px; gap: 16px; }
   .landing-nav nav { gap: 14px; }
@@ -74,7 +71,6 @@
   .landing-cover-front { top: 32px; left: 8%; }
   .landing-cover-front > div { padding: 16px; }
   .landing-cover-front strong { font-size: 20px; }
-  .landing-art-note { bottom: 0; left: 8%; min-height: 44px; display: inline-flex; align-items: center; }
   .landing-film { padding: 55px 5%; }
   .landing-section-head { flex-direction: column; align-items: start; gap: 20px; }
   .landing-product { padding-top: 65px; }
@@ -83,10 +79,8 @@
   .landing-feature h3 { max-width: 20ch; }
   .landing-feature p { max-width: 50ch; margin-top: 12px; }
   .landing-feature figcaption { font-size: 14px; }
-  .landing-demo-disclaimer { font-size: 14px; }
   .landing-outro { padding: 64px 5%; }
   .landing-footer { flex-wrap: wrap; }
-  .landing-footer > span { display: none; }
 }
 @media (max-width: 420px) {
   .landing-wordmark { font-size: 20px; }
@@ -104,7 +98,6 @@
   .landing-cover-back { left: 38%; }
   .landing-cover-front > div { padding: 16px; }
   .landing-cover-front strong { font-size: 20px; }
-  .landing-art-note { bottom: 0; left: 0; min-height: 44px; display: inline-flex; align-items: center; }
 }
 @media (hover: none) {
   .landing-primary:active { background: #efc985; }

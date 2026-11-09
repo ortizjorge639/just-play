@@ -30,9 +30,8 @@ for (const [name, browserType] of Object.entries({ chromium, webkit, firefox }))
       if (width <= 420) {
         const hero = await page.locator(".landing-hero-art").boundingBox()
         const cover = await page.locator(".landing-cover-front").boundingBox()
-        const credits = await page.locator(".landing-art-note").boundingBox()
         assert.ok(cover.x >= hero.x && cover.x + cover.width <= hero.x + hero.width, "Cover clipped on phone")
-        assert.ok(cover.y + cover.height <= credits.y, "Cover overlaps artwork credit")
+        assert.ok(cover.y + cover.height <= hero.y + hero.height, "Cover overflows hero")
       }
       assert.ok(!requested.some(url => url.includes("just-play-wide.mp4")), "Video downloaded before interaction")
       assert.ok(!requested.some(url => /three|scene\.js/i.test(url)), "Marketing loaded WebGL")

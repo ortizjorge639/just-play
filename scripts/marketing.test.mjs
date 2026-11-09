@@ -80,6 +80,7 @@ test("anonymous root renders real marketing without fetching player data", async
   assert.match(html, /\/media\/game-art\/hades.jpg/)
   assert.match(html, /\/media\/game-art\/stardew-valley.jpg/)
   assert.match(html, /\/media\/artwork-credits.txt/)
+  assert.ok(!/landing-art-note|landing-demo-disclaimer|Staged demo data|Download the vertical cut/.test(html), "Production notes should not interrupt the landing page")
   assert.ok(!/mosslight\.svg|afterlight\.svg/.test(html))
 })
 test("catalog covers are varied, local, attributed, and not relicensed", () => {

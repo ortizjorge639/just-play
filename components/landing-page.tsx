@@ -43,21 +43,20 @@ export function LandingPage() {
             <Image src={marketingArtwork[0].image} alt="Hades game cover" fill sizes="(max-width: 800px) 80vw, 40vw" priority />
             <div><span>Tonight, not someday.</span><strong>Just one good choice.</strong></div>
           </div>
-          <a className="landing-art-note" href="/media/artwork-credits.txt">Real game artwork · credits</a>
         </div>
       </section>
 
       <section className="landing-film" id="film" aria-labelledby="film-title">
         <div className="landing-section-head">
           <h2 id="film-title">From the pile<br />to the play.</h2>
-          <div><p>The feeling, in 20 seconds.</p><a href="/media/just-play-social.mp4" download>Download the vertical cut <ArrowDown size={16} aria-hidden="true" /></a></div>
+          <p>The feeling, in 20 seconds.</p>
         </div>
         <video controls playsInline preload="none" poster="/media/reel-poster.jpg" aria-label="Just Play: Flow through your backlog, a 20-second animated promo">
           <source src="/media/just-play-wide.mp4" type="video/mp4" />
           <track kind="captions" src="/media/reel.vtt" srcLang="en" label="English" default />
           Your browser cannot play the film. <a href="/media/just-play-wide.mp4">Download the MP4</a>.
         </video>
-        <details className="landing-transcript"><summary>Read the film transcript and artwork credits</summary><p>So many games. What fits tonight? Mood. Energy. Time. One good choice. Settle in. Keep your journey. Just Play. Flow through your backlog. Find your next game from a curated catalog.</p><p>Game data and covers from <a href="https://www.igdb.com/">IGDB</a>. Artwork belongs to the respective game owners; no publisher endorsement is implied. <a href="/media/artwork-credits.txt">Full credits and source terms</a>.</p></details>
+        <details className="landing-transcript"><summary>Read transcript</summary><p>So many games. What fits tonight? Mood. Energy. Time. One good choice. Settle in. Keep your journey. Just Play. Flow through your backlog. Find your next game from a curated catalog.</p></details>
       </section>
 
       <section id="how-it-works" className="landing-product" aria-labelledby="product-title">
@@ -72,13 +71,12 @@ export function LandingPage() {
               <a href={`/media/${screen.image}.png`} target="_blank" rel="noopener noreferrer" aria-label={`Open full-size ${screen.image.replaceAll("-", " ")} screenshot`}>
                 <Image src={`/media/${screen.image}.png`} alt={screen.alt} width={1440} height={900} sizes="(max-width: 800px) 100vw, 65vw" />
               </a>
-              <figcaption><a href={`/media/${screen.image}.png`} target="_blank" rel="noopener noreferrer">View full-size screenshot <ArrowUpRight size={16} aria-hidden="true" /></a><span>Staged demo data</span></figcaption>
+              <figcaption><a href={`/media/${screen.image}.png`} target="_blank" rel="noopener noreferrer">View full-size screenshot <ArrowUpRight size={16} aria-hidden="true" /></a></figcaption>
             </figure>
           </article>
         ))}
       </section>
 
-      <p className="landing-demo-disclaimer">These demo titles illustrate the interface, not live catalog availability or publisher endorsement. Game data and covers: <a href="https://www.igdb.com/">IGDB</a>. <a href="/media/artwork-credits.txt">Artwork credits and source terms</a>.</p>
 
       <section className="landing-faq" aria-labelledby="faq-title">
         <h2 id="faq-title">Before you jump in.</h2>
@@ -94,7 +92,7 @@ export function LandingPage() {
         <Link href="/auth/sign-up" className="landing-primary">Just Play <ArrowUpRight size={20} aria-hidden="true" /></Link>
         <p>Have an account? <Link href="/auth/login">Sign in</Link></p>
       </section>
-      <footer className="landing-footer"><Link href="/about" className="landing-wordmark">Just Play.</Link><span>Flow through your backlog.</span><a href="#top">Back to top ↑</a></footer>
+      <footer className="landing-footer"><Link href="/about" className="landing-wordmark">Just Play.</Link><a href="https://www.igdb.com/">Game data: IGDB</a><a href="/media/artwork-credits.txt">Credits</a><a href="#top">Back to top ↑</a></footer>
     </main>
   )
 }
