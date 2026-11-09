@@ -155,8 +155,11 @@ introductory copy 18px, body 16px, actions 14–16px, and demo captions 12px.
 The wordmark is 25px (22px on small phones). These larger sizes are intentional
 for this new surface, not changes to the product UI ramp.
 
-The signature composition is a pair of original 4:3 covers becoming one
+The signature composition is a pair of 4:3 artwork covers becoming one
 invitation, followed by a user-controlled film and actual staged app screens.
+The current real-game artwork uses verified open licenses and visible credits;
+it demonstrates the UI without implying publisher endorsement or catalog
+availability. Source and adapted-media terms live in `/media/artwork-credits.txt`.
 Media does not autoplay or load Three.js on the landing page. The editable
 Three.js film uses the same palette and the system sans-serif fallback for
 offline deterministic capture; its two exports are reframed, not cropped.

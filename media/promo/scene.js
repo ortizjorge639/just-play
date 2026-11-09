@@ -1,7 +1,8 @@
 import * as THREE from "three"
+import marketingArtwork from "../../public/media/game-art/artwork.json"
 
 // THESIS: A crowded shelf becomes one invitation, not a feature-grid slideshow.
-// OWN-WORLD: Just Play's forest ink, amber, ivory, original landscape covers.
+// OWN-WORLD: Just Play's forest ink, amber, ivory, licensed real-game artwork.
 // STORY: Too many choices → mood/energy/time → one game → a remembered session.
 // FIRST VIEWPORT: Large silent-readable hook; a physical river of game cards.
 // FORM: Brief-pinned 20-second cinematic flow; portrait and landscape reframing.
@@ -22,10 +23,30 @@ const light = new THREE.DirectionalLight(0xffe1a5, 3)
 light.position.set(-4, 6, 8)
 scene.add(light)
 const loader = new THREE.TextureLoader()
-const coverPaths = ["mosslight", "afterlight", "tidebound", "embertrail"]
-const textures = await Promise.all(coverPaths.map(async name => {
-  const texture = await loader.loadAsync(`/media/${name}.svg`)
+await document.fonts.ready
+const textures = await Promise.all(marketingArtwork.map(async artwork => {
+  const source = await loader.loadAsync(artwork.image)
+  const canvas = document.createElement("canvas")
+  canvas.width = 800
+  canvas.height = 600
+  const context = canvas.getContext("2d")
+  if (!context) throw new Error("Cover composition requires a 2D canvas")
+  const image = source.image
+  const scale = Math.max(canvas.width / image.width, canvas.height / image.height)
+  context.fillStyle = "#141714"
+  context.fillRect(0, 0, 800, 600)
+  context.drawImage(image, (800 - image.width * scale) / 2, (600 - image.height * scale) / 2, image.width * scale, image.height * scale)
+  const shade = context.createLinearGradient(0, 360, 0, 600)
+  shade.addColorStop(0, "transparent")
+  shade.addColorStop(1, "#141714")
+  context.fillStyle = shade
+  context.fillRect(0, 360, 800, 240)
+  context.fillStyle = "#f3efe3"
+  context.font = "700 60px system-ui"
+  context.fillText(artwork.name, 36, 552)
+  const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
+  source.dispose()
   return texture
 }))
 const screenTextures = await Promise.all(["now-playing", "standby", "home"].map(async name => {
@@ -80,7 +101,9 @@ window.renderFrame = time => {
   subheading.style.opacity = String(mix(.6, 1, ease(beatAge / .7)))
   document.body.dataset.beat = String(beat)
   footer.style.opacity = time >= 17 ? "1" : "0"
-  caption.textContent = time >= 10 && time < 17 ? "Actual app · original demo art" : time >= 17 ? "Recommendations from a curated catalog" : "Original demo artwork"
+  caption.textContent = time >= 10 && time < 17 ? "Actual app · staged demo data" : time >= 17
+    ? "Art: Wildfire Games · Endless Sky · Freedoom\nCC BY-SA 4.0 media · credits: /media/artwork-credits.txt"
+    : "Real-game artwork · no publisher endorsement"
 
   const converge = ease((time - 3.5) / 2.8)
   const choose = ease((time - 7) / 1.5)

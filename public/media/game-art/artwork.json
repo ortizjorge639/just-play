@@ -1,0 +1,41 @@
+[
+  {
+    "id": "zero-ad",
+    "name": "0 A.D.",
+    "image": "/media/game-art/zero-ad.png",
+    "genres": ["Strategy"],
+    "minutes": 45,
+    "description": "Build a civilization and lead it through an ancient-world strategy session.",
+    "author": "Wildfire Games",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "source": "https://github.com/0ad/0ad/blob/61a3b9507d974084e6badb88a0826bd89a6d5b8b/binaries/data/mods/public/art/textures/ui/pregame/backgrounds/hellenes1-1.png",
+    "project": "https://www.wildfiregames.com/"
+  },
+  {
+    "id": "endless-sky",
+    "name": "Endless Sky",
+    "image": "/media/game-art/endless-sky.png",
+    "genres": ["Space", "Adventure"],
+    "minutes": 45,
+    "description": "Explore a space-trading adventure at your own pace.",
+    "author": "1010todd; derived from Becca Tommaso, Darcy Manoel, and Michael Zahniser",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://github.com/endless-sky/endless-sky/blob/2d561107a62ae36301787c0d646b96a0baf59c57/images/scene/plasma%20scene.png",
+    "project": "https://endless-sky.github.io/"
+  },
+  {
+    "id": "freedm",
+    "name": "FreeDM",
+    "image": "/media/game-art/freedm.png",
+    "genres": ["Shooter"],
+    "minutes": 30,
+    "description": "Drop into a fast-paced, classic multiplayer shooter.",
+    "author": "Contributors to the Freedoom project",
+    "license": "BSD-3-Clause",
+    "licenseUrl": "/media/game-art/freedoom-license.txt",
+    "source": "https://github.com/freedoom/freedoom/blob/ebe74f20bed2f4924f6bb72a7e5235e88ad7ecfa/graphics/titlepic/freedm_titlepic.png",
+    "project": "https://freedoom.github.io/"
+  }
+]

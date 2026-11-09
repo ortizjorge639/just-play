@@ -37,6 +37,7 @@
 .landing-transcript { margin-top: 20px; color: #b7b5aa; font-size: 14px; }
 .landing-transcript summary { cursor: pointer; min-height: 44px; }
 .landing-transcript p { max-width: 70ch; line-height: 1.7; }
+.landing-demo-disclaimer { max-width: 850px; margin: 0 auto 65px; padding-inline: 5%; font-size: 12px; line-height: 1.7; color: #b7b5aa; }
 .landing-product { max-width: 1440px; margin: auto; padding: 110px 5% 0; scroll-margin-top: 30px; }
 .landing-feature { display: grid; grid-template-columns: .7fr 1.3fr; align-items: center; gap: 64px; margin: 90px 0 120px; }
 .landing-feature h3 { font-size: clamp(28px, 3vw, 42px); font-weight: 700; letter-spacing: -.03em; line-height: 1.1; max-width: 14ch; }

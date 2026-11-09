@@ -45,6 +45,7 @@ function fixture({ authenticated = false, exchangeError = null } = {}) {
       if (specifier === "next/link") return function Link(props) { return React.createElement("a", props) }
       if (specifier === "next/image") return function Image({ fill, priority, ...props }) { return React.createElement("img", props) }
       if (specifier.startsWith("@/")) return load(specifier.slice(2))
+      if (specifier.endsWith("artwork.json")) return require(path.resolve(root, "public/media/game-art/artwork.json"))
       return require(specifier)
     }
     compileFunction(code, ["require", "module", "exports", "process"], { filename })(resolve, loaded, loaded.exports, { env: {} })
@@ -74,6 +75,26 @@ test("anonymous root renders real marketing without fetching player data", async
   assert.match(html, /Library import is not available yet/)
   assert.deepEqual(f.calls, ["auth"])
   assert.ok(!html.includes("fixture-user"))
+  assert.match(html, /Watch the reel/)
+  assert.match(html, /\/media\/game-art\/zero-ad.png/)
+  assert.match(html, /\/media\/game-art\/endless-sky.png/)
+  assert.match(html, /\/media\/artwork-credits.txt/)
+  assert.ok(!/mosslight\.svg|afterlight\.svg/.test(html))
+})
+test("real-game artwork is local, attributed, and pinned to immutable sources", () => {
+  const artworks = require(path.resolve(root, "public/media/game-art/artwork.json"))
+  assert.equal(artworks.length, 3)
+  for (const artwork of artworks) {
+    assert.ok(artwork.author && artwork.license && artwork.licenseUrl)
+    assert.match(artwork.source, /github\.com\/[^/]+\/[^/]+\/blob\/[a-f0-9]{40}\//)
+    assert.ok(artwork.image.startsWith("/media/game-art/") && !artwork.image.includes(".."))
+    assert.ok(existsSync(path.resolve(root, "public", artwork.image.slice(1))))
+  }
+  const credits = readFileSync(path.resolve(root, "public/media/artwork-credits.txt"), "utf8")
+  assert.match(credits, /Wildfire Games/)
+  assert.match(credits, /1010todd/)
+  assert.match(credits, /BSD-3-Clause/)
+  assert.match(credits, /not a license change to/)
 })
 test("signed-in root still renders the app and fetches its existing data", async () => {
   const f = fixture({ authenticated: true })

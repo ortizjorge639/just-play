@@ -11,7 +11,7 @@
     #heading { margin: 0; font-weight: 800; font-size: 7.3vw; letter-spacing: -.04em; line-height: 1.02; }
     #subheading { margin: 2.3vh 0 0; font-size: 2.2vw; color: #e2b56c; font-weight: 500; }
     #footer { position: fixed; bottom: 7%; width: 100%; text-align: center; font-size: 1.8vw; color: #f3efe3; opacity: 0; }
-    #caption { position: fixed; bottom: 3%; width: 100%; text-align: center; font-size: 1.1vw; color: #b7b5aa; }
+    #caption { position: fixed; bottom: 3%; width: 100%; padding-inline: 5%; text-align: center; font-size: 1.1vw; line-height: 1.4; white-space: pre-line; color: #b7b5aa; }
     #preview { position: fixed; right: 12px; bottom: 12px; padding: 12px; }
     body[data-capture] #preview { display: none; }
     body[data-beat="5"] #heading { color: #e2b56c; }
@@ -27,7 +27,7 @@
 <body data-capture>
   <div id="scene" aria-hidden="true"></div>
   <div class="copy"><h1 id="heading">So many games.</h1><p id="subheading">And somehow, nothing to play.</p></div>
-  <div id="footer">v0-just-play-app.vercel.app</div><div id="caption">Original demo artwork</div>
+  <div id="footer">v0-just-play-app.vercel.app</div><div id="caption">Real-game artwork · no publisher endorsement</div>
   <button id="preview" type="button">Play preview</button>
   <script type="module" src="/scene.js"></script>
 </body>

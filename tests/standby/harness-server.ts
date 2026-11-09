@@ -4,6 +4,7 @@ import path from "node:path"
 import { build } from "esbuild"
 import postcss from "postcss"
 import tailwind from "@tailwindcss/postcss"
+import marketingArtwork from "../../public/media/game-art/artwork.json"
 
 // Isolated component harness: no Next route, authentication bypass, or database.
 async function main() {
@@ -35,6 +36,9 @@ async function main() {
   for (const name of ["mosslight", "afterlight", "tidebound", "embertrail"]) {
     marketingAssets.set(`/media/${name}.svg`, await readFile(path.resolve("public", "media", `${name}.svg`)))
   }
+  for (const artwork of marketingArtwork) {
+    marketingAssets.set(artwork.image, await readFile(path.resolve("public", artwork.image.slice(1))))
+  }
   const css = await postcss([tailwind()]).process(await readFile(path.resolve("app", "globals.css"), "utf8"), {
     from: path.resolve("app", "globals.css"),
   })
@@ -44,7 +48,7 @@ async function main() {
     const url = request.url || "/"
     const asset = assets.get(url) ?? marketingAssets.get(url) ?? (url === "/fixture-art.svg" ? fixtureArt : url === "/canopy/r1-4f33b632.glb" ? robot : url === "/style.css" ? css.css : canopyAssets.get(url) ?? html)
     response.setHeader("Content-Type", url.endsWith(".js") ? "application/javascript"
-      : url.endsWith(".css") ? "text/css" : url.endsWith(".glb") ? "model/gltf-binary" : url.endsWith(".svg") ? "image/svg+xml" : "text/html")
+      : url.endsWith(".css") ? "text/css" : url.endsWith(".glb") ? "model/gltf-binary" : url.endsWith(".svg") ? "image/svg+xml" : url.endsWith(".png") ? "image/png" : "text/html")
     response.end(asset)
   }).listen(Number(process.env.STANDBY_TEST_PORT || "4387"), "127.0.0.1")
 }

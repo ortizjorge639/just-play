@@ -10,6 +10,7 @@ import { ENDED_KEY, fixture, game, getActiveSession, initialSession } from "./mo
 import { LANDING_COOKIE, landingTabFromCookie } from "@/lib/landing"
 import { AuthSubmitButton } from "@/components/auth-submit-button"
 import type { CompletedGame, Game, StampRule, StandbyPreferences } from "@/lib/types"
+import marketingArtwork from "../../public/media/game-art/artwork.json"
 
 declare global {
   interface Window { standbyFixture: typeof fixture }
@@ -39,17 +40,19 @@ function StampGameHarness(props: {
   </>
 }
 const params = new URLSearchParams(window.location.search)
-const demoCovers = ["mosslight", "afterlight", "tidebound", "embertrail"]
-const demoNames = ["Mosslight", "Afterlight", "Tidebound", "Embertrail"]
+const demoNames = marketingArtwork.map(artwork => artwork.name)
 if (params.has("marketing")) {
   game.name = demoNames[0]
-  game.header_image = `/media/${demoCovers[0]}.svg`
-  game.description = "Take the trail at your own pace. A small adventure for a quiet evening."
+  game.header_image = marketingArtwork[0].image
+  game.genres = marketingArtwork[0].genres
+  game.estimated_session_length = marketingArtwork[0].minutes
+  game.description = marketingArtwork[0].description
   if (fixture.session) {
     fixture.session = {
       ...fixture.session,
       started_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-      notes: JSON.stringify(["Found the lookout. Take the river trail next time.", ...Array(9).fill("")]),
+      session_goal: "Build a small settlement",
+      notes: JSON.stringify(["Established the first settlement. Explore beyond the hills next time.", ...Array(9).fill("")]),
     }
   }
   if (params.has("discovery")) fixture.session = null
@@ -133,11 +136,11 @@ if (params.has("postcards")) {
   ]
 }
 const completedGames: CompletedGame[] = params.has("completed-games")
-  ? Array.from({ length: params.has("marketing") ? 4 : 5 }, (_, i) => {
+  ? Array.from({ length: params.has("marketing") ? marketingArtwork.length : 5 }, (_, i) => {
     const completedGame = i === 0
       ? game
       : { ...game, id: `completed-${i}`, name: params.has("marketing") ? demoNames[i] : `Completed game ${i + 1}`,
-        header_image: params.has("marketing") ? `/media/${demoCovers[i]}.svg` : game.header_image }
+        header_image: params.has("marketing") ? marketingArtwork[i].image : game.header_image }
     return {
       id: `progress-${completedGame.id}`,
       user_id: "test-user",
@@ -180,7 +183,9 @@ const deckGames = params.has("deck")
     name: params.has("long-deck") && k === "A"
       ? "The Legend of Zelda: Tears of the Kingdom - A very long library title"
       : params.has("marketing") ? (k === "A" ? demoNames[0] : demoNames[2]) : `Deck ${k}`,
-    header_image: params.has("marketing") ? `/media/${k === "A" ? demoCovers[0] : demoCovers[2]}.svg` : game.header_image,
+    header_image: params.has("marketing") ? marketingArtwork[k === "A" ? 0 : 2].image : game.header_image,
+    genres: params.has("marketing") ? marketingArtwork[k === "A" ? 0 : 2].genres : game.genres,
+    estimated_session_length: params.has("marketing") ? marketingArtwork[k === "A" ? 0 : 2].minutes : game.estimated_session_length,
   }))
   : []
 const app = params.has("app-shell")
