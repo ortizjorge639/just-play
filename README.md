@@ -73,6 +73,60 @@ Follow the build → [@jojiguy639](https://x.com/jojiguy639)
 
 ## Running locally
 
+### Public landing and launch media
+
+Logged-out visitors see the public landing at `/`. Signed-in visitors keep the
+existing app there; `/about` always shows the landing without an auth round trip.
+Auth routes still refresh sessions, callback codes still return to `/`, and
+private routes retain their auth guard. `/media/` contains public-only exports;
+never put player data or private uploads there.
+
+The landing uses a curated-catalog promise, not Steam/library sync or game
+launching. It includes real app screenshots staged with fictional demo data and
+four original SVG covers. These are illustrations, not games in the catalog.
+No production account, third-party game artwork, or licensed music was used.
+
+The 20-second silent-first Three.js film lives in `media/promo/`. Its H.264
+MP4 exports are `public/media/just-play-social.mp4` (1080×1920) and
+`just-play-wide.mp4` (1920×1080), both 30fps. The web page uses a poster, native
+controls, captions, a transcript, and `preload="none"`; it never downloads WebGL.
+The social card and downloadable vertical cut are public too.
+
+Recreate screenshots using the isolated component harness, not production:
+
+```sh
+STANDBY_TEST_PORT=4517 pnpm exec tsx tests/standby/harness-server.ts
+# In another terminal:
+MARKETING_HARNESS_URL=http://127.0.0.1:4517 node scripts/capture-marketing.mjs
+```
+
+Render the film using installed Chromium and system `ffmpeg`:
+
+```sh
+node scripts/render-promo.mjs --verify-only
+node scripts/render-promo.mjs
+```
+
+The verifier reads actual artwork pixels, requires nonzero geometry, and checks
+forward/backward seek equality before encoding. Explicit SVG dimensions are
+required for Chromium WebGL uploads: a viewBox-only SVG can load successfully
+yet render as a black texture. Frames are temporary; story-beat evidence goes
+to `.promo-evidence/` or `PROMO_EVIDENCE_DIR`. Original source and final assets
+are retained. Browser/GPU changes may affect pixels; capture is deterministic
+within the tested backend, not guaranteed byte-identical across platforms.
+
+```sh
+node --test scripts/marketing.test.mjs scripts/auth-recovery.test.mjs
+# Against a running real Next server:
+MARKETING_URL=http://127.0.0.1:3000 node scripts/verify-marketing.mjs
+```
+
+The auth regressions mock Next/Supabase boundaries; they do not prove a real
+account login. The browser verifier exercises actual Next SSR/hydration,
+anonymous public access, layout at desktop/portrait/landscape sizes, media,
+keyboard controls, and full-size screenshots in Chromium, WebKit, and Firefox.
+Firefox's bundled codec environment is not used to certify MP4 playback.
+
 ```bash
 pnpm install
 pnpm dev

@@ -141,6 +141,26 @@ Semantic state tokens are `success` (`#a7c7ad`), `destructive` (`#f0a08d`), `inf
 - **Label** (medium, 0.75rem to 0.875rem): Genres, timing, navigation labels, and compact state text.
 - **Timer** (Geist Mono, tabular numerals): StandBy elapsed time only; retain its explicit verified/unverified state.
 
+### Public marketing surface
+
+The `/about` landing page extends this identity in Persuade mode; the signed-in
+app retains the Operate hierarchy above. Players browsing after work see
+forest-ink fields, warm-ivory type, amber invitations, and original landscape
+art. The final invitation owns an amber field rather than scattering accents.
+
+Marketing display type scales from 52px on phones to 96px on wide screens,
+with 800 weight, 1.03 leading, and -0.04em tracking. Section headings scale
+34–56px and feature headings 28–42px; supporting headlines use 22–28px,
+introductory copy 18px, body 16px, actions 14–16px, and demo captions 12px.
+The wordmark is 25px (22px on small phones). These larger sizes are intentional
+for this new surface, not changes to the product UI ramp.
+
+The signature composition is a pair of original 4:3 covers becoming one
+invitation, followed by a user-controlled film and actual staged app screens.
+Media does not autoplay or load Three.js on the landing page. The editable
+Three.js film uses the same palette and the system sans-serif fallback for
+offline deterministic capture; its two exports are reframed, not cropped.
+
 ## Layout
 
 The app shell uses a 64px compact header and a fixed 64px bottom navigation, with content padded clear of the nav. Discover is capped at 1440px. At wide widths, a narrow recommendation list sits beside a larger artwork/detail panel; at smaller widths, the list stacks above the detail panel. Keep the primary action within the visible content area at common phone sizes.

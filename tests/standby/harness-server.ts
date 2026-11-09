@@ -31,6 +31,10 @@ async function main() {
   for (const name of await readdir(path.resolve("public", "canopy"))) {
     if (name.endsWith(".glb")) canopyAssets.set(`/canopy/${name}`, await readFile(path.resolve("public", "canopy", name)))
   }
+  const marketingAssets = new Map<string, Buffer>()
+  for (const name of ["mosslight", "afterlight", "tidebound", "embertrail"]) {
+    marketingAssets.set(`/media/${name}.svg`, await readFile(path.resolve("public", "media", `${name}.svg`)))
+  }
   const css = await postcss([tailwind()]).process(await readFile(path.resolve("app", "globals.css"), "utf8"), {
     from: path.resolve("app", "globals.css"),
   })
@@ -38,7 +42,7 @@ async function main() {
   const html = `<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Isolated StandBy test harness</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/assets/harness.css"></head><body><div id="root"></div><script type="module" src="/assets/harness.js"></script></body></html>`
   createServer((request, response) => {
     const url = request.url || "/"
-    const asset = assets.get(url) ?? (url === "/fixture-art.svg" ? fixtureArt : url === "/canopy/r1-4f33b632.glb" ? robot : url === "/style.css" ? css.css : canopyAssets.get(url) ?? html)
+    const asset = assets.get(url) ?? marketingAssets.get(url) ?? (url === "/fixture-art.svg" ? fixtureArt : url === "/canopy/r1-4f33b632.glb" ? robot : url === "/style.css" ? css.css : canopyAssets.get(url) ?? html)
     response.setHeader("Content-Type", url.endsWith(".js") ? "application/javascript"
       : url.endsWith(".css") ? "text/css" : url.endsWith(".glb") ? "model/gltf-binary" : url.endsWith(".svg") ? "image/svg+xml" : "text/html")
     response.end(asset)

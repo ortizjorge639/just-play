@@ -39,6 +39,21 @@ function StampGameHarness(props: {
   </>
 }
 const params = new URLSearchParams(window.location.search)
+const demoCovers = ["mosslight", "afterlight", "tidebound", "embertrail"]
+const demoNames = ["Mosslight", "Afterlight", "Tidebound", "Embertrail"]
+if (params.has("marketing")) {
+  game.name = demoNames[0]
+  game.header_image = `/media/${demoCovers[0]}.svg`
+  game.description = "Take the trail at your own pace. A small adventure for a quiet evening."
+  if (fixture.session) {
+    fixture.session = {
+      ...fixture.session,
+      started_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+      notes: JSON.stringify(["Found the lookout. Take the river trail next time.", ...Array(9).fill("")]),
+    }
+  }
+  if (params.has("discovery")) fixture.session = null
+}
 if (params.has("remote-art")) game.header_image = "https://artwork-fixture.invalid/cover.svg"
 if (params.has("untracked")) fixture.session = { ...initialSession, record_time: false }
 if (params.has("locked")) fixture.session = { ...initialSession, status: "LockedIn" }
@@ -118,10 +133,11 @@ if (params.has("postcards")) {
   ]
 }
 const completedGames: CompletedGame[] = params.has("completed-games")
-  ? Array.from({ length: 5 }, (_, i) => {
+  ? Array.from({ length: params.has("marketing") ? 4 : 5 }, (_, i) => {
     const completedGame = i === 0
       ? game
-      : { ...game, id: `completed-${i}`, name: `Completed game ${i + 1}` }
+      : { ...game, id: `completed-${i}`, name: params.has("marketing") ? demoNames[i] : `Completed game ${i + 1}`,
+        header_image: params.has("marketing") ? `/media/${demoCovers[i]}.svg` : game.header_image }
     return {
       id: `progress-${completedGame.id}`,
       user_id: "test-user",
@@ -163,12 +179,13 @@ const deckGames = params.has("deck")
     id: `deck-${k}`,
     name: params.has("long-deck") && k === "A"
       ? "The Legend of Zelda: Tears of the Kingdom - A very long library title"
-      : `Deck ${k}`,
+      : params.has("marketing") ? (k === "A" ? demoNames[0] : demoNames[2]) : `Deck ${k}`,
+    header_image: params.has("marketing") ? `/media/${k === "A" ? demoCovers[0] : demoCovers[2]}.svg` : game.header_image,
   }))
   : []
 const app = params.has("app-shell")
   ? <AppShell user={{
-    id: "test-user", display_name: null, steam_id: null, preferences: {},
+    id: "test-user", display_name: params.has("marketing") ? "Demo player" : null, steam_id: null, preferences: {},
     standby_preferences: DEFAULT_STANDBY_PREFERENCES, onboarding_complete: true,
     tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,

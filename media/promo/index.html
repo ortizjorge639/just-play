@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Just Play — Original promo composition</title>
+  <style>
+    * { box-sizing: border-box; } body { margin: 0; background: #141714; color: #f3efe3; font-family: system-ui, sans-serif; overflow: hidden; }
+    #scene { position: fixed; inset: 0; }
+    #scene::after { content: ""; position: absolute; inset: 0 0 auto; height: 38%; background: linear-gradient(#141714 40%, #14171400); pointer-events: none; }
+    .copy { position: fixed; top: 10%; left: 7%; right: 7%; pointer-events: none; text-align: center; }
+    #heading { margin: 0; font-weight: 800; font-size: 7.3vw; letter-spacing: -.04em; line-height: 1.02; }
+    #subheading { margin: 2.3vh 0 0; font-size: 2.2vw; color: #e2b56c; font-weight: 500; }
+    #footer { position: fixed; bottom: 7%; width: 100%; text-align: center; font-size: 1.8vw; color: #f3efe3; opacity: 0; }
+    #caption { position: fixed; bottom: 3%; width: 100%; text-align: center; font-size: 1.1vw; color: #b7b5aa; }
+    #preview { position: fixed; right: 12px; bottom: 12px; padding: 12px; }
+    body[data-capture] #preview { display: none; }
+    body[data-beat="5"] #heading { color: #e2b56c; }
+    @media (max-aspect-ratio: 1/1) {
+      .copy { top: 15%; left: 8%; right: 8%; }
+      #heading { font-size: 11vw; }
+      #subheading { font-size: 4.3vw; line-height: 1.4; margin-top: 2vh; }
+      #footer { font-size: 3.6vw; bottom: 15%; }
+      #caption { font-size: 2.8vw; bottom: 10%; }
+    }
+  </style>
+</head>
+<body data-capture>
+  <div id="scene" aria-hidden="true"></div>
+  <div class="copy"><h1 id="heading">So many games.</h1><p id="subheading">And somehow, nothing to play.</p></div>
+  <div id="footer">v0-just-play-app.vercel.app</div><div id="caption">Original demo artwork</div>
+  <button id="preview" type="button">Play preview</button>
+  <script type="module" src="/scene.js"></script>
+</body>
+</html>

@@ -18,6 +18,7 @@ import {
 } from "./actions"
 import { AppShell } from "@/components/app-shell"
 import type { PlayerStats } from "@/lib/types"
+import { LandingPage } from "@/components/landing-page"
 
 export default async function HomePage({
   searchParams,
@@ -41,7 +42,7 @@ export default async function HomePage({
   } = await supabase.auth.getUser()
 
   if (!authUser) {
-    redirect("/auth/login")
+    return <LandingPage />
   }
 
   let profile = null

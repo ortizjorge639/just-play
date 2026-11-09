@@ -3,6 +3,11 @@
 Use the worktree root as the working directory. These tests use isolated local
 fixtures and actual bundled art; they do not access the production database.
 
+`?marketing` switches only the isolated harness to fictional demo names and
+original `/media/` artwork. `scripts/capture-marketing.mjs` uses this mode for
+public screenshots; it is not an app route, authentication bypass, or database
+seed. See the root README for capture and real-Next marketing verification.
+
 ## What runs in CI
 
 `.github/workflows/ci.yml` runs lint, a production build, and the Chromium specs for
