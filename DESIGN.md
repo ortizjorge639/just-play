@@ -165,6 +165,14 @@ Media does not autoplay or load Three.js on the landing page. The editable
 Three.js film uses the same palette and the system sans-serif fallback for
 offline deterministic capture; its two exports are reframed, not cropped.
 
+On phones, hero covers retain their portrait 2:3 shape, with a reserved credit
+row instead of letterboxed landscapes. The headline scales down to 40px on
+320px screens; the narrow wordmark is 20px and compact navigation is 12px
+inside 44px-tall targets. Mobile supporting notes use 14px; screenshot captions include
+an explicit 44px-tall full-size link. Navigation and footer respect safe areas.
+Short phone landscapes use a compact two-column hero. Native video controls,
+FAQ disclosure, and browser back behavior remain unchanged.
+
 ## Layout
 
 The app shell uses a 64px compact header and a fixed 64px bottom navigation, with content padded clear of the nav. Discover is capped at 1440px. At wide widths, a narrow recommendation list sits beside a larger artwork/detail panel; at smaller widths, the list stacks above the detail panel. Keep the primary action within the visible content area at common phone sizes.

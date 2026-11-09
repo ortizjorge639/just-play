@@ -9,8 +9,8 @@ await mkdir(evidence, { recursive: true })
 for (const [name, browserType] of Object.entries({ chromium, webkit, firefox })) {
   const browser = await browserType.launch()
   try {
-    for (const [width, height] of [[1440, 900], [390, 844], [844, 390]]) {
-      const page = await browser.newPage({ viewport: { width, height }, reducedMotion: "reduce" })
+    for (const [width, height] of [[1440, 900], [320, 568], [390, 844], [844, 390]]) {
+      const page = await browser.newPage({ viewport: { width, height }, hasTouch: width < 1000, reducedMotion: "reduce" })
       const errors = []
       const requested = []
       page.on("pageerror", error => errors.push(error.message))
@@ -23,6 +23,17 @@ for (const [name, browserType] of Object.entries({ chromium, webkit, firefox }))
       assert.equal(await page.locator("h1").innerText(), "Flow through\nyour backlog.")
       await page.waitForFunction(() => [...document.images].filter(image => image.loading !== "lazy").every(image => image.complete && image.naturalWidth > 0))
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name}: overflow at ${width}`)
+      for (const selector of [".landing-nav nav a", ".landing-primary", ".landing-secondary", ".landing-feature figcaption a", ".landing-footer > a", ".landing-faq summary"]) {
+        const sizes = await page.locator(selector).evaluateAll(elements => elements.filter(el => el.getClientRects().length).map(el => ({ height: el.getBoundingClientRect().height, width: el.getBoundingClientRect().width })))
+        assert.ok(sizes.every(size => size.height >= 44 && size.width >= 44), `${name}: small touch target ${selector} at ${width}`)
+      }
+      if (width <= 420) {
+        const hero = await page.locator(".landing-hero-art").boundingBox()
+        const cover = await page.locator(".landing-cover-front").boundingBox()
+        const credits = await page.locator(".landing-art-note").boundingBox()
+        assert.ok(cover.x >= hero.x && cover.x + cover.width <= hero.x + hero.width, "Cover clipped on phone")
+        assert.ok(cover.y + cover.height <= credits.y, "Cover overlaps artwork credit")
+      }
       assert.ok(!requested.some(url => url.includes("just-play-wide.mp4")), "Video downloaded before interaction")
       assert.ok(!requested.some(url => /three|scene\.js/i.test(url)), "Marketing loaded WebGL")
       assert.equal(await page.locator("video").getAttribute("autoplay"), null)
@@ -36,6 +47,12 @@ for (const [name, browserType] of Object.entries({ chromium, webkit, firefox }))
       await popup.waitForLoadState()
       assert.ok(popup.url().endsWith("/media/discovery.png"))
       await popup.close()
+      const captionPopupPromise = page.waitForEvent("popup")
+      await page.getByRole("link", { name: "View full-size screenshot" }).first().click()
+      const captionPopup = await captionPopupPromise
+      await captionPopup.waitForLoadState()
+      assert.ok(captionPopup.url().endsWith("/media/discovery.png"))
+      await captionPopup.close()
       if (name !== "firefox") {
         await page.locator("video").evaluate(async video => { video.muted = true; await video.play(); })
         await page.waitForFunction(() => document.querySelector("video").currentTime > .1)

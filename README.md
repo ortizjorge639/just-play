@@ -137,6 +137,8 @@ The auth regressions mock Next/Supabase boundaries; they do not prove a real
 account login. The browser verifier exercises actual Next SSR/hydration,
 anonymous public access, layout at desktop/portrait/landscape sizes, media,
 keyboard controls, and full-size screenshots in Chromium, WebKit, and Firefox.
+Phone coverage includes 320px and 390px widths, visible 44px touch targets,
+unclipped portrait hero covers, and explicit full-size screenshot links.
 Firefox's bundled codec environment is not used to certify MP4 playback.
 
 ```bash

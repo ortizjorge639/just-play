@@ -73,7 +73,7 @@ export function LandingPage() {
               <a href={`/media/${screen.image}.png`} target="_blank" rel="noopener noreferrer" aria-label={`Open full-size ${screen.image.replaceAll("-", " ")} screenshot`}>
                 <Image src={`/media/${screen.image}.png`} alt={screen.alt} width={1440} height={900} sizes="(max-width: 800px) 100vw, 65vw" />
               </a>
-              <figcaption>Demo screen · select to view full size</figcaption>
+              <figcaption><a href={`/media/${screen.image}.png`} target="_blank" rel="noopener noreferrer">View full-size screenshot <ArrowUpRight size={16} aria-hidden="true" /></a><span>Staged demo data</span></figcaption>
             </figure>
           </article>
         ))}

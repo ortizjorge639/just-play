@@ -1,5 +1,7 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { LandingPage } from "@/components/landing-page"
+
+export const viewport: Viewport = { viewportFit: "cover" }
 
 export const metadata: Metadata = {
   title: "Just Play — Flow through your backlog",
