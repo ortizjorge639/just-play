@@ -36,7 +36,6 @@ export function LandingPage() {
             <Link className="landing-primary" href="/auth/sign-up">Find my next game <ArrowUpRight size={20} aria-hidden="true" /></Link>
             <a className="landing-secondary" href="#how-it-works">See how it works <ArrowDown size={18} aria-hidden="true" /></a>
           </div>
-          <p className="landing-small">A companion for choosing and tracking games. Library import is not available yet.</p>
         </div>
         <div className="landing-hero-art">
           <div className="landing-cover landing-cover-back"><Image src={marketingArtwork[1].image} alt="" fill sizes="35vw" /></div>
