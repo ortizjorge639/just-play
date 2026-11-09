@@ -23,7 +23,7 @@ for (const [name, browserType] of Object.entries({ chromium, webkit, firefox }))
       assert.equal(await page.locator("h1").innerText(), "Flow through\nyour backlog.")
       await page.waitForFunction(() => [...document.images].filter(image => image.loading !== "lazy").every(image => image.complete && image.naturalWidth > 0))
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${name}: overflow at ${width}`)
-      for (const selector of [".landing-nav nav a", ".landing-primary", ".landing-secondary", ".landing-feature figcaption a", ".landing-footer > a", ".landing-faq summary"]) {
+      for (const selector of [".landing-nav nav a", ".landing-primary", ".landing-secondary", ".landing-feature figure > a", ".landing-footer > a", ".landing-faq summary"]) {
         const sizes = await page.locator(selector).evaluateAll(elements => elements.filter(el => el.getClientRects().length).map(el => ({ height: el.getBoundingClientRect().height, width: el.getBoundingClientRect().width })))
         assert.ok(sizes.every(size => size.height >= 44 && size.width >= 44), `${name}: small touch target ${selector} at ${width}`)
       }
@@ -46,12 +46,6 @@ for (const [name, browserType] of Object.entries({ chromium, webkit, firefox }))
       await popup.waitForLoadState()
       assert.ok(popup.url().endsWith("/media/discovery.png"))
       await popup.close()
-      const captionPopupPromise = page.waitForEvent("popup")
-      await page.getByRole("link", { name: "View full-size screenshot" }).first().click()
-      const captionPopup = await captionPopupPromise
-      await captionPopup.waitForLoadState()
-      assert.ok(captionPopup.url().endsWith("/media/discovery.png"))
-      await captionPopup.close()
       if (name !== "firefox") {
         await page.locator("video").evaluate(async video => { video.muted = true; await video.play(); })
         await page.waitForFunction(() => document.querySelector("video").currentTime > .1)

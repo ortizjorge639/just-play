@@ -81,6 +81,9 @@ test("anonymous root renders real marketing without fetching player data", async
   assert.match(html, /\/media\/game-art\/stardew-valley.jpg/)
   assert.match(html, /\/media\/artwork-credits.txt/)
   assert.ok(!/landing-art-note|landing-demo-disclaimer|Staged demo data|Download the vertical cut/.test(html), "Production notes should not interrupt the landing page")
+  assert.ok(!/Tonight, not someday|Just one good choice|doesn&#x27;t need a spreadsheet|Actual app screens/.test(html), "Do not pad product evidence with slogans or production narration")
+  assert.ok(html.indexOf('id="how-it-works"') < html.indexOf('id="film"'), "Product evidence must precede the promo")
+  assert.equal((html.match(/Find my next game/g) ?? []).length, 2, "Use the same signup action at both conversion points")
   assert.ok(!/mosslight\.svg|afterlight\.svg/.test(html))
 })
 test("catalog covers are varied, local, attributed, and not relicensed", () => {
