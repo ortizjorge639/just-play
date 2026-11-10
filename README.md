@@ -149,7 +149,7 @@ polling, not instant live synchronization; account preference persistence is not
 live preference synchronization. No mutations are queued offline.
 
 Session notes autosave with acknowledged responses ordered. Local **Done for Today**, StandBy finish,
-**I Beat This Game!** and **Abandon Game** first await any older note write and the
+**I Beat This Game!** and **Set Game Aside** first await any older note write and the
 latest pre-finish draft. Editing is disabled while ending; a failed note save
 blocks finalization and keeps the draft and error visible for retry. Every failed
 response makes the write uncertain: even reverting to the previous saved value

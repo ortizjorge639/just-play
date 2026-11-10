@@ -117,13 +117,14 @@ test("StandBy is only available after the locked-in session actually starts", as
 
 for (const choice of [
   { name: "I Beat This Game!", kind: "beaten" },
-  { name: "Abandon Game", kind: "abandoned" },
+  { name: "Set Game Aside", kind: "abandoned" },
 ]) {
   test(`normal-screen ${choice.kind} supplies the displayed session snapshot`, async ({ page }) => {
     await page.goto("/")
     await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
     await page.getByRole("button", { name: "End Session", exact: true }).click()
     await page.getByRole("button", { name: choice.name, exact: true }).click()
+    if (choice.name === "I Beat This Game!") await page.getByRole("button", { name: "Yes, I beat it", exact: true }).click()
     await expect.poll(() => page.evaluate(() => window.standbyFixture.gameEndWrites)).toEqual([{
       kind: choice.kind,
       gameId: "test-game",
@@ -154,6 +155,7 @@ test("beating the current game opens Home instead of resetting to the deck", asy
 
   await page.getByRole("button", { name: "More options", exact: true }).click()
   await page.getByRole("button", { name: "I Beat This Game!", exact: true }).click()
+  await page.getByRole("button", { name: "Yes, I beat it", exact: true }).click()
 
   await expect(page.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page")
   expect(await page.evaluate(() => sessionStorage.getItem("standby-test-router-refreshed"))).toBe("true")
@@ -172,8 +174,9 @@ test("game options stay compact and use the app action palette", async ({ page }
   await expect(page.getByRole("button", { name: "I Beat This Game!", exact: true })).toHaveCSS(
     "background-color", "rgb(226, 181, 108)",
   )
-  await expect(page.getByRole("button", { name: "Abandon Game", exact: true })).toHaveCSS(
-    "color", "rgb(240, 160, 141)",
+  // Setting a game aside is an ordinary choice, so it is not styled as a warning.
+  await expect(page.getByRole("button", { name: "Set Game Aside", exact: true })).toHaveCSS(
+    "color", "rgb(243, 239, 227)",
   )
 })
 
@@ -185,7 +188,7 @@ test("the current-game screen blocks unsafe actions while offline", async ({ pag
   await expect(page.getByRole("button", { name: "Start Today's Session", exact: true })).toBeDisabled()
   await page.getByRole("button", { name: "More options", exact: true }).click()
   await expect(page.getByRole("button", { name: "I Beat This Game!", exact: true })).toBeDisabled()
-  await expect(page.getByRole("button", { name: "Abandon Game", exact: true })).toBeDisabled()
+  await expect(page.getByRole("button", { name: "Set Game Aside", exact: true })).toBeDisabled()
   await context.setOffline(false)
   await expect(page.getByRole("button", { name: "I Beat This Game!", exact: true })).toBeEnabled()
 })
@@ -205,7 +208,7 @@ test("missing020 creation is visibly unavailable without a phantom session and s
   await expect(page.getByRole("button", { name: /Enter StandBy/ })).toBeVisible()
 })
 
-for (const name of ["I Beat This Game!", "Abandon Game"]) {
+for (const name of ["I Beat This Game!", "Set Game Aside"]) {
   test(`missing020 ${name} is visibly unavailable without claiming game completion`, async ({ page }) => {
     await page.goto("/?current-game")
     await expect(page.getByRole("button", { name: "Start Today's Session", exact: true })).toBeEnabled()
@@ -214,6 +217,7 @@ for (const name of ["I Beat This Game!", "Abandon Game"]) {
     })
     await page.getByRole("button", { name: "More options", exact: true }).click()
     await page.getByRole("button", { name, exact: true }).click()
+    if (name === "I Beat This Game!") await page.getByRole("button", { name: "Yes, I beat it", exact: true }).click()
     await expect(page.getByText(/Database migration 020 and an up-to-date API schema cache/)).toBeVisible()
     expect(await page.evaluate(() => window.standbyFixture.finishedNotes)).toEqual([])
     expect(await page.evaluate(() => window.standbyFixture.events)).toEqual([])
@@ -223,7 +227,7 @@ for (const name of ["I Beat This Game!", "Abandon Game"]) {
 
 for (const choice of [
   { name: "I Beat This Game!", kind: "beaten" },
-  { name: "Abandon Game", kind: "abandoned" },
+  { name: "Set Game Aside", kind: "abandoned" },
 ]) {
   test(`current-game ${choice.kind} explicitly expects no active session`, async ({ page }) => {
     await page.goto("/?current-game")
@@ -231,6 +235,7 @@ for (const choice of [
     await page.evaluate(() => { window.standbyFixture.delay = 10000 })
     await page.getByRole("button", { name: "More options", exact: true }).click()
     await page.getByRole("button", { name: choice.name, exact: true }).click()
+    if (choice.name === "I Beat This Game!") await page.getByRole("button", { name: "Yes, I beat it", exact: true }).click()
     await expect.poll(() => page.evaluate(() => window.standbyFixture.gameEndWrites)).toEqual([{
       kind: choice.kind, gameId: "test-game", expected: null,
     }])

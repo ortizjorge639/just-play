@@ -67,6 +67,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     setRejectedStack((prev) => prev.slice(0, -1))
     setDeck((prev) => [...prev, lastRejected])
     setFocusedGameId(lastRejected.id)
+    setLockedGame(null)
   }, [rejectedStack, setDeck])
 
   const handleSkip = useCallback((game: Game) => {
@@ -230,7 +231,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
             <button
               type="button"
               onClick={handleUndo}
-              disabled={rejectedStack.length === 0 || !!lockedGame}
+              disabled={rejectedStack.length === 0}
               className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span aria-hidden="true">↶</span> Undo skip
@@ -238,7 +239,6 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
             <button
               type="button"
               onClick={() => handleSkip(displayGame)}
-              disabled={!!lockedGame}
               className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
             >
               <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -249,7 +249,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
             <button
               type="button"
               onClick={() => handleNotForMe(displayGame)}
-              disabled={skipPending || !!lockedGame}
+              disabled={skipPending}
               className="min-h-11 w-full rounded-lg px-3 text-center text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline disabled:opacity-50"
             >
               Don&apos;t suggest this game
@@ -257,7 +257,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
             {currentBoosterStatus ? (
               <button
                 type="button"
-                onClick={() => setShowBoosterPack(true)}
+                onClick={() => { setLockedGame(null); setShowBoosterPack(true) }}
                 disabled={currentBoosterStatus.packsRemaining <= 0}
                 className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >

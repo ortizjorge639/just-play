@@ -69,6 +69,12 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
   const [sessionGoal, setSessionGoal] = useState(session.session_goal || "")
   const showXPToast = useXPToast()
   const [showEndOptions, setShowEndOptions] = useState(false)
+  // Marking a game beaten cannot be undone, so it asks once before it commits.
+  const [confirmBeaten, setConfirmBeaten] = useState(false)
+  const openEndOptions = () => {
+    setConfirmBeaten(false)
+    setShowEndOptions(true)
+  }
   const [shimmer, setShimmer] = useState(false)
   const [nudgeStage, setNudgeStage] = useState<NudgeStage>("none")
   const [showNudge, setShowNudge] = useState(false)
@@ -399,7 +405,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
                 {isPending ? "Pausing..." : "Pause"}
               </button>
               <button
-                onClick={() => setShowEndOptions(true)}
+                onClick={openEndOptions}
                 className="flex min-h-11 items-center justify-center gap-2 px-2 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -423,7 +429,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
                 {isPending ? "Resuming..." : "Resume"}
               </button>
               <button
-                onClick={() => setShowEndOptions(true)}
+                onClick={openEndOptions}
                 className="flex min-h-11 items-center justify-center gap-2 px-2 py-3 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -497,6 +503,30 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
               className="w-full max-w-lg rounded-t-3xl bg-background p-6 pb-10"
             >
               <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-muted" />
+              {confirmBeaten ? (
+                <>
+                  <h3 className="text-xl font-bold text-foreground mb-1">Beat {game.name}?</h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    This ends the session and marks the game as beaten. It can&apos;t be undone.
+                  </p>
+                  <fieldset disabled={isPending || !!syncError} className="flex flex-col gap-3">
+                    <button
+                      onClick={handleMarkBeaten}
+                      className="h-14 w-full rounded-xl text-base font-semibold text-success-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                      style={{ backgroundColor: "var(--success)" }}
+                    >
+                      Yes, I beat it
+                    </button>
+                    <button
+                      onClick={() => setConfirmBeaten(false)}
+                      className="h-11 w-full rounded-xl text-sm font-medium text-muted-foreground transition-all active:scale-[0.98] min-h-[44px]"
+                    >
+                      Not yet
+                    </button>
+                  </fieldset>
+                </>
+              ) : (
+              <>
               <h3 className="text-xl font-bold text-foreground mb-1">End Session</h3>
               <p className="text-sm text-muted-foreground mb-6">How did it go?</p>
 
@@ -514,7 +544,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
                 </button>
 
                 <button
-                  onClick={handleMarkBeaten}
+                  onClick={() => setConfirmBeaten(true)}
                   disabled={isPending}
                   className="h-14 w-full rounded-xl text-base font-semibold text-success-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px] flex items-center gap-3 px-5"
                   style={{ backgroundColor: "var(--success)" }}
@@ -528,9 +558,9 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
                 <button
                   onClick={handleAbandon}
                   disabled={isPending}
-                  className="h-11 w-full rounded-xl text-sm font-medium text-destructive transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
+                  className="h-11 w-full rounded-xl border border-border text-sm font-medium text-foreground transition-all active:scale-[0.98] disabled:opacity-50 min-h-[44px]"
                 >
-                  Abandon Game
+                  Set Game Aside
                 </button>
 
                 <button
@@ -540,6 +570,8 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
                   Cancel
                 </button>
               </fieldset>
+              </>
+              )}
             </motion.div>
           </motion.div>
         )}

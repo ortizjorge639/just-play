@@ -30,7 +30,7 @@ test.afterEach(async ({ page }, testInfo) => {
 const endings = [
   { name: "Done for Today", kind: "finish" },
   { name: "I Beat This Game!", kind: "beaten" },
-  { name: "Abandon Game", kind: "abandoned" },
+  { name: "Set Game Aside", kind: "abandoned" },
 ] as const
 
 async function openNotes(page: Page, url = "/", virtualClock = true) {
@@ -51,6 +51,8 @@ async function finish(page: Page, name: string) {
   await expect(page.locator("div.rounded-t-3xl").filter({ has: action })).toHaveCSS("transform", "none")
   await expect(action).toBeEnabled()
   await action.click()
+  // Beating a game asks once before it commits.
+  if (name === "I Beat This Game!") await page.getByRole("button", { name: "Yes, I beat it", exact: true }).click()
   await expect(page.getByRole("button", { name, exact: false })).toBeHidden()
 }
 
