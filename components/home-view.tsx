@@ -22,6 +22,8 @@ interface HomeViewProps {
   postcards: Postcard[]
   invitedGame: Game | null
   showStamps?: boolean
+  /** Opens Discover. Omitted while a game is in progress, when Discover is not available. */
+  onDiscover?: () => void
 }
 
 function HolographicStamp({ kind }: { kind: "completed" | "arrived" }) {
@@ -99,7 +101,7 @@ function CompletedGameCard({ completed, arrived, showStamps }: { completed: Comp
   )
 }
 
-export function HomeView({ residents, completedGames, postcards, invitedGame, showStamps = true }: HomeViewProps) {
+export function HomeView({ residents, completedGames, postcards, invitedGame, showStamps = true, onDiscover }: HomeViewProps) {
   const [expanded, setExpanded] = useState(false)
   const orderedResidents = [...residents].sort(
     (a, b) => Date.parse(b.arrived_at) - Date.parse(a.arrived_at)
@@ -163,9 +165,21 @@ export function HomeView({ residents, completedGames, postcards, invitedGame, sh
         ) : (
           <>
             <h1 id="home-title" className="text-2xl font-bold text-foreground">Completed games <span className="font-normal text-muted-foreground">(0)</span></h1>
-            <p className="mt-4 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-              No completed games yet.
-            </p>
+            <div className="mt-4 rounded-xl border border-border bg-card p-5">
+              <p className="font-medium text-foreground">No completed games yet.</p>
+              <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+                Home keeps the games you finish, so the ones you played stay with you. There is no rush to fill it.
+              </p>
+              {onDiscover ? (
+                <button
+                  type="button"
+                  onClick={onDiscover}
+                  className="mt-4 inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  Find a game to play
+                </button>
+              ) : null}
+            </div>
           </>
         )}
       </section>
