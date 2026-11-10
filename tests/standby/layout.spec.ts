@@ -132,3 +132,24 @@ test("search opens as a centred panel on a desktop and above the bar on a phone"
     return box.y > phone.height / 2 && box.y + box.height <= phone.height - 64
   }).toBe(true)
 })
+
+test("tabs slide in without ever making a phone screen scroll sideways", async ({ page }) => {
+  await page.setViewportSize(phone)
+  // Record the widest the page gets on any frame, including mid-animation.
+  await page.addInitScript(() => {
+    const state = window as unknown as { widest: number }
+    state.widest = 0
+    const tick = () => {
+      if (document.documentElement) state.widest = Math.max(state.widest, document.documentElement.scrollWidth - innerWidth)
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
+  await page.goto("/?app-shell&active-game")
+  for (const tab of ["Home", "Progress", "Now Playing"]) {
+    await page.getByRole("button", { name: tab, exact: true }).click()
+    await expect(page.getByRole("button", { name: tab, exact: true })).toHaveAttribute("aria-current", "page")
+    await page.waitForTimeout(400)
+  }
+  expect(await page.evaluate(() => (window as unknown as { widest: number }).widest)).toBe(0)
+})
