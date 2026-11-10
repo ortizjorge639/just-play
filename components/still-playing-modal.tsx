@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { ModalLayer, ModalTitle } from "./ui/modal-layer"
 
 interface StillPlayingModalProps {
   elapsed: number
@@ -42,7 +43,9 @@ export function StillPlayingModal({
   const countdownMins = Math.floor(countdown / 60)
   const countdownSecs = countdown % 60
 
+  // Escape answers "still playing": it dismisses the prompt without ending anything.
   return (
+    <ModalLayer onClose={onStillPlaying}>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -68,7 +71,7 @@ export function StillPlayingModal({
           </motion.div>
         </div>
 
-        <h2 className="text-xl font-bold text-foreground mb-1">Still playing?</h2>
+        <ModalTitle asChild><h2 className="text-xl font-bold text-foreground mb-1">Still playing?</h2></ModalTitle>
         <p className="text-sm text-muted-foreground mb-1">
           You&apos;ve been playing for <span className="font-semibold text-foreground">{formatDuration(elapsed)}</span>
         </p>
@@ -92,5 +95,6 @@ export function StillPlayingModal({
         </div>
       </motion.div>
     </motion.div>
+    </ModalLayer>
   )
 }

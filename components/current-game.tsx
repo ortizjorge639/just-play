@@ -8,6 +8,7 @@ import { StampPanel } from "./stamp-panel"
 import { MoveInNote } from "./move-in-note"
 import type { GameProgress, Game, StampRule } from "@/lib/types"
 import { GameArtwork } from "./game-artwork"
+import { ModalLayer, ModalTitle } from "./ui/modal-layer"
 
 interface CurrentGameProps {
   gameProgress: GameProgress & { game: Game }
@@ -323,14 +324,17 @@ export function CurrentGame({
       {/* Options bottom sheet */}
       <AnimatePresence>
         {showOptions && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
-              onClick={() => setShowOptions(false)}
-            />
+          <ModalLayer
+            onClose={() => setShowOptions(false)}
+            overlay={
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+              />
+            }
+          >
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
@@ -342,7 +346,7 @@ export function CurrentGame({
               
               {confirmBeaten ? (
                 <>
-                  <h3 className="text-lg font-semibold text-foreground mb-1">Beat {game.name}?</h3>
+                  <ModalTitle asChild><h3 className="text-lg font-semibold text-foreground mb-1">Beat {game.name}?</h3></ModalTitle>
                   <p className="mb-4 text-sm text-muted-foreground">
                     This marks the game as beaten. It can&apos;t be undone.
                   </p>
@@ -364,9 +368,11 @@ export function CurrentGame({
                 </>
               ) : (
               <>
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                Game options
-              </h3>
+              <ModalTitle asChild>
+                <h3 className="text-lg font-semibold text-foreground mb-4">
+                  Game options
+                </h3>
+              </ModalTitle>
 
               <div className="flex flex-col gap-3">
                 <button
@@ -395,7 +401,7 @@ export function CurrentGame({
               </>
               )}
             </motion.div>
-          </>
+          </ModalLayer>
         )}
       </AnimatePresence>
     </div>

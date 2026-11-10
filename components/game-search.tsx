@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import type { Game } from "@/lib/types"
 import type { IGDBSearchResult } from "@/lib/igdb"
+import { ModalLayer, ModalTitle } from "./ui/modal-layer"
 
 interface GameSearchProps {
   onGameSelected: (game: Game) => void
@@ -141,16 +142,18 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
       {/* Search overlay */}
       <AnimatePresence>
         {isOpen && (
-          <>
-            {/* Blurred backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-[45] bg-background/60 backdrop-blur-md"
-              onClick={handleClose}
-            />
+          <ModalLayer
+            onClose={handleClose}
+            overlay={
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-[45] bg-background/60 backdrop-blur-md"
+              />
+            }
+          >
 
             {/* Search container — anchored above nav bar */}
             <motion.div
@@ -160,6 +163,7 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
               transition={{ type: "spring", stiffness: 350, damping: 30 }}
               className="fixed bottom-[calc(64px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 flex flex-col lg:bottom-auto lg:left-1/2 lg:right-auto lg:top-24 lg:w-full lg:max-w-xl lg:-translate-x-1/2 lg:flex-col-reverse"
             >
+              <ModalTitle className="sr-only">Search for a game</ModalTitle>
               {/* Results list — transparent bg, white text */}
               <AnimatePresence mode="popLayout">
                 {(results.length > 0 || isLoading || error) && (
@@ -315,7 +319,7 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
                 )}
               </div>
             </motion.div>
-          </>
+          </ModalLayer>
         )}
       </AnimatePresence>
     </>

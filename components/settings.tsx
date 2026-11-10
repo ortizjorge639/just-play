@@ -10,6 +10,7 @@ import { StampRuleEditor } from "./stamp-rule-editor"
 import { StandbyPreferencesForm } from "./standby-preferences"
 import { HOME_STAMP_EXPLANATIONS } from "@/lib/home-stamps"
 import { Switch } from "./ui/switch"
+import { ModalLayer, ModalTitle } from "./ui/modal-layer"
 
 interface SettingsProps {
   displayName: string | null
@@ -52,6 +53,7 @@ export function Settings({
     })
   }
   return (
+    <ModalLayer onClose={onClose}>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -81,7 +83,7 @@ export function Settings({
           </svg>
           Back
         </button>
-        <h1 className="text-lg font-bold text-foreground">Settings</h1>
+        <ModalTitle asChild><h1 className="text-lg font-bold text-foreground">Settings</h1></ModalTitle>
         <div className="w-12" />
       </header>
 
@@ -232,6 +234,7 @@ export function Settings({
       </div>
       </div>
     </motion.div>
+    </ModalLayer>
   )
 }
 
