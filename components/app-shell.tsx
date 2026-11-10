@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { getActiveSession } from "@/app/actions"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
@@ -21,6 +21,7 @@ import { ResidentArrivalCard } from "./resident-arrival-card"
 import { clearPersistedDeck } from "@/hooks/use-persisted-deck"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
+import { clearLandingCookie, setLandingCookie, type LandingTab } from "@/lib/landing"
 import { DEFAULT_STANDBY_PREFERENCES, StandbyPreferencesForm } from "./standby-preferences"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import type { UserProfile, Game, Session, GameProgress, CompletedGame, PlayerStats, Resident, Postcard, StampRule, NameCard } from "@/lib/types"
@@ -42,6 +43,8 @@ interface AppShellProps {
   isAnonymous?: boolean
   isBoosterPack: boolean
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
+  /** Set by the server from the landing cookie after a session ends. */
+  initialTab?: LandingTab
 }
 
 export function AppShell({
@@ -59,10 +62,11 @@ export function AppShell({
   isAnonymous,
   isBoosterPack,
   boosterPackStatus,
+  initialTab,
 }: AppShellProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<Tab>(
-    initialSession || activeGame ? "session" : "deck"
+    initialTab ?? (initialSession || activeGame ? "session" : "deck")
   )
   const {
     session: activeSession, sessionReadRevision, setSession: setActiveSession, updateSession,
@@ -88,6 +92,7 @@ export function AppShell({
     return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
   })()
   const [arrivedGame, setArrivedGame] = useState<Game | null>(null)
+  const residentGameIds = useMemo(() => (residents ?? []).map(r => r.game_id), [residents])
   const [stampRules, setStampRules] = useState<StampRule[]>(initialStampRules ?? [])
   const handleStampRuleSaved = useCallback((gameId: string | null, rule: StampRule | null) => {
     setStampRules(prev => {
@@ -123,6 +128,8 @@ export function AppShell({
     setActiveSession(null)
     setActiveTab("progress")
     setNeedsRefresh(true)
+    // The reload below rebuilds the shell; the cookie lets the server render Progress first.
+    setLandingCookie("progress")
     // Full reload to get updated history
     window.location.reload()
   }, [setActiveSession])
@@ -155,6 +162,11 @@ export function AppShell({
     } catch {
       // ignore
     }
+  }, [])
+
+  // The landing is for one page load only, so a later reload returns to the default tab.
+  useEffect(() => {
+    clearLandingCookie()
   }, [])
 
   const handleTabChange = useCallback((tab: Tab) => {
@@ -281,6 +293,7 @@ export function AppShell({
           >
             <CardDeck
               games={recommendations}
+              residentGameIds={residentGameIds}
               preferences={user.preferences || {}}
               onSessionCreated={handleSessionCreated}
               isBoosterPack={isBoosterPack}

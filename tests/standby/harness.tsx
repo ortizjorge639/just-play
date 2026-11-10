@@ -6,7 +6,8 @@ import { CurrentGame } from "@/components/current-game"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
 import { useSessionNotes } from "@/hooks/use-session-notes"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/components/standby-preferences"
-import { fixture, game, getActiveSession, initialSession } from "./mock-actions"
+import { ENDED_KEY, fixture, game, getActiveSession, initialSession } from "./mock-actions"
+import { LANDING_COOKIE, landingTabFromCookie } from "@/lib/landing"
 import type { CompletedGame, Game, StampRule, StandbyPreferences } from "@/lib/types"
 
 declare global {
@@ -88,6 +89,16 @@ if (params.has("residents-tiers")) {
   }))
 }
 if (params.has("elder")) fixture.residents = fixture.residents.map((r) => ({ ...r, minutes_played: 3000 }))
+// ?persist-end: after a finish, reload into the state the server would return.
+const ended = params.has("persist-end") ? sessionStorage.getItem(ENDED_KEY) : null
+if (ended) {
+  fixture.session = null
+  const stamp = { user_id: "test-user", game_id: game.id, game }
+  if (ended === "beaten") fixture.residents = [{ ...stamp, arrived_at: new Date().toISOString(), arrival_source: "beaten" }]
+  if (ended === "abandoned") fixture.postcards = [{ ...stamp, created_at: new Date().toISOString() }]
+}
+// Stands in for app/page.tsx, which reads the same cookie on the server.
+const landingCookie = document.cookie.split("; ").find(part => part.startsWith(`${LANDING_COOKIE}=`))?.split("=")[1]
 if (params.has("pieces")) {
   fixture.pieces = [
     { game_id: "many-0", piece: "loft", deck: 0, anchor: 1 },
@@ -161,7 +172,8 @@ const app = params.has("app-shell")
     tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,
   }} isAnonymous={params.has("anon")} recommendations={deckGames} activeSession={fixture.session}
-    activeGame={params.has("active-game") && sessionStorage.getItem("standby-test-game-beaten") !== "true" ? {
+    initialTab={landingTabFromCookie(landingCookie)}
+    activeGame={ended === "finish" || (params.has("active-game") && sessionStorage.getItem("standby-test-game-beaten") !== "true") ? {
       id: "test-progress", user_id: "test-user", game_id: game.id, status: "playing",
       total_sessions: 1, total_time_minutes: 20, started_at: initialSession.created_at,
       completed_at: null, created_at: initialSession.created_at, game,

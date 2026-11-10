@@ -125,6 +125,7 @@ export async function updateSessionStatus(
     fixture.events.push({ kind: "finish", notes: updated.notes || "" })
     fixture.finishedNotes.push(updated.notes || "")
     sessionStorage.setItem("standby-test-finished-notes", JSON.stringify(fixture.finishedNotes))
+    rememberEnd("finish")
     fixture.session = null
   }
   return { session: updated, xpAwarded: { total: 5, bonuses: [] } }
@@ -203,8 +204,16 @@ function settleLateNotes() {
   }
 }
 
+// With ?persist-end the harness keeps the session ended across the reload AppShell performs,
+// standing in for the server state a real finish leaves behind.
+export const ENDED_KEY = "standby-test-ended"
+function rememberEnd(kind: "finish" | "beaten" | "abandoned") {
+  if (new URLSearchParams(globalThis.location?.search || "").has("persist-end")) sessionStorage.setItem(ENDED_KEY, kind)
+}
+
 function finishGame(kind: "beaten" | "abandoned", finalNotes?: string) {
   if (fixture.session) {
+    rememberEnd(kind)
     if (fixture.settleLateOnFinish) settleLateNotes()
     if (finalNotes !== undefined) {
       fixture.finalDrafts.push(finalNotes)

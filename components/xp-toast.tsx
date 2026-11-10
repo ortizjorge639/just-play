@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { XPParticles } from "./xp-particles"
 import type { PlayerStats } from "@/lib/types"
@@ -36,6 +36,40 @@ export function storePendingXP(xp: number, playerStats: PlayerStats | null) {
   }
 }
 
+// Starting or finishing a session reloads the page while the toast is still up. The toast is
+// kept in sessionStorage until it has finished, so a reload in between can show it again.
+const TOAST_KEY = "pendingXPToast"
+const TOAST_REPLAY_MS = 10000
+
+function storeToast(data: XPToastData, levelUp: boolean) {
+  try {
+    sessionStorage.setItem(TOAST_KEY, JSON.stringify({ data, levelUp, timestamp: Date.now() }))
+  } catch {
+    // sessionStorage unavailable — the toast simply is not replayed
+  }
+}
+
+function clearToast() {
+  try {
+    sessionStorage.removeItem(TOAST_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+function takeInterruptedToast(): { data: XPToastData; levelUp: boolean } | null {
+  try {
+    const raw = sessionStorage.getItem(TOAST_KEY)
+    if (!raw) return null
+    sessionStorage.removeItem(TOAST_KEY)
+    const { data, levelUp, timestamp } = JSON.parse(raw) as { data: XPToastData; levelUp: boolean; timestamp: number }
+    if (Date.now() - timestamp >= TOAST_REPLAY_MS || !(data?.total > 0) || !Array.isArray(data.bonuses)) return null
+    return { data, levelUp: levelUp === true }
+  } catch {
+    return null
+  }
+}
+
 export function XPToastProvider({ children, playerStats }: { children: ReactNode; playerStats?: PlayerStats | null }) {
   const [toast, setToast] = useState<XPToastData | null>(null)
   const [isLevelUp, setIsLevelUp] = useState(false)
@@ -44,20 +78,9 @@ export function XPToastProvider({ children, playerStats }: { children: ReactNode
   const toastRef = useRef<HTMLDivElement>(null)
   const [particleOrigin, setParticleOrigin] = useState({ x: 0, y: 0 })
 
-  const showToast = useCallback((data: XPToastData) => {
-    if (data.total <= 0) return
+  const present = useCallback((data: XPToastData, levelUp: boolean) => {
     setToast(data)
-
-    // Detect level-up: current XP in level + awarded >= XP needed
-    const levelUp = playerStats
-      ? playerStats.xpInCurrentLevel + data.total >= playerStats.xpToNextLevel
-      : false
     setIsLevelUp(levelUp)
-
-    // Store pending XP for progress page animation
-    if (playerStats) {
-      storePendingXP(data.total, playerStats)
-    }
 
     // Trigger particles after a brief delay (let toast render first)
     setTimeout(() => {
@@ -72,8 +95,38 @@ export function XPToastProvider({ children, playerStats }: { children: ReactNode
       setShowParticles(true)
     }, 100)
 
-    setTimeout(() => setToast(null), levelUp ? 3000 : 2000)
-  }, [playerStats])
+    setTimeout(() => {
+      setToast(null)
+      clearToast()
+    }, levelUp ? 3000 : 2000)
+  }, [])
+
+  const showToast = useCallback((data: XPToastData) => {
+    if (data.total <= 0) return
+
+    // Detect level-up: current XP in level + awarded >= XP needed
+    const levelUp = playerStats
+      ? playerStats.xpInCurrentLevel + data.total >= playerStats.xpToNextLevel
+      : false
+
+    // Store pending XP for progress page animation
+    if (playerStats) {
+      storePendingXP(data.total, playerStats)
+    }
+
+    storeToast(data, levelUp)
+    present(data, levelUp)
+  }, [playerStats, present])
+
+  // A toast cut short by a reload is shown again. Stats have already moved on by then, so the
+  // level-up flag comes from the original toast and the Progress hand-off is left untouched.
+  useEffect(() => {
+    const interrupted = takeInterruptedToast()
+    if (!interrupted) return
+    // sessionStorage only exists on the client, so it can only be read after mount
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    present(interrupted.data, interrupted.levelUp)
+  }, [present])
 
   return (
     <XPToastContext.Provider value={showToast}>
