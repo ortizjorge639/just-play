@@ -118,8 +118,7 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
             exit={{ scale: 0, opacity: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             onClick={() => setIsOpen(true)}
-            className="fixed right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full glass-card shadow-lg active:scale-95 transition-transform"
-            style={{ bottom: "calc(72px + env(safe-area-inset-bottom, 0px))" }}
+            className="fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full glass-card shadow-lg active:scale-95 transition-transform lg:bottom-6 lg:right-6"
             aria-label="Search for a game"
           >
             <svg
@@ -149,7 +148,7 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-background/60 backdrop-blur-md"
+              className="fixed inset-0 z-[45] bg-background/60 backdrop-blur-md"
               onClick={handleClose}
             />
 
@@ -159,8 +158,7 @@ export function GameSearch({ onGameSelected }: GameSearchProps) {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 100, opacity: 0 }}
               transition={{ type: "spring", stiffness: 350, damping: 30 }}
-              className="fixed left-0 right-0 z-50 flex flex-col"
-              style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))" }}
+              className="fixed bottom-[calc(64px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 flex flex-col lg:bottom-auto lg:left-1/2 lg:right-auto lg:top-24 lg:w-full lg:max-w-xl lg:-translate-x-1/2 lg:flex-col-reverse"
             >
               {/* Results list — transparent bg, white text */}
               <AnimatePresence mode="popLayout">
