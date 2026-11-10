@@ -20,6 +20,7 @@ test("Resident note does not display when game has no residents", async ({ page 
 async function beatGame(page: import("@playwright/test").Page) {
   await page.getByRole("button", { name: "End Session", exact: true }).click()
   await page.getByRole("button", { name: "I Beat This Game!", exact: true }).click()
+  await page.getByRole("button", { name: "Yes, I beat it", exact: true }).click()
 }
 
 test("Arrival card shows the first time a game is beaten", async ({ page }) => {

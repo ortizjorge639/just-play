@@ -139,3 +139,47 @@ test("the booster pack honors reduced-motion preferences", async ({ page }) => {
   await expect(art).toBeVisible()
   await expect.poll(() => art.evaluate(element => getComputedStyle(element).transform)).toBe("none")
 })
+
+test("a locked-in game can still be skipped, which returns to choosing", async ({ page }) => {
+  await page.goto("/?app-shell&deck&current-game")
+  await page.getByRole("button", { name: /Lock in game/ }).click()
+  await expect(page.getByRole("button", { name: "Start Playing" })).toBeVisible()
+
+  await page.getByRole("button", { name: /Skip for now/ }).click()
+  await expect(page.getByRole("heading", { name: "Deck B", level: 2 })).toBeVisible()
+  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Start Playing" })).toHaveCount(0)
+  expect(await page.evaluate(() => window.standbyFixture.sessionCreateCalls)).toEqual([])
+})
+
+test("undoing a skip while another game is locked in shows the returned game unlocked", async ({ page }) => {
+  await page.goto("/?app-shell&deck&current-game")
+  await page.getByRole("button", { name: /Skip for now/ }).click()
+  await page.getByRole("button", { name: /Lock in game/ }).click()
+  await expect(page.getByRole("button", { name: "Start Playing" })).toBeVisible()
+
+  await page.getByRole("button", { name: /Undo skip/ }).click()
+  await expect(page.getByRole("heading", { name: "Deck A", level: 2 })).toBeVisible()
+  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeVisible()
+})
+
+test("the booster pack opens from a locked-in game and comes back to choosing", async ({ page }) => {
+  await page.goto("/?app-shell&deck&current-game&packs")
+  await page.getByRole("button", { name: /Lock in game/ }).click()
+  await page.getByRole("button", { name: "Booster pack (2 left)" }).click()
+  await expect(page.getByRole("heading", { name: "Booster Pack" })).toBeVisible()
+
+  await page.getByRole("button", { name: "Back to recommendations" }).click()
+  await expect(page.getByRole("heading", { name: "Choose a game" })).toBeVisible()
+  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeVisible()
+})
+
+test("a locked-in game can be marked as not to suggest", async ({ page }) => {
+  await page.goto("/?app-shell&deck&current-game")
+  await page.getByRole("button", { name: /Lock in game/ }).click()
+  await page.getByRole("button", { name: "Don't suggest this game" }).click()
+
+  await expect(page.getByRole("heading", { name: "Deck B", level: 2 })).toBeVisible()
+  await expect(page.getByRole("button", { name: /Deck A/ })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeVisible()
+})

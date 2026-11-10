@@ -8,7 +8,10 @@ async function endSession(page: Page, choice: string) {
   await page.getByRole("button", { name: "End Session", exact: true }).click()
   const action = page.getByRole("button", { name: choice })
   await expect(page.locator("div.rounded-t-3xl").filter({ has: action })).toHaveCSS("transform", "none")
-  await Promise.all([page.waitForNavigation({ waitUntil: "load" }), action.click()])
+  // Beating a game asks once before it commits.
+  const commit = choice === "I Beat This Game!" ? page.getByRole("button", { name: "Yes, I beat it", exact: true }) : action
+  if (commit !== action) await action.click()
+  await Promise.all([page.waitForNavigation({ waitUntil: "load" }), commit.click()])
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("standby-test-finished-notes"))).not.toBeNull()
 }
 
@@ -30,7 +33,7 @@ function recordFrames() {
 const frames = (page: Page) =>
   page.evaluate(() => (window as unknown as { landingFrames: { label: string | null; toast: boolean }[] }).landingFrames)
 
-for (const choice of ["Done for Today", "I Beat This Game!", "Abandon Game"]) {
+for (const choice of ["Done for Today", "I Beat This Game!", "Set Game Aside"]) {
   test(`${choice} lands on Progress after the reload`, async ({ page }) => {
     await page.addInitScript(recordFrames)
     await page.goto("/?app-shell")
@@ -93,7 +96,7 @@ for (const choice of ["Done for Today", "I Beat This Game!"]) {
 test("setting a game aside awards no XP toast before or after the reload", async ({ page }) => {
   await page.addInitScript(recordFrames)
   await page.goto("/?app-shell")
-  await endSession(page, "Abandon Game")
+  await endSession(page, "Set Game Aside")
 
   await expect(tabLabel(page)).toHaveText("Progress")
   await page.waitForTimeout(500)
@@ -179,7 +182,7 @@ test("a beaten game is gone from the saved deck once it has moved in", async ({ 
 test("a game set aside stays in the saved deck", async ({ page }) => {
   await page.goto("/?app-shell&persist-end")
   await saveDeckWithFixtureGame(page)
-  await endSession(page, "Abandon Game")
+  await endSession(page, "Set Game Aside")
   await expect(tabLabel(page)).toHaveText("Progress")
 
   await page.getByRole("button", { name: "Deck", exact: true }).click()

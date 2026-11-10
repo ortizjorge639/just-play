@@ -26,6 +26,8 @@ export function CurrentGame({
 }: CurrentGameProps) {
   const [isPending, startTransition] = useTransition()
   const [showOptions, setShowOptions] = useState(false)
+  // Marking a game beaten cannot be undone, so it asks once before it commits.
+  const [confirmBeaten, setConfirmBeaten] = useState(false)
   const [flipped, setFlipped] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const frontFlipButtonRef = useRef<HTMLButtonElement>(null)
@@ -57,8 +59,11 @@ export function CurrentGame({
     })
   }
 
+  // The sheet closes as an action starts, so a failure shows on the page instead of behind it.
   const handleMarkBeaten = () => {
     if (syncError || isPending) return
+    setError(null)
+    setShowOptions(false)
     startTransition(async () => {
       try {
         await markGameBeaten(game.id, null)
@@ -73,6 +78,8 @@ export function CurrentGame({
 
   const handleAbandon = () => {
     if (syncError || isPending) return
+    setError(null)
+    setShowOptions(false)
     startTransition(async () => {
       try {
         await abandonGame(game.id, null)
@@ -220,21 +227,11 @@ export function CurrentGame({
                 </div>
               </div>
 
-              {/* Progress bar */}
+              {/* Journey status */}
               <div className="flex flex-col gap-1.5 mt-auto">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Journey</span>
                   <span>{gameProgress.status === "playing" ? "In progress" : gameProgress.status}</span>
-                </div>
-                <div className="relative h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                  <motion.div
-                    className="absolute inset-y-0 left-0 rounded-full bg-[var(--success)]"
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: `${Math.min(Math.max((gameProgress.total_sessions / 10) * 100, 4), 100)}%`,
-                    }}
-                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                  />
                 </div>
               </div>
 
@@ -298,7 +295,7 @@ export function CurrentGame({
         </button>
 
         <button
-          onClick={() => setShowOptions(true)}
+          onClick={() => { setConfirmBeaten(false); setShowOptions(true) }}
           className="inline-flex min-h-[44px] h-12 w-full items-center justify-center gap-2 rounded-xl glass-card text-sm font-medium text-muted-foreground transition-colors hover:text-foreground hover:bg-muted"
         >
           <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -330,13 +327,37 @@ export function CurrentGame({
             >
               <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-muted-foreground/30" />
               
+              {confirmBeaten ? (
+                <>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">Beat {game.name}?</h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    This marks the game as beaten. It can&apos;t be undone.
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={handleMarkBeaten}
+                      disabled={isPending || !!syncError}
+                      className="min-h-12 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all hover:bg-primary-highlight active:scale-[0.98] disabled:opacity-50"
+                    >
+                      Yes, I beat it
+                    </button>
+                    <button
+                      onClick={() => setConfirmBeaten(false)}
+                      className="min-h-12 w-full rounded-xl border border-border text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    >
+                      Not yet
+                    </button>
+                  </div>
+                </>
+              ) : (
+              <>
               <h3 className="text-lg font-semibold text-foreground mb-4">
                 Game options
               </h3>
 
               <div className="flex flex-col gap-3">
                 <button
-                  onClick={handleMarkBeaten}
+                  onClick={() => setConfirmBeaten(true)}
                   disabled={isPending || !!syncError}
                   className="min-h-12 w-full rounded-xl bg-primary text-base font-semibold text-primary-foreground transition-all hover:bg-primary-highlight active:scale-[0.98] disabled:opacity-50"
                 >
@@ -346,9 +367,9 @@ export function CurrentGame({
                 <button
                   onClick={handleAbandon}
                   disabled={isPending || !!syncError}
-                  className="min-h-12 w-full rounded-xl border border-destructive/50 text-base font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-[0.98] disabled:opacity-50"
+                  className="min-h-12 w-full rounded-xl border border-border text-base font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.98] disabled:opacity-50"
                 >
-                  Abandon Game
+                  Set Game Aside
                 </button>
 
                 <button
@@ -358,6 +379,8 @@ export function CurrentGame({
                   Cancel
                 </button>
               </div>
+              </>
+              )}
             </motion.div>
           </>
         )}
