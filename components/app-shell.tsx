@@ -357,7 +357,7 @@ export function AppShell({
                 </div>
                 <h2 className="text-xl font-bold text-foreground">No active session</h2>
                 <p className="text-muted-foreground text-base max-w-xs">
-                  Head to the deck and lock in a game to start playing.
+                  Go to Discover and pick a game to start playing.
                 </p>
                 <button
                   onClick={() => setActiveTab("deck")}

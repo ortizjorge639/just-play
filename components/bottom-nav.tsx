@@ -20,7 +20,7 @@ export function BottomNav({ active, onChange, hasActiveSession, xpPending }: Bot
       {/* Only show Deck when no active session - forces focus on current game */}
       {!hasActiveSession && (
         <NavItem
-          label="Deck"
+          label="Discover"
           active={active === "deck"}
           onClick={() => onChange("deck")}
           icon={

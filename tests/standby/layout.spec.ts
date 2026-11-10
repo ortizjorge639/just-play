@@ -29,7 +29,7 @@ test("navigation is a left rail on a desktop, and content starts beside it", asy
   await expect(page.getByRole("banner").getByText("Just Play")).toBeHidden()
 
   // Items stack, and nothing in the page sits under the rail.
-  const deck = (await nav(page).getByRole("button", { name: "Deck", exact: true }).boundingBox())!
+  const deck = (await nav(page).getByRole("button", { name: "Discover", exact: true }).boundingBox())!
   const home = (await nav(page).getByRole("button", { name: "Home", exact: true }).boundingBox())!
   expect(home.y).toBeGreaterThan(deck.y + deck.height - 1)
   expect((await page.getByRole("banner").boundingBox())!.x).toBe(rail.width)

@@ -173,7 +173,7 @@ test("a beaten game is gone from the saved deck once it has moved in", async ({ 
   await page.getByRole("button", { name: "Got it" }).click()
   await expect(tabLabel(page)).toHaveText("Progress")
 
-  await page.getByRole("button", { name: "Deck", exact: true }).click()
+  await page.getByRole("button", { name: "Discover", exact: true }).click()
   await expect(page.getByRole("heading", { name: "Deck A", level: 2 })).toBeVisible()
   await expect(deckButtons(page)).toHaveCount(1)
   await expect(page.getByRole("button", { name: /A Short Hike/ })).toHaveCount(0)
@@ -185,7 +185,7 @@ test("a game set aside stays in the saved deck", async ({ page }) => {
   await endSession(page, "Set Game Aside")
   await expect(tabLabel(page)).toHaveText("Progress")
 
-  await page.getByRole("button", { name: "Deck", exact: true }).click()
+  await page.getByRole("button", { name: "Discover", exact: true }).click()
   await expect(page.getByRole("heading", { name: "A Short Hike", level: 2 })).toBeVisible()
   await expect(deckButtons(page)).toHaveCount(2)
 })
@@ -196,7 +196,7 @@ test("Done for Today keeps the game as the current game instead of reopening the
   await endSession(page, "Done for Today")
   await expect(tabLabel(page)).toHaveText("Progress")
 
-  await expect(page.getByRole("button", { name: "Deck", exact: true })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "Discover", exact: true })).toHaveCount(0)
   await page.getByRole("button", { name: "Now Playing", exact: true }).click()
   await expect(page.getByRole("button", { name: /Start Today.s Session/ })).toBeVisible()
 })
