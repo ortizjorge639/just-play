@@ -4,6 +4,7 @@ import { useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { savePreferences } from "@/app/actions"
 import type { UserPreferences } from "@/lib/types"
+import { ModalLayer, ModalTitle } from "./ui/modal-layer"
 
 const MOODS = [
   { value: "adventurous", label: "Adventurous" },
@@ -49,6 +50,7 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
   }
 
   return (
+    <ModalLayer onClose={onCancel}>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -67,7 +69,7 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
         <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/30 shrink-0" />
         
         <div className="text-center flex flex-col gap-1">
-          <h3 className="text-lg font-bold text-foreground">Update Filters</h3>
+          <ModalTitle asChild><h3 className="text-lg font-bold text-foreground">Update Filters</h3></ModalTitle>
           <p className="text-sm text-muted-foreground">Tweak your preferences for new picks</p>
         </div>
 
@@ -168,5 +170,6 @@ export function QuickFilters({ currentPreferences, onApply, onCancel }: QuickFil
         </div>
       </motion.div>
     </motion.div>
+    </ModalLayer>
   )
 }

@@ -71,7 +71,8 @@ test("Settings is a readable column beside the rail on a desktop", async ({ page
   const help = (await page.getByText(/Recording is set when a session starts/).boundingBox())!
   expect(help.width).toBeLessThanOrEqual(768)
   expect(help.x).toBeGreaterThan(224)
-  await expect(nav(page)).toBeVisible()
+  // The rail stays on screen beside Settings (it is inert while the dialog is open).
+  await expect(page.locator("nav")).toBeVisible()
 })
 
 test("the current game sits beside its actions on a desktop and above them on a phone", async ({ page }) => {

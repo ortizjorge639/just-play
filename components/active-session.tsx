@@ -19,6 +19,7 @@ import type { StandbyPreferences } from "@/lib/types"
 import { getSessionElapsedSeconds } from "@/lib/session-time"
 import { SessionNotesSaveError, type SessionNotesController } from "@/hooks/use-session-notes"
 import { GameArtwork } from "./game-artwork"
+import { ModalLayer, ModalTitle } from "./ui/modal-layer"
 
 type NudgeStage = "none" | "first" | "second"
 const DEFAULT_ESTIMATED_MINUTES = 60
@@ -487,6 +488,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
       {/* End Session Options Modal */}
       <AnimatePresence>
         {showEndOptions && (
+          <ModalLayer onClose={() => setShowEndOptions(false)}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -505,7 +507,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
               <div className="mx-auto mb-6 h-1 w-10 rounded-full bg-muted" />
               {confirmBeaten ? (
                 <>
-                  <h3 className="text-xl font-bold text-foreground mb-1">Beat {game.name}?</h3>
+                  <ModalTitle asChild><h3 className="text-xl font-bold text-foreground mb-1">Beat {game.name}?</h3></ModalTitle>
                   <p className="text-sm text-muted-foreground mb-6">
                     This ends the session and marks the game as beaten. It can&apos;t be undone.
                   </p>
@@ -527,7 +529,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
                 </>
               ) : (
               <>
-              <h3 className="text-xl font-bold text-foreground mb-1">End Session</h3>
+              <ModalTitle asChild><h3 className="text-xl font-bold text-foreground mb-1">End Session</h3></ModalTitle>
               <p className="text-sm text-muted-foreground mb-6">How did it go?</p>
 
               <fieldset disabled={isPending || !!syncError} className="flex flex-col gap-3">
@@ -574,6 +576,7 @@ function ActiveSessionContent({ session, onFinished, onSessionUpdated, onArrived
               )}
             </motion.div>
           </motion.div>
+          </ModalLayer>
         )}
       </AnimatePresence>
     </div>
