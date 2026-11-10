@@ -250,7 +250,9 @@ for (const held of ["pre-commit", "committed-ACK"] as const) {
     await page.emulateMedia({ reducedMotion: "reduce" })
     await page.goto("/?empty-notes&app-shell")
     await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
-    await page.getByRole("button", { name: "Notes", exact: false }).click()
+    // The Notes section starts open; only click its toggle when it is collapsed.
+    const notesToggle = page.getByRole("button", { name: "Notes", exact: true })
+    if ((await notesToggle.getAttribute("aria-expanded")) !== "true") await notesToggle.click()
     const editor = page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
     await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
     await page.evaluate(mode => {

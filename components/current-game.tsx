@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { startSessionForGame, markGameBeaten, abandonGame } from "@/app/actions"
+import { startSessionForGame, markGameBeaten, abandonGame, getResidents } from "@/app/actions"
 import { useXPToast } from "./xp-toast"
 import { StampPanel } from "./stamp-panel"
 import { MoveInNote } from "./move-in-note"
@@ -68,6 +68,15 @@ export function CurrentGame({
       try {
         await markGameBeaten(game.id, null)
         showXPToast({ total: 50, bonuses: ["🏆 Game beaten!"] })
+        // A game that was not on Home before may have just moved in. A failed lookup only
+        // skips the announcement; the game is beaten either way.
+        if (!isResident) {
+          try {
+            if ((await getResidents()).some(resident => resident.game_id === game.id)) onArrived(game)
+          } catch (cause) {
+            console.warn("[residents] Failed to check arrival:", cause)
+          }
+        }
         onGameBeaten()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")

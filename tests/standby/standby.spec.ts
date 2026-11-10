@@ -6,7 +6,7 @@ test("production StandBy defaults to artwork without a settlement view", async (
   await page.getByRole("button", { name: /Enter StandBy/ }).click()
   await expect(page.getByRole("combobox", { name: "StandBy view" })).toHaveCount(0)
   await expect(page.getByTestId("standby-field").locator("img")).toBeVisible()
-  await expect(page.getByTestId("standby-field").locator(".standby-color-form")).toHaveCount(3)
+  await expect(page.getByTestId("standby-field").getByTestId("standby-ascii")).toHaveCount(1)
   await expect(page.locator('[data-testid="settlement-3d"]')).toHaveCount(0)
 })
 
@@ -18,7 +18,9 @@ test("StandBy traps focus, hides discovery, exits with Escape and restores entry
   await expect(dialog).toBeVisible()
   await expect(dialog.getByRole("heading", { name: "A Short Hike" })).toBeVisible()
   await expect(dialog).toContainText("Reach the summit")
-  await expect(dialog).toContainText("Time recording on")
+  // A recorded session with a visible clock needs no recording label.
+  await expect(dialog).not.toContainText("Time recording off")
+  await expect(dialog).not.toContainText("Clock hidden")
   await expect(dialog.getByText("Avg. Session")).toHaveCount(0)
   for (let i = 0; i < 10; i++) await page.keyboard.press("Tab")
   await expect.poll(() => page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))).toBe(true)
@@ -82,13 +84,15 @@ test("pause/resume and deliberate finish use the same authoritative session", as
 })
 
 test("preferences persist independently and do not change the current recording contract", async ({ page }) => {
-  await page.goto("/")
-  await page.getByText("Time & StandBy preferences", { exact: true }).click()
+  // Preferences live behind the top bar's Session preferences button.
+  await page.goto("/?app-shell")
+  await page.getByRole("button", { name: "Session preferences", exact: true }).click()
   await page.getByLabel("Record play time for future sessions").uncheck()
   await expect.poll(() => page.evaluate(() => window.standbyFixture.savedPreferences?.record_time)).toBe(false)
-  await expect(page.getByText("This session: time recording on.", { exact: false })).toBeVisible()
+  await expect(page.getByText("This session's time recording is on.", { exact: false })).toBeVisible()
   await page.getByLabel("Show elapsed clock (recorded sessions only)").uncheck()
   await expect.poll(() => page.evaluate(() => window.standbyFixture.savedPreferences?.show_clock)).toBe(false)
+  await page.keyboard.press("Escape")
   await page.getByRole("button", { name: /Enter StandBy/ }).click()
   await expect(page.getByRole("dialog")).toContainText("Clock hidden; time recording on")
 })
@@ -157,6 +161,9 @@ test("beating the current game opens Home instead of resetting to the deck", asy
   await page.getByRole("button", { name: "I Beat This Game!", exact: true }).click()
   await page.getByRole("button", { name: "Yes, I beat it", exact: true }).click()
 
+  // The game was not on Home yet, so its arrival is announced first.
+  await expect(page.getByRole("heading", { name: "A Short Hike has moved in" })).toBeVisible()
+  await page.getByRole("button", { name: "Got it" }).click()
   await expect(page.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page")
   expect(await page.evaluate(() => sessionStorage.getItem("standby-test-router-refreshed"))).toBe("true")
 })

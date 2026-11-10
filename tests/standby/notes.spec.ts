@@ -33,11 +33,23 @@ const endings = [
   { name: "Set Game Aside", kind: "abandoned" },
 ] as const
 
+// A saved or not-yet-saved draft shows no status line; only saving, acknowledged and failed
+// states do. Waiting for the line to clear is the sync point after a save in flight.
+async function expectNoNotesStatus(page: Page) {
+  await expect(page.getByRole("status")).toHaveCount(0)
+}
+
+// The Notes section starts open; only click its toggle when it is collapsed.
+async function showNotes(page: Page) {
+  const toggle = page.getByRole("button", { name: "Notes", exact: true })
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click()
+}
+
 async function openNotes(page: Page, url = "/", virtualClock = true) {
   if (virtualClock) await page.clock.install()
   await page.goto(url)
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
-  await page.getByRole("button", { name: "Notes", exact: false }).click()
+  await showNotes(page)
   const editor = page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
   // Expansion moves End Session even after a transient frame-stability check.
   await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
@@ -262,7 +274,7 @@ for (const ending of endings) {
     await page.evaluate(() => { window.standbyFixture.schema020 = false })
     await editor.fill("Acknowledged ordinary note")
     await page.clock.fastForward(1001)
-    await expect(page.getByRole("status")).toHaveText("Notes saved.")
+    await expectNoNotesStatus(page)
     const before = await page.evaluate(() => window.standbyFixture.session)
     await finish(page, ending.name)
     await expect(page.getByRole("alert")).toContainText("migration 020")
@@ -302,7 +314,7 @@ test("018-only StandBy finish is unavailable without ending or losing its normal
   const editor = await openNotes(page, "/?empty-notes")
   await editor.fill("Keep the memory")
   await page.clock.fastForward(1001)
-  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await expectNoNotesStatus(page)
   await page.evaluate(() => { window.standbyFixture.schema020 = false })
   await page.getByRole("button", { name: /Enter StandBy/ }).click()
   const dialog = page.getByRole("dialog")
@@ -335,7 +347,7 @@ for (const schema020 of [false, true]) {
     await expect(editor).toHaveCount(0)
     await page.getByRole("button", { name: "Now Playing", exact: true }).click()
     await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
-    await page.getByRole("button", { name: "Notes", exact: false }).click()
+    await showNotes(page)
     editor = page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
     await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
     await expect(editor).toHaveValue("")
@@ -378,7 +390,7 @@ for (const interrupted of ["failed", "pending"] as const) {
     await expect(editor).toHaveCount(0)
     await page.getByRole("button", { name: "Now Playing", exact: true }).click()
     await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
-    await page.getByRole("button", { name: "Notes", exact: false }).click()
+    await showNotes(page)
     const remounted = page.getByRole("textbox", { name: "Session notes, page 1", exact: true })
     await expect(remounted).toHaveValue("Memory that has no ACK")
     await expect(page.getByRole("status")).toHaveText(interrupted === "failed"
@@ -391,7 +403,7 @@ for (const interrupted of ["failed", "pending"] as const) {
     if (interrupted === "failed") await expect(page.getByRole("alert")).toContainText("Offline note service")
     else {
       await page.evaluate(() => window.standbyFixture.releaseNextNote())
-      await expect(page.getByRole("status")).toHaveText("Notes saved.")
+      await expectNoNotesStatus(page)
       expect(await page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(1)
     }
   })
@@ -409,13 +421,13 @@ test("clean same-session reconciliation adopts remote notes before and after Pro
   })
   // Exercise the actual 20-second interval without installing a virtual clock.
   await expect(editor).toHaveValue("Remote legitimate memory", { timeout: 25000 })
-  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await expectNoNotesStatus(page)
   expect(await page.evaluate(() => window.standbyFixture.notesWrites)).toEqual([])
   await page.getByRole("button", { name: "Progress", exact: true }).click()
   await expect(editor).toHaveCount(0)
   await page.getByRole("button", { name: "Now Playing", exact: true }).click()
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
-  await page.getByRole("button", { name: "Notes", exact: false }).click()
+  await showNotes(page)
   await expect(editor).toHaveValue("Remote legitimate memory")
   await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
   await page.getByRole("button", { name: "End Session", exact: true }).click()
@@ -439,7 +451,7 @@ test("a pre-write poll resolved after the newer ACK cannot roll back notes; a la
   await editor.fill("New local ACK")
   await expect.poll(() => page.evaluate(() => window.standbyFixture.notesWrites.length)).toBe(1)
   await page.evaluate(() => window.standbyFixture.releaseNextNote())
-  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await expectNoNotesStatus(page)
   const completedReads = await page.evaluate(() => window.standbyFixture.readCompletions)
   await page.evaluate(() => window.standbyFixture.releaseNextRead())
   await expect.poll(() => page.evaluate(() => window.standbyFixture.readCompletions)).toBeGreaterThan(completedReads)
@@ -448,7 +460,7 @@ test("a pre-write poll resolved after the newer ACK cannot roll back notes; a la
   await expect(editor).toHaveCount(0)
   await page.getByRole("button", { name: "Now Playing", exact: true }).click()
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
-  await page.getByRole("button", { name: "Notes", exact: false }).click()
+  await showNotes(page)
   await expect(editor).toHaveValue("New local ACK")
   await page.evaluate(() => {
     window.standbyFixture.holdReads = false
@@ -458,7 +470,7 @@ test("a pre-write poll resolved after the newer ACK cannot roll back notes; a la
     }
   })
   await expect(editor).toHaveValue("Later remote ACK", { timeout: 25000 })
-  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await expectNoNotesStatus(page)
 })
 
 test("a dirty draft is not replaced by an authoritative refresh before its debounce", async ({ page }) => {
@@ -473,7 +485,7 @@ test("a dirty draft is not replaced by an authoritative refresh before its debou
   })
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
   await expect(editor).toHaveValue("Local draft")
-  await expect(page.getByRole("status")).toHaveText("Notes not saved yet.")
+  await expectNoNotesStatus(page)
   expect(await page.evaluate(() => window.standbyFixture.notesWrites)).toEqual([])
 })
 
@@ -502,7 +514,7 @@ test("an uncertain draft stays protected after an overwrite ACK and later remote
   await expect(editor).toHaveCount(0)
   await page.getByRole("button", { name: "Now Playing", exact: true }).click()
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
-  await page.getByRole("button", { name: "Notes", exact: false }).click()
+  await showNotes(page)
   await expect(editor).toHaveValue("Current intended draft")
   await expect(page.getByRole("status")).toContainText("Notes acknowledged")
 })
@@ -559,7 +571,6 @@ for (const held of ["pre-commit", "committed-ACK"] as const) {
       // A read invocation can still expose the old session's enabled controls.
       await expect(page.getByText(replacementGoal, { exact: true })).toBeVisible()
       await expect.poll(() => oldEditor.evaluate(element => element.isConnected)).toBe(false)
-      await expect(editor).toHaveCount(0)
       await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
       const notes = page.getByRole("button", { name: "Notes", exact: false })
       await expect.poll(() => notes.evaluate(element => {
@@ -569,10 +580,11 @@ for (const held of ["pre-commit", "committed-ACK"] as const) {
         }
         return true
       })).toBe(true)
-      await notes.click()
+      // The replacement session mounts with Notes already open.
+      if ((await notes.getAttribute("aria-expanded")) !== "true") await notes.click()
       await expect(page.locator("div.overflow-hidden").filter({ has: editor }).first()).toHaveAttribute("style", /height:\s*auto/)
       await expect(editor).toHaveValue("Replacement memory")
-      await expect(page.getByRole("status")).toHaveText("Notes saved.")
+      await expectNoNotesStatus(page)
       // The replacement has been observed before the unrelated response settles.
       expect(await queuedCount()).toBe(1)
       const readsWhileHeld = await page.evaluate(() => window.standbyFixture.readSnapshots.length)
@@ -589,7 +601,7 @@ for (const held of ["pre-commit", "committed-ACK"] as const) {
       await expect.poll(() => page.evaluate(() => window.standbyFixture.readSnapshots.length)).toBeGreaterThan(readsWhileHeld)
       await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeEnabled()
       await expect(editor).toHaveValue("Replacement memory")
-      await expect(page.getByRole("status")).toHaveText("Notes saved.")
+      await expectNoNotesStatus(page)
       await expect(page.getByRole("alert")).toHaveCount(0)
       await testInfo.attach("liveness-history.json", {
         contentType: "application/json",
@@ -616,7 +628,7 @@ test("a read begun during a held write cannot replace its newer ACK; a later cle
   })
   await expect.poll(() => page.evaluate(() => window.standbyFixture.readReleases.length)).toBe(1)
   await page.evaluate(() => window.standbyFixture.releaseNextNote())
-  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await expectNoNotesStatus(page)
   const completedReads = await page.evaluate(() => window.standbyFixture.readCompletions)
   await page.evaluate(() => window.standbyFixture.releaseNextRead())
   await expect.poll(() => page.evaluate(() => window.standbyFixture.readCompletions)).toBeGreaterThan(completedReads)
@@ -630,7 +642,7 @@ test("a read begun during a held write cannot replace its newer ACK; a later cle
     window.dispatchEvent(new Event("online"))
   })
   await expect(editor).toHaveValue("Later authoritative draft")
-  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await expectNoNotesStatus(page)
 })
 
 test("multiple queued note writes never suppress reads or consume lifecycle mutation guards", async ({ page }) => {
@@ -649,7 +661,7 @@ test("multiple queued note writes never suppress reads or consume lifecycle muta
   await expect(editor).toHaveValue("Second queued draft")
   await expect(page.getByRole("status")).toHaveText("Saving notes...")
   await page.evaluate(() => window.standbyFixture.releaseNextNote())
-  await expect(page.getByRole("status")).toHaveText("Notes saved.")
+  await expectNoNotesStatus(page)
   await page.evaluate(() => {
     window.standbyFixture.session = {
       ...window.standbyFixture.session!,
