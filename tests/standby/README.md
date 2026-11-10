@@ -3,6 +3,19 @@
 Use the worktree root as the working directory. These tests use isolated local
 fixtures and actual bundled art; they do not access the production database.
 
+## What runs in CI
+
+`.github/workflows/ci.yml` runs lint, a production build, and the Chromium specs for
+surfaces that are live in the app: discovery, session endings and landing, notes, Now
+Playing, StandBy artwork, postcards, residents, stamps, the name card, Progress, and the
+Home gallery subset below.
+
+These specs are not in CI because the views they drive are not currently mounted in the
+app, so they fail until those views return: `canopy.spec.ts` (needs the StandBy view
+picker), `emotes.spec.ts`, `living-world.spec.ts`, `world-lifecycle.spec.ts`, and the
+settlement and Arrange cases in `home.spec.ts`. They also render WebGL in software, which
+is slow on shared runners.
+
 ## Home completed-game gallery
 
 ```sh

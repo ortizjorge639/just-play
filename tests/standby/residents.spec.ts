@@ -60,22 +60,19 @@ test("Missing residents table gracefully degrades", async ({ page }) => {
   await page.goto("/")
 
   // Page should render normally even if residents table is missing
-  await expect(page.locator("text=A Short Hike")).toBeVisible()
+  await expect(page.getByRole("heading", { name: "A Short Hike" })).toBeVisible()
 })
 
-test("Home tab shows Lives here heading and game name when a resident exists", async ({ page }) => {
+test("Home tab lists an arrival with its game name and date when a resident exists", async ({ page }) => {
   // Navigate with residents parameter to populate fixture
   await page.goto("/?residents&app-shell")
 
-  await page.getByRole("button", { name: /Home/i }).click()
+  await page.getByRole("button", { name: "Home", exact: true }).click()
 
-  await expect(page.getByRole("heading", { name: "Lives here" })).toBeVisible()
-
-  // Check for game name in the resident card
-  await expect(page.locator("text=A Short Hike")).toBeVisible()
-
-  // Check for arrival date text
-  await expect(page.locator("text=/Arrived/")).toBeVisible()
+  const arrivals = page.locator("section").filter({ has: page.getByRole("heading", { name: "Arrivals" }) })
+  await expect(arrivals.getByRole("heading", { name: "Arrivals" })).toBeVisible()
+  await expect(arrivals.getByText("A Short Hike")).toBeVisible()
+  await expect(arrivals.locator("time")).toHaveText(/\w+ \d{1,2}, \d{4}/)
 })
 
 test("Home tab hides Lives here when no residents exist", async ({ page }) => {
@@ -86,3 +83,39 @@ test("Home tab hides Lives here when no residents exist", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: "Lives here" })).toHaveCount(0)
 })
+
+test("beating a game from its card does not announce an arrival when it already lives on Home", async ({ page }) => {
+  await page.goto("/?app-shell&active-game&deck&residents")
+  await page.getByRole("button", { name: "More options", exact: true }).click()
+  await page.getByRole("button", { name: "I Beat This Game!", exact: true }).click()
+  await page.getByRole("button", { name: "Yes, I beat it", exact: true }).click()
+
+  await expect(page.getByRole("button", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page")
+  await expect(page.getByRole("heading", { name: /has moved in/ })).toHaveCount(0)
+})
+
+for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
+  test(`the arrival card is a centred card above the app chrome at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.goto("/?app-shell")
+    await beatGame(page)
+
+    const card = page.getByRole("heading", { name: /has moved in/ }).locator("xpath=ancestor::div[contains(@class,'rounded-2xl')]")
+    await expect(card).toBeVisible()
+    await expect(card).toHaveCSS("opacity", "1")
+    const box = (await card.boundingBox())!
+    expect(box.width).toBeLessThanOrEqual(384)
+    expect(box.height).toBeLessThan(viewport.height * 0.6)
+    expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(1)
+    expect(Math.abs(box.y + box.height / 2 - viewport.height / 2)).toBeLessThanOrEqual(1)
+    // The top bar and bottom navigation sit under the dialog, not over it.
+    const covered = await page.evaluate(({ width, height }) => [[width / 2, 20], [width / 2, height - 20]].map(
+      ([x, y]) => !!document.elementFromPoint(x, y)?.closest('[role="dialog"]'),
+    ), viewport)
+    expect(covered).toEqual([true, true])
+
+    // Clicking beside the card closes it.
+    await page.mouse.click(8, viewport.height / 2)
+    await expect(page.getByRole("heading", { name: /has moved in/ })).toHaveCount(0)
+  })
+}

@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+
+  browser-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      # Specs for surfaces that are live in the app. The settlement, world, emote and Canopy
+      # specs target views that are not currently mounted (and need software WebGL), so they
+      # stay a local check; see tests/standby/README.md.
+      - name: Browser tests
+        run: >
+          pnpm exec playwright test --config tests/standby/playwright.config.ts
+          --project=chromium --trace off
+          artwork-motion.spec.ts discovery.spec.ts end-choices.spec.ts finish-landing.spec.ts
+          namecard.spec.ts notes.spec.ts now-playing.spec.ts postcards.spec.ts
+          progress.spec.ts progress-logic.spec.ts quiet-field.spec.ts residents.spec.ts
+          stamps.spec.ts standby.spec.ts uncertainty.spec.ts
+      - name: Home gallery tests
+        run: >
+          pnpm exec playwright test --config tests/standby/playwright.config.ts
+          --project=chromium --trace off home.spec.ts
+          --grep "calm empty state|4:3 carousel|expand into a gallery|Home stamp"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7

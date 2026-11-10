@@ -13,7 +13,7 @@ test("an empty card shows the name and a quiet edit link, nothing else", async (
   await page.getByRole("button", { name: /Progress/i }).click()
   await expect(page.getByRole("heading", { name: "Player" })).toBeVisible()
   await expect(page.getByRole("button", { name: "Edit card" })).toBeVisible()
-  await expect(page.getByLabel("Favorite games")).toHaveCount(0)
+  await expect(page.getByTestId("favorite-game-art")).toHaveCount(0)
 })
 
 test("a filled card shows tagline, play style and favorites", async ({ page }) => {
@@ -21,7 +21,7 @@ test("a filled card shows tagline, play style and favorites", async ({ page }) =
   await page.getByRole("button", { name: /Progress/i }).click()
   await expect(page.getByText("Slow games, long evenings")).toBeVisible()
   await expect(page.getByText("Cozy and unhurried")).toBeVisible()
-  await expect(page.getByLabel("Favorite games").getByText("Library A")).toBeVisible()
+  await expect(page.getByTestId("favorite-game-art")).toContainText("Library A")
 })
 
 test("saving updates the card and sends trimmed-ready input", async ({ page }) => {

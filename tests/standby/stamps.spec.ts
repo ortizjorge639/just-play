@@ -94,35 +94,39 @@ test("Settings shows the saved default rule", async ({ page }) => {
 test("the move-in note shows once and stays dismissed", async ({ page }) => {
   await page.goto("/?current-game&played=120")
   const note = page.getByTestId("move-in-note")
-  await expect(note).toContainText("moves into your settlement as a resident")
+  await expect(note).toContainText("it joins your Home gallery")
   await note.getByRole("button", { name: "Got it" }).click()
   await expect(note).toHaveCount(0)
   await page.reload()
   await expect(page.getByTestId("move-in-note")).toHaveCount(0)
 })
 
-test("Not for me removes the top card and tells the engine", async ({ page }) => {
-  await page.goto("/?app-shell&current-game&deck")
-  await page.getByRole("button", { name: /Not for me/ }).click()
-  await expect.poll(() => calls(page)).toEqual(["skip:deck-B"])
-  await page.getByRole("button", { name: /Not for me/ }).click()
-  await expect.poll(() => calls(page)).toEqual(["skip:deck-B", "skip:deck-A"])
-})
+const dontSuggest = (page: import("@playwright/test").Page) => page.getByRole("button", { name: "Don't suggest this game" })
 
-test("the deck keeps its cards after a reload, minus the one already skipped", async ({ page }) => {
+test("Don't suggest removes the shown game and tells the engine", async ({ page }) => {
   await page.goto("/?app-shell&current-game&deck")
-  await page.getByRole("button", { name: /Not for me/ }).click()
-  await expect.poll(() => calls(page)).toEqual(["skip:deck-B"])
-  await page.reload()
-  await page.getByRole("button", { name: /Not for me/ }).click()
+  await dontSuggest(page).click()
   await expect.poll(() => calls(page)).toEqual(["skip:deck-A"])
+  await expect(page.getByRole("heading", { name: "Deck B", level: 2 })).toBeVisible()
+  await dontSuggest(page).click()
+  await expect.poll(() => calls(page)).toEqual(["skip:deck-A", "skip:deck-B"])
 })
 
-test("a failed Not for me keeps the card and says so plainly", async ({ page }) => {
+test("the deck keeps its cards after a reload, minus the one already removed", async ({ page }) => {
+  await page.goto("/?app-shell&current-game&deck")
+  await dontSuggest(page).click()
+  await expect.poll(() => calls(page)).toEqual(["skip:deck-A"])
+  await page.reload()
+  await expect(page.getByRole("button", { name: /Deck A/ })).toHaveCount(0)
+  await dontSuggest(page).click()
+  await expect.poll(() => calls(page)).toEqual(["skip:deck-B"])
+})
+
+test("a failed Don't suggest keeps the game and says so plainly", async ({ page }) => {
   await page.goto("/?app-shell&current-game&deck&skip-fail")
-  await page.getByRole("button", { name: /Not for me/ }).click()
+  await dontSuggest(page).click()
   await expect(page.getByText("Could not save that. Try again.")).toBeVisible()
-  await expect(page.getByRole("button", { name: /Not for me/ })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Deck A", level: 2 })).toBeVisible()
   expect(await calls(page)).toEqual([])
 })
 
