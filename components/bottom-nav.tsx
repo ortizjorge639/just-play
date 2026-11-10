@@ -13,9 +13,10 @@ interface BottomNavProps {
 
 export function BottomNav({ active, onChange, hasActiveSession, xpPending }: BottomNavProps) {
   return (
-    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-border bg-background px-4 pb-[env(safe-area-inset-bottom)]"
-      style={{ minHeight: 64 }}
+    // A bottom bar on phones and tablets; a left rail from the lg breakpoint.
+    <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-40 flex min-h-16 items-center justify-around border-t border-border bg-background px-4 pb-[env(safe-area-inset-bottom)] lg:right-auto lg:top-0 lg:w-56 lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:border-r lg:border-t-0 lg:px-3 lg:py-4"
     >
+      <p className="hidden px-3 pb-4 pt-1 text-base font-semibold tracking-tight text-foreground lg:block">Just Play</p>
       {/* Only show Deck when no active session - forces focus on current game */}
       {!hasActiveSession && (
         <NavItem
@@ -85,7 +86,7 @@ function NavItem({
     <button
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className="relative flex min-h-11 min-w-16 flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="relative flex min-h-11 min-w-16 flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:aria-[current=page]:bg-secondary"
     >
       <div className="relative">
         <span
@@ -113,7 +114,7 @@ function NavItem({
         )}
       </div>
       <span
-        className={`text-xs font-medium transition-colors ${
+        className={`text-xs font-medium transition-colors lg:text-sm ${
           active ? "text-primary" : glow ? "text-primary" : "text-muted-foreground"
         }`}
       >

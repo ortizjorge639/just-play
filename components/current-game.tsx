@@ -109,9 +109,10 @@ export function CurrentGame({
       {syncError ? <div role="alert" className="mb-4 rounded-lg border border-primary/40 p-3 text-sm text-primary">
         {syncError} <button className="min-h-11 underline" onClick={onRetry}>Retry</button>
       </div> : null}
+      <div className="flex w-full flex-col items-center lg:flex-row lg:items-start lg:justify-center lg:gap-10 lg:pt-6">
       {/* Flippable card */}
       <div
-        className="relative mb-6 w-full max-w-[320px]"
+        className="relative mb-6 w-full max-w-[320px] lg:mb-0 lg:shrink-0"
         style={{ aspectRatio: "3/4", perspective: "1200px" }}
       >
         <motion.div
@@ -261,6 +262,7 @@ export function CurrentGame({
         </motion.div>
       </div>
 
+      <div className="flex w-full flex-col items-center lg:w-[320px] lg:shrink-0">
       {/* Error */}
       <AnimatePresence>
         {error && (
@@ -314,6 +316,8 @@ export function CurrentGame({
           </svg>
           More options
         </button>
+      </div>
+      </div>
       </div>
 
       {/* Options bottom sheet */}

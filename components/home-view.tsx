@@ -110,7 +110,7 @@ export function HomeView({ residents, completedGames, postcards, invitedGame, sh
   const residentGameIds = new Set(residents.map((resident) => resident.game_id))
 
   return (
-    <div className="flex min-h-dvh min-w-0 flex-col px-4 pb-24 sm:px-6">
+    <div className="mx-auto flex min-h-dvh w-full min-w-0 max-w-5xl flex-col px-4 pb-24 sm:px-6 lg:pb-10">
       <section aria-labelledby="home-title" className="mb-7 pt-2">
         {orderedCompletedGames.length ? (
           <Carousel

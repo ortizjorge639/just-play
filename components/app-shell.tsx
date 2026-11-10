@@ -184,13 +184,14 @@ export function AppShell({
 
   return (
     <XPToastProvider playerStats={playerStats}>
-    <div className="flex min-h-dvh flex-col pb-16">
+    <div className="flex min-h-dvh flex-col pb-16 lg:pb-0 lg:pl-56">
       {/* Top bar */}
       <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-background px-4 py-2 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <p className="text-base font-semibold tracking-tight text-foreground">Just Play</p>
-          <span aria-hidden="true" className="h-4 w-px bg-border" />
-          <p className="truncate text-sm text-muted-foreground">
+          {/* From lg the rail carries the name, so the bar shows only where you are. */}
+          <p className="text-base font-semibold tracking-tight text-foreground lg:hidden">Just Play</p>
+          <span aria-hidden="true" className="h-4 w-px bg-border lg:hidden" />
+          <p className="truncate text-sm text-muted-foreground lg:text-base lg:font-semibold lg:text-foreground">
             {visibleTab === "deck" ? "Discover" : visibleTab === "session" ? "Now Playing" : visibleTab === "home" ? "Home" : "Progress"}
           </p>
         </div>
