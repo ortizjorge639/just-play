@@ -15,8 +15,9 @@ for (const viewport of [
       "background-image",
       /linear-gradient.*linear-gradient/,
     )
-    if (viewport.width >= 390 && viewport.height >= 844) {
-      await expect(page.getByRole("button", { name: /Lock in game/ })).toBeInViewport()
+    // The primary action is on screen without scrolling on any upright phone.
+    if (viewport.height >= 568) {
+      await expect(page.getByRole("button", { name: "Start Playing" })).toBeInViewport()
     }
     const undoSkip = page.getByRole("button", { name: "Undo skip" })
     await expect(undoSkip).toBeDisabled()
@@ -34,13 +35,12 @@ for (const viewport of [
     await undoSkip.click()
     await expect(page.getByRole("heading", { name: "Deck A" })).toBeVisible()
 
-    await page.getByRole("button", { name: /Lock in game/ }).click()
-    await expect(page.getByRole("heading", { name: "Deck A" })).toBeVisible()
+    // Looking at another game is free: nothing starts until Start Playing.
+    await page.getByRole("button", { name: /Deck B/ }).click()
+    await expect(page.getByRole("heading", { name: "Deck B", level: 2 })).toBeVisible()
     await expect(page.getByRole("button", { name: "Start Playing" })).toBeVisible()
+    await expect(page.getByRole("button", { name: /Lock in game/ })).toHaveCount(0)
     await expect(page.getByRole("button", { name: "Change game" })).toHaveCount(0)
-    if (viewport.width >= 390 && viewport.height >= 844) {
-      await expect(page.getByRole("button", { name: "Start Playing" })).toBeInViewport()
-    }
 
     expect(await page.evaluate(() => window.standbyFixture.sessionCreateCalls)).toEqual([])
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
@@ -51,7 +51,6 @@ test("Split focus keeps a long game title readable at 200% text size", async ({ 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/?app-shell&deck&current-game&long-deck")
   await page.addStyleTag({ content: "html{font-size:200%!important}" })
-  await page.getByRole("button", { name: /Lock in game/ }).click()
   await expect(page.getByRole("heading", { name: /Tears of the Kingdom/ })).toBeVisible()
   await expect(page.getByRole("button", { name: "Start Playing" })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
@@ -91,7 +90,7 @@ test("booster packs remain available while recommendations are on the deck", asy
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto("/?app-shell&deck&current-game&packs")
   await expect(page.getByRole("button", { name: "Booster pack (2 left)" })).toBeVisible()
-  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeInViewport()
+  await expect(page.getByRole("button", { name: "Start Playing" })).toBeInViewport()
   await page.getByRole("button", { name: "Booster pack (2 left)" }).click()
   await expect(page.getByRole("heading", { name: "Booster Pack" })).toBeVisible()
   await expect(page.getByRole("button", { name: "Open Booster Pack" })).toBeVisible()
@@ -140,46 +139,75 @@ test("the booster pack honors reduced-motion preferences", async ({ page }) => {
   await expect.poll(() => art.evaluate(element => getComputedStyle(element).transform)).toBe("none")
 })
 
-test("a locked-in game can still be skipped, which returns to choosing", async ({ page }) => {
-  await page.goto("/?app-shell&deck&current-game")
-  await page.getByRole("button", { name: /Lock in game/ }).click()
-  await expect(page.getByRole("button", { name: "Start Playing" })).toBeVisible()
+const startCalls = (page: import("@playwright/test").Page) =>
+  page.evaluate(() => window.standbyFixture.sessionCreateCalls)
 
-  await page.getByRole("button", { name: /Skip for now/ }).click()
-  await expect(page.getByRole("heading", { name: "Deck B", level: 2 })).toBeVisible()
-  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeVisible()
-  await expect(page.getByRole("button", { name: "Start Playing" })).toHaveCount(0)
-  expect(await page.evaluate(() => window.standbyFixture.sessionCreateCalls)).toEqual([])
+test("one tap on Start Playing starts the selected game", async ({ page }) => {
+  await page.goto("/?app-shell&deck&current-game")
+  expect(await startCalls(page)).toEqual([])
+  await page.getByRole("button", { name: "Start Playing" }).click()
+  await expect.poll(() => startCalls(page)).toEqual(["deck-A"])
 })
 
-test("undoing a skip while another game is locked in shows the returned game unlocked", async ({ page }) => {
+test("picking another game from the list starts that one instead", async ({ page }) => {
+  await page.goto("/?app-shell&deck&current-game")
+  await page.getByRole("button", { name: /Deck B/ }).click()
+  await expect(page.getByRole("heading", { name: "Deck B", level: 2 })).toBeVisible()
+  expect(await startCalls(page)).toEqual([])
+  await page.getByRole("button", { name: "Start Playing" }).click()
+  await expect.poll(() => startCalls(page)).toEqual(["deck-B"])
+})
+
+test("skipping moves on without starting anything, and undo brings the game back", async ({ page }) => {
   await page.goto("/?app-shell&deck&current-game")
   await page.getByRole("button", { name: /Skip for now/ }).click()
-  await page.getByRole("button", { name: /Lock in game/ }).click()
-  await expect(page.getByRole("button", { name: "Start Playing" })).toBeVisible()
-
+  await expect(page.getByRole("heading", { name: "Deck B", level: 2 })).toBeVisible()
   await page.getByRole("button", { name: /Undo skip/ }).click()
   await expect(page.getByRole("heading", { name: "Deck A", level: 2 })).toBeVisible()
-  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeVisible()
+  expect(await startCalls(page)).toEqual([])
 })
 
-test("the booster pack opens from a locked-in game and comes back to choosing", async ({ page }) => {
-  await page.goto("/?app-shell&deck&current-game&packs")
-  await page.getByRole("button", { name: /Lock in game/ }).click()
-  await page.getByRole("button", { name: "Booster pack (2 left)" }).click()
-  await expect(page.getByRole("heading", { name: "Booster Pack" })).toBeVisible()
-
-  await page.getByRole("button", { name: "Back to recommendations" }).click()
-  await expect(page.getByRole("heading", { name: "Choose a game" })).toBeVisible()
-  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeVisible()
-})
-
-test("a locked-in game can be marked as not to suggest", async ({ page }) => {
+test("a start that fails says so and leaves the choice in place", async ({ page }) => {
+  // The harness's createSession always rejects, standing in for a failed start.
   await page.goto("/?app-shell&deck&current-game")
-  await page.getByRole("button", { name: /Lock in game/ }).click()
-  await page.getByRole("button", { name: "Don't suggest this game" }).click()
+  const start = page.getByRole("button", { name: "Start Playing" })
+  await start.click()
+  await expect(page.getByRole("alert")).toBeVisible()
+  await expect(start).toBeEnabled()
+  await expect(page.getByRole("heading", { name: "Deck A", level: 2 })).toBeVisible()
+})
 
-  await expect(page.getByRole("heading", { name: "Deck B", level: 2 })).toBeVisible()
-  await expect(page.getByRole("button", { name: /Deck A/ })).toHaveCount(0)
-  await expect(page.getByRole("button", { name: /Lock in game/ })).toBeVisible()
+test("the selected game and its action come before the other picks on a phone, beside them on a desktop", async ({ page }) => {
+  await page.goto("/?app-shell&deck&current-game")
+  const start = page.getByRole("button", { name: "Start Playing" })
+  const firstPick = page.getByRole("button", { name: /Deck A/ })
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  let startBox = (await start.boundingBox())!, pickBox = (await firstPick.boundingBox())!
+  expect(startBox.y + startBox.height).toBeLessThan(pickBox.y)
+
+  await page.setViewportSize({ width: 1440, height: 900 })
+  startBox = (await start.boundingBox())!
+  pickBox = (await firstPick.boundingBox())!
+  expect(startBox.x).toBeGreaterThan(pickBox.x + pickBox.width)
+})
+
+test("the first tab is called Discover in the navigation and the top bar", async ({ page }) => {
+  await page.goto("/?app-shell&deck&current-game")
+  const tab = page.getByRole("navigation", { name: "Main navigation" }).getByRole("button", { name: "Discover", exact: true })
+  await expect(tab).toHaveAttribute("aria-current", "page")
+  await expect(page.getByRole("banner")).toContainText("Discover")
+  await expect(page.getByRole("button", { name: "Deck", exact: true })).toHaveCount(0)
+})
+
+test("the empty state only offers what is available", async ({ page }) => {
+  // No packs left and nothing skipped: filters and search are the ways forward.
+  await page.goto("/?app-shell&current-game")
+  const hint = page.getByText(/No games are showing right now/)
+  await expect(hint).toHaveText("No games are showing right now. You can update your filters or search for a game.")
+
+  // With packs left, the pack is offered too.
+  await page.goto("/?app-shell&booster&packs&current-game")
+  await page.getByRole("button", { name: "Back to recommendations" }).click()
+  await expect(hint).toHaveText("No games are showing right now. You can open a booster pack, update your filters or search for a game.")
 })

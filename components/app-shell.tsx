@@ -184,7 +184,8 @@ export function AppShell({
 
   return (
     <XPToastProvider playerStats={playerStats}>
-    <div className="flex min-h-dvh flex-col pb-16 lg:pb-0 lg:pl-56">
+    {/* Tabs slide in from the side; clipping keeps that motion from widening the page. */}
+    <div className="flex min-h-dvh flex-col overflow-x-clip pb-16 lg:pb-0 lg:pl-56">
       {/* Top bar */}
       <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-background px-4 py-2 sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
@@ -357,7 +358,7 @@ export function AppShell({
                 </div>
                 <h2 className="text-xl font-bold text-foreground">No active session</h2>
                 <p className="text-muted-foreground text-base max-w-xs">
-                  Head to the deck and lock in a game to start playing.
+                  Go to Discover and pick a game to start playing.
                 </p>
                 <button
                   onClick={() => setActiveTab("deck")}

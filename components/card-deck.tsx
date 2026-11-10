@@ -30,7 +30,6 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     [savedDeck, residentGameIds]
   )
   const [rejectedStack, setRejectedStack] = useState<Game[]>([])
-  const [lockedGame, setLockedGame] = useState<Game | null>(null)
   const [focusedGameId, setFocusedGameId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [skipPending, startSkip] = useTransition()
@@ -54,11 +53,10 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     setShowBoosterPack(false)
   }, [setDeck])
 
-  // A searched game becomes a local selection; no session is written until play starts.
+  // A searched game becomes the selected game; no session is written until play starts.
   const addSearchedGame = useCallback((game: Game) => {
     setDeck((prev) => [game, ...prev.filter((g) => g.id !== game.id)])
     setFocusedGameId(game.id)
-    setLockedGame(game)
   }, [setDeck])
 
   const handleUndo = useCallback(() => {
@@ -67,13 +65,11 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
     setRejectedStack((prev) => prev.slice(0, -1))
     setDeck((prev) => [...prev, lastRejected])
     setFocusedGameId(lastRejected.id)
-    setLockedGame(null)
   }, [rejectedStack, setDeck])
 
   const handleSkip = useCallback((game: Game) => {
     setDeck((prev) => prev.filter((candidate) => candidate.id !== game.id))
     setRejectedStack((prev) => [...prev, game])
-    setLockedGame((current) => current?.id === game.id ? null : current)
   }, [setDeck])
 
   const handleNotForMe = useCallback((game: Game) => {
@@ -85,34 +81,27 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
         return
       }
       setDeck((prev) => prev.filter((g) => g.id !== game.id))
-      setLockedGame((current) => current?.id === game.id ? null : current)
     })
   }, [setDeck])
 
-  const handleLockIn = useCallback((game: Game) => {
-    setFocusedGameId(game.id)
-    setLockedGame(game)
-  }, [])
-
-  const confirmLockIn = useCallback(() => {
-    if (!lockedGame) return
+  // One tap starts the selected game. Picking a different game first is free.
+  const startPlaying = useCallback((game: Game) => {
     setError(null)
     startTransition(async () => {
       try {
-        const result = await createSession(lockedGame.id)
+        const result = await createSession(game.id)
         if (result.xpAwarded) showXPToast(result.xpAwarded)
         onSessionCreated()
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong")
       }
     })
-  }, [lockedGame, onSessionCreated, showXPToast])
+  }, [onSessionCreated, showXPToast])
 
-  const focusedGame = deck.find((game) => game.id === focusedGameId) ?? deck[0]
-  const displayGame = lockedGame ?? focusedGame
+  const displayGame = deck.find((game) => game.id === focusedGameId) ?? deck[0]
 
   // Show booster pack overlay only after onboarding is complete and when explicitly triggered
-  if (!lockedGame && onboardingComplete && ((isBoosterPack && !packOpened && !boosterDismissed && deck.length === 0) || showBoosterPack)) {
+  if (onboardingComplete && ((isBoosterPack && !packOpened && !boosterDismissed && deck.length === 0) || showBoosterPack)) {
     return (
       <>
         <BoosterPack
@@ -128,6 +117,14 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
   }
 
   if (deck.length === 0) {
+    // Only mention the ways forward that are on offer right now.
+    const ways = [
+      rejectedStack.length > 0 ? "bring back the last game you skipped" : null,
+      currentBoosterStatus && currentBoosterStatus.packsRemaining > 0 ? "open a booster pack" : null,
+      "update your filters",
+      "search for a game",
+    ].filter((way): way is string => way !== null)
+    const emptyHint = `No games are showing right now. You can ${ways.slice(0, -1).join(", ")} or ${ways[ways.length - 1]}.`
     return (
       <>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
@@ -137,9 +134,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
             </svg>
           </div>
           <h2 className="text-xl font-bold text-foreground">No more games</h2>
-          <p className="text-muted-foreground text-base max-w-xs">
-            No games are showing right now. Undo a skip, open another pack, or update your filters.
-          </p>
+          <p className="text-muted-foreground text-base max-w-xs">{emptyHint}</p>
           <div className="flex flex-col gap-3 w-full max-w-xs mt-2">
             {rejectedStack.length > 0 && (
               <button
@@ -203,19 +198,46 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
 
   return (
     <>
-      <main className="mx-auto grid w-full max-w-[1440px] flex-1 gap-5 px-4 pb-8 pt-5 sm:px-6 lg:grid-cols-[minmax(220px,.68fr)_minmax(0,1.32fr)] lg:gap-8 lg:px-8">
-        <section aria-labelledby="recommendations-title" className="min-w-0">
-          <header className="mb-4">
-            <h1 id="recommendations-title" className="text-2xl font-semibold tracking-tight text-foreground">Choose a game</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Select a game to see its details.</p>
-          </header>
+      {/* On a phone the selected game and its action come first; from lg they sit beside the list. */}
+      <main className="mx-auto grid w-full max-w-[1440px] flex-1 content-start gap-5 px-4 pb-24 pt-5 sm:px-6 lg:pb-8 lg:grid-cols-[minmax(220px,.68fr)_minmax(0,1.32fr)] lg:grid-rows-[auto_1fr] lg:gap-x-8 lg:gap-y-4 lg:px-8">
+        <header className="lg:col-start-1 lg:row-start-1">
+          <h1 id="recommendations-title" className="text-2xl font-semibold tracking-tight text-foreground">Choose a game</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Pick one and start, or look through the others.</p>
+        </header>
+        <section aria-label={`${displayGame.name} details`} className="relative isolate flex min-h-[22rem] min-w-0 flex-col justify-end overflow-hidden rounded-xl border border-border bg-card sm:min-h-[32rem] lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-[min(70dvh,44rem)]">
+          <GameArtwork
+            src={displayGame.header_image}
+            alt=""
+            sizes="(max-width: 1023px) 100vw, 68vw"
+            priority
+            className="absolute inset-0"
+          />
+          <div aria-hidden="true" data-testid="recommendation-art-overlay" className="recommendation-art-overlay absolute inset-0 z-[3]" />
+          <div className="relative z-[4] grid gap-3 p-5 sm:p-7 lg:p-9">
+            <p className="text-sm font-medium text-primary">{displayGame.estimated_session_length} min · {(displayGame.genres ?? []).slice(0, 3).join(" · ")}</p>
+            <h2 className="max-w-[18ch] break-words text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">{displayGame.name}</h2>
+            {displayGame.description ? <p className="max-w-[58ch] text-sm leading-relaxed text-white/85 sm:text-base">{displayGame.description}</p> : null}
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => startPlaying(displayGame)}
+                disabled={isPending}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight disabled:cursor-wait disabled:opacity-60"
+              >
+                {isPending ? "Starting…" : <><svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor" /></svg>Start Playing</>}
+              </button>
+            </div>
+            {error ? <p role="alert" className="max-w-xl rounded-lg border border-destructive/50 bg-background/80 px-3 py-2 text-sm text-destructive">{error}</p> : null}
+          </div>
+        </section>
+        <section aria-labelledby="recommendations-title" className="min-w-0 lg:col-start-1 lg:row-start-2">
           <ul className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
             {deck.map((game) => (
               <li key={game.id}>
                 <button
                   type="button"
                   aria-pressed={displayGame.id === game.id}
-                  onClick={() => { setFocusedGameId(game.id); if (lockedGame) setLockedGame(game) }}
+                  onClick={() => setFocusedGameId(game.id)}
                   className="flex min-h-[76px] w-full items-center gap-3 rounded-lg border border-border bg-card p-2 text-left transition-colors hover:bg-secondary aria-pressed:border-primary/70 aria-pressed:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 >
                   <GameArtwork src={game.header_image} alt="" sizes="72px" className="relative h-14 w-[72px] shrink-0 rounded-md" />
@@ -257,7 +279,7 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
             {currentBoosterStatus ? (
               <button
                 type="button"
-                onClick={() => { setLockedGame(null); setShowBoosterPack(true) }}
+                onClick={() => setShowBoosterPack(true)}
                 disabled={currentBoosterStatus.packsRemaining <= 0}
                 className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -272,43 +294,6 @@ export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, 
           </div>
         </section>
 
-        <section aria-label={lockedGame ? `${displayGame.name} selected` : `${displayGame.name} details`} className="relative isolate flex min-h-[22rem] min-w-0 flex-col justify-end overflow-hidden rounded-xl border border-border bg-card sm:min-h-[32rem] lg:min-h-[min(70dvh,44rem)]">
-          <GameArtwork
-            src={displayGame.header_image}
-            alt=""
-            sizes="(max-width: 1023px) 100vw, 68vw"
-            priority
-            className="absolute inset-0"
-          />
-          <div aria-hidden="true" data-testid="recommendation-art-overlay" className="recommendation-art-overlay absolute inset-0 z-[3]" />
-          <div className="relative z-[4] grid gap-3 p-5 sm:p-7 lg:p-9">
-            <p className="text-sm font-medium text-primary">{lockedGame ? "Ready to play" : `${displayGame.estimated_session_length} min · ${(displayGame.genres ?? []).slice(0, 3).join(" · ")}`}</p>
-            <h2 className="max-w-[18ch] break-words text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">{displayGame.name}</h2>
-            {displayGame.description ? <p className="max-w-[58ch] text-sm leading-relaxed text-white/85 sm:text-base">{displayGame.description}</p> : null}
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              {lockedGame ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={confirmLockIn}
-                    disabled={isPending}
-                    className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight disabled:cursor-wait disabled:opacity-60"
-                  >
-                    {isPending ? "Starting…" : <><svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor" /></svg>Start Playing</>}
-                  </button>
-                </>
-              ) : (
-                <button type="button" onClick={() => handleLockIn(displayGame)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 font-semibold text-primary-foreground transition-colors hover:bg-primary-highlight">
-                  <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 10V7.5a4.5 4.5 0 019 0V10m-11.25 0h13.5A1.5 1.5 0 0120.25 11.5v8A1.5 1.5 0 0118.75 21h-13.5a1.5 1.5 0 01-1.5-1.5v-8A1.5 1.5 0 015.25 10z" />
-                  </svg>
-                  Lock in game
-                </button>
-              )}
-            </div>
-            {error ? <p role="alert" className="max-w-xl rounded-lg border border-destructive/50 bg-background/80 px-3 py-2 text-sm text-destructive">{error}</p> : null}
-          </div>
-        </section>
       </main>
       <GameSearch onGameSelected={addSearchedGame} />
     </>
