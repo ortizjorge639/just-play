@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { getActiveSession } from "@/app/actions"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
@@ -88,6 +88,7 @@ export function AppShell({
     return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
   })()
   const [arrivedGame, setArrivedGame] = useState<Game | null>(null)
+  const residentGameIds = useMemo(() => (residents ?? []).map(r => r.game_id), [residents])
   const [stampRules, setStampRules] = useState<StampRule[]>(initialStampRules ?? [])
   const handleStampRuleSaved = useCallback((gameId: string | null, rule: StampRule | null) => {
     setStampRules(prev => {
@@ -123,6 +124,12 @@ export function AppShell({
     setActiveSession(null)
     setActiveTab("progress")
     setNeedsRefresh(true)
+    // The reload below rebuilds the shell, so the Progress landing is handed over like the arrival.
+    try {
+      sessionStorage.setItem("landingTab", JSON.stringify({ tab: "progress", timestamp: Date.now() }))
+    } catch {
+      // storage unavailable: land on the default tab rather than block finishing
+    }
     // Full reload to get updated history
     window.location.reload()
   }, [setActiveSession])
@@ -151,6 +158,23 @@ export function AppShell({
         // sessionStorage only exists on the client, so it can only be read after mount
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setArrivedGame(game)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  // A finished session lands on Progress after its reload, whatever the default tab would be.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("landingTab")
+      if (!raw) return
+      sessionStorage.removeItem("landingTab")
+      const { tab, timestamp } = JSON.parse(raw) as { tab: string; timestamp: number }
+      if (tab === "progress" && Date.now() - timestamp < 30000) {
+        // sessionStorage only exists on the client, so it can only be read after mount
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setActiveTab("progress")
       }
     } catch {
       // ignore
@@ -281,6 +305,7 @@ export function AppShell({
           >
             <CardDeck
               games={recommendations}
+              residentGameIds={residentGameIds}
               preferences={user.preferences || {}}
               onSessionCreated={handleSessionCreated}
               isBoosterPack={isBoosterPack}

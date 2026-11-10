@@ -38,7 +38,8 @@ test("Arrival card does not show when the game was already a resident", async ({
 
   // The finished session is stored just before the page reloads.
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("standby-test-finished-notes"))).not.toBeNull()
-  await expect(page.getByRole("button", { name: "End Session", exact: true })).toBeVisible()
+  // A finished session lands on Progress once the page is back.
+  await expect(page.getByRole("region", { name: "Player profile" })).toBeVisible()
   await expect(page.getByRole("heading", { name: /has moved in/ })).toHaveCount(0)
   expect(await page.evaluate(() => sessionStorage.getItem("arrivedGame"))).toBeNull()
 })

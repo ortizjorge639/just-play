@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useCallback } from "react"
+import { useState, useTransition, useCallback, useMemo } from "react"
 import { AnimatePresence } from "framer-motion"
 import { GameSearch } from "./game-search"
 import { QuickFilters } from "./quick-filters"
@@ -18,10 +18,17 @@ interface CardDeckProps {
   isBoosterPack?: boolean
   boosterPackStatus?: { packsOpenedToday: number; packsRemaining: number }
   onboardingComplete?: boolean
+  /** Games already on Home. The saved deck can outlive the moment one moves in. */
+  residentGameIds?: string[]
 }
 
-export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, boosterPackStatus, onboardingComplete = true }: CardDeckProps) {
-  const [deck, setDeck] = usePersistedDeck(games)
+export function CardDeck({ games, preferences, onSessionCreated, isBoosterPack, boosterPackStatus, onboardingComplete = true, residentGameIds }: CardDeckProps) {
+  const [savedDeck, setDeck] = usePersistedDeck(games)
+  // Booster packs never offer a game that is already on Home; the saved deck follows the same rule.
+  const deck = useMemo(
+    () => residentGameIds?.length ? savedDeck.filter((game) => !residentGameIds.includes(game.id)) : savedDeck,
+    [savedDeck, residentGameIds]
+  )
   const [rejectedStack, setRejectedStack] = useState<Game[]>([])
   const [lockedGame, setLockedGame] = useState<Game | null>(null)
   const [focusedGameId, setFocusedGameId] = useState<string | null>(null)
