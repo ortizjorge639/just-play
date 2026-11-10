@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
+import { LANDING_COOKIE, landingTabFromCookie } from "@/lib/landing"
 import {
   getUser,
   getActiveSession,
@@ -106,6 +108,7 @@ export default async function HomePage({
       isAnonymous={authUser.is_anonymous === true}
       isBoosterPack={true}
       boosterPackStatus={boosterPackStatus}
+      initialTab={landingTabFromCookie((await cookies()).get(LANDING_COOKIE)?.value)}
     />
   )
 }

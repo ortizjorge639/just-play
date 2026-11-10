@@ -21,6 +21,7 @@ import { ResidentArrivalCard } from "./resident-arrival-card"
 import { clearPersistedDeck } from "@/hooks/use-persisted-deck"
 import { signout } from "@/app/auth/actions"
 import { FilterTip } from "./filter-tip"
+import { clearLandingCookie, setLandingCookie, type LandingTab } from "@/lib/landing"
 import { DEFAULT_STANDBY_PREFERENCES, StandbyPreferencesForm } from "./standby-preferences"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import type { UserProfile, Game, Session, GameProgress, CompletedGame, PlayerStats, Resident, Postcard, StampRule, NameCard } from "@/lib/types"
@@ -42,6 +43,8 @@ interface AppShellProps {
   isAnonymous?: boolean
   isBoosterPack: boolean
   boosterPackStatus: { packsOpenedToday: number; packsRemaining: number }
+  /** Set by the server from the landing cookie after a session ends. */
+  initialTab?: LandingTab
 }
 
 export function AppShell({
@@ -59,10 +62,11 @@ export function AppShell({
   isAnonymous,
   isBoosterPack,
   boosterPackStatus,
+  initialTab,
 }: AppShellProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<Tab>(
-    initialSession || activeGame ? "session" : "deck"
+    initialTab ?? (initialSession || activeGame ? "session" : "deck")
   )
   const {
     session: activeSession, sessionReadRevision, setSession: setActiveSession, updateSession,
@@ -124,12 +128,8 @@ export function AppShell({
     setActiveSession(null)
     setActiveTab("progress")
     setNeedsRefresh(true)
-    // The reload below rebuilds the shell, so the Progress landing is handed over like the arrival.
-    try {
-      sessionStorage.setItem("landingTab", JSON.stringify({ tab: "progress", timestamp: Date.now() }))
-    } catch {
-      // storage unavailable: land on the default tab rather than block finishing
-    }
+    // The reload below rebuilds the shell; the cookie lets the server render Progress first.
+    setLandingCookie("progress")
     // Full reload to get updated history
     window.location.reload()
   }, [setActiveSession])
@@ -164,21 +164,9 @@ export function AppShell({
     }
   }, [])
 
-  // A finished session lands on Progress after its reload, whatever the default tab would be.
+  // The landing is for one page load only, so a later reload returns to the default tab.
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("landingTab")
-      if (!raw) return
-      sessionStorage.removeItem("landingTab")
-      const { tab, timestamp } = JSON.parse(raw) as { tab: string; timestamp: number }
-      if (tab === "progress" && Date.now() - timestamp < 30000) {
-        // sessionStorage only exists on the client, so it can only be read after mount
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setActiveTab("progress")
-      }
-    } catch {
-      // ignore
-    }
+    clearLandingCookie()
   }, [])
 
   const handleTabChange = useCallback((tab: Tab) => {

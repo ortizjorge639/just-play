@@ -12,8 +12,27 @@ async function endSession(page: Page, choice: string) {
   await expect.poll(() => page.evaluate(() => sessionStorage.getItem("standby-test-finished-notes"))).not.toBeNull()
 }
 
+const landingCookie = (page: Page) => page.evaluate(() => document.cookie.includes("jp-landing="))
+
+// Records what the top bar and the XP toast show on every frame of the current page load.
+function recordFrames() {
+  const frames: { label: string | null; toast: boolean }[] = []
+  ;(window as unknown as { landingFrames: typeof frames }).landingFrames = frames
+  const tick = () => {
+    const label = document.querySelectorAll("header p")[1]?.textContent ?? null
+    const toast = /\+\d+ XP/.test(document.body?.innerText ?? "")
+    const last = frames[frames.length - 1]
+    if (!last || last.label !== label || last.toast !== toast) frames.push({ label, toast })
+    requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+}
+const frames = (page: Page) =>
+  page.evaluate(() => (window as unknown as { landingFrames: { label: string | null; toast: boolean }[] }).landingFrames)
+
 for (const choice of ["Done for Today", "I Beat This Game!", "Abandon Game"]) {
   test(`${choice} lands on Progress after the reload`, async ({ page }) => {
+    await page.addInitScript(recordFrames)
     await page.goto("/?app-shell")
     await expect(tabLabel(page)).toHaveText("Now Playing")
     await endSession(page, choice)
@@ -26,22 +45,73 @@ for (const choice of ["Done for Today", "I Beat This Game!", "Abandon Game"]) {
     await expect(page.getByRole("heading", { name: /has moved in/ })).toHaveCount(0)
     await expect(tabLabel(page)).toHaveText("Progress")
     await expect(page.getByRole("region", { name: "Player profile" })).toBeVisible()
-    // The handover is used once, so a later reload goes back to the default tab.
-    expect(await page.evaluate(() => sessionStorage.getItem("landingTab"))).toBeNull()
+    // The page comes back already on Progress: no other tab is shown first.
+    expect((await frames(page)).map(frame => frame.label).filter(Boolean)).toEqual(["Progress"])
+    // The landing is used once, so a later reload goes back to the default tab.
+    expect(await landingCookie(page)).toBe(false)
 
     await page.reload()
     await expect(tabLabel(page)).toHaveText("Now Playing")
   })
 }
 
-test("a stale landing handover is discarded", async ({ page }) => {
+test("the reload request carries the landing to the server", async ({ page }) => {
   await page.goto("/?app-shell")
-  await page.evaluate(() => sessionStorage.setItem("landingTab", JSON.stringify({ tab: "progress", timestamp: Date.now() - 60000 })))
+  await page.getByRole("button", { name: "End Session", exact: true }).click()
+  const action = page.getByRole("button", { name: "Done for Today" })
+  await expect(page.locator("div.rounded-t-3xl").filter({ has: action })).toHaveCSS("transform", "none")
+  const [request] = await Promise.all([page.waitForRequest(candidate => candidate.isNavigationRequest()), action.click()])
+
+  expect((await request.allHeaders()).cookie).toContain("jp-landing=progress")
+})
+
+test("an unrecognised landing value is ignored and cleared", async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: "jp-landing", value: "home", url: baseURL! }])
+  await page.goto("/?app-shell")
+
+  await expect(tabLabel(page)).toHaveText("Now Playing")
+  await expect.poll(() => landingCookie(page)).toBe(false)
+})
+
+for (const choice of ["Done for Today", "I Beat This Game!"]) {
+  test(`the XP toast cut off by ${choice} is shown again after the reload`, async ({ page }) => {
+    await page.addInitScript(recordFrames)
+    await page.goto("/?app-shell")
+    await endSession(page, choice)
+
+    await expect(page.getByText(/^\+\d+ XP$/)).toBeVisible()
+    await expect(page.getByText(/^\+\d+ XP$/)).toHaveCount(0)
+    // Once it has finished it is not replayed by a later reload.
+    expect(await page.evaluate(() => sessionStorage.getItem("pendingXPToast"))).toBeNull()
+    await page.reload()
+    await expect(tabLabel(page)).toHaveText("Now Playing")
+    await page.waitForTimeout(500)
+    expect((await frames(page)).some(frame => frame.toast)).toBe(false)
+  })
+}
+
+test("setting a game aside awards no XP toast before or after the reload", async ({ page }) => {
+  await page.addInitScript(recordFrames)
+  await page.goto("/?app-shell")
+  await endSession(page, "Abandon Game")
+
+  await expect(tabLabel(page)).toHaveText("Progress")
+  await page.waitForTimeout(500)
+  expect((await frames(page)).some(frame => frame.toast)).toBe(false)
+})
+
+test("a stale interrupted toast is discarded", async ({ page }) => {
+  await page.goto("/?app-shell")
+  await page.evaluate(() => sessionStorage.setItem("pendingXPToast", JSON.stringify({
+    data: { total: 5, bonuses: [] }, levelUp: false, timestamp: Date.now() - 60000,
+  })))
+  await page.addInitScript(recordFrames)
   await page.reload()
 
-  await expect(page.getByRole("button", { name: "End Session", exact: true })).toBeVisible()
   await expect(tabLabel(page)).toHaveText("Now Playing")
-  expect(await page.evaluate(() => sessionStorage.getItem("landingTab"))).toBeNull()
+  await page.waitForTimeout(500)
+  expect((await frames(page)).some(frame => frame.toast)).toBe(false)
+  expect(await page.evaluate(() => sessionStorage.getItem("pendingXPToast"))).toBeNull()
 })
 
 async function saveDeckWithFixtureGame(page: Page) {
@@ -88,4 +158,42 @@ test("a saved deck with only a moved-in game falls back to the empty deck", asyn
   await page.reload()
 
   await expect(page.getByRole("heading", { name: "No more games" })).toBeVisible()
+})
+
+// End to end: ?persist-end keeps the session ended across the reload, as the server would.
+const deckButtons = (page: Page) => page.getByRole("list").getByRole("button")
+
+test("a beaten game is gone from the saved deck once it has moved in", async ({ page }) => {
+  await page.goto("/?app-shell&persist-end")
+  await saveDeckWithFixtureGame(page)
+  await endSession(page, "I Beat This Game!")
+  await page.getByRole("button", { name: "Got it" }).click()
+  await expect(tabLabel(page)).toHaveText("Progress")
+
+  await page.getByRole("button", { name: "Deck", exact: true }).click()
+  await expect(page.getByRole("heading", { name: "Deck A", level: 2 })).toBeVisible()
+  await expect(deckButtons(page)).toHaveCount(1)
+  await expect(page.getByRole("button", { name: /A Short Hike/ })).toHaveCount(0)
+})
+
+test("a game set aside stays in the saved deck", async ({ page }) => {
+  await page.goto("/?app-shell&persist-end")
+  await saveDeckWithFixtureGame(page)
+  await endSession(page, "Abandon Game")
+  await expect(tabLabel(page)).toHaveText("Progress")
+
+  await page.getByRole("button", { name: "Deck", exact: true }).click()
+  await expect(page.getByRole("heading", { name: "A Short Hike", level: 2 })).toBeVisible()
+  await expect(deckButtons(page)).toHaveCount(2)
+})
+
+test("Done for Today keeps the game as the current game instead of reopening the deck", async ({ page }) => {
+  await page.goto("/?app-shell&persist-end")
+  await saveDeckWithFixtureGame(page)
+  await endSession(page, "Done for Today")
+  await expect(tabLabel(page)).toHaveText("Progress")
+
+  await expect(page.getByRole("button", { name: "Deck", exact: true })).toHaveCount(0)
+  await page.getByRole("button", { name: "Now Playing", exact: true }).click()
+  await expect(page.getByRole("button", { name: /Start Today.s Session/ })).toBeVisible()
 })
