@@ -138,10 +138,9 @@ export function CurrentGame({
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent" />
             </div>
 
-            {/* Currently playing badge */}
+            {/* No session is running on this screen, so the badge says where the game stands. */}
             <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full px-2.5 py-1" style={{ background: "color-mix(in srgb, var(--success) 20%, transparent)", borderWidth: "1px", borderStyle: "solid", borderColor: "color-mix(in srgb, var(--success) 30%, transparent)" }}>
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)]" style={{ animation: "pulse 2s infinite" }} />
-              <span className="text-xs font-semibold uppercase tracking-wide text-success">Playing</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-success">In progress</span>
             </div>
 
             {/* Game info */}
@@ -278,8 +277,6 @@ export function CurrentGame({
         )}
       </AnimatePresence>
 
-      {!isResident ? <MoveInNote /> : null}
-
       {!isResident ? (
         <StampPanel
           game={game}
@@ -318,6 +315,9 @@ export function CurrentGame({
           More options
         </button>
       </div>
+
+      {/* A one-time explainer sits below the actions so it never pushes them down. */}
+      {!isResident ? <div className="mt-4 w-full max-w-[320px]"><MoveInNote /></div> : null}
       </div>
       </div>
 

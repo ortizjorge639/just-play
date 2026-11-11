@@ -17,7 +17,7 @@ export function BottomNav({ active, onChange, hasActiveSession, xpPending }: Bot
     <nav aria-label="Main navigation" className="fixed bottom-0 left-0 right-0 z-40 flex min-h-16 items-center justify-around border-t border-border bg-background px-4 pb-[env(safe-area-inset-bottom)] lg:right-auto lg:top-0 lg:w-56 lg:flex-col lg:items-stretch lg:justify-start lg:gap-1 lg:border-r lg:border-t-0 lg:px-3 lg:py-4"
     >
       <p className="hidden px-3 pb-4 pt-1 text-base font-semibold tracking-tight text-foreground lg:block">Just Play</p>
-      {/* Only show Deck when no active session - forces focus on current game */}
+      {/* Discover and Now Playing swap: one of them is always the first tab. */}
       {!hasActiveSession && (
         <NavItem
           label="Discover"
@@ -31,17 +31,20 @@ export function BottomNav({ active, onChange, hasActiveSession, xpPending }: Bot
           }
         />
       )}
-      <NavItem
-        label={hasActiveSession ? "Now Playing" : "Session"}
-        active={active === "session"}
-        onClick={() => onChange("session")}
-        badge={hasActiveSession}
-        icon={
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-          </svg>
-        }
-      />
+      {/* Shown only when there is a game in progress; otherwise it led to an empty screen. */}
+      {hasActiveSession && (
+        <NavItem
+          label="Now Playing"
+          active={active === "session"}
+          onClick={() => onChange("session")}
+          badge
+          icon={
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+            </svg>
+          }
+        />
+      )}
       <NavItem
         label="Home"
         active={active === "home"}
