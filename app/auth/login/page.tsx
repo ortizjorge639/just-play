@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { login } from "../actions"
+import { AuthSubmitButton } from "@/components/auth-submit-button"
 
 export default async function LoginPage(props: {
   searchParams: Promise<{ error?: string }>
@@ -20,7 +21,7 @@ export default async function LoginPage(props: {
         </div>
 
         {error && (
-          <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive">
+          <div role="alert" className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -64,12 +65,7 @@ export default async function LoginPage(props: {
             />
           </div>
 
-          <button
-            type="submit"
-            className="h-12 w-full rounded-lg bg-primary text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 active:bg-primary/80"
-          >
-            Sign In
-          </button>
+          <AuthSubmitButton label="Sign In" pendingLabel="Signing in…" />
         </form>
 
         <p className="text-center text-sm text-muted-foreground">

@@ -8,6 +8,7 @@ import { useSessionNotes } from "@/hooks/use-session-notes"
 import { DEFAULT_STANDBY_PREFERENCES } from "@/components/standby-preferences"
 import { ENDED_KEY, fixture, game, getActiveSession, initialSession } from "./mock-actions"
 import { LANDING_COOKIE, landingTabFromCookie } from "@/lib/landing"
+import { AuthSubmitButton } from "@/components/auth-submit-button"
 import type { CompletedGame, Game, StampRule, StandbyPreferences } from "@/lib/types"
 
 declare global {
@@ -181,4 +182,11 @@ const app = params.has("app-shell")
     sessionHistory={libraryHistory} nameCard={fixture.nameCard} playerStats={null} residents={fixture.residents} completedGames={completedGames} postcards={fixture.postcards} stampRules={fixture.stampRules} isBoosterPack={params.has("booster")}
     boosterPackStatus={{ packsOpenedToday: 0, packsRemaining: params.has("packs") ? 2 : 0 }} />
   : <Harness />
-createRoot(document.getElementById("root")!).render(params.has("strict") ? <StrictMode>{app}</StrictMode> : app)
+// ?submit-button: the auth forms' button around an action that takes a moment.
+const submitButtonForm = (
+  <form action={async () => { await new Promise(resolve => setTimeout(resolve, 600)) }} className="p-6">
+    <AuthSubmitButton label="Sign In" pendingLabel="Signing in…" />
+  </form>
+)
+const view = params.has("submit-button") ? submitButtonForm : app
+createRoot(document.getElementById("root")!).render(params.has("strict") ? <StrictMode>{view}</StrictMode> : view)
