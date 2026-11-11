@@ -272,16 +272,17 @@ export function SessionNotepad({
                     </motion.div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-1 pt-2 border-t border-border/20 mt-1">
+                  {/* The dots stay small to look at; each one's tap area is 44px tall and as wide as the row allows. */}
+                  <div className="mt-1 flex items-center justify-center border-t border-border/20 pt-1">
                     <button
                       onClick={() => flipPage(-1)}
                       disabled={currentPage === 0}
-                      className="text-muted-foreground disabled:opacity-15 text-sm leading-none px-1 min-h-[24px]"
+                      className="flex size-11 shrink-0 items-center justify-center rounded-lg text-lg leading-none text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-15"
                       aria-label="Previous page"
                     >
                       ‹
                     </button>
-                    <div className="flex gap-[3px]">
+                    <div className="flex min-w-0 max-w-[20rem] flex-1">
                       {Array.from({ length: 10 }, (_, i) => (
                         <button
                           key={i}
@@ -289,21 +290,27 @@ export function SessionNotepad({
                             setDirection(i > currentPage ? 1 : -1)
                             setCurrentPage(i)
                           }}
-                          className={`rounded-full transition-all ${
-                            i === currentPage
-                              ? "w-2 h-2 bg-primary"
-                              : pages[i]?.trim()
-                                ? "w-1.5 h-1.5 bg-foreground/30"
-                                : "w-1.5 h-1.5 bg-muted-foreground/15"
-                          }`}
                           aria-label={`Page ${i + 1}`}
-                        />
+                          aria-current={i === currentPage ? "page" : undefined}
+                          className="group flex h-11 min-w-0 flex-1 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`rounded-full transition-all ${
+                              i === currentPage
+                                ? "h-2 w-2 bg-primary"
+                                : pages[i]?.trim()
+                                  ? "h-1.5 w-1.5 bg-foreground/30 group-hover:bg-foreground/60"
+                                  : "h-1.5 w-1.5 bg-muted-foreground/15 group-hover:bg-muted-foreground/50"
+                            }`}
+                          />
+                        </button>
                       ))}
                     </div>
                     <button
                       onClick={() => flipPage(1)}
                       disabled={currentPage === 9}
-                      className="text-muted-foreground disabled:opacity-15 text-sm leading-none px-1 min-h-[24px]"
+                      className="flex size-11 shrink-0 items-center justify-center rounded-lg text-lg leading-none text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-15"
                       aria-label="Next page"
                     >
                       ›

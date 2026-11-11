@@ -6,7 +6,7 @@ import { getActiveSession } from "@/app/actions"
 import { useSessionReconciliation } from "@/hooks/use-session-reconciliation"
 import { useSessionNotes } from "@/hooks/use-session-notes"
 import { useHomeStamps } from "@/hooks/use-home-stamps"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "framer-motion"
 import { CardDeck } from "./card-deck"
 import { ActiveSession } from "./active-session"
 import { CurrentGame } from "./current-game"
@@ -63,6 +63,9 @@ export function AppShell({
   initialTab,
 }: AppShellProps) {
   const router = useRouter()
+  // With reduced motion on, tabs cross-fade in place instead of sliding.
+  const reduceMotion = useReducedMotion()
+  const slide = (offset: number) => (reduceMotion ? 0 : offset)
   const [activeTab, setActiveTab] = useState<Tab>(
     initialTab ?? (initialSession || activeGame ? "session" : "deck")
   )
@@ -181,6 +184,9 @@ export function AppShell({
   }, [needsRefresh, activeSession, activeGame])
 
   return (
+    // Honour the system "reduce motion" setting everywhere: slides and scales are skipped,
+    // fades remain.
+    <MotionConfig reducedMotion="user">
     <XPToastProvider playerStats={playerStats}>
     {/* Tabs slide in from the side; clipping keeps that motion from widening the page. */}
     <div className="flex min-h-dvh flex-col overflow-x-clip pb-16 lg:pb-0 lg:pl-56">
@@ -262,9 +268,9 @@ export function AppShell({
         {visibleTab === "deck" && !activeSession && (
           <motion.div
             key="deck"
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: slide(-20) }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: slide(-20) }}
             transition={{ duration: 0.2 }}
             className="flex flex-1 flex-col"
           >
@@ -283,9 +289,9 @@ export function AppShell({
         {visibleTab === "session" && (
           <motion.div
             key="session"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: slide(20) }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
+            exit={{ opacity: 0, x: slide(20) }}
             transition={{ duration: 0.2 }}
             className="flex flex-1 flex-col"
           >
@@ -349,9 +355,9 @@ export function AppShell({
         {visibleTab === "home" && (
           <motion.div
             key="home"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: slide(20) }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+            exit={{ opacity: 0, x: slide(-20) }}
             transition={{ duration: 0.2 }}
             className="flex flex-1 flex-col"
           >
@@ -369,9 +375,9 @@ export function AppShell({
         {visibleTab === "progress" && (
           <motion.div
             key="progress"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: slide(20) }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
+            exit={{ opacity: 0, x: slide(20) }}
             transition={{ duration: 0.2 }}
             className="flex flex-1 flex-col"
           >
@@ -453,5 +459,6 @@ export function AppShell({
       )}
     </div>
     </XPToastProvider>
+    </MotionConfig>
   )
 }
