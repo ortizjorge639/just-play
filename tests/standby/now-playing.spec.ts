@@ -108,9 +108,9 @@ test("StandBy pointer movement shifts a restrained color wash across the artwork
   await page.goto("/")
   await page.getByRole("button", { name: "Enter StandBy" }).click()
   const dialog = page.getByRole("dialog")
-  await page.mouse.move(20, 200)
+  await dialog.hover({ position: { x: 20, y: 200 } })
   await expect.poll(() => dialog.evaluate(element => element.style.getPropertyValue("--pointer-hue"))).toBe("103.425")
-  await page.mouse.move(780, 200)
+  await dialog.hover({ position: { x: 780, y: 200 } })
   await expect.poll(() => dialog.evaluate(element => element.style.getPropertyValue("--pointer-hue"))).toBe("43.575")
 })
 

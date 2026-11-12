@@ -3,6 +3,9 @@
 Use the worktree root as the working directory. These tests use isolated local
 fixtures and actual bundled art; they do not access the production database.
 
+Playwright allocates an unused loopback port by default. Set `STANDBY_TEST_PORT`
+only when a specific port is needed.
+
 `?marketing` switches only the isolated harness to fictional demo names and
 original `/media/` artwork. `scripts/capture-marketing.mjs` uses this mode for
 public screenshots; it is not an app route, authentication bypass, or database

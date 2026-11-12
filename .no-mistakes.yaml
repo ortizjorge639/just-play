@@ -1,12 +1,12 @@
 commands:
   test: >-
-    STANDBY_TEST_PORT=4512 pnpm exec playwright test --config tests/standby/playwright.config.ts
+    pnpm exec playwright test --config tests/standby/playwright.config.ts
     --project=chromium --trace off
     artwork-motion.spec.ts clarity.spec.ts dialogs.spec.ts discovery.spec.ts end-choices.spec.ts finish-landing.spec.ts
     layout.spec.ts namecard.spec.ts notes.spec.ts now-playing.spec.ts polish.spec.ts postcards.spec.ts
     progress.spec.ts progress-logic.spec.ts quiet-field.spec.ts residents.spec.ts
     stamps.spec.ts standby.spec.ts uncertainty.spec.ts
-    && STANDBY_TEST_PORT=4513 pnpm exec playwright test --config tests/standby/playwright.config.ts
+    && pnpm exec playwright test --config tests/standby/playwright.config.ts
     --project=chromium --trace off home.spec.ts
     --grep "calm empty state|4:3 carousel|expand into a gallery|Home stamp"
   lint: "pnpm lint"
