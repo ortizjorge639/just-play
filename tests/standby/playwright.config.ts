@@ -25,7 +25,9 @@ export default defineConfig({
     command: `node --import tsx "${path.resolve("tests", "standby", "harness-server.ts")}"`,
     env: { STANDBY_TEST_PORT: process.env.STANDBY_TEST_PORT || "0" },
     // Playwright exposes this capture through its default baseURL fixture.
-    wait: { stdout: /StandBy harness ready at (?<playwright_test_base_url>http:\/\/127\.0\.0\.1:\d+)/ },
+    wait: {
+      stdout: new RegExp(String.raw`StandBy harness ready at (?<playwright_test_base_url>http://127\.0\.0\.1:\d+)`),
+    },
     reuseExistingServer: false,
   },
 })
