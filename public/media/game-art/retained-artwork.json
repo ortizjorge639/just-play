@@ -1,0 +1,13 @@
+[
+  {
+    "id": "endless-sky",
+    "name": "Endless Sky",
+    "image": "/media/game-art/endless-sky.png",
+    "author": "1010todd; derived from Becca Tommaso, Darcy Manoel, and Michael Zahniser; incorporates a JSPlacement texture by WindMillArt",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "source": "https://github.com/endless-sky/endless-sky/blob/2d561107a62ae36301787c0d646b96a0baf59c57/images/scene/plasma%20scene.png",
+    "licensingRecord": "https://github.com/endless-sky/endless-sky/blob/2d561107a62ae36301787c0d646b96a0baf59c57/copyright",
+    "project": "https://endless-sky.github.io/"
+  }
+]
