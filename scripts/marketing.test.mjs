@@ -39,6 +39,7 @@ function fixture({ authenticated = false, exchangeError = null } = {}) {
       if (specifier === "@/lib/supabase/server") return { createClient: async () => ({ auth }) }
       if (specifier === "@supabase/ssr") return { createServerClient: () => ({ auth }) }
       if (specifier === "next/server") return { NextResponse }
+      if (specifier === "next/headers") return { cookies: async () => ({ get: () => undefined }) }
       if (specifier === "next/navigation") return { redirect: location => { throw new Error(`redirect:${location}`) } }
       if (specifier === "./actions") return actions
       if (specifier === "@/components/app-shell") return { AppShell: props => React.createElement("div", { "data-app": props.user.id }, "Authenticated app") }
