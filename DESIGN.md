@@ -141,6 +141,46 @@ Semantic state tokens are `success` (`#a7c7ad`), `destructive` (`#f0a08d`), `inf
 - **Label** (medium, 0.75rem to 0.875rem): Genres, timing, navigation labels, and compact state text.
 - **Timer** (Geist Mono, tabular numerals): StandBy elapsed time only; retain its explicit verified/unverified state.
 
+### Public marketing surface
+
+The landing at signed-out `/` and always-public `/about` extends this identity
+in Persuade mode; the signed-in app retains the Operate hierarchy above.
+Players browsing after work see
+forest-ink fields, warm-ivory type, amber invitations, and credited catalog
+covers. The final invitation owns an amber field rather than scattering accents.
+
+Marketing display type scales from 40–64px on phones to 52–96px on wider screens,
+with 800 weight, 1.03 leading, and -0.04em tracking. Section headings scale
+34–56px and feature headings 28–42px. Introductory copy is 18px, body 16px,
+actions 14–16px, and footer links 12px.
+The wordmark is 25px (20px at widths up to 420px). These larger sizes are intentional
+for this new surface, not changes to the product UI ramp.
+
+The signature composition is a pair of rotated 2:3 artwork covers beside one
+invitation, followed by actual staged app screens and a user-controlled film.
+The current real-game covers come from the existing IGDB catalog with visible credits;
+the page demonstrates the UI without implying publisher endorsement or catalog
+availability. Source terms live in `/media/artwork-credits.txt`; replacement
+media does not inherit the earlier open-license artwork's CC BY-SA terms.
+Media does not autoplay or load Three.js on the landing page. The editable
+Three.js film uses the same palette and the system sans-serif fallback for
+offline deterministic capture; its two exports are reframed, not cropped.
+
+The landing is product-first: one hero promise and explanation, four concise
+workflow views with consistent alignment, then the optional reel and FAQ.
+Do not add slogans over covers, production narration, repeated screenshot
+captions, or internal stamp terminology to the acquisition path. Both signup
+actions say "Find my next game". Screenshots themselves open full-size.
+
+On phones, hero covers retain their portrait 2:3 shape instead of letterboxed
+landscapes. Attribution belongs in the footer, not the hero or repeated captions.
+Reel exports remain available as media assets, not a player-facing download CTA.
+The headline scales down to 40px on
+320px screens; the narrow wordmark is 20px and compact navigation is 12px
+inside 44px-tall targets. Navigation and footer respect safe areas.
+Short phone landscapes use a compact two-column hero. Native video controls,
+FAQ disclosure, and browser back behavior remain unchanged.
+
 ## Layout
 
 The app shell uses a 64px compact header and a fixed 64px bottom navigation, with content padded clear of the nav. Discover is capped at 1440px. At wide widths, a narrow recommendation list sits beside a larger artwork/detail panel; at smaller widths, the list stacks above the detail panel. Keep the primary action within the visible content area at common phone sizes.

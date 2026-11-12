@@ -11,3 +11,5 @@ node_modules/
 .vercel
 test-results/
 playwright-report/
+.promo-evidence/
+.marketing-evidence/

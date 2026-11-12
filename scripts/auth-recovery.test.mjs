@@ -2,7 +2,7 @@
 // Real action/route/page code; mocked Next/Supabase boundaries. Never sends email
 // or exchanges a real code, and does not establish successful private recovery.
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { createRequire } from "node:module"
 import path from "node:path"
 import { test } from "node:test"
@@ -52,7 +52,9 @@ function fixture(options = {}) {
   } }
   const cache = new Map()
   const load = (relative) => {
-    const filename = path.resolve(root, relative)
+    const base = path.resolve(root, relative)
+    const filename = [base, `${base}.ts`, `${base}.tsx`].find(name => existsSync(name))
+    assert.ok(filename, `Missing test dependency: ${relative}`)
     if (cache.has(filename)) return cache.get(filename)
     const loaded = { exports: {} }
     cache.set(filename, loaded.exports)
@@ -72,8 +74,8 @@ function fixture(options = {}) {
         return React.createElement("a", props, props.children)
       }
       if (specifier.startsWith("react")) return require(specifier)
-      if (specifier.startsWith("@/")) return load(`${specifier.slice(2)}.ts`)
-      if (specifier.startsWith(".")) return load(path.resolve(path.dirname(filename), `${specifier}.ts`))
+      if (specifier.startsWith("@/")) return load(specifier.slice(2))
+      if (specifier.startsWith(".")) return load(path.resolve(path.dirname(filename), specifier))
       throw new Error(`Unexpected dependency: ${specifier}`)
     }
     compileFunction(outputText, ["require", "module", "exports", "process"], { filename })(

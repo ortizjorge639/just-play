@@ -1,8 +1,6 @@
 import { defineConfig, devices } from "@playwright/test"
 import path from "node:path"
 
-const baseURL = `http://127.0.0.1:${process.env.STANDBY_TEST_PORT || "4387"}`
-
 export default defineConfig({
   testDir: ".",
   testMatch: "*.spec.ts",
@@ -16,7 +14,7 @@ export default defineConfig({
   // Automatic trace filmstrips force GPU readbacks on every captured frame.
   // Software WebGL then stalls independently of app input/render scheduling.
   // Keep DOM/network/source traces; composition specs still take explicit images.
-  use: { baseURL, trace: { mode: "retain-on-failure", screenshots: false, snapshots: true, sources: true } },
+  use: { trace: { mode: "retain-on-failure", screenshots: false, snapshots: true, sources: true } },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
@@ -25,7 +23,11 @@ export default defineConfig({
   webServer: {
     cwd: process.cwd(),
     command: `node --import tsx "${path.resolve("tests", "standby", "harness-server.ts")}"`,
-    url: baseURL,
+    env: { STANDBY_TEST_PORT: process.env.STANDBY_TEST_PORT || "0" },
+    // Playwright exposes this capture through its default baseURL fixture.
+    wait: {
+      stdout: new RegExp(String.raw`StandBy harness ready at (?<playwright_test_base_url>http://127\.0\.0\.1:\d+)`),
+    },
     reuseExistingServer: false,
   },
 })

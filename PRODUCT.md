@@ -116,9 +116,18 @@ feed, public hours ranking, neglect penalty, or social obligation.
 
 ## Operating Context
 
-The current application authenticates users and loads a single-page interface
-with a recommendation deck, a current-game/session view, and progress/history.
+Signed-out visitors see a public landing at `/`; `/about` shows it regardless
+of sign-in state. The signed-in root authenticates users and loads a single-page
+interface with a recommendation deck, a current-game/session view, and progress/history.
 Discovery includes booster packs, preferences, and game search.
+
+Recommendations use Just Play's curated catalog. Steam/library import is planned,
+not shipped; Just Play neither includes nor launches games. Public screenshots
+use real components with staged fixture records and credited catalog covers,
+not production player data or proof of live-catalog availability. The optional
+20-second promo is a pre-rendered video, not WebGL loaded by the landing.
+See [public landing and launch media](README.md#public-landing-and-launch-media)
+for reproduction steps, attribution, and reuse limitations.
 
 Sessions use `LockedIn`, `Playing`, `Paused`, and `Finished` states. Game
 progress independently uses `playing`, `beaten`, and `abandoned`.

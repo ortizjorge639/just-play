@@ -10,6 +10,7 @@ import { ENDED_KEY, fixture, game, getActiveSession, initialSession } from "./mo
 import { LANDING_COOKIE, landingTabFromCookie } from "@/lib/landing"
 import { AuthSubmitButton } from "@/components/auth-submit-button"
 import type { CompletedGame, Game, StampRule, StandbyPreferences } from "@/lib/types"
+import marketingArtwork from "../../public/media/game-art/artwork.json"
 
 declare global {
   interface Window { standbyFixture: typeof fixture }
@@ -39,6 +40,23 @@ function StampGameHarness(props: {
   </>
 }
 const params = new URLSearchParams(window.location.search)
+const demoNames = marketingArtwork.map(artwork => artwork.name)
+if (params.has("marketing")) {
+  game.name = demoNames[0]
+  game.header_image = marketingArtwork[0].image
+  game.genres = marketingArtwork[0].genres
+  game.estimated_session_length = marketingArtwork[0].minutes
+  game.description = marketingArtwork[0].description
+  if (fixture.session) {
+    fixture.session = {
+      ...fixture.session,
+      started_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+      session_goal: "Try another escape",
+      notes: JSON.stringify(["Try a different weapon on the next escape attempt.", ...Array(9).fill("")]),
+    }
+  }
+  if (params.has("discovery")) fixture.session = null
+}
 if (params.has("remote-art")) game.header_image = "https://artwork-fixture.invalid/cover.svg"
 if (params.has("untracked")) fixture.session = { ...initialSession, record_time: false }
 if (params.has("locked")) fixture.session = { ...initialSession, status: "LockedIn" }
@@ -118,10 +136,14 @@ if (params.has("postcards")) {
   ]
 }
 const completedGames: CompletedGame[] = params.has("completed-games")
-  ? Array.from({ length: 5 }, (_, i) => {
-    const completedGame = i === 0
+  ? Array.from({ length: params.has("marketing") ? marketingArtwork.length : 5 }, (_, i) => {
+    const artwork = marketingArtwork[(i + 3) % marketingArtwork.length]
+    const completedGame = params.has("marketing")
+      ? { ...game, id: `completed-${artwork.id}`, name: artwork.name, header_image: artwork.image,
+        genres: artwork.genres, estimated_session_length: artwork.minutes, description: artwork.description }
+      : i === 0
       ? game
-      : { ...game, id: `completed-${i}`, name: `Completed game ${i + 1}` }
+      : { ...game, id: `completed-${i}`, name: `Completed game ${i + 1}`, header_image: game.header_image }
     return {
       id: `progress-${completedGame.id}`,
       user_id: "test-user",
@@ -158,17 +180,20 @@ function Harness() {
   /> : <p role="status">Session ended on another device.</p>
 }
 const deckGames = params.has("deck")
-  ? ["A", "B"].map(k => ({
+  ? (params.has("marketing") ? ["A", "B", "C"] : ["A", "B"]).map((k, index) => ({
     ...game,
     id: `deck-${k}`,
     name: params.has("long-deck") && k === "A"
       ? "The Legend of Zelda: Tears of the Kingdom - A very long library title"
-      : `Deck ${k}`,
+      : params.has("marketing") ? demoNames[index] : `Deck ${k}`,
+    header_image: params.has("marketing") ? marketingArtwork[index].image : game.header_image,
+    genres: params.has("marketing") ? marketingArtwork[index].genres : game.genres,
+    estimated_session_length: params.has("marketing") ? marketingArtwork[index].minutes : game.estimated_session_length,
   }))
   : []
 const app = params.has("app-shell")
   ? <AppShell user={{
-    id: "test-user", display_name: null, steam_id: null, preferences: {},
+    id: "test-user", display_name: params.has("marketing") ? "Demo player" : null, steam_id: null, preferences: {},
     standby_preferences: DEFAULT_STANDBY_PREFERENCES, onboarding_complete: true,
     tutorial_complete: true, streak_enabled: false, total_xp: 0, level: 1,
     streak_count: 0, best_streak: 0, last_session_date: null, created_at: initialSession.created_at,

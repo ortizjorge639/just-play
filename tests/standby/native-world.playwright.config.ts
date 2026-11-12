@@ -10,6 +10,6 @@ export default defineConfig({
   workers: 1,
   timeout: 30000,
   outputDir: "../../test-results/native-world",
-  use: { baseURL: standard.use?.baseURL, trace: "off" },
+  use: { trace: "off" },
   projects: [{ name: "native-chromium" }],
 })

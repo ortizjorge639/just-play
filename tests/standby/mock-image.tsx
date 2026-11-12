@@ -19,7 +19,7 @@ const MockImage = forwardRef<HTMLImageElement, {
   const style: CSSProperties = fill ? { position: "absolute", inset: 0, width: "100%", height: "100%" } : {}
   // Use a real image element so the harness can exercise native canvas pixel reads.
   /* eslint-disable-next-line @next/next/no-img-element */
-  return <img ref={ref} src="/fixture-art.svg" crossOrigin={crossOrigin} alt={alt} className={className} style={style} onLoad={onLoad} onError={onError} />
+  return <img ref={ref} src={src?.startsWith("/media/") ? src : "/fixture-art.svg"} crossOrigin={crossOrigin} alt={alt} className={className} style={style} onLoad={onLoad} onError={onError} />
 })
 
 export default MockImage

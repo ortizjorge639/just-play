@@ -49,7 +49,7 @@ for (const choice of ["Done for Today", "I Beat This Game!", "Set Game Aside"]) 
     await expect(tabLabel(page)).toHaveText("Progress")
     await expect(page.getByRole("region", { name: "Player profile" })).toBeVisible()
     // The page comes back already on Progress: no other tab is shown first.
-    expect((await frames(page)).map(frame => frame.label).filter(Boolean)).toEqual(["Progress"])
+    await expect.poll(async () => (await frames(page)).map(frame => frame.label).filter(Boolean)).toEqual(["Progress"])
     // The landing is used once, so a later reload goes back to the default tab.
     expect(await landingCookie(page)).toBe(false)
 

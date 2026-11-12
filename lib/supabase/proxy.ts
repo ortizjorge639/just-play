@@ -1,7 +1,14 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isPublicRoute } from '@/lib/public-routes'
 
 export async function updateSession(request: NextRequest) {
+  // Marketing and exported media never need player data or a Supabase round trip.
+  if (isPublicRoute(request.nextUrl.pathname) &&
+    request.nextUrl.pathname !== "/" &&
+    !request.nextUrl.pathname.startsWith("/auth")) {
+    return NextResponse.next({ request })
+  }
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -43,7 +50,7 @@ export async function updateSession(request: NextRequest) {
 
   if (
     !user &&
-    !request.nextUrl.pathname.startsWith('/auth')
+    !isPublicRoute(request.nextUrl.pathname)
   ) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'

@@ -1,0 +1,47 @@
+Just Play - catalog cover artwork
+
+Game data and cover images sourced from IGDB: https://www.igdb.com/
+The six source URLs and catalog IDs are recorded in game-art/artwork.json.
+
+Hades - Supergiant Games
+Stardew Valley - ConcernedApe
+Hollow Knight - Team Cherry
+Portal 2 - Valve
+Elden Ring - FromSoftware / Bandai Namco Entertainment
+Disco Elysium - ZA/UM
+
+Game artwork and trademarks belong to their respective rights holders.
+These covers identify games in staged demonstrations of Just Play's
+recommendation, session and history interfaces. No publisher endorsement,
+partnership, included game license, or game-launching capability is implied.
+The fixture records do not prove live database availability.
+
+Source terms checked:
+https://api-docs.igdb.com/
+https://www.igdb.com/api
+https://www.twitch.tv/p/legal/developer-agreement/
+
+IGDB documents non-commercial API use and local caching. Its FAQ describes
+commercial partnerships and visible IGDB attribution. Just Play is currently
+non-commercial. These terms are not a blanket publisher copyright license
+or an explicit clearance for paid advertising or standalone promotional films.
+Recheck applicable terms before monetization, paid campaigns or other reuse.
+
+The screenshots and reel crop and frame source covers to demonstrate the app.
+The replacement media is NOT licensed CC BY-SA or represented as public domain.
+Attribution does not grant redistribution rights to the underlying covers.
+The application-code license is unchanged.
+
+Earlier open-license assets remain in game-art/ with their original notices,
+but are not used in this version of the landing screenshots or reel.
+
+Endless Sky - Plasma scene (/media/game-art/endless-sky.png)
+Author: 1010todd. Derived from works by Becca Tommaso, Darcy Manoel, and
+Michael Zahniser; incorporates a JSPlacement texture by WindMillArt.
+Source:
+https://github.com/endless-sky/endless-sky/blob/2d561107a62ae36301787c0d646b96a0baf59c57/images/scene/plasma%20scene.png
+Licensing record:
+https://github.com/endless-sky/endless-sky/blob/2d561107a62ae36301787c0d646b96a0baf59c57/copyright
+License: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+https://creativecommons.org/licenses/by-sa/4.0/
+Retained artwork metadata: /media/game-art/retained-artwork.json

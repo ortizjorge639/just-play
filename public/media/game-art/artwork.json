@@ -1,0 +1,68 @@
+[
+  {
+    "id": "hades",
+    "name": "Hades",
+    "image": "/media/game-art/hades.jpg",
+    "genres": ["Action", "Roguelike"],
+    "minutes": 60,
+    "description": "Make another escape attempt through the ever-changing Underworld.",
+    "author": "Supergiant Games",
+    "source": "https://images.igdb.com/igdb/image/upload/t_720p/cob9kr.jpg",
+    "catalogId": "igdb-113112"
+  },
+  {
+    "id": "stardew-valley",
+    "name": "Stardew Valley",
+    "image": "/media/game-art/stardew-valley.jpg",
+    "genres": ["Farming", "Relaxing"],
+    "minutes": 60,
+    "description": "Spend a quiet day tending your farm and exploring the valley.",
+    "author": "ConcernedApe",
+    "source": "https://images.igdb.com/igdb/image/upload/t_720p/coa93h.jpg",
+    "catalogId": "igdb-17000"
+  },
+  {
+    "id": "hollow-knight",
+    "name": "Hollow Knight",
+    "image": "/media/game-art/hollow-knight.jpg",
+    "genres": ["Adventure", "Metroidvania"],
+    "minutes": 30,
+    "description": "Explore the winding paths and forgotten depths of Hallownest.",
+    "author": "Team Cherry",
+    "source": "https://images.igdb.com/igdb/image/upload/t_720p/cobfzp.jpg",
+    "catalogId": "igdb-14593"
+  },
+  {
+    "id": "portal-2",
+    "name": "Portal 2",
+    "image": "/media/game-art/portal-2.jpg",
+    "genres": ["Puzzle", "Adventure"],
+    "minutes": 30,
+    "description": "Think your way through Aperture Science's portal puzzles.",
+    "author": "Valve",
+    "source": "https://images.igdb.com/igdb/image/upload/t_720p/co1rs4.jpg",
+    "catalogId": "igdb-72"
+  },
+  {
+    "id": "elden-ring",
+    "name": "Elden Ring",
+    "image": "/media/game-art/elden-ring.jpg",
+    "genres": ["RPG", "Open-world"],
+    "minutes": 60,
+    "description": "Choose a path through the Lands Between.",
+    "author": "FromSoftware / Bandai Namco Entertainment",
+    "source": "https://images.igdb.com/igdb/image/upload/t_720p/co4jni.jpg",
+    "catalogId": "igdb-119133"
+  },
+  {
+    "id": "disco-elysium",
+    "name": "Disco Elysium",
+    "image": "/media/game-art/disco-elysium.jpg",
+    "genres": ["RPG", "Adventure"],
+    "minutes": 60,
+    "description": "Follow a lead through the streets of Revachol.",
+    "author": "ZA/UM",
+    "source": "https://images.igdb.com/igdb/image/upload/t_720p/co1sfj.jpg",
+    "catalogId": "igdb-26472"
+  }
+]

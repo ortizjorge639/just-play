@@ -37,7 +37,7 @@ test("Home stamps open explanations on touch in short landscape", async ({ brows
     expect(box).not.toBeNull()
     expect(box!.x).toBeGreaterThanOrEqual(0)
     expect(box!.x + box!.width).toBeLessThanOrEqual(568)
-    await page.getByRole("heading", { name: "Completed games (5)", exact: true }).tap()
+    await page.getByRole("banner").getByText("Just Play", { exact: true }).tap()
     await expect(help).toHaveCount(0)
   } finally {
     await context.close()
