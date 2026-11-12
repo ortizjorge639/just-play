@@ -51,11 +51,38 @@ for (const [name, browserType] of Object.entries({ chromium, webkit, firefox }))
         await page.waitForFunction(() => document.querySelector("video").currentTime > .1)
         await page.locator("video").evaluate(video => video.pause())
         assert.ok(await page.locator("video").evaluate(video => video.videoWidth === 1920 && video.videoHeight === 1080))
+        if (name === "chromium" && width === 1440) {
+          await page.locator("video").evaluate(video => new Promise(resolve => {
+            video.addEventListener("seeked", resolve, { once: true })
+            video.currentTime = 8
+          }))
+          await page.locator("video").screenshot({ path: path.join(evidence, "shipped-wide-promo.png") })
+        }
       }
       assert.deepEqual(errors, [], `${name}: browser errors`)
       if (name === "chromium") {
         await page.evaluate(() => scrollTo(0, 0))
         await page.screenshot({ path: path.join(evidence, `landing-${width}.png`), fullPage: true })
+      }
+      if (width === 1440) {
+        const root = await page.goto(base)
+        assert.equal(root.status(), 200)
+        await page.getByRole("heading", { name: "Flow through your backlog." }).waitFor()
+        await page.getByRole("link", { name: "Find my next game" }).first().click()
+        await page.waitForURL(`${base}/auth/sign-up`)
+        await page.getByRole("heading", { name: "Create Account" }).waitFor()
+        assert.ok(await page.getByLabel("Email", { exact: true }).isVisible())
+        assert.ok(await page.getByLabel("Password", { exact: true }).isVisible())
+        if (name === "chromium") await page.screenshot({ path: path.join(evidence, "signup-from-root.png"), fullPage: true })
+        await page.goto(`${base}/about`)
+        await page.getByRole("link", { name: "Sign in", exact: true }).click()
+        await page.waitForURL(`${base}/auth/login`)
+        assert.ok(await page.getByLabel("Email", { exact: true }).isVisible())
+        assert.ok(await page.getByLabel("Password", { exact: true }).isVisible())
+        const privateResponse = await page.request.get(`${base}/api/player`, { maxRedirects: 0 })
+        assert.equal(privateResponse.status(), 307)
+        assert.equal(new URL(privateResponse.headers().location, base).pathname, "/auth/login")
+        assert.deepEqual(errors, [], `${name}: browser errors during navigation`)
       }
       await page.close()
       console.log(`${name} ${width}×${height}: public SSR, layout, media, keyboard, screenshots passed`)

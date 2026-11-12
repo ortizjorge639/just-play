@@ -26,7 +26,9 @@ pnpm lint         # ESLint (flat config, core-web-vitals + React 19 rules)
 
 ### Data flow
 
-The root page (`app/page.tsx`) is a **Server Component** that authenticates, fetches all initial data via `Promise.all`, and passes it as props to `AppShell` â€” the single client component that manages all UI state. There are no nested routes; the entire app is a single-page SPA within the App Router shell.
+The root page (`app/page.tsx`) is a **Server Component** that checks authentication. Without a user it renders `LandingPage` without fetching player data; signed-in users retain the existing `Promise.all` data load and `AppShell` state flow. Product navigation remains a single-page SPA; `/about` is a separate, always-public landing route, and `/auth/*` contains authentication routes.
+
+The landing uses staged app screenshots and a pre-rendered promo, not client-side Three.js. Recommendations come from a curated catalog; library import is planned, not shipped. For media capture, rendering, verification, and artwork terms, read [Public landing and launch media](../README.md#public-landing-and-launch-media).
 
 ### Supabase client pattern
 
@@ -83,6 +85,7 @@ Games have a separate progress tracker (independent from sessions): `playing` â†
 
 ### Auth
 
-- Middleware redirects unauthenticated users to `/auth/login` (except `/auth/*` routes).
+- `lib/public-routes.ts` allows `/`, `/about` (including its trailing slash), `/auth`, `/auth/*`, and `/media/*`. Middleware redirects unauthenticated requests on other matched paths to `/auth/login`.
+- Root and auth routes still refresh Supabase sessions. `/about` and `/media/*` skip the auth round trip; middleware also excludes static assets and `/_vercel/insights/` endpoints. Keep `/media/` limited to public exports, never player data.
 - Email confirmation redirects go through `/auth/callback` (PKCE code exchange).
 - Environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`.

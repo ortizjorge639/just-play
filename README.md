@@ -28,15 +28,17 @@ See [PRODUCT.md](PRODUCT.md) for current boundaries and approved world rules.
 
 ## Start here: agent handoff
 
-**Branch: `standby-canopy-handoff`.** This branch combines the accepted
+**Historical baseline: `standby-canopy-handoff`.** That handoff combined the accepted
 StandBy/Canopy runtime with the agreed specifications and a
 [bounded work plan](docs/standby-canopy-handoff.md). No agent, feature work,
 merge, live account operation, or manual deployment was started by packaging it.
-The two existing implementation PRs remain separate and unmerged.
+The two implementation PRs were separate and unmerged at that checkpoint.
 
 The plan identifies workstreams, dependencies, required permissions, expected
 outcomes, evidence, and stop conditions. It is not approval to execute every
 listed task. The separate fictional demo/art experiments are not imported.
+This checkout also includes the public landing and launch media described below;
+the handoff's documentation-only scope describes its original preparation.
 
 ---
 
@@ -46,7 +48,7 @@ listed task. The separate fictional demo/art experiments are not imported.
 - [Supabase](https://supabase.com/) — auth + database
 - [shadcn/ui](https://ui.shadcn.com/) + Tailwind CSS v4
 - [Framer Motion](https://www.framer.com/motion/) — animations
-- Three.js — the optional, lazy-loaded Canopy nook
+- Three.js — the optional, lazy-loaded Canopy nook and offline promo composition
 - [IGDB](https://www.igdb.com/api) — game metadata
 
 ---
@@ -57,10 +59,11 @@ listed task. The separate fictional demo/art experiments are not imported.
 
 The StandBy foundation is [PR #2](https://github.com/ortizjorge639/just-play/pull/2)
 at `b19bf48`; Canopy is [PR #3](https://github.com/ortizjorge639/just-play/pull/3)
-at `d19672d`, which already includes the foundation. Both remain unmerged at
-this handoff. Runtime and SQL in this branch are unchanged from `d19672d`;
-only documentation is added or updated. Historical evidence remains pinned
-to the source actually exercised, not relabeled as a new run on this branch.
+at `d19672d`, which already includes the foundation. Both were unmerged at
+the historical handoff. Its unchanged-runtime checkpoint is not a description
+of this checkout's later application, media, dependency, and harness changes.
+Historical evidence remains pinned to the source actually exercised, not
+relabeled as a new run on this branch.
 
 R1 currently provides neutral Idle scenery in one fixed furnished room,
 not dialogue, gameplay awareness, earned residency, or a persistent home.
@@ -73,13 +76,25 @@ Follow the build → [@jojiguy639](https://x.com/jojiguy639)
 
 ## Running locally
 
+```bash
+pnpm install
+pnpm dev
+```
+
+Requires a `.env.local` with Supabase and IGDB credentials. The root route
+still checks Supabase authentication before choosing the landing or app;
+it is not a configuration-free static preview.
+
 ### Public landing and launch media
 
 Logged-out visitors see the public landing at `/`. Signed-in visitors keep the
 existing app there; `/about` always shows the landing without an auth round trip.
-Auth routes still refresh sessions, callback codes still return to `/`, and
+Root and auth routes still refresh sessions, successful root callback-code
+exchanges still redirect to a clean `/`, and
 private routes retain their auth guard. `/media/` contains public-only exports;
-never put player data or private uploads there.
+never put player data or private uploads there. `lib/public-routes.ts` defines
+the public allowlist. Vercel's `/_vercel/insights/` endpoints, static Next assets,
+the manifest, favicon, and image extensions bypass middleware.
 
 The landing uses a curated-catalog promise, not Steam/library sync or game
 launching. It includes real app screenshots staged with demo records for Hades,
@@ -102,9 +117,22 @@ The 20-second silent-first Three.js film lives in `media/promo/`. Its H.264
 MP4 exports are `public/media/just-play-social.mp4` (1080×1920) and
 `just-play-wide.mp4` (1920×1080), both 30fps. The web page uses a poster, native
 controls, captions, a transcript, and `preload="none"`; it never downloads WebGL.
-The social card and downloadable vertical cut are public too.
+The social card and vertical cut are public assets too; the landing does not
+show a vertical-download call to action. Open Graph and Twitter metadata use
+`/media/social-card.jpg`. Relative metadata URLs resolve against the fixed
+`metadataBase` in `app/layout.tsx` (`https://v0-just-play-app.vercel.app`), not
+`NEXT_PUBLIC_SITE_URL`; update that base when changing the public site origin.
+The film footer also hardcodes that host in `media/promo/index.html`; update
+it and regenerate the exports when the public host changes.
 
-Recreate screenshots using the isolated component harness, not production:
+Use Node.js 22.12+ and the project dependencies for media scripts. Capture and
+render use Playwright Chromium; browser verification also requires WebKit and
+Firefox. Install missing browser binaries with
+`pnpm exec playwright install chromium webkit firefox`. Encoding additionally
+requires an existing `ffmpeg` on `PATH` with `libx264`; `--verify-only` skips it.
+
+Recreate screenshots using the isolated component harness, not production.
+This overwrites the four `public/media/*.png` screenshots at 1440×900:
 
 ```sh
 STANDBY_TEST_PORT=4517 pnpm exec tsx tests/standby/harness-server.ts
@@ -112,16 +140,18 @@ STANDBY_TEST_PORT=4517 pnpm exec tsx tests/standby/harness-server.ts
 MARKETING_HARNESS_URL=http://127.0.0.1:4517 node scripts/capture-marketing.mjs
 ```
 
-Render the film using installed Chromium and system `ffmpeg`:
+Render the film using Playwright Chromium and `ffmpeg`. The full render
+overwrites both MP4s, `reel-poster.jpg`, and `social-card.jpg`:
 
 ```sh
 node scripts/render-promo.mjs --verify-only
 node scripts/render-promo.mjs
 ```
 
-The verifier reads actual artwork pixels, requires nonzero geometry, and checks
+The render verifier reads actual artwork pixels, requires nonzero geometry, and checks
 forward/backward seek equality before encoding. Explicit SVG dimensions are
-required for Chromium WebGL uploads: a viewBox-only SVG can load successfully
+required if reusing the retained SVG artwork for Chromium WebGL uploads:
+a viewBox-only SVG can load successfully
 yet render as a black texture. Frames are temporary; story-beat evidence goes
 to `.promo-evidence/` or `PROMO_EVIDENCE_DIR`. Original source and final assets
 are retained. Browser/GPU changes may affect pixels; capture is deterministic
@@ -140,13 +170,10 @@ keyboard controls, and full-size screenshots in Chromium, WebKit, and Firefox.
 Phone coverage includes 320px and 390px widths, visible 44px touch targets,
 unclipped portrait hero covers, and full-size screenshot links.
 Firefox's bundled codec environment is not used to certify MP4 playback.
-
-```bash
-pnpm install
-pnpm dev
-```
-
-Requires a `.env.local` with Supabase and IGDB credentials.
+`MARKETING_URL` defaults to `http://127.0.0.1:4519`; the example explicitly
+targets the default development server instead. Browser screenshots go to
+`.marketing-evidence/` or `MARKETING_EVIDENCE_DIR`. These checks do not submit
+credentials, create accounts, publish media, or post to X.
 
 ### Password recovery
 
@@ -349,8 +376,9 @@ after a newer acknowledgement, and dirty/uncertain draft protection,
 held pre-commit/committed-ACK note responses during periodic/reconnect/Retry reads,
 replacement isolation after late old ACK/error, and multiple queued note writes,
 remote end, reconnect and errors. Pointer tests wait for completed layout/sheet
-animations, not arbitrary delays or keyboard substitution. Set `STANDBY_TEST_PORT` to an unused port if a
-different harness is already running. They do not establish real
+animations, not arbitrary delays or keyboard substitution. Playwright allocates
+an unused loopback port by default; set `STANDBY_TEST_PORT` only to require a
+specific free port. They do not establish real
 two-device Supabase behavior, physical iOS/Android wake behavior, or that people
 actually scroll less or play more. Those are separate release checks and usability
 outcomes, not claims inferred from passing technical tests.

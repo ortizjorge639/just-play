@@ -4,12 +4,18 @@ Use the worktree root as the working directory. These tests use isolated local
 fixtures and actual bundled art; they do not access the production database.
 
 Playwright allocates an unused loopback port by default. Set `STANDBY_TEST_PORT`
-only when a specific port is needed.
+only when a specific free port is needed. A manually started
+`tests/standby/harness-server.ts` defaults to port 4387 instead; use its logged
+URL or set an explicit port for screenshot capture.
 
-`?marketing` switches only the isolated harness to fictional demo names and
-original `/media/` artwork. `scripts/capture-marketing.mjs` uses this mode for
+`?marketing` switches only the isolated harness to real game names and local
+IGDB covers from `public/media/game-art/artwork.json`, with staged session,
+goal, notes, completed-game, and demo-player records.
+`scripts/capture-marketing.mjs` combines this mode with `?app-shell` for
 public screenshots; it is not an app route, authentication bypass, or database
-seed. See the root README for capture and real-Next marketing verification.
+seed. It overwrites the four 1440×900 screenshots under `public/media/`.
+See the [root README](../../README.md#public-landing-and-launch-media) for
+capture, real-Next marketing verification, prerequisites, and artwork terms.
 
 ## What runs in CI
 
@@ -51,7 +57,8 @@ The layout cases cover desktop, tablet, small phones, short landscape screens,
 long titles, and 200% text. They also check stale-time labeling, disabled
 actions during verification failures, and untracked-session presentation.
 StandBy and note-save cases exercise the existing actions with mocked
-account data. The image replacement is schematic, so these checks do not
+account data. Ordinary fixtures replace images with schematic artwork;
+marketing fixtures use the local catalog covers instead. Ordinary checks do not
 verify real cover-art crops, physical devices, or a deployed account session.
 
 ## StandBy appearance

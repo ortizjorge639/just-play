@@ -143,22 +143,23 @@ Semantic state tokens are `success` (`#a7c7ad`), `destructive` (`#f0a08d`), `inf
 
 ### Public marketing surface
 
-The `/about` landing page extends this identity in Persuade mode; the signed-in
-app retains the Operate hierarchy above. Players browsing after work see
-forest-ink fields, warm-ivory type, amber invitations, and original landscape
-art. The final invitation owns an amber field rather than scattering accents.
+The landing at signed-out `/` and always-public `/about` extends this identity
+in Persuade mode; the signed-in app retains the Operate hierarchy above.
+Players browsing after work see
+forest-ink fields, warm-ivory type, amber invitations, and credited catalog
+covers. The final invitation owns an amber field rather than scattering accents.
 
-Marketing display type scales from 52px on phones to 96px on wide screens,
+Marketing display type scales from 40–64px on phones to 52–96px on wider screens,
 with 800 weight, 1.03 leading, and -0.04em tracking. Section headings scale
-34–56px and feature headings 28–42px; supporting headlines use 22–28px,
-introductory copy 18px, body 16px, actions 14–16px, and demo captions 12px.
-The wordmark is 25px (22px on small phones). These larger sizes are intentional
+34–56px and feature headings 28–42px. Introductory copy is 18px, body 16px,
+actions 14–16px, and footer links 12px.
+The wordmark is 25px (20px at widths up to 420px). These larger sizes are intentional
 for this new surface, not changes to the product UI ramp.
 
-The signature composition is a pair of 4:3 artwork covers becoming one
-invitation, followed by a user-controlled film and actual staged app screens.
+The signature composition is a pair of rotated 2:3 artwork covers beside one
+invitation, followed by actual staged app screens and a user-controlled film.
 The current real-game covers come from the existing IGDB catalog with visible credits;
-it demonstrates the UI without implying publisher endorsement or catalog
+the page demonstrates the UI without implying publisher endorsement or catalog
 availability. Source terms live in `/media/artwork-credits.txt`; replacement
 media does not inherit the earlier open-license artwork's CC BY-SA terms.
 Media does not autoplay or load Three.js on the landing page. The editable
